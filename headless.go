@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"forge.lthn.ai/core/cli/pkg/agentci"
-	"forge.lthn.ai/core/cli/pkg/cli"
-	"forge.lthn.ai/core/cli/pkg/config"
-	"forge.lthn.ai/core/cli/pkg/forge"
-	"forge.lthn.ai/core/cli/pkg/jobrunner"
-	forgejosource "forge.lthn.ai/core/cli/pkg/jobrunner/forgejo"
-	"forge.lthn.ai/core/cli/pkg/jobrunner/handlers"
+	"forge.lthn.ai/core/go/pkg/agentci"
+	"forge.lthn.ai/core/go/pkg/cli"
+	"forge.lthn.ai/core/go/pkg/config"
+	"forge.lthn.ai/core/go/pkg/forge"
+	"forge.lthn.ai/core/go/pkg/jobrunner"
+	forgejosource "forge.lthn.ai/core/go/pkg/jobrunner/forgejo"
+	"forge.lthn.ai/core/go/pkg/jobrunner/handlers"
 )
 
 // hasDisplay returns true if a graphical display is available.
