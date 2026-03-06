@@ -1,0 +1,26 @@
+# Core IDE build configuration
+# Used by: core build
+
+version: 1
+
+project:
+  name: core-ide
+  description: Core IDE - Development Environment
+  binary: core-ide
+
+build:
+  type: wails
+  cgo: true
+  flags:
+    - -trimpath
+  ldflags:
+    - -s
+    - -w
+
+targets:
+  - os: darwin
+    arch: arm64
+  - os: linux
+    arch: amd64
+  - os: windows
+    arch: amd64
