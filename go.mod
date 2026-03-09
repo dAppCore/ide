@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	forge.lthn.ai/core/go v0.0.0
+	forge.lthn.ai/core/go-process v0.0.0
 	forge.lthn.ai/core/gui v0.0.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.64
@@ -64,5 +65,6 @@ require (
 
 replace (
 	forge.lthn.ai/core/go => ../go
+	forge.lthn.ai/core/go-process => ../go-process
 	forge.lthn.ai/core/gui => ../gui
 )

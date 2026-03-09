@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"forge.lthn.ai/core/go-process"
 	"forge.lthn.ai/core/go/pkg/agentci"
-	"forge.lthn.ai/core/go/pkg/cli"
 	"forge.lthn.ai/core/go/pkg/config"
 	"forge.lthn.ai/core/go/pkg/forge"
 	"forge.lthn.ai/core/go/pkg/jobrunner"
@@ -102,7 +102,7 @@ func startHeadless() {
 	})
 
 	// Daemon with PID file and health check
-	daemon := cli.NewDaemon(cli.DaemonOptions{
+	daemon := process.NewDaemon(process.DaemonOptions{
 		PIDFile:    filepath.Join(os.Getenv("HOME"), ".core", "core-ide.pid"),
 		HealthAddr: "127.0.0.1:9878",
 	})
