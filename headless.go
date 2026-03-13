@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"forge.lthn.ai/core/go-process"
-	"forge.lthn.ai/core/go/pkg/agentci"
-	"forge.lthn.ai/core/go/pkg/config"
-	"forge.lthn.ai/core/go/pkg/forge"
-	"forge.lthn.ai/core/go/pkg/jobrunner"
-	forgejosource "forge.lthn.ai/core/go/pkg/jobrunner/forgejo"
-	"forge.lthn.ai/core/go/pkg/jobrunner/handlers"
+	process "forge.lthn.ai/core/go-process"
+	orchestrator "forge.lthn.ai/core/agent/pkg/orchestrator"
+	config "forge.lthn.ai/core/go-config"
+	"forge.lthn.ai/core/go-scm/forge"
+	"forge.lthn.ai/core/agent/pkg/jobrunner"
+	forgejosource "forge.lthn.ai/core/agent/pkg/jobrunner/forgejo"
+	"forge.lthn.ai/core/agent/pkg/jobrunner/handlers"
 )
 
 // hasDisplay returns true if a graphical display is available.
@@ -69,18 +69,18 @@ func startHeadless() {
 
 	// Agent dispatch — Clotho integration
 	cfg, cfgErr := config.New()
-	var agentTargets map[string]agentci.AgentConfig
-	var clothoCfg agentci.ClothoConfig
+	var agentTargets map[string]orchestrator.AgentConfig
+	var clothoCfg orchestrator.ClothoConfig
 
 	if cfgErr == nil {
-		agentTargets, _ = agentci.LoadActiveAgents(cfg)
-		clothoCfg, _ = agentci.LoadClothoConfig(cfg)
+		agentTargets, _ = orchestrator.LoadActiveAgents(cfg)
+		clothoCfg, _ = orchestrator.LoadClothoConfig(cfg)
 	}
 	if agentTargets == nil {
-		agentTargets = map[string]agentci.AgentConfig{}
+		agentTargets = map[string]orchestrator.AgentConfig{}
 	}
 
-	spinner := agentci.NewSpinner(clothoCfg, agentTargets)
+	spinner := orchestrator.NewSpinner(clothoCfg, agentTargets)
 	log.Printf("Loaded %d agent targets. Strategy: %s", len(agentTargets), clothoCfg.Strategy)
 
 	dispatch := handlers.NewDispatchHandler(forgeClient, forgeURL, forgeToken, spinner)

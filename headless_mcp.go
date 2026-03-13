@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
-	"forge.lthn.ai/core/go/pkg/jobrunner"
+	"forge.lthn.ai/core/agent/pkg/jobrunner"
 )
 
 // startHeadlessMCP starts a minimal MCP HTTP server for headless mode.
-// It exposes job handler tools and health endpoints.
+// It exposes job handler tools, brain tools, and health endpoints.
 func startHeadlessMCP(poller *jobrunner.Poller) {
+	brain := NewBrainService()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +42,7 @@ func startHeadlessMCP(poller *jobrunner.Poller) {
 			{"name": "job_set_dry_run", "description": "Enable/disable dry-run mode"},
 			{"name": "job_run_once", "description": "Trigger a single poll-dispatch cycle"},
 		}
+		tools = append(tools, brainToolsList()...)
 		json.NewEncoder(w).Encode(map[string]any{"tools": tools})
 	})
 
@@ -78,6 +81,12 @@ func startHeadlessMCP(poller *jobrunner.Poller) {
 				"cycle":   poller.Cycle(),
 			})
 		default:
+			// Try brain tools
+			if strings.HasPrefix(req.Tool, "brain_") {
+				result := executeBrainTool(brain, req.Tool, req.Params)
+				json.NewEncoder(w).Encode(result)
+				return
+			}
 			json.NewEncoder(w).Encode(map[string]any{"error": "unknown tool"})
 		}
 	})

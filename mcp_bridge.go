@@ -7,18 +7,19 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
-	"forge.lthn.ai/core/gui/pkg/webview"
-	"forge.lthn.ai/core/gui/pkg/ws"
+	ws "forge.lthn.ai/core/go-ws"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// MCPBridge wires together WebView and WebSocket services
+// MCPBridge wires together WebView, WebSocket, and Brain services
 // and starts the MCP HTTP server after Wails initializes.
 type MCPBridge struct {
-	webview      *webview.Service
+	webview      *WebviewService
+	brain        *BrainService
 	wsHub        *ws.Hub
 	claudeBridge *ClaudeBridge
 	app          *application.App
@@ -29,7 +30,7 @@ type MCPBridge struct {
 
 // NewMCPBridge creates a new MCP bridge with all services wired up.
 func NewMCPBridge(port int) *MCPBridge {
-	wv := webview.New()
+	wv := NewWebviewService()
 	hub := ws.NewHub()
 
 	// Create Claude bridge to forward messages to MCP core on port 9876
@@ -37,6 +38,7 @@ func NewMCPBridge(port int) *MCPBridge {
 
 	return &MCPBridge{
 		webview:      wv,
+		brain:        NewBrainService(),
 		wsHub:        hub,
 		claudeBridge: claudeBridge,
 		port:         port,
@@ -75,7 +77,7 @@ func (b *MCPBridge) ServiceStartup(ctx context.Context, options application.Serv
 // injectConsoleCapture injects the console capture script into windows.
 func (b *MCPBridge) injectConsoleCapture() {
 	// Wait for windows to be created (poll with timeout)
-	var windows []webview.WindowInfo
+	var windows []WindowInfo
 	for i := 0; i < 10; i++ {
 		time.Sleep(500 * time.Millisecond)
 		windows = b.webview.ListWindows()
@@ -190,6 +192,7 @@ func (b *MCPBridge) handleMCPTools(w http.ResponseWriter, r *http.Request) {
 		{"name": "webview_pdf", "description": "Export page as PDF (base64 data URI)"},
 		{"name": "webview_print", "description": "Open print dialog for window"},
 	}
+	tools = append(tools, brainToolsList()...)
 	json.NewEncoder(w).Encode(map[string]any{"tools": tools})
 }
 
@@ -500,6 +503,10 @@ func (b *MCPBridge) executeWebviewTool(tool string, params map[string]any) map[s
 		return map[string]any{"success": true}
 
 	default:
+		// Try brain tools
+		if strings.HasPrefix(tool, "brain_") {
+			return executeBrainTool(b.brain, tool, params)
+		}
 		return map[string]any{"error": "unknown tool", "tool": tool}
 	}
 }
