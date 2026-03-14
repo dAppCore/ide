@@ -90,7 +90,7 @@ This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for
 - `../go` → `forge.lthn.ai/core/go`
 - `../gui` → `forge.lthn.ai/core/gui`
 - `../mcp` → `forge.lthn.ai/core/mcp`
-- `../go-config` → `forge.lthn.ai/core/go-config`
+- `../config` → `forge.lthn.ai/core/config`
 - `../go-ws` → `forge.lthn.ai/core/go-ws`
 
 ## Conventions

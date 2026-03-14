@@ -17,7 +17,7 @@ rm webview_svc.go     # Replaced by core/gui/pkg/display + webview
 rm brain_mcp.go       # Replaced by core/mcp/pkg/mcp/brain
 rm claude_bridge.go   # Replaced by core/mcp/pkg/mcp/ide Bridge
 rm headless_mcp.go    # Not needed — core/mcp runs in-process
-rm headless.go        # go-config gui.enabled flag; jobrunner belongs in core/agent
+rm headless.go        # config gui.enabled flag; jobrunner belongs in core/agent
 rm greetservice.go    # Scaffold placeholder
 ```
 
@@ -43,7 +43,7 @@ import (
 	"runtime"
 	"syscall"
 
-	"forge.lthn.ai/core/go-config"
+	"forge.lthn.ai/core/config"
 	"forge.lthn.ai/core/go-ws"
 	"forge.lthn.ai/core/go/pkg/core"
 	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
@@ -271,7 +271,7 @@ go 1.26.0
 
 require (
 	forge.lthn.ai/core/go v0.2.2
-	forge.lthn.ai/core/go-config v0.1.2
+	forge.lthn.ai/core/config v0.1.2
 	forge.lthn.ai/core/go-ws v0.1.3
 	forge.lthn.ai/core/gui v0.1.0
 	forge.lthn.ai/core/mcp v0.1.0
@@ -400,7 +400,7 @@ This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for
 - `../go` → `forge.lthn.ai/core/go`
 - `../gui` → `forge.lthn.ai/core/gui`
 - `../mcp` → `forge.lthn.ai/core/mcp`
-- `../go-config` → `forge.lthn.ai/core/go-config`
+- `../config` → `forge.lthn.ai/core/config`
 - `../go-ws` → `forge.lthn.ai/core/go-ws`
 
 ## Conventions

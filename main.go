@@ -13,7 +13,7 @@ import (
 
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
-	"forge.lthn.ai/core/go-config"
+	"forge.lthn.ai/core/config"
 	process "forge.lthn.ai/core/go-process"
 	processapi "forge.lthn.ai/core/go-process/pkg/api"
 	"forge.lthn.ai/core/go-ws"

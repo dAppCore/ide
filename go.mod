@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	forge.lthn.ai/core/go v0.2.2
 	forge.lthn.ai/core/api v0.1.0
-	forge.lthn.ai/core/go-config v0.1.2
+	forge.lthn.ai/core/config v0.1.2
 	forge.lthn.ai/core/go-process v0.1.0
 	forge.lthn.ai/core/go-ws v0.1.3
 	forge.lthn.ai/core/gui v0.0.0

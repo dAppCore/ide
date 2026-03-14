@@ -39,7 +39,7 @@ Replace all hand-rolled services with imports from the existing ecosystem. The I
 │  │  └─ transports: stdio, TCP, Unix     │   │
 │  └──────────────────────────────────────┘   │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │go-config │  │go-process│  │ go-log   │  │
+│  │  config  │  │go-process│  │ go-log   │  │
 │  └──────────┘  └──────────┘  └──────────┘  │
 └─────────────────────────────────────────────┘
         │
@@ -56,7 +56,7 @@ Replace all hand-rolled services with imports from the existing ecosystem. The I
 - **Tray panel** is a 380x480 frameless Angular window attached to the tray icon. Renders a control pane (MCP status, connected agents, brain stats).
 - **Windows** are disposable views — closing a window does not terminate the app.
 - **macOS**: Accessory app (no Dock icon). Template tray icon.
-- **go-config** reads `.core/config.yaml`. If `gui.enabled: false` (or no display), Wails is skipped entirely. Core still runs all services — MCP server, brain, etc.
+- **config** reads `.core/config.yaml`. If `gui.enabled: false` (or no display), Wails is skipped entirely. Core still runs all services — MCP server, brain, etc.
 
 ## Service Wiring
 
@@ -170,14 +170,14 @@ The `core/gui/pkg/display.Service` bridges Core IPC to the Wails platform — wi
 | `brain_mcp.go` | `core/mcp/pkg/mcp/brain` |
 | `claude_bridge.go` | `core/mcp/pkg/mcp/ide` Bridge |
 | `headless_mcp.go` | Not needed — core/mcp runs in-process |
-| `headless.go` | go-config `gui.enabled` flag. Jobrunner/poller extracted to core/agent (not in scope). |
+| `headless.go` | config `gui.enabled` flag. Jobrunner/poller extracted to core/agent (not in scope). |
 | `greetservice.go` | Scaffold placeholder, not needed |
 
 ### Rewrite (1 file)
 
 | File | Changes |
 |------|---------|
-| `main.go` | Thin shell: go-config, core.New with services, Wails systray, `--mcp` flag for stdio |
+| `main.go` | Thin shell: config, core.New with services, Wails systray, `--mcp` flag for stdio |
 
 ### Keep (unchanged)
 
@@ -198,7 +198,7 @@ The `core/gui/pkg/display.Service` bridges Core IPC to the Wails platform — wi
 - `forge.lthn.ai/core/gui` — display service, 74 MCP tools
 - `forge.lthn.ai/core/go-io` — sandboxed filesystem
 - `forge.lthn.ai/core/go-log` — structured logging + errors
-- `forge.lthn.ai/core/go-config` — configuration
+- `forge.lthn.ai/core/config` — configuration
 
 ### Remove (indirect cleanup)
 
