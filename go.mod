@@ -5,12 +5,23 @@ go 1.26.0
 require (
 	forge.lthn.ai/core/api v0.1.0
 	forge.lthn.ai/core/config v0.1.0
-	forge.lthn.ai/core/go v0.2.2
-	forge.lthn.ai/core/go-process v0.1.2
+	forge.lthn.ai/core/go v0.3.0
+	forge.lthn.ai/core/go-process v0.2.0
+	forge.lthn.ai/core/go-scm v0.2.0
 	forge.lthn.ai/core/go-ws v0.1.3
-	forge.lthn.ai/core/gui v0.0.0
-	forge.lthn.ai/core/mcp v0.0.0
+	forge.lthn.ai/core/gui v0.1.0
+	forge.lthn.ai/core/mcp v0.1.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
+)
+
+require (
+	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/ncruces/go-strftime v1.0.0 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	modernc.org/libc v1.68.0 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.11.0 // indirect
+	modernc.org/sqlite v1.46.1 // indirect
 )
 
 require (
@@ -22,7 +33,6 @@ require (
 	forge.lthn.ai/core/go-ml v0.1.0 // indirect
 	forge.lthn.ai/core/go-mlx v0.1.0 // indirect
 	forge.lthn.ai/core/go-rag v0.1.0 // indirect
-	forge.lthn.ai/core/go-scm v0.1.0
 	forge.lthn.ai/core/go-webview v0.1.2 // indirect
 	github.com/99designs/gqlgen v0.17.87 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -65,7 +75,7 @@ require (
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/gin-contrib/static v1.1.5 // indirect
 	github.com/gin-contrib/timeout v1.1.0 // indirect
-	github.com/gin-gonic/gin v1.12.0 // indirect
+	github.com/gin-gonic/gin v1.12.0
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.7.0 // indirect
 	github.com/go-git/go-git/v5 v5.16.4 // indirect
@@ -180,9 +190,4 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-replace (
-	forge.lthn.ai/core/gui => ../gui
-	forge.lthn.ai/core/mcp => ../mcp
 )
