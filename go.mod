@@ -3,9 +3,9 @@ module forge.lthn.ai/core/ide
 go 1.26.0
 
 require (
-	forge.lthn.ai/core/go v0.2.2
 	forge.lthn.ai/core/api v0.1.0
 	forge.lthn.ai/core/config v0.1.0
+	forge.lthn.ai/core/go v0.2.2
 	forge.lthn.ai/core/go-process v0.1.0
 	forge.lthn.ai/core/go-ws v0.1.3
 	forge.lthn.ai/core/gui v0.0.0
@@ -22,6 +22,7 @@ require (
 	forge.lthn.ai/core/go-ml v0.1.0 // indirect
 	forge.lthn.ai/core/go-mlx v0.1.0 // indirect
 	forge.lthn.ai/core/go-rag v0.1.0 // indirect
+	forge.lthn.ai/core/go-scm v0.1.0
 	forge.lthn.ai/core/go-webview v0.1.2 // indirect
 	github.com/99designs/gqlgen v0.17.87 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect

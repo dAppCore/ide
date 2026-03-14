@@ -1,10 +1,11 @@
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
+forge.lthn.ai/core/api v0.1.0 h1:ZKnQx+L9vxLQSEjwpsD1eNcIQrE4YKV1c2AlMtseM6o=
+forge.lthn.ai/core/config v0.1.0 h1:qj14x/dnOWcsXMBQWAT3FtA+/sy6Qd+1NFTg5Xoil1I=
 forge.lthn.ai/core/go v0.2.2 h1:JCWaFfiG+agb0f7b5DO1g+h40x6nb4UydxJ7D+oZk5k=
 forge.lthn.ai/core/go v0.2.2/go.mod h1:gE6c8h+PJ2287qNhVUJ5SOe1kopEwHEquvinstpuyJc=
 forge.lthn.ai/core/go-ai v0.1.5 h1:iOKW5Wv4Pquc5beDw0QqaKspq3pUvqXxT8IEdCT13Go=
 forge.lthn.ai/core/go-ai v0.1.5/go.mod h1:h1gcfi7l0m+Z9lSOwzcqzSeqRIR/6Qc2vqezBo74Rl0=
-forge.lthn.ai/core/go-api v0.1.2 h1:zGmU2CqCQ0n0cntNvprdc7HoucD4E631wBdZw+taK1w=
 forge.lthn.ai/core/go-inference v0.1.0 h1:pO7etYgqV8LMKFdpW8/2RWncuECZJCIcf8nnezeZ5R4=
 forge.lthn.ai/core/go-inference v0.1.0/go.mod h1:jfWz+IJX55wAH98+ic6FEqqGB6/P31CHlg7VY7pxREw=
 forge.lthn.ai/core/go-io v0.0.5 h1:oSyngKTkB1gR5fEWYKXftTg9FxwnpddSiCq2dlwfImE=

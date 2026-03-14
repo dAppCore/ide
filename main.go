@@ -78,6 +78,9 @@ func main() {
 	)
 	reg.MountAll(engine)
 
+	// ── Runtime Provider Manager ──────────────────────────────
+	rm := NewRuntimeManager(engine)
+
 	// ── Core framework ─────────────────────────────────────────
 	c, err := core.New(
 		core.WithName("ws", func(c *core.Core) (any, error) {
@@ -116,6 +119,11 @@ func main() {
 		bridge.Start(ctx)
 		go hub.Run(ctx)
 
+		// Start runtime providers
+		if err := rm.StartAll(ctx); err != nil {
+			log.Printf("runtime provider error: %v", err)
+		}
+
 		// Start API server in background for provider endpoints
 		go func() {
 			if err := engine.Serve(ctx); err != nil {
@@ -127,6 +135,7 @@ func main() {
 			log.Printf("MCP stdio error: %v", err)
 		}
 
+		rm.StopAll()
 		_ = mcpSvc.Shutdown(ctx)
 		_ = c.ServiceShutdown(ctx)
 		return
@@ -144,6 +153,11 @@ func main() {
 		bridge.Start(ctx)
 		go hub.Run(ctx)
 
+		// Start runtime providers
+		if err := rm.StartAll(ctx); err != nil {
+			log.Printf("runtime provider error: %v", err)
+		}
+
 		// Start API server
 		go func() {
 			log.Printf("API server listening on %s", apiAddr)
@@ -159,6 +173,7 @@ func main() {
 		}()
 
 		<-ctx.Done()
+		rm.StopAll()
 		shutdownCtx := context.Background()
 		_ = mcpSvc.Shutdown(shutdownCtx)
 		_ = c.ServiceShutdown(shutdownCtx)
@@ -184,6 +199,7 @@ func main() {
 			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 		OnShutdown: func() {
+			rm.StopAll()
 			ctx := context.Background()
 			_ = mcpSvc.Shutdown(ctx)
 			bridge.Shutdown()
@@ -221,11 +237,16 @@ func main() {
 	})
 	systray.SetMenu(trayMenu)
 
-	// Start MCP transport and API server alongside Wails
+	// Start MCP transport, runtime providers, and API server alongside Wails
 	go func() {
 		ctx := context.Background()
 		bridge.Start(ctx)
 		go hub.Run(ctx)
+
+		// Start runtime providers
+		if err := rm.StartAll(ctx); err != nil {
+			log.Printf("runtime provider error: %v", err)
+		}
 
 		// Start API server
 		go func() {
