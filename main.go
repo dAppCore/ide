@@ -5,12 +5,17 @@ import (
 	"embed"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 
+	"forge.lthn.ai/core/go-api"
+	"forge.lthn.ai/core/go-api/pkg/provider"
 	"forge.lthn.ai/core/go-config"
+	process "forge.lthn.ai/core/go-process"
+	processapi "forge.lthn.ai/core/go-process/pkg/api"
 	"forge.lthn.ai/core/go-ws"
 	"forge.lthn.ai/core/go/pkg/core"
 	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
@@ -55,6 +60,24 @@ func main() {
 	}
 	bridge := ide.NewBridge(hub, bridgeCfg)
 
+	// ── Service Provider Registry ──────────────────────────────
+	reg := provider.NewRegistry()
+	reg.Add(processapi.NewProvider(process.DefaultRegistry(), hub))
+	reg.Add(brain.NewProvider(bridge, hub))
+
+	// ── API Engine ─────────────────────────────────────────────
+	apiAddr := ":9880"
+	if addr := os.Getenv("CORE_API_ADDR"); addr != "" {
+		apiAddr = addr
+	}
+	engine, _ := api.New(
+		api.WithAddr(apiAddr),
+		api.WithCORS("*"),
+		api.WithWSHandler(http.Handler(hub.Handler())),
+		api.WithSwagger("Core IDE", "Service Provider API", "0.1.0"),
+	)
+	reg.MountAll(engine)
+
 	// ── Core framework ─────────────────────────────────────────
 	c, err := core.New(
 		core.WithName("ws", func(c *core.Core) (any, error) {
@@ -87,11 +110,18 @@ func main() {
 			syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 
-		// Start Core lifecycle manually
 		if err := c.ServiceStartup(ctx, nil); err != nil {
 			log.Fatalf("core startup failed: %v", err)
 		}
 		bridge.Start(ctx)
+		go hub.Run(ctx)
+
+		// Start API server in background for provider endpoints
+		go func() {
+			if err := engine.Serve(ctx); err != nil {
+				log.Printf("API server error: %v", err)
+			}
+		}()
 
 		if err := mcpSvc.ServeStdio(ctx); err != nil {
 			log.Printf("MCP stdio error: %v", err)
@@ -112,6 +142,15 @@ func main() {
 			log.Fatalf("core startup failed: %v", err)
 		}
 		bridge.Start(ctx)
+		go hub.Run(ctx)
+
+		// Start API server
+		go func() {
+			log.Printf("API server listening on %s", apiAddr)
+			if err := engine.Serve(ctx); err != nil {
+				log.Printf("API server error: %v", err)
+			}
+		}()
 
 		go func() {
 			if err := mcpSvc.Run(ctx); err != nil {
@@ -182,10 +221,20 @@ func main() {
 	})
 	systray.SetMenu(trayMenu)
 
-	// Start MCP transport alongside Wails
+	// Start MCP transport and API server alongside Wails
 	go func() {
 		ctx := context.Background()
 		bridge.Start(ctx)
+		go hub.Run(ctx)
+
+		// Start API server
+		go func() {
+			log.Printf("API server listening on %s", apiAddr)
+			if err := engine.Serve(ctx); err != nil {
+				log.Printf("API server error: %v", err)
+			}
+		}()
+
 		if err := mcpSvc.Run(ctx); err != nil {
 			log.Printf("MCP error: %v", err)
 		}
