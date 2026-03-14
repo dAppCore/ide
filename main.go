@@ -81,6 +81,10 @@ func main() {
 	// ── Runtime Provider Manager ──────────────────────────────
 	rm := NewRuntimeManager(engine)
 
+	// ── Providers API ─────────────────────────────────────────
+	// Exposes GET /api/v1/providers for the Angular frontend
+	engine.Register(NewProvidersAPI(reg, rm))
+
 	// ── Core framework ─────────────────────────────────────────
 	c, err := core.New(
 		core.WithName("ws", func(c *core.Core) (any, error) {

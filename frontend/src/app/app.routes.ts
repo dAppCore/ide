@@ -1,17 +1,26 @@
+// SPDX-Licence-Identifier: EUPL-1.2
+
 import { Routes } from '@angular/router';
-import { TrayComponent } from './pages/tray/tray.component';
-import { IdeComponent } from './pages/ide/ide.component';
+import {
+  ApplicationFrameComponent,
+  ProviderHostComponent,
+  SystemTrayFrameComponent,
+} from '@core/gui-ui';
 
 export const routes: Routes = [
-  // System tray panel - standalone compact UI
-  { path: 'tray', component: TrayComponent },
+  // System tray panel — standalone compact UI (380x480 frameless)
+  { path: 'tray', component: SystemTrayFrameComponent },
 
-  // Full IDE interface
-  { path: 'ide', component: IdeComponent },
+  // Main application frame with HLCRF layout
+  {
+    path: '',
+    component: ApplicationFrameComponent,
+    children: [
+      // Dynamic provider rendering via route parameter
+      { path: ':provider', component: ProviderHostComponent },
 
-  // Default to tray for the root (tray panel is the default view)
-  { path: '', redirectTo: 'tray', pathMatch: 'full' },
-
-  // Catch-all
-  { path: '**', redirectTo: 'tray' },
+      // Default to process provider (first registered)
+      { path: '', redirectTo: 'process', pathMatch: 'full' },
+    ],
+  },
 ];
