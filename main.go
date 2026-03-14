@@ -1,57 +1,153 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"io/fs"
 	"log"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
+	"forge.lthn.ai/core/go-config"
+	"forge.lthn.ai/core/go-ws"
+	"forge.lthn.ai/core/go/pkg/core"
+	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
+	"forge.lthn.ai/core/gui/pkg/display"
 	"forge.lthn.ai/core/ide/icons"
+	"forge.lthn.ai/core/mcp/pkg/mcp"
+	"forge.lthn.ai/core/mcp/pkg/mcp/brain"
+	"forge.lthn.ai/core/mcp/pkg/mcp/ide"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist/wails-angular-template/browser
 var assets embed.FS
 
-// Default MCP port for the embedded server
-const mcpPort = 9877
-
 func main() {
-	// Check for headless mode
-	headless := false
+	// ── Flags ──────────────────────────────────────────────────
+	mcpOnly := false
 	for _, arg := range os.Args[1:] {
-		if arg == "--headless" {
-			headless = true
+		if arg == "--mcp" {
+			mcpOnly = true
 		}
 	}
 
-	if headless || !hasDisplay() {
-		startHeadless()
+	// ── Configuration ──────────────────────────────────────────
+	cfg, _ := config.New()
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("failed to get working directory: %v", err)
+	}
+
+	// ── Shared resources (built before Core) ───────────────────
+	hub := ws.NewHub()
+
+	bridgeCfg := ide.DefaultConfig()
+	bridgeCfg.WorkspaceRoot = cwd
+	if url := os.Getenv("CORE_API_URL"); url != "" {
+		bridgeCfg.LaravelWSURL = url
+	}
+	if token := os.Getenv("CORE_API_TOKEN"); token != "" {
+		bridgeCfg.Token = token
+	}
+	bridge := ide.NewBridge(hub, bridgeCfg)
+
+	// ── Core framework ─────────────────────────────────────────
+	c, err := core.New(
+		core.WithName("ws", func(c *core.Core) (any, error) {
+			return hub, nil
+		}),
+		core.WithService(display.Register(nil)), // nil platform until Wails starts
+		core.WithName("mcp", func(c *core.Core) (any, error) {
+			return mcp.New(
+				mcp.WithWorkspaceRoot(cwd),
+				mcp.WithWSHub(hub),
+				mcp.WithSubsystem(brain.New(bridge)),
+				mcp.WithSubsystem(guiMCP.New(c)),
+			)
+		}),
+	)
+	if err != nil {
+		log.Fatalf("failed to create core: %v", err)
+	}
+
+	// Retrieve the MCP service for transport control
+	mcpSvc, err := core.ServiceFor[*mcp.Service](c, "mcp")
+	if err != nil {
+		log.Fatalf("failed to get MCP service: %v", err)
+	}
+
+	// ── Mode selection ─────────────────────────────────────────
+	if mcpOnly {
+		// stdio mode — Claude Code connects via --mcp flag
+		ctx, cancel := signal.NotifyContext(context.Background(),
+			syscall.SIGINT, syscall.SIGTERM)
+		defer cancel()
+
+		// Start Core lifecycle manually
+		if err := c.ServiceStartup(ctx, nil); err != nil {
+			log.Fatalf("core startup failed: %v", err)
+		}
+		bridge.Start(ctx)
+
+		if err := mcpSvc.ServeStdio(ctx); err != nil {
+			log.Printf("MCP stdio error: %v", err)
+		}
+
+		_ = mcpSvc.Shutdown(ctx)
+		_ = c.ServiceShutdown(ctx)
 		return
 	}
 
-	// Strip the embed path prefix so files are served from root
+	if !guiEnabled(cfg) {
+		// No GUI — run Core with MCP transport in background
+		ctx, cancel := signal.NotifyContext(context.Background(),
+			syscall.SIGINT, syscall.SIGTERM)
+		defer cancel()
+
+		if err := c.ServiceStartup(ctx, nil); err != nil {
+			log.Fatalf("core startup failed: %v", err)
+		}
+		bridge.Start(ctx)
+
+		go func() {
+			if err := mcpSvc.Run(ctx); err != nil {
+				log.Printf("MCP error: %v", err)
+			}
+		}()
+
+		<-ctx.Done()
+		shutdownCtx := context.Background()
+		_ = mcpSvc.Shutdown(shutdownCtx)
+		_ = c.ServiceShutdown(shutdownCtx)
+		return
+	}
+
+	// ── GUI mode ───────────────────────────────────────────────
 	staticAssets, err := fs.Sub(assets, "frontend/dist/wails-angular-template/browser")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Create the MCP bridge for Claude Code integration
-	mcpBridge := NewMCPBridge(mcpPort)
-
 	app := application.New(application.Options{
 		Name:        "Core IDE",
 		Description: "Host UK Core IDE - Development Environment",
 		Services: []application.Service{
-			application.NewService(&GreetService{}),
-			application.NewService(mcpBridge),
+			application.NewService(c),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(staticAssets),
 		},
 		Mac: application.MacOptions{
 			ActivationPolicy: application.ActivationPolicyAccessory,
+		},
+		OnShutdown: func() {
+			ctx := context.Background()
+			_ = mcpSvc.Shutdown(ctx)
+			bridge.Shutdown()
 		},
 	})
 
@@ -86,9 +182,36 @@ func main() {
 	})
 	systray.SetMenu(trayMenu)
 
+	// Start MCP transport alongside Wails
+	go func() {
+		ctx := context.Background()
+		bridge.Start(ctx)
+		if err := mcpSvc.Run(ctx); err != nil {
+			log.Printf("MCP error: %v", err)
+		}
+	}()
+
 	log.Println("Starting Core IDE...")
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// guiEnabled checks whether the GUI should start.
+// Returns false if config says gui.enabled: false, or if no display is available.
+func guiEnabled(cfg *config.Config) bool {
+	if cfg != nil {
+		var guiCfg struct {
+			Enabled *bool `mapstructure:"enabled"`
+		}
+		if err := cfg.Get("gui", &guiCfg); err == nil && guiCfg.Enabled != nil {
+			return *guiCfg.Enabled
+		}
+	}
+	// Fall back to display detection
+	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+		return true
+	}
+	return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
 }

@@ -32,37 +32,66 @@ cd frontend && npm run test
 
 ## Architecture
 
-**Dual-mode application**: a single Go binary that operates as either a GUI desktop app (Wails 3 + Angular) or a headless CI/CD daemon, determined at startup by the `--headless` flag or display availability.
+**Thin Wails shell** wiring ecosystem packages via `core.Core` dependency injection. Three operating modes:
 
 ### GUI Mode (default)
-`main()` → Wails application with embedded Angular frontend, system tray (macOS: accessory app, no Dock icon), and an MCP HTTP server on **port 9877**. The `MCPBridge` service orchestrates `WebviewService` (window/DOM automation), `BrainService` (vector knowledge store via OpenBrain), and a WebSocket hub.
+`main()` → Wails 3 application with embedded Angular frontend, system tray (macOS: accessory app, no Dock icon). Core framework manages all services:
+- **display** (`core/gui`) — window management, webview automation, 74 MCP tools across 14 categories
+- **MCP** (`core/mcp`) — Model Context Protocol server with file ops, brain subsystem, GUI subsystem
+- **IDE bridge** (`core/mcp/pkg/mcp/ide`) — WebSocket bridge to Laravel core-agentic backend
+- **WS hub** (`core/go-ws`) — WebSocket hub for Angular frontend communication
 
-### Headless Mode (`--headless` or no display)
-`startHeadless()` → Daemon with PID file at `~/.core/core-ide.pid`, health check on **port 9878**, and a minimal MCP server on **port 9877**. Polls Forgejo repos (configured via `CORE_REPOS` env var) every 60 seconds and runs jobs through an ordered handler pipeline: PublishDraft → SendFix → DismissReviews → EnableAutoMerge → TickParent → Dispatch.
+### MCP Mode (`--mcp`)
+`core-ide --mcp` → stdio MCP server for Claude Code integration. No GUI, no HTTP. Configure in `.claude/.mcp.json`:
+```json
+{
+    "mcpServers": {
+        "core-ide": {
+            "type": "stdio",
+            "command": "core-ide",
+            "args": ["--mcp"]
+        }
+    }
+}
+```
 
-### Key Services
-- **`MCPBridge`** (`mcp_bridge.go`) — Central GUI service. Registers 29 webview tools + 4 brain tools via HTTP MCP protocol. Routes: `/health`, `/mcp`, `/mcp/tools`, `/mcp/call`, `/ws`.
-- **`WebviewService`** (`webview_svc.go`) — Wails v3 window management and DOM interaction. Many tools are stubbed pending CDP integration.
-- **`BrainService`** (`brain_mcp.go`) — Wraps `lifecycle.Client` for OpenBrain vector store (remember/recall/forget). Shared by both modes.
-- **`ClaudeBridge`** (`claude_bridge.go`) — WebSocket relay to upstream MCP at `ws://localhost:9876/ws`. Currently disabled.
+### Headless Mode (no display or `gui.enabled: false`)
+Core framework runs all services without Wails. MCP transport determined by `MCP_ADDR` env var (TCP if set, stdio otherwise).
 
 ### Frontend
-Angular 20+ app embedded via `//go:embed`. Two routes: `/tray` (system tray panel, 380x480 frameless) and `/ide` (full IDE layout). Wails bindings auto-generated in `frontend/bindings/`.
+Angular 20+ app embedded via `//go:embed`. Two routes: `/tray` (system tray panel, 380x480 frameless) and `/ide` (full IDE layout).
+
+## Configuration
+
+```yaml
+# .core/config.yaml
+gui:
+  enabled: true          # false = no Wails, Core still runs
+mcp:
+  transport: stdio       # stdio | tcp | unix
+  tcp:
+    port: 9877
+brain:
+  api_url: http://localhost:8000
+  api_token: ""          # or CORE_API_TOKEN env var
+```
 
 ## Environment Variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `CORE_REPOS` | `host-uk/core,host-uk/core-php,host-uk/core-tenant,host-uk/core-admin` | Repos to poll in headless mode |
-| `CORE_API_URL` | `http://localhost:8000` | OpenBrain API endpoint |
-| `CORE_API_TOKEN` | (required) | OpenBrain auth token |
+| `CORE_API_URL` | `http://localhost:8000` | Laravel backend WebSocket URL |
+| `CORE_API_TOKEN` | (empty) | Bearer token for Laravel backend auth |
+| `MCP_ADDR` | (empty) | TCP address for MCP server (headless mode) |
 
 ## Workspace Dependencies
 
-This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for sibling modules. Ensure these exist alongside `ide/`:
+This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for sibling modules:
 - `../go` → `forge.lthn.ai/core/go`
-- `../go-process` → `forge.lthn.ai/core/go-process`
 - `../gui` → `forge.lthn.ai/core/gui`
+- `../mcp` → `forge.lthn.ai/core/mcp`
+- `../go-config` → `forge.lthn.ai/core/go-config`
+- `../go-ws` → `forge.lthn.ai/core/go-ws`
 
 ## Conventions
 
@@ -70,5 +99,5 @@ This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for
 - **Conventional commits**: `type(scope): description` with co-author line `Co-Authored-By: Virgil <virgil@lethean.io>`.
 - **Licence**: EUPL-1.2.
 - All Go code is in `package main` (single-package application).
-- New Wails services: create struct in a Go file, register in `main.go`'s `Services` slice, then `wails3 dev` to regenerate TS bindings.
-- New MCP tools: add metadata to `handleMCPTools` and a case to `executeWebviewTool` in `mcp_bridge.go`.
+- Services are registered via `core.WithService` or `core.WithName` factory functions.
+- MCP subsystems implement `mcp.Subsystem` interface from `core/mcp`.
