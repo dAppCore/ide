@@ -10,7 +10,7 @@ require (
 	forge.lthn.ai/core/go-scm v0.2.0
 	forge.lthn.ai/core/go-ws v0.1.3
 	forge.lthn.ai/core/gui v0.1.0
-	forge.lthn.ai/core/mcp v0.1.0
+	forge.lthn.ai/core/mcp v0.1.3
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 )
 
@@ -27,10 +27,10 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	forge.lthn.ai/core/go-ai v0.1.5 // indirect
-	forge.lthn.ai/core/go-inference v0.1.0 // indirect
-	forge.lthn.ai/core/go-io v0.0.5 // indirect
-	forge.lthn.ai/core/go-log v0.0.1 // indirect
-	forge.lthn.ai/core/go-ml v0.1.0 // indirect
+	forge.lthn.ai/core/go-inference v0.1.3 // indirect
+	forge.lthn.ai/core/go-io v0.1.0 // indirect
+	forge.lthn.ai/core/go-log v0.0.2 // indirect
+	forge.lthn.ai/core/go-ml v0.1.8 // indirect
 	forge.lthn.ai/core/go-mlx v0.1.0 // indirect
 	forge.lthn.ai/core/go-rag v0.1.0 // indirect
 	forge.lthn.ai/core/go-webview v0.1.2 // indirect
@@ -184,7 +184,6 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	google.golang.org/grpc v1.79.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
