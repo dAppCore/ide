@@ -22,6 +22,7 @@ import (
 	"forge.lthn.ai/core/gui/pkg/display"
 	"forge.lthn.ai/core/ide/icons"
 	"forge.lthn.ai/core/mcp/pkg/mcp"
+	"forge.lthn.ai/core/mcp/pkg/mcp/agentic"
 	"forge.lthn.ai/core/mcp/pkg/mcp/brain"
 	"forge.lthn.ai/core/mcp/pkg/mcp/ide"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -95,7 +96,8 @@ func main() {
 			return mcp.New(
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
-				mcp.WithSubsystem(brain.New(bridge)),
+				mcp.WithSubsystem(brain.NewDirect()),
+				mcp.WithSubsystem(agentic.NewPrep()),
 				mcp.WithSubsystem(guiMCP.New(c)),
 			)
 		}),

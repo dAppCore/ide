@@ -10,7 +10,7 @@ require (
 	forge.lthn.ai/core/go-scm v0.2.0
 	forge.lthn.ai/core/go-ws v0.1.3
 	forge.lthn.ai/core/gui v0.1.0
-	forge.lthn.ai/core/mcp v0.1.3
+	forge.lthn.ai/core/mcp v0.2.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 )
 
