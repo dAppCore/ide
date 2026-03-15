@@ -234,8 +234,33 @@ func main() {
 	})
 	systray.AttachWindow(trayWindow).WindowOffset(5)
 
+	// Main IDE window (hidden initially, opened via tray menu)
+	ideWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:             "ide",
+		Title:            "Core IDE",
+		Width:            1280,
+		Height:           800,
+		URL:              "/",
+		Hidden:           true,
+		BackgroundColour: application.NewRGB(26, 27, 38),
+	})
+
 	// Tray menu
 	trayMenu := app.Menu.New()
+	trayMenu.Add("Open IDE").OnClick(func(ctx *application.Context) {
+		ideWindow.Show()
+		ideWindow.Focus()
+	})
+	trayMenu.Add("API Swagger").OnClick(func(ctx *application.Context) {
+		app.Window.NewWithOptions(application.WebviewWindowOptions{
+			Name:   "swagger",
+			Title:  "Core IDE — API",
+			Width:  1024,
+			Height: 768,
+			URL:    "http://localhost" + apiAddr + "/swagger/index.html",
+		})
+	})
+	trayMenu.AddSeparator()
 	trayMenu.Add("Quit").OnClick(func(ctx *application.Context) {
 		app.Quit()
 	})
