@@ -4,13 +4,13 @@ go 1.26.0
 
 require (
 	forge.lthn.ai/core/api v0.1.5
-	forge.lthn.ai/core/config v0.1.7
-	forge.lthn.ai/core/go v0.3.2
-	forge.lthn.ai/core/go-process v0.2.8
-	forge.lthn.ai/core/go-scm v0.3.5
-	forge.lthn.ai/core/go-ws v0.2.4
-	forge.lthn.ai/core/gui v0.1.4
-	forge.lthn.ai/core/mcp v0.3.3
+	forge.lthn.ai/core/config v0.1.8
+	forge.lthn.ai/core/go v0.3.3
+	forge.lthn.ai/core/go-process v0.2.9
+	forge.lthn.ai/core/go-scm v0.3.6
+	forge.lthn.ai/core/go-ws v0.2.5
+	forge.lthn.ai/core/gui v0.1.5
+	forge.lthn.ai/core/mcp v0.3.4
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 )
 
@@ -27,10 +27,10 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	forge.lthn.ai/core/go-ai v0.1.12 // indirect
-	forge.lthn.ai/core/go-io v0.1.6 // indirect
+	forge.lthn.ai/core/go-io v0.1.7 // indirect
 	forge.lthn.ai/core/go-log v0.0.4 // indirect
-	forge.lthn.ai/core/go-rag v0.1.10 // indirect
-	forge.lthn.ai/core/go-webview v0.1.6 // indirect
+	forge.lthn.ai/core/go-rag v0.1.11 // indirect
+	forge.lthn.ai/core/go-webview v0.1.7 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
