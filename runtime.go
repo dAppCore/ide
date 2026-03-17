@@ -15,6 +15,7 @@ import (
 
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
+	coreerr "forge.lthn.ai/core/go-log"
 	"forge.lthn.ai/core/go-scm/manifest"
 	"forge.lthn.ai/core/go-scm/marketplace"
 	"github.com/gin-gonic/gin"
@@ -63,7 +64,7 @@ func (rm *RuntimeManager) StartAll(ctx context.Context) error {
 	dir := defaultProvidersDir()
 	discovered, err := marketplace.DiscoverProviders(dir)
 	if err != nil {
-		return fmt.Errorf("runtime: discover providers: %w", err)
+		return coreerr.E("runtime.StartAll", "discover providers", err)
 	}
 
 	if len(discovered) == 0 {
@@ -93,7 +94,7 @@ func (rm *RuntimeManager) startProvider(ctx context.Context, dp marketplace.Disc
 	// Assign a free port.
 	port, err := findFreePort()
 	if err != nil {
-		return nil, fmt.Errorf("find free port: %w", err)
+		return nil, coreerr.E("runtime.startProvider", "find free port", err)
 	}
 
 	// Resolve binary path.
@@ -114,7 +115,7 @@ func (rm *RuntimeManager) startProvider(ctx context.Context, dp marketplace.Disc
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start binary %s: %w", binaryPath, err)
+		return nil, coreerr.E("runtime.startProvider", fmt.Sprintf("start binary %s", binaryPath), err)
 	}
 
 	// Wait for health check.
@@ -122,7 +123,7 @@ func (rm *RuntimeManager) startProvider(ctx context.Context, dp marketplace.Disc
 	if err := waitForHealth(healthURL, 10*time.Second); err != nil {
 		// Kill the process if health check fails.
 		_ = cmd.Process.Kill()
-		return nil, fmt.Errorf("health check failed for %s: %w", m.Code, err)
+		return nil, coreerr.E("runtime.startProvider", fmt.Sprintf("health check failed for %s", m.Code), err)
 	}
 
 	// Register proxy provider.
@@ -248,7 +249,7 @@ func waitForHealth(url string, timeout time.Duration) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	return fmt.Errorf("health check timed out after %s: %s", timeout, url)
+	return coreerr.E("runtime.waitForHealth", fmt.Sprintf("timed out after %s: %s", timeout, url), nil)
 }
 
 // staticAssetGroup is a simple RouteGroup that serves static files.

@@ -11,12 +11,15 @@ require (
 	forge.lthn.ai/core/go-ws v0.2.3
 	forge.lthn.ai/core/gui v0.1.3
 	forge.lthn.ai/core/mcp v0.3.2
+	github.com/stretchr/testify v1.11.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
@@ -28,7 +31,7 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	forge.lthn.ai/core/go-ai v0.1.11 // indirect
 	forge.lthn.ai/core/go-io v0.1.5 // indirect
-	forge.lthn.ai/core/go-log v0.0.4 // indirect
+	forge.lthn.ai/core/go-log v0.0.4
 	forge.lthn.ai/core/go-rag v0.1.9 // indirect
 	forge.lthn.ai/core/go-webview v0.1.5 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
