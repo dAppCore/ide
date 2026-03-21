@@ -1,4 +1,4 @@
-module forge.lthn.ai/core/ide
+module dappco.re/go/core/ide
 
 go 1.26.0
 

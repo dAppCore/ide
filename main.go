@@ -20,7 +20,7 @@ import (
 	"forge.lthn.ai/core/go/pkg/core"
 	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/gui/pkg/display"
-	"forge.lthn.ai/core/ide/icons"
+	"dappco.re/go/core/ide/icons"
 	"forge.lthn.ai/core/mcp/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp/agentic"
 	"forge.lthn.ai/core/mcp/pkg/mcp/brain"
