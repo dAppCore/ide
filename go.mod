@@ -15,7 +15,14 @@ require (
 )
 
 require (
+<<<<<<< HEAD
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+=======
+	dappco.re/go/core v0.4.7 // indirect
+	dappco.re/go/core/io v0.1.7 // indirect
+	dappco.re/go/core/log v0.0.4 // indirect
+	dappco.re/go/core/process v0.2.9 // indirect
+>>>>>>> ff717ef516c6d2261f84b727c409dd050c8e63a6
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -176,3 +183,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
