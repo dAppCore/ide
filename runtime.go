@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
+	coreerr "dappco.re/go/core/log"
+	"dappco.re/go/core/scm/manifest"
+	"dappco.re/go/core/scm/marketplace"
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
-	coreerr "forge.lthn.ai/core/go-log"
-	"forge.lthn.ai/core/go-scm/manifest"
-	"forge.lthn.ai/core/go-scm/marketplace"
 	"github.com/gin-gonic/gin"
 )
 
@@ -230,7 +230,11 @@ func findFreePort() (int, error) {
 		return 0, err
 	}
 	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port, nil
+	tcpAddr, ok := l.Addr().(*net.TCPAddr)
+	if !ok {
+		return 0, coreerr.E("runtime.findFreePort", "unexpected address type", nil)
+	}
+	return tcpAddr.Port, nil
 }
 
 // waitForHealth polls a health URL until it returns 200 or the timeout expires.

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"dappco.re/go/core/scm/manifest"
 	"forge.lthn.ai/core/api/pkg/provider"
-	"forge.lthn.ai/core/go-scm/manifest"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

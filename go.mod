@@ -3,11 +3,11 @@ module dappco.re/go/core/ide
 go 1.26.0
 
 require (
-	forge.lthn.ai/core/api v0.1.3
-	forge.lthn.ai/core/config v0.1.6
-	forge.lthn.ai/core/go v0.3.1
+	dappco.re/go/core/scm v0.4.0
+	forge.lthn.ai/core/api v0.1.5
+	forge.lthn.ai/core/config v0.1.8
+	forge.lthn.ai/core/go v0.3.3
 	forge.lthn.ai/core/go-process v0.2.7
-	forge.lthn.ai/core/go-scm v0.3.4
 	forge.lthn.ai/core/go-ws v0.2.3
 	forge.lthn.ai/core/gui v0.1.3
 	forge.lthn.ai/core/mcp v0.3.2
@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	forge.lthn.ai/core/go-log v0.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -24,15 +25,16 @@ require (
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.46.2 // indirect
+	modernc.org/sqlite v1.47.0 // indirect
 )
 
 require (
+	dappco.re/go/core/io v0.2.0 // indirect
+	dappco.re/go/core/log v0.1.0
 	dario.cat/mergo v1.0.2 // indirect
 	forge.lthn.ai/core/go-ai v0.1.11 // indirect
-	forge.lthn.ai/core/go-io v0.1.5 // indirect
-	forge.lthn.ai/core/go-log v0.0.4
-	forge.lthn.ai/core/go-rag v0.1.9 // indirect
+	forge.lthn.ai/core/go-io v0.1.7 // indirect
+	forge.lthn.ai/core/go-rag v0.1.11 // indirect
 	forge.lthn.ai/core/go-webview v0.1.5 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -45,7 +47,7 @@ require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.10.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/bytedance/gopkg v0.1.3 // indirect
+	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/casbin/casbin/v2 v2.135.0 // indirect
@@ -122,7 +124,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.4.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/ollama/ollama v0.18.0 // indirect
+	github.com/ollama/ollama v0.18.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect

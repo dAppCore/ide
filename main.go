@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"dappco.re/go/core/ide/icons"
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
 	"forge.lthn.ai/core/config"
@@ -18,9 +19,8 @@ import (
 	processapi "forge.lthn.ai/core/go-process/pkg/api"
 	"forge.lthn.ai/core/go-ws"
 	"forge.lthn.ai/core/go/pkg/core"
-	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/gui/pkg/display"
-	"dappco.re/go/core/ide/icons"
+	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp/agentic"
 	"forge.lthn.ai/core/mcp/pkg/mcp/brain"
