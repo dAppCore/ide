@@ -15,6 +15,10 @@ require (
 )
 
 require (
+	dappco.re/go/core v0.4.7 // indirect
+	dappco.re/go/core/io v0.1.7 // indirect
+	dappco.re/go/core/log v0.0.4 // indirect
+	dappco.re/go/core/process v0.2.9 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -174,3 +178,13 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace forge.lthn.ai/core/mcp => ../../../../core/mcp
+
+replace dappco.re/go/core => ../../../../core/go
+
+replace dappco.re/go/core/process => ../../../../core/go-process
+
+replace dappco.re/go/core/io => ../../../../core/go-io
+
+replace dappco.re/go/core/log => ../../../../core/go-log

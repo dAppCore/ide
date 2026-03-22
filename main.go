@@ -18,8 +18,8 @@ import (
 	processapi "forge.lthn.ai/core/go-process/pkg/api"
 	"forge.lthn.ai/core/go-ws"
 	"forge.lthn.ai/core/go/pkg/core"
-	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/gui/pkg/display"
+	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/ide/icons"
 	"forge.lthn.ai/core/mcp/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp/agentic"
@@ -41,7 +41,10 @@ func main() {
 	}
 
 	// ── Configuration ──────────────────────────────────────────
-	cfg, _ := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		log.Printf("config load failed, using defaults: %v", err)
+	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -71,12 +74,15 @@ func main() {
 	if addr := os.Getenv("CORE_API_ADDR"); addr != "" {
 		apiAddr = addr
 	}
-	engine, _ := api.New(
+	engine, err := api.New(
 		api.WithAddr(apiAddr),
 		api.WithCORS("*"),
 		api.WithWSHandler(http.Handler(hub.Handler())),
 		api.WithSwagger("Core IDE", "Service Provider API", "0.1.0"),
 	)
+	if err != nil {
+		log.Fatalf("failed to create API engine: %v", err)
+	}
 	reg.MountAll(engine)
 
 	// ── Runtime Provider Manager ──────────────────────────────
@@ -87,55 +93,49 @@ func main() {
 	engine.Register(NewProvidersAPI(reg, rm))
 
 	// ── Core framework ─────────────────────────────────────────
-	c, err := core.New(
-		core.WithName("ws", func(c *core.Core) (any, error) {
-			return hub, nil
-		}),
-		core.WithService(display.Register(nil)), // nil platform until Wails starts
-		core.WithName("mcp", func(c *core.Core) (any, error) {
-			return mcp.New(
-				mcp.WithWorkspaceRoot(cwd),
-				mcp.WithWSHub(hub),
-				mcp.WithSubsystem(brain.NewDirect()),
-				mcp.WithSubsystem(agentic.NewPrep()),
-				mcp.WithSubsystem(guiMCP.New(c)),
-			)
-		}),
-	)
+	c, err := core.New()
 	if err != nil {
 		log.Fatalf("failed to create core: %v", err)
 	}
 
-	// Retrieve the MCP service for transport control
-	mcpSvc, err := core.ServiceFor[*mcp.Service](c, "mcp")
+	if err := c.RegisterService("ws", hub); err != nil {
+		log.Fatalf("failed to register ws service: %v", err)
+	}
+
+	displaySvcAny, err := display.Register(nil)(c)
 	if err != nil {
-		log.Fatalf("failed to get MCP service: %v", err)
+		log.Fatalf("failed to create display service: %v", err)
+	}
+	if err := c.RegisterService("display", displaySvcAny); err != nil {
+		log.Fatalf("failed to register display service: %v", err)
+	}
+	if ds, ok := displaySvcAny.(*display.Service); ok {
+		c.RegisterAction(ds.HandleIPCEvents)
+	}
+
+	mcpSvc, err := mcp.New(mcp.Options{
+		WorkspaceRoot: cwd,
+		WSHub:         hub,
+		Subsystems: []mcp.Subsystem{
+			brain.NewDirect(),
+			agentic.NewPrep(),
+			guiMCP.New(c),
+		},
+	})
+	if err != nil {
+		log.Fatalf("failed to create MCP service: %v", err)
+	}
+	if err := c.RegisterService("mcp", mcpSvc); err != nil {
+		log.Fatalf("failed to register MCP service: %v", err)
 	}
 
 	// ── Mode selection ─────────────────────────────────────────
 	if mcpOnly {
-		// stdio mode — Claude Code connects via --mcp flag
-		ctx, cancel := signal.NotifyContext(context.Background(),
-			syscall.SIGINT, syscall.SIGTERM)
+		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 
-		if err := c.ServiceStartup(ctx, nil); err != nil {
-			log.Fatalf("core startup failed: %v", err)
-		}
-		bridge.Start(ctx)
-		go hub.Run(ctx)
-
-		// Start runtime providers
-		if err := rm.StartAll(ctx); err != nil {
-			log.Printf("runtime provider error: %v", err)
-		}
-
-		// Start API server in background for provider endpoints
-		go func() {
-			if err := engine.Serve(ctx); err != nil {
-				log.Printf("API server error: %v", err)
-			}
-		}()
+		startCore(ctx, c, bridge, hub, rm)
+		go serveAPI(ctx, engine, apiAddr)
 
 		if err := mcpSvc.ServeStdio(ctx); err != nil {
 			log.Printf("MCP stdio error: %v", err)
@@ -148,29 +148,11 @@ func main() {
 	}
 
 	if !guiEnabled(cfg) {
-		// No GUI — run Core with MCP transport in background
-		ctx, cancel := signal.NotifyContext(context.Background(),
-			syscall.SIGINT, syscall.SIGTERM)
+		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 
-		if err := c.ServiceStartup(ctx, nil); err != nil {
-			log.Fatalf("core startup failed: %v", err)
-		}
-		bridge.Start(ctx)
-		go hub.Run(ctx)
-
-		// Start runtime providers
-		if err := rm.StartAll(ctx); err != nil {
-			log.Printf("runtime provider error: %v", err)
-		}
-
-		// Start API server
-		go func() {
-			log.Printf("API server listening on %s", apiAddr)
-			if err := engine.Serve(ctx); err != nil {
-				log.Printf("API server error: %v", err)
-			}
-		}()
+		startCore(ctx, c, bridge, hub, rm)
+		go serveAPI(ctx, engine, apiAddr)
 
 		go func() {
 			if err := mcpSvc.Run(ctx); err != nil {
@@ -192,6 +174,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	guiCtx, guiCancel := context.WithCancel(context.Background())
+
 	app := application.New(application.Options{
 		Name:        "Core IDE",
 		Description: "Host UK Core IDE - Development Environment",
@@ -205,10 +189,12 @@ func main() {
 			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 		OnShutdown: func() {
+			guiCancel()
 			rm.StopAll()
 			ctx := context.Background()
 			_ = mcpSvc.Shutdown(ctx)
 			bridge.Shutdown()
+			_ = c.ServiceShutdown(ctx)
 		},
 	})
 
@@ -270,24 +256,16 @@ func main() {
 
 	// Start MCP transport, runtime providers, and API server alongside Wails
 	go func() {
-		ctx := context.Background()
-		bridge.Start(ctx)
-		go hub.Run(ctx)
+		bridge.Start(guiCtx)
+		go hub.Run(guiCtx)
 
-		// Start runtime providers
-		if err := rm.StartAll(ctx); err != nil {
+		if err := rm.StartAll(guiCtx); err != nil {
 			log.Printf("runtime provider error: %v", err)
 		}
 
-		// Start API server
-		go func() {
-			log.Printf("API server listening on %s", apiAddr)
-			if err := engine.Serve(ctx); err != nil {
-				log.Printf("API server error: %v", err)
-			}
-		}()
+		go serveAPI(guiCtx, engine, apiAddr)
 
-		if err := mcpSvc.Run(ctx); err != nil {
+		if err := mcpSvc.Run(guiCtx); err != nil {
 			log.Printf("MCP error: %v", err)
 		}
 	}()
@@ -296,6 +274,26 @@ func main() {
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func startCore(ctx context.Context, c *core.Core, bridge *ide.Bridge, hub *ws.Hub, rm *RuntimeManager) {
+	if err := c.ServiceStartup(ctx, nil); err != nil {
+		log.Fatalf("core startup failed: %v", err)
+	}
+	bridge.Start(ctx)
+	go hub.Run(ctx)
+	if err := rm.StartAll(ctx); err != nil {
+		log.Printf("runtime provider error: %v", err)
+	}
+}
+
+func serveAPI(ctx context.Context, engine *api.Engine, addr string) {
+	if addr != "" {
+		log.Printf("API server listening on %s", addr)
+	}
+	if err := engine.Serve(ctx); err != nil {
+		log.Printf("API server error: %v", err)
 	}
 }
 
