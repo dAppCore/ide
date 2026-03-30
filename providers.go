@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"forge.lthn.ai/core/api/pkg/provider"
@@ -40,15 +41,26 @@ func (p *ProvidersAPI) list(c *gin.Context) {
 	registryInfo := p.registry.Info()
 	runtimeInfo := p.runtime.List()
 
-	// Merge runtime provider info with registry info
+	// Merge registry and runtime provider data without duplication.
 	providers := make([]providerDTO, 0, len(registryInfo)+len(runtimeInfo))
+	seen := make(map[string]struct{}, len(registryInfo)+len(runtimeInfo))
+
+	providerKey := func(name, namespace string) string {
+		return fmt.Sprintf("%s|%s", name, namespace)
+	}
 
 	for _, info := range registryInfo {
+		key := providerKey(info.Name, info.BasePath)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+
 		dto := providerDTO{
 			Name:     info.Name,
 			BasePath: info.BasePath,
-			Channels: info.Channels,
 			Status:   "active",
+			Channels: info.Channels,
 		}
 		if info.Element != nil {
 			dto.Element = &elementDTO{
@@ -61,20 +73,20 @@ func (p *ProvidersAPI) list(c *gin.Context) {
 
 	// Add runtime providers not already in registry
 	for _, ri := range runtimeInfo {
-		found := false
-		for _, p := range providers {
-			if p.Name == ri.Code {
-				found = true
-				break
-			}
+		key := providerKey(ri.Code, ri.Namespace)
+		if _, ok := seen[key]; ok {
+			continue
 		}
-		if !found {
-			providers = append(providers, providerDTO{
-				Name:     ri.Code,
-				BasePath: ri.Namespace,
-				Status:   "active",
-			})
-		}
+		seen[key] = struct{}{}
+
+		providers = append(providers, providerDTO{
+			Name:      ri.Code,
+			BasePath:  ri.Namespace,
+			Status:    ri.Status,
+			Code:      ri.Code,
+			Version:   ri.Version,
+			Namespace: ri.Namespace,
+		})
 	}
 
 	c.JSON(http.StatusOK, providersResponse{Providers: providers})
@@ -85,11 +97,14 @@ type providersResponse struct {
 }
 
 type providerDTO struct {
-	Name     string      `json:"name"`
-	BasePath string      `json:"basePath"`
-	Status   string      `json:"status,omitempty"`
-	Element  *elementDTO `json:"element,omitempty"`
-	Channels []string    `json:"channels,omitempty"`
+	Name      string      `json:"name"`
+	BasePath  string      `json:"basePath"`
+	Status    string      `json:"status,omitempty"`
+	Code      string      `json:"code,omitempty"`
+	Version   string      `json:"version,omitempty"`
+	Namespace string      `json:"namespace,omitempty"`
+	Element   *elementDTO `json:"element,omitempty"`
+	Channels  []string    `json:"channels,omitempty"`
 }
 
 type elementDTO struct {

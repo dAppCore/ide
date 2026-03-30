@@ -36,7 +36,7 @@ func TestWaitForHealth_Good(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	err := waitForHealth(srv.URL, 5*time.Second)
+	err := waitForHealth(context.Background(), srv.URL, 5*time.Second)
 	assert.NoError(t, err)
 }
 
@@ -46,13 +46,13 @@ func TestWaitForHealth_Bad_Timeout(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	err := waitForHealth(srv.URL, 500*time.Millisecond)
+	err := waitForHealth(context.Background(), srv.URL, 500*time.Millisecond)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "timed out")
 }
 
 func TestWaitForHealth_Bad_NoServer(t *testing.T) {
-	err := waitForHealth("http://127.0.0.1:1", 500*time.Millisecond)
+	err := waitForHealth(context.Background(), "http://127.0.0.1:1", 500*time.Millisecond)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "timed out")
 }
@@ -79,7 +79,7 @@ func TestRuntimeManager_List_Good_WithProviders(t *testing.T) {
 				Code:      "test-svc",
 				Name:      "Test Service",
 				Version:   "1.0.0",
-				Namespace: "test",
+			Namespace: "test",
 			},
 		},
 	}
@@ -92,6 +92,7 @@ func TestRuntimeManager_List_Good_WithProviders(t *testing.T) {
 	assert.Equal(t, "test", infos[0].Namespace)
 	assert.Equal(t, 12345, infos[0].Port)
 	assert.Equal(t, "/tmp/test-provider", infos[0].Dir)
+	assert.Equal(t, "running", infos[0].Status)
 }
 
 func TestRuntimeManager_StopAll_Good_Empty(t *testing.T) {
