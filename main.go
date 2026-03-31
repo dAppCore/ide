@@ -63,6 +63,11 @@ func main() {
 	}
 	bridge := ide.NewBridge(hub, bridgeCfg)
 
+	brainDirect, err := NewCachedBrainDirect(cwd)
+	if err != nil {
+		log.Fatalf("failed to initialise brain cache: %v", err)
+	}
+
 	// ── Service Provider Registry ──────────────────────────────
 	reg := provider.NewRegistry()
 	reg.Add(processapi.NewProvider(process.DefaultRegistry(), hub))
@@ -100,7 +105,7 @@ func main() {
 			return mcp.New(
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
-				mcp.WithSubsystem(brain.NewDirect()),
+				mcp.WithSubsystem(brainDirect),
 				mcp.WithSubsystem(agentic.NewPrep()),
 				mcp.WithSubsystem(guiMCP.New(c)),
 			)
