@@ -1,3 +1,5 @@
+//go:build !linux
+
 package main
 
 import (
@@ -85,6 +87,7 @@ func main() {
 	// ── Providers API ─────────────────────────────────────────
 	// Exposes GET /api/v1/providers for the Angular frontend
 	engine.Register(NewProvidersAPI(reg, rm))
+	engine.Register(NewWorkspaceAPI(cwd))
 
 	// ── Core framework ─────────────────────────────────────────
 	c, err := core.New(
@@ -297,22 +300,4 @@ func main() {
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// guiEnabled checks whether the GUI should start.
-// Returns false if config says gui.enabled: false, or if no display is available.
-func guiEnabled(cfg *config.Config) bool {
-	if cfg != nil {
-		var guiCfg struct {
-			Enabled *bool `mapstructure:"enabled"`
-		}
-		if err := cfg.Get("gui", &guiCfg); err == nil && guiCfg.Enabled != nil {
-			return *guiCfg.Enabled
-		}
-	}
-	// Fall back to display detection
-	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
-		return true
-	}
-	return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
 }

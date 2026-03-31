@@ -82,5 +82,5 @@ func TestProvidersAPI_List_Good_WithRuntimeProviders(t *testing.T) {
 	require.Len(t, resp.Providers, 1)
 	assert.Equal(t, "test-provider", resp.Providers[0].Name)
 	assert.Equal(t, "test", resp.Providers[0].BasePath)
-	assert.Equal(t, "active", resp.Providers[0].Status)
+	assert.Equal(t, "running", resp.Providers[0].Status)
 }
