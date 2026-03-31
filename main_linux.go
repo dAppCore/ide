@@ -69,6 +69,7 @@ func main() {
 	rm := NewRuntimeManager(engine)
 	engine.Register(NewProvidersAPI(reg, rm))
 	engine.Register(NewWorkspaceAPI(cwd))
+	engine.Register(NewPackageToolsAPI(nil))
 
 	c, err := core.New(
 		core.WithName("ws", func(c *core.Core) (any, error) {

@@ -88,6 +88,7 @@ func main() {
 	// Exposes GET /api/v1/providers for the Angular frontend
 	engine.Register(NewProvidersAPI(reg, rm))
 	engine.Register(NewWorkspaceAPI(cwd))
+	engine.Register(NewPackageToolsAPI(nil))
 
 	// ── Core framework ─────────────────────────────────────────
 	c, err := core.New(
