@@ -251,7 +251,7 @@ func main() {
 		Title:            "Core IDE",
 		Width:            1280,
 		Height:           800,
-		URL:              "/",
+		URL:              "/ide",
 		Hidden:           true,
 		BackgroundColour: application.NewRGB(26, 27, 38),
 	})

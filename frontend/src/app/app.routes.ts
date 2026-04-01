@@ -3,6 +3,7 @@
 import { Routes } from '@angular/router';
 import {
   ApplicationFrameComponent,
+  IdeComponent,
   ProviderHostComponent,
   SystemTrayFrameComponent,
 } from '@core/gui-ui';
@@ -10,6 +11,9 @@ import {
 export const routes: Routes = [
   // System tray panel — standalone compact UI (380x480 frameless)
   { path: 'tray', component: SystemTrayFrameComponent },
+
+  // Full IDE layout with sidebar, dashboard, explorer, and terminal panes
+  { path: 'ide', component: IdeComponent },
 
   // Main application frame with HLCRF layout
   {
