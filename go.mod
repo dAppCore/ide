@@ -4,13 +4,13 @@ go 1.26.0
 
 require (
 	dappco.re/go/core/scm v0.4.0
-	forge.lthn.ai/core/api v0.1.5
-	forge.lthn.ai/core/config v0.1.8
-	forge.lthn.ai/core/go v0.3.3
-	forge.lthn.ai/core/go-process v0.2.7
-	forge.lthn.ai/core/go-ws v0.2.3
-	forge.lthn.ai/core/gui v0.1.3
-	forge.lthn.ai/core/mcp v0.3.2
+	dappco.re/go/core/api v0.1.5
+	dappco.re/go/core/config v0.1.8
+	dappco.re/go/core v0.3.3
+	dappco.re/go/core/process v0.2.7
+	dappco.re/go/core/ws v0.2.3
+	dappco.re/go/core/gui v0.1.3
+	dappco.re/go/core/mcp v0.3.2
 	github.com/marcboeker/go-duckdb v1.8.5
 	github.com/stretchr/testify v1.11.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
@@ -18,7 +18,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	forge.lthn.ai/core/go-log v0.0.4 // indirect
+	dappco.re/go/core/log v0.0.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.0 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
@@ -72,10 +72,10 @@ require (
 require (
 	dappco.re/go/core/io v0.2.0 // indirect
 	dappco.re/go/core/log v0.1.0
-	forge.lthn.ai/core/go-ai v0.1.11 // indirect
-	forge.lthn.ai/core/go-io v0.1.7 // indirect
-	forge.lthn.ai/core/go-rag v0.1.11 // indirect
-	forge.lthn.ai/core/go-webview v0.1.5 // indirect
+	dappco.re/go/core/ai v0.1.11 // indirect
+	dappco.re/go/core/io v0.1.7 // indirect
+	dappco.re/go/core/rag v0.1.11 // indirect
+	dappco.re/go/core/webview v0.1.5 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
