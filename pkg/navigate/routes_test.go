@@ -156,6 +156,24 @@ func TestRoutes_ResolveQueryRoutes_Good(t *testing.T) {
 	}
 }
 
+func TestRoutes_RegisterRoutes_Ugly(t *testing.T) {
+	c := core.New()
+	c.RegisterQuery(func(_ *core.Core, q core.Query) core.Result {
+		if name, ok := q.(string); ok && name == "ai.models.list" {
+			return core.Result{Value: map[string]any{"models": []any{map[string]any{"name": "gpt"}}}, OK: true}
+		}
+		return core.Result{}
+	})
+	subsystem := New(config.Navigate{Routes: []string{"core://models"}}, c)
+	out, err := subsystem.resolve(context.Background(), Input{Route: "core://models"})
+	if err != nil {
+		t.Fatalf("resolve core://models: %v", err)
+	}
+	if !out.Available || out.Data == nil {
+		t.Fatalf("expected models route to remain available when store is disabled, got %#v", out)
+	}
+}
+
 func TestRoutes_ResolveStore_Ugly(t *testing.T) {
 	subsystem := New(config.Navigate{}, core.New())
 	data, schema, err := subsystem.resolveStore(context.Background(), Filter{})

@@ -24,11 +24,10 @@ type Router struct {
 
 func (s *Subsystem) registerRoutes() {
 	s.router = &Router{}
-	if !s.routeEnabled("core://store") {
-		return
+	if s.routeEnabled("core://store") {
+		s.router.Handle("core://store", s.resolveStore)
+		s.router.Handle("core://store/{namespace}", s.resolveStoreNamespace)
 	}
-	s.router.Handle("core://store", s.resolveStore)
-	s.router.Handle("core://store/{namespace}", s.resolveStoreNamespace)
 	if s.routeEnabled("core://models") {
 		s.router.Handle("core://models", s.resolveModels)
 	}
