@@ -114,7 +114,7 @@ func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput
 	}
 	git, err := gitStatus(ctx, s.process, root)
 	if err != nil {
-		git = GitStatus{Clean: true}
+		return StatusOutput{}, err
 	}
 	return StatusOutput{
 		Root:      root,
@@ -166,32 +166,14 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 }
 
 func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, error) {
-	_ = ctx
 	root := s.root(input.Root)
 	depth := input.Depth
 	if depth <= 0 {
 		depth = s.cfg.ScanDepth
 	}
-	projects := make([]Project, 0, depth+1)
-	current := root
-	for i := 0; i <= depth; i++ {
-		manifestPath := core.JoinPath(current, ".core", "manifest.yaml")
-		buildPath := core.JoinPath(current, ".core", "build.yaml")
-		if s.medium.Exists(manifestPath) || s.medium.Exists(buildPath) {
-			git, _ := gitStatus(context.Background(), s.process, current)
-			projects = append(projects, Project{
-				Root:      current,
-				Manifest:  pickPath(s.medium.Exists(manifestPath), manifestPath),
-				BuildYaml: pickPath(s.medium.Exists(buildPath), buildPath),
-				Languages: detectLanguages(s.medium, current),
-				GitBranch: git.Branch,
-			})
-		}
-		parent := parentDir(current)
-		if parent == current {
-			break
-		}
-		current = parent
+	projects, err := scanProjects(ctx, ScanInput{Root: root, Depth: depth}, s.medium, s.process, root)
+	if err != nil {
+		return ScanOutput{}, err
 	}
 	return ScanOutput{Projects: projects}, nil
 }

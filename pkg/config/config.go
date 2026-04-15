@@ -31,6 +31,22 @@ type Transport struct {
 	Token      string `yaml:"token"`
 }
 
+func (cfg Transport) WithDefaults() Transport {
+	if cfg.Mode == "" {
+		cfg.Mode = "stdio"
+	}
+	if cfg.HTTPAddr == "" {
+		cfg.HTTPAddr = "127.0.0.1:9880"
+	}
+	if cfg.TCPAddr == "" {
+		cfg.TCPAddr = "127.0.0.1:9100"
+	}
+	if cfg.UnixSocket == "" {
+		cfg.UnixSocket = "/tmp/core-ide.sock"
+	}
+	return cfg
+}
+
 type Brain struct {
 	Endpoint string `yaml:"endpoint"`
 	Key      string `yaml:"key"`
@@ -38,10 +54,34 @@ type Brain struct {
 	Cache    Cache  `yaml:"cache"`
 }
 
+func (cfg Brain) WithDefaults() Brain {
+	if cfg.Endpoint == "" {
+		cfg.Endpoint = "https://api.lthn.sh"
+	}
+	if cfg.AgentID == "" {
+		cfg.AgentID = "cladius"
+	}
+	cfg.Cache = cfg.Cache.WithDefaults()
+	return cfg
+}
+
 type Cache struct {
 	Enabled   *bool         `yaml:"enabled"`
 	TTL       time.Duration `yaml:"ttl"`
 	Namespace string        `yaml:"namespace"`
+}
+
+func (cfg Cache) WithDefaults() Cache {
+	if cfg.Enabled == nil {
+		cfg.Enabled = BoolPtr(true)
+	}
+	if cfg.TTL == 0 {
+		cfg.TTL = 5 * time.Minute
+	}
+	if cfg.Namespace == "" {
+		cfg.Namespace = "ide.brain.cache"
+	}
+	return cfg
 }
 
 type Workspace struct {
@@ -51,6 +91,22 @@ type Workspace struct {
 	ConventionPacks []string `yaml:"convention_packs"`
 }
 
+func (cfg Workspace) WithDefaults() Workspace {
+	if cfg.Root == "" {
+		cfg.Root = "."
+	}
+	if cfg.ScanDepth == 0 {
+		cfg.ScanDepth = 3
+	}
+	if len(cfg.Ignore) == 0 {
+		cfg.Ignore = []string{"node_modules/", "vendor/", ".git/"}
+	}
+	if len(cfg.ConventionPacks) == 0 {
+		cfg.ConventionPacks = []string{"go", "php", "typescript", "python"}
+	}
+	return cfg
+}
+
 type Subagent struct {
 	Enabled  *bool            `yaml:"enabled"`
 	Relay    SubagentRelay    `yaml:"relay"`
@@ -58,9 +114,29 @@ type Subagent struct {
 	Timeouts SubagentTimeouts `yaml:"timeouts"`
 }
 
+func (cfg Subagent) WithDefaults() Subagent {
+	if cfg.Enabled == nil {
+		cfg.Enabled = BoolPtr(true)
+	}
+	cfg.Relay = cfg.Relay.WithDefaults()
+	cfg.Dispatch = cfg.Dispatch.WithDefaults()
+	cfg.Timeouts = cfg.Timeouts.WithDefaults()
+	return cfg
+}
+
 type SubagentRelay struct {
 	Addr string `yaml:"addr"`
 	Path string `yaml:"path"`
+}
+
+func (cfg SubagentRelay) WithDefaults() SubagentRelay {
+	if cfg.Addr == "" {
+		cfg.Addr = "127.0.0.1:9882"
+	}
+	if cfg.Path == "" {
+		cfg.Path = "/subagent"
+	}
+	return cfg
 }
 
 func (relay SubagentRelay) URL() string {
@@ -92,13 +168,48 @@ type SubagentDispatch struct {
 	DefaultTemplate string `yaml:"default_template"`
 }
 
+func (cfg SubagentDispatch) WithDefaults() SubagentDispatch {
+	if cfg.DefaultAgent == "" {
+		cfg.DefaultAgent = "codex"
+	}
+	if cfg.DefaultTemplate == "" {
+		cfg.DefaultTemplate = "coding"
+	}
+	return cfg
+}
+
 type SubagentTimeouts struct {
 	GuideAck            time.Duration `yaml:"guide_ack"`
 	QuestionWaitDefault time.Duration `yaml:"question_wait_default"`
 }
 
+func (cfg SubagentTimeouts) WithDefaults() SubagentTimeouts {
+	if cfg.GuideAck == 0 {
+		cfg.GuideAck = 10 * time.Second
+	}
+	if cfg.QuestionWaitDefault == 0 {
+		cfg.QuestionWaitDefault = 60 * time.Second
+	}
+	return cfg
+}
+
 type Navigate struct {
 	Routes []string `yaml:"routes"`
+}
+
+func (cfg Navigate) WithDefaults() Navigate {
+	if len(cfg.Routes) == 0 {
+		cfg.Routes = []string{
+			"core://store",
+			"core://models",
+			"core://agent",
+			"core://network",
+			"core://settings",
+			"core://identity",
+			"core://wallet",
+		}
+	}
+	return cfg
 }
 
 type Marketplace struct {
@@ -107,11 +218,40 @@ type Marketplace struct {
 	InstallVia string `yaml:"install_via"`
 }
 
+func (cfg Marketplace) WithDefaults() Marketplace {
+	if cfg.Endpoint == "" {
+		cfg.Endpoint = "https://api.lthn.sh"
+	}
+	if cfg.APIPath == "" {
+		cfg.APIPath = "/v1/marketplace"
+	}
+	if cfg.InstallVia == "" {
+		cfg.InstallVia = "go-scm"
+	}
+	return cfg
+}
+
 type Chat struct {
 	Enabled      *bool  `yaml:"enabled"`
 	APIURL       string `yaml:"api_url"`
 	StorePath    string `yaml:"store_path"`
 	ToolExecutor string `yaml:"tool_executor"`
+}
+
+func (cfg Chat) WithDefaults() Chat {
+	if cfg.Enabled == nil {
+		cfg.Enabled = BoolPtr(true)
+	}
+	if cfg.APIURL == "" {
+		cfg.APIURL = "http://localhost:8090"
+	}
+	if cfg.StorePath == "" {
+		cfg.StorePath = core.JoinPath(homeDir(), ".core", "ide", "chat.db")
+	}
+	if cfg.ToolExecutor == "" {
+		cfg.ToolExecutor = "gui_mcp"
+	}
+	return cfg
 }
 
 type LoaderOptions struct {
@@ -151,7 +291,7 @@ func Load(paths ...string) (IDEConfig, error) {
 }
 
 func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
-	cfg := IDEConfig{}.WithDefaults()
+	cfg := IDEConfig{}
 	medium := options.Medium
 	if medium == nil {
 		medium = coreio.Local
@@ -177,98 +317,114 @@ func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
 }
 
 func (cfg IDEConfig) WithDefaults() IDEConfig {
-	if cfg.Ide.Transport.Mode == "" {
-		cfg.Ide.Transport.Mode = "stdio"
-	}
-	if cfg.Ide.Transport.HTTPAddr == "" {
-		cfg.Ide.Transport.HTTPAddr = "127.0.0.1:9880"
-	}
-	if cfg.Ide.Transport.TCPAddr == "" {
-		cfg.Ide.Transport.TCPAddr = "127.0.0.1:9100"
-	}
-	if cfg.Ide.Transport.UnixSocket == "" {
-		cfg.Ide.Transport.UnixSocket = "/tmp/core-ide.sock"
-	}
-	if cfg.Ide.Brain.Endpoint == "" {
-		cfg.Ide.Brain.Endpoint = "https://api.lthn.sh"
-	}
-	if cfg.Ide.Brain.AgentID == "" {
-		cfg.Ide.Brain.AgentID = "cladius"
-	}
-	if cfg.Ide.Brain.Cache.Enabled == nil {
-		cfg.Ide.Brain.Cache.Enabled = BoolPtr(true)
-	}
-	if cfg.Ide.Brain.Cache.TTL == 0 {
-		cfg.Ide.Brain.Cache.TTL = 5 * time.Minute
-	}
-	if cfg.Ide.Brain.Cache.Namespace == "" {
-		cfg.Ide.Brain.Cache.Namespace = "ide.brain.cache"
-	}
-	if cfg.Ide.Workspace.Root == "" {
-		cfg.Ide.Workspace.Root = "."
-	}
-	if cfg.Ide.Workspace.ScanDepth == 0 {
-		cfg.Ide.Workspace.ScanDepth = 3
-	}
-	if len(cfg.Ide.Workspace.Ignore) == 0 {
-		cfg.Ide.Workspace.Ignore = []string{"node_modules/", "vendor/", ".git/"}
-	}
-	if len(cfg.Ide.Workspace.ConventionPacks) == 0 {
-		cfg.Ide.Workspace.ConventionPacks = []string{"go", "php", "typescript", "python"}
-	}
-	if cfg.Ide.Subagent.Enabled == nil {
-		cfg.Ide.Subagent.Enabled = BoolPtr(true)
-	}
-	if cfg.Ide.Subagent.Relay.Addr == "" {
-		cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
-	}
-	if cfg.Ide.Subagent.Relay.Path == "" {
-		cfg.Ide.Subagent.Relay.Path = "/subagent"
-	}
-	if cfg.Ide.Subagent.Dispatch.DefaultAgent == "" {
-		cfg.Ide.Subagent.Dispatch.DefaultAgent = "codex"
-	}
-	if cfg.Ide.Subagent.Dispatch.DefaultTemplate == "" {
-		cfg.Ide.Subagent.Dispatch.DefaultTemplate = "coding"
-	}
-	if cfg.Ide.Subagent.Timeouts.GuideAck == 0 {
-		cfg.Ide.Subagent.Timeouts.GuideAck = 10 * time.Second
-	}
-	if cfg.Ide.Subagent.Timeouts.QuestionWaitDefault == 0 {
-		cfg.Ide.Subagent.Timeouts.QuestionWaitDefault = 60 * time.Second
-	}
-	if len(cfg.Ide.Navigate.Routes) == 0 {
-		cfg.Ide.Navigate.Routes = []string{
-			"core://store",
-			"core://models",
-			"core://agent",
-			"core://network",
-			"core://settings",
-			"core://identity",
-			"core://wallet",
+	cfg.Ide.Transport = cfg.Ide.Transport.WithDefaults()
+	cfg.Ide.Brain = cfg.Ide.Brain.WithDefaults()
+	cfg.Ide.Workspace = cfg.Ide.Workspace.WithDefaults()
+	cfg.Ide.Subagent = cfg.Ide.Subagent.WithDefaults()
+	cfg.Ide.Navigate = cfg.Ide.Navigate.WithDefaults()
+	cfg.Ide.Marketplace = cfg.Ide.Marketplace.WithDefaults()
+	cfg.Ide.Chat = cfg.Ide.Chat.WithDefaults()
+	return cfg
+}
+
+func (cfg IDEConfig) Merge(override IDEConfig) IDEConfig {
+	if override.Ide.Transport.Mode != "" || override.Ide.Transport.HTTPAddr != "" || override.Ide.Transport.TCPAddr != "" || override.Ide.Transport.UnixSocket != "" || override.Ide.Transport.Token != "" {
+		if override.Ide.Transport.Mode != "" {
+			cfg.Ide.Transport.Mode = override.Ide.Transport.Mode
+		}
+		if override.Ide.Transport.HTTPAddr != "" {
+			cfg.Ide.Transport.HTTPAddr = override.Ide.Transport.HTTPAddr
+		}
+		if override.Ide.Transport.TCPAddr != "" {
+			cfg.Ide.Transport.TCPAddr = override.Ide.Transport.TCPAddr
+		}
+		if override.Ide.Transport.UnixSocket != "" {
+			cfg.Ide.Transport.UnixSocket = override.Ide.Transport.UnixSocket
+		}
+		if override.Ide.Transport.Token != "" {
+			cfg.Ide.Transport.Token = override.Ide.Transport.Token
 		}
 	}
-	if cfg.Ide.Marketplace.Endpoint == "" {
-		cfg.Ide.Marketplace.Endpoint = "https://api.lthn.sh"
+	if override.Ide.Brain.Endpoint != "" {
+		cfg.Ide.Brain.Endpoint = override.Ide.Brain.Endpoint
 	}
-	if cfg.Ide.Marketplace.APIPath == "" {
-		cfg.Ide.Marketplace.APIPath = "/v1/marketplace"
+	if override.Ide.Brain.Key != "" {
+		cfg.Ide.Brain.Key = override.Ide.Brain.Key
 	}
-	if cfg.Ide.Marketplace.InstallVia == "" {
-		cfg.Ide.Marketplace.InstallVia = "go-scm"
+	if override.Ide.Brain.AgentID != "" {
+		cfg.Ide.Brain.AgentID = override.Ide.Brain.AgentID
 	}
-	if cfg.Ide.Chat.Enabled == nil {
-		cfg.Ide.Chat.Enabled = BoolPtr(true)
+	if override.Ide.Brain.Cache.Enabled != nil {
+		cfg.Ide.Brain.Cache.Enabled = override.Ide.Brain.Cache.Enabled
 	}
-	if cfg.Ide.Chat.APIURL == "" {
-		cfg.Ide.Chat.APIURL = "http://localhost:8090"
+	if override.Ide.Brain.Cache.TTL != 0 {
+		cfg.Ide.Brain.Cache.TTL = override.Ide.Brain.Cache.TTL
 	}
-	if cfg.Ide.Chat.StorePath == "" {
-		cfg.Ide.Chat.StorePath = core.JoinPath(homeDir(), ".core", "ide", "chat.db")
+	if override.Ide.Brain.Cache.Namespace != "" {
+		cfg.Ide.Brain.Cache.Namespace = override.Ide.Brain.Cache.Namespace
 	}
-	if cfg.Ide.Chat.ToolExecutor == "" {
-		cfg.Ide.Chat.ToolExecutor = "gui_mcp"
+	if override.Ide.Workspace.Root != "" {
+		cfg.Ide.Workspace.Root = override.Ide.Workspace.Root
 	}
+	if override.Ide.Workspace.ScanDepth != 0 {
+		cfg.Ide.Workspace.ScanDepth = override.Ide.Workspace.ScanDepth
+	}
+	if len(override.Ide.Workspace.Ignore) != 0 {
+		cfg.Ide.Workspace.Ignore = append([]string{}, override.Ide.Workspace.Ignore...)
+	}
+	if len(override.Ide.Workspace.ConventionPacks) != 0 {
+		cfg.Ide.Workspace.ConventionPacks = append([]string{}, override.Ide.Workspace.ConventionPacks...)
+	}
+	if override.Ide.Subagent.Enabled != nil {
+		cfg.Ide.Subagent.Enabled = override.Ide.Subagent.Enabled
+	}
+	if override.Ide.Subagent.Relay.Addr != "" {
+		cfg.Ide.Subagent.Relay.Addr = override.Ide.Subagent.Relay.Addr
+	}
+	if override.Ide.Subagent.Relay.Path != "" {
+		cfg.Ide.Subagent.Relay.Path = override.Ide.Subagent.Relay.Path
+	}
+	if override.Ide.Subagent.Dispatch.DefaultAgent != "" {
+		cfg.Ide.Subagent.Dispatch.DefaultAgent = override.Ide.Subagent.Dispatch.DefaultAgent
+	}
+	if override.Ide.Subagent.Dispatch.DefaultTemplate != "" {
+		cfg.Ide.Subagent.Dispatch.DefaultTemplate = override.Ide.Subagent.Dispatch.DefaultTemplate
+	}
+	if override.Ide.Subagent.Timeouts.GuideAck != 0 {
+		cfg.Ide.Subagent.Timeouts.GuideAck = override.Ide.Subagent.Timeouts.GuideAck
+	}
+	if override.Ide.Subagent.Timeouts.QuestionWaitDefault != 0 {
+		cfg.Ide.Subagent.Timeouts.QuestionWaitDefault = override.Ide.Subagent.Timeouts.QuestionWaitDefault
+	}
+	if len(override.Ide.Navigate.Routes) != 0 {
+		cfg.Ide.Navigate.Routes = append([]string{}, override.Ide.Navigate.Routes...)
+	}
+	if override.Ide.Marketplace.Endpoint != "" {
+		cfg.Ide.Marketplace.Endpoint = override.Ide.Marketplace.Endpoint
+	}
+	if override.Ide.Marketplace.APIPath != "" {
+		cfg.Ide.Marketplace.APIPath = override.Ide.Marketplace.APIPath
+	}
+	if override.Ide.Marketplace.InstallVia != "" {
+		cfg.Ide.Marketplace.InstallVia = override.Ide.Marketplace.InstallVia
+	}
+	if override.Ide.Chat.Enabled != nil {
+		cfg.Ide.Chat.Enabled = override.Ide.Chat.Enabled
+	}
+	if override.Ide.Chat.APIURL != "" {
+		cfg.Ide.Chat.APIURL = override.Ide.Chat.APIURL
+	}
+	if override.Ide.Chat.StorePath != "" {
+		cfg.Ide.Chat.StorePath = override.Ide.Chat.StorePath
+	}
+	if override.Ide.Chat.ToolExecutor != "" {
+		cfg.Ide.Chat.ToolExecutor = override.Ide.Chat.ToolExecutor
+	}
+	return cfg
+}
+
+func (cfg IDEConfig) ApplyFlags(overrides CLIOverrides) IDEConfig {
+	ApplyCLIOverrides(&cfg, overrides)
 	return cfg
 }
 

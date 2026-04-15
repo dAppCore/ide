@@ -1,12 +1,51 @@
 package workspace
 
 import (
+	"context"
 	"io/fs"
 	"slices"
 
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
+	"dappco.re/go/core/process"
 )
+
+func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string) ([]Project, error) {
+	_ = ctx
+	root := input.Root
+	if core.Trim(root) == "" {
+		root = fallbackRoot
+	}
+	if core.Trim(root) == "" {
+		root = "."
+	}
+	depth := input.Depth
+	if depth <= 0 {
+		depth = 3
+	}
+	projects := make([]Project, 0, depth+1)
+	current := root
+	for i := 0; i <= depth; i++ {
+		manifestPath := core.JoinPath(current, ".core", "manifest.yaml")
+		buildPath := core.JoinPath(current, ".core", "build.yaml")
+		if medium.Exists(manifestPath) || medium.Exists(buildPath) {
+			git, _ := gitStatus(context.Background(), processService, current)
+			projects = append(projects, Project{
+				Root:      current,
+				Manifest:  pickPath(medium.Exists(manifestPath), manifestPath),
+				BuildYaml: pickPath(medium.Exists(buildPath), buildPath),
+				Languages: detectLanguages(medium, current),
+				GitBranch: git.Branch,
+			})
+		}
+		parent := parentDir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+	return projects, nil
+}
 
 func readCoreFiles(medium coreio.Medium, root string) ([]File, FileCount, []string, error) {
 	paths := []string{
