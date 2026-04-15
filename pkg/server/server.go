@@ -1,0 +1,140 @@
+package server
+
+import (
+	"context"
+
+	core "dappco.re/go/core"
+	coreio "dappco.re/go/core/io"
+	"dappco.re/go/core/process"
+	"dappco.re/go/core/ws"
+	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
+
+	brainpkg "dappco.re/go/core/ide/pkg/brain"
+	aipkg "dappco.re/go/core/ide/pkg/ai"
+	chatpkg "dappco.re/go/core/ide/pkg/chat"
+	marketplacepkg "dappco.re/go/core/ide/pkg/marketplace"
+	navigatepkg "dappco.re/go/core/ide/pkg/navigate"
+	storepkg "dappco.re/go/core/ide/pkg/store"
+	subagentpkg "dappco.re/go/core/ide/pkg/subagent"
+	workspacepkg "dappco.re/go/core/ide/pkg/workspace"
+)
+
+type Server struct {
+	core      *core.Core
+	mcp       *coremcp.Service
+	hub       *ws.Hub
+	transport Transport
+}
+
+func Compose(options Options) (*Server, error) {
+	cfg := options.Config.WithDefaults()
+	medium := options.Medium
+	if medium == nil {
+		medium = coreio.Local
+	}
+	hub := ws.NewHub()
+	guiExecutor := chatpkg.NewExecutor(nil, nil)
+
+	c := core.New(
+		core.WithName("ws", func(_ *core.Core) core.Result {
+			return core.Result{Value: hub, OK: true}
+		}),
+		core.WithService(process.Register),
+		core.WithService(storepkg.Register),
+		core.WithService(aipkg.Register),
+		core.WithName("workspace", func(c *core.Core) core.Result {
+			processService, _ := core.ServiceFor[*process.Service](c, "process")
+			return core.Result{Value: workspacepkg.New(cfg.Ide.Workspace, medium, processService), OK: true}
+		}),
+		core.WithName("brain", func(c *core.Core) core.Result {
+			storeService, _ := core.ServiceFor[*storepkg.Service](c, "store")
+			workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
+			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService), OK: true}
+		}),
+		core.WithName("subagent", func(_ *core.Core) core.Result {
+			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub), OK: true}
+		}),
+		core.WithName("navigate", func(c *core.Core) core.Result {
+			return core.Result{Value: navigatepkg.New(cfg.Ide.Navigate, c), OK: true}
+		}),
+		core.WithName("marketplace", func(_ *core.Core) core.Result {
+			return core.Result{Value: marketplacepkg.New(cfg.Ide.Marketplace), OK: true}
+		}),
+		core.WithName("gui_mcp", func(c *core.Core) core.Result {
+			return core.Result{Value: guimcp.New(c), OK: true}
+		}),
+		core.WithService(coremcp.Register),
+	)
+	if cfg.Ide.Chat.Enabled {
+		result := chatpkg.NewRegister(cfg.Ide.Chat, guiExecutor)(c)
+		if !result.OK {
+			if err, ok := result.Value.(error); ok {
+				return nil, err
+			}
+			return nil, core.E("ide.server.Compose", "register chat", nil)
+		}
+		if result.Value != nil {
+			if registerErr := c.RegisterService("chat", result.Value); !registerErr.OK {
+				if err, ok := registerErr.Value.(error); ok {
+					return nil, err
+				}
+				return nil, core.E("ide.server.Compose", "register chat service", nil)
+			}
+		}
+	}
+
+	workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
+	brainService, _ := core.ServiceFor[*brainpkg.Subsystem](c, "brain")
+	subagentService, _ := core.ServiceFor[*subagentpkg.Subsystem](c, "subagent")
+	navigateService, _ := core.ServiceFor[*navigatepkg.Subsystem](c, "navigate")
+	marketplaceService, _ := core.ServiceFor[*marketplacepkg.Subsystem](c, "marketplace")
+	brainService.RegisterActions(c)
+	workspaceService.RegisterActions(c)
+	subagentService.RegisterActions(c)
+	navigateService.RegisterActions(c)
+	marketplaceService.RegisterActions(c)
+
+	mcpService, ok := core.ServiceFor[*coremcp.Service](c, "mcp")
+	if !ok {
+		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
+	}
+	guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
+	guiExecutor.Attach(guiSubsystem, mcpService)
+
+	transport, err := SelectTransport(cfg, options.MCP)
+	if err != nil {
+		return nil, err
+	}
+	return &Server{core: c, mcp: mcpService, hub: hub, transport: transport}, nil
+}
+
+func (s *Server) Run(ctx context.Context) error {
+	go s.hub.Run(ctx)
+	if result := s.core.ServiceStartup(ctx, nil); !result.OK {
+		if err, ok := result.Value.(error); ok {
+			return err
+		}
+		return core.E("ide.server.Run", "service startup failed", nil)
+	}
+	defer s.core.ServiceShutdown(context.Background())
+
+	switch s.transport.Mode {
+	case "http":
+		return s.mcp.ServeHTTP(ctx, s.transport.Addr)
+	case "tcp":
+		return s.mcp.ServeTCP(ctx, s.transport.Addr)
+	case "unix":
+		return s.mcp.ServeUnix(ctx, s.transport.Addr)
+	default:
+		return s.mcp.ServeStdio(ctx)
+	}
+}
+
+func (s *Server) Core() *core.Core {
+	return s.core
+}
+
+func (s *Server) MCP() *coremcp.Service {
+	return s.mcp
+}

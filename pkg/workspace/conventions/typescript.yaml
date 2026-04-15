@@ -1,0 +1,5 @@
+conventions:
+  - "Prefer deterministic component inputs and outputs over hidden ambient state."
+  - "Keep UI state isolated from transport concerns."
+notes:
+  - "TypeScript pack loaded from workspace/conventions/typescript.yaml."
