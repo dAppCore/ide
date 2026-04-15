@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	aipkg "dappco.re/go/core/ide/pkg/ai"
 	"dappco.re/go/core/ide/pkg/config"
 	coreio "dappco.re/go/core/io"
 )
@@ -112,6 +113,15 @@ func TestClient_DefaultInstallMedium_Good(t *testing.T) {
 	}
 	if _, err := os.Stat(home); err != nil {
 		t.Fatalf("expected temp home to exist: %v", err)
+	}
+}
+
+func TestClient_AttachAI_Good(t *testing.T) {
+	client := NewClient(config.Marketplace{Endpoint: "https://example.com", APIPath: "/v1/marketplace"})
+	service := &aipkg.Service{}
+	client.AttachAI(service)
+	if client.ai != service {
+		t.Fatalf("expected AI service to be attached, got %#v", client.ai)
 	}
 }
 

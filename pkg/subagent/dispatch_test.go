@@ -53,3 +53,27 @@ func TestDispatch_WithDispatchEnv_Ugly(t *testing.T) {
 		t.Fatalf("expected relay token to be removed, got %q", got)
 	}
 }
+
+func TestDispatch_HandleDispatchGuided_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	_, out, err := subsystem.handleDispatchGuided(context.Background(), nil, DispatchGuidedInput{Repo: "core/ide", Task: "investigate"})
+	if err != nil {
+		t.Fatalf("handleDispatchGuided: %v", err)
+	}
+	if !out.Success || out.Delivered {
+		t.Fatalf("expected no-relay guided dispatch, got %#v", out)
+	}
+}
+
+func TestDispatch_BindAgenticWorkspace_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem.bindAgenticWorkspace("ws-1", "workspace-name")
+	if got := subsystem.agenticWorkspace("ws-1"); got.Name != "workspace-name" {
+		t.Fatalf("expected agentic workspace binding, got %#v", got)
+	}
+}
+
+func TestDispatch_DispatchViaAgentic_Ugly(t *testing.T) {
+	// Missing seam: dispatchViaAgentic requires an injectable agentic MCP dispatcher to unit test safely.
+	t.Skip("dispatchViaAgentic is exercised indirectly by integration coverage only")
+}

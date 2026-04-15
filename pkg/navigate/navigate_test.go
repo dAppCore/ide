@@ -60,3 +60,20 @@ func TestNavigate_RouteEnabled_Good(t *testing.T) {
 		t.Fatal("expected unconfigured route to be disabled")
 	}
 }
+
+func TestNavigate_RouteNameFromAction_Good(t *testing.T) {
+	cases := map[string]string{
+		"ai.models.list":      "models",
+		"agent.workspaces.run": "agent",
+		"network.status":      "network",
+		"config.dump":         "settings",
+		"identity.status":     "identity",
+		"wallet.status":       "wallet",
+		"brain.recall":        "brain.recall",
+	}
+	for action, expected := range cases {
+		if got := routeNameFromAction(action); got != expected {
+			t.Fatalf("expected %q for %q, got %q", expected, action, got)
+		}
+	}
+}
