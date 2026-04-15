@@ -31,6 +31,7 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 				"ide": map[string]any{
 					"transport": map[string]any{"token": "secret-token"},
 					"brain":     map[string]any{"key": "secret-key"},
+					"identity":  map[string]any{"privateKey": "camel-secret"},
 					"nested":    []any{map[string]any{"api_key": "abc123"}},
 					"flags":     []any{"--token=secret-token", "--safe=value", "Authorization: Bearer secret"},
 				},
@@ -61,6 +62,10 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 	brain, ok := ide["brain"].(map[string]any)
 	if !ok || brain["key"] != "[redacted]" {
 		t.Fatalf("expected key redaction, got %#v", brain)
+	}
+	identity, ok := ide["identity"].(map[string]any)
+	if !ok || identity["privateKey"] != "[redacted]" {
+		t.Fatalf("expected camelCase private key redaction, got %#v", identity)
 	}
 	nested, ok := ide["nested"].([]any)
 	if !ok || len(nested) != 1 {

@@ -92,12 +92,50 @@ func redactSensitiveValue(value any) any {
 }
 
 func isSensitiveKey(key string) bool {
-	key = core.Lower(core.Trim(key))
+	key = normalizeSensitiveKey(key)
+	if key == "" {
+		return false
+	}
 	switch key {
-	case "token", "key", "secret", "password", "passphrase", "api_key", "apikey", "client_secret", "access_token", "refresh_token", "private_key", "authorization", "bearer":
+	case "token", "key", "secret", "password", "passphrase", "api", "client", "access", "refresh", "private", "authorization", "bearer":
 		return true
 	}
-	return core.HasSuffix(key, "_token") || core.HasSuffix(key, "_key") || core.HasSuffix(key, "_secret") || core.HasSuffix(key, "_password")
+	for _, needle := range []string{
+		"token",
+		"key",
+		"secret",
+		"password",
+		"passphrase",
+		"apikey",
+		"privatekey",
+		"clientsecret",
+		"accesstoken",
+		"refreshtoken",
+		"authorization",
+		"bearer",
+	} {
+		if core.Contains(key, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeSensitiveKey(key string) string {
+	key = core.Lower(core.Trim(key))
+	if key == "" {
+		return ""
+	}
+	normalized := make([]rune, 0, len(key))
+	for _, r := range key {
+		switch {
+		case r >= 'a' && r <= 'z':
+			normalized = append(normalized, r)
+		case r >= '0' && r <= '9':
+			normalized = append(normalized, r)
+		}
+	}
+	return string(normalized)
 }
 
 func redactReflectValue(value reflect.Value) reflect.Value {
