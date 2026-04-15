@@ -4,6 +4,7 @@ import (
 	"context"
 
 	core "dappco.re/go/core"
+	coreio "dappco.re/go/core/io"
 	storelib "dappco.re/go/store"
 )
 
@@ -13,7 +14,11 @@ type Service struct {
 }
 
 func Register(c *core.Core) core.Result {
-	storeInstance, err := storelib.New(":memory:")
+	path := defaultStorePath()
+	if err := coreio.Local.EnsureDir(core.PathDir(path)); err != nil {
+		return core.Result{Value: err, OK: false}
+	}
+	storeInstance, err := storelib.New(path)
 	if err != nil {
 		return core.Result{Value: err, OK: false}
 	}
@@ -23,6 +28,17 @@ func Register(c *core.Core) core.Result {
 	}
 	svc.registerQueries(c)
 	return core.Result{Value: svc, OK: true}
+}
+
+func defaultStorePath() string {
+	home := core.Env("DIR_HOME")
+	if home == "" {
+		home = core.Env("HOME")
+	}
+	if home == "" {
+		return ":memory:"
+	}
+	return core.JoinPath(home, ".core", "ide", "store.db")
 }
 
 func (s *Service) OnShutdown(context.Context) core.Result {

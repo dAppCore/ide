@@ -4,8 +4,8 @@ import (
 	"embed"
 
 	core "dappco.re/go/core"
+	coreconfig "dappco.re/go/core/config"
 	coreio "dappco.re/go/core/io"
-	"gopkg.in/yaml.v3"
 )
 
 //go:embed conventions/*.yaml
@@ -39,8 +39,16 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		if err != nil {
 			continue
 		}
+		medium := coreio.NewMemoryMedium()
+		if writeErr := medium.Write(path, string(raw)); writeErr != nil {
+			continue
+		}
+		data, err := coreconfig.Load(medium, path)
+		if err != nil {
+			continue
+		}
 		var pack conventionPack
-		if err := yaml.Unmarshal(raw, &pack); err != nil {
+		if result := core.JSONUnmarshalString(core.JSONMarshalString(data), &pack); !result.OK {
 			continue
 		}
 		conventions = append(conventions, pack.Conventions...)
@@ -81,11 +89,18 @@ func readBuildProjectName(medium coreio.Medium, root string) string {
 	if err != nil {
 		return ""
 	}
-	var data map[string]any
-	if err := yaml.Unmarshal([]byte(content), &data); err != nil {
+	mem := coreio.NewMemoryMedium()
+	if writeErr := mem.Write(path, content); writeErr != nil {
+		return ""
+	}
+	data, err := coreconfig.Load(mem, path)
+	if err != nil {
 		return ""
 	}
 	if value, ok := data["projectName"].(string); ok {
+		return value
+	}
+	if value, ok := data["projectname"].(string); ok {
 		return value
 	}
 	if value, ok := data["name"].(string); ok {

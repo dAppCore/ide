@@ -20,7 +20,6 @@ func TestActions_Subagent_Good(t *testing.T) {
 		"ide.subagent.progress",
 		"ide.subagent.watch",
 		"ide.subagent.answer",
-		"ide.subagent.dispatch_guided",
 	} {
 		if !c.Action(name).Exists() {
 			t.Fatalf("expected %s action", name)
@@ -43,9 +42,6 @@ func TestActions_Subagent_Good(t *testing.T) {
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
 	if result := c.Action("ide.subagent.answer").Run(context.Background(), core.NewOptions(core.Option{Key: "workspaceId", Value: "ws-1"}, core.Option{Key: "questionId", Value: "q1"}, core.Option{Key: "answer", Value: "because"})); !result.OK {
 		t.Fatalf("expected answer action success, got %#v", result.Value)
-	}
-	if result := c.Action("ide.subagent.dispatch_guided").Run(context.Background(), core.NewOptions(core.Option{Key: "repo", Value: "core/ide"}, core.Option{Key: "task", Value: "investigate"})); !result.OK {
-		t.Fatalf("expected dispatch action success, got %#v", result.Value)
 	}
 }
 

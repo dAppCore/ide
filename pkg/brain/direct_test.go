@@ -269,7 +269,7 @@ func TestDirect_Context_Ugly(t *testing.T) {
 	}
 }
 
-func TestDirect_Remember_Clear_UsesTime(t *testing.T) {
+func TestDirect_Remember_Clear_Good(t *testing.T) {
 	// Sanity check that remember returns a fresh timestamp and not a zero value.
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

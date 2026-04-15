@@ -22,7 +22,7 @@ func TestServerIntegration_Run_Good(t *testing.T) {
 	for _, tool := range srv.MCP().Tools() {
 		names[tool.Name] = true
 	}
-	for _, name := range []string{"workspace_scan", "workspace_status", "core_navigate", "pkg_search", "subagent_dispatch_guided"} {
+	for _, name := range []string{"workspace_scan", "workspace_status", "core_navigate", "pkg_search", "subagent_watch"} {
 		if !names[name] {
 			t.Fatalf("expected tool %s to be registered", name)
 		}
@@ -36,17 +36,17 @@ func TestServerIntegration_Run_Bad(t *testing.T) {
 	}
 	var found bool
 	for _, tool := range srv.MCP().Tools() {
-		if tool.Name != "subagent_dispatch_guided" {
+		if tool.Name != "subagent_ask" {
 			continue
 		}
 		found = true
-		_, callErr := tool.RESTHandler(context.Background(), []byte(`{"repo":"","task":""}`))
+		_, callErr := tool.RESTHandler(context.Background(), []byte(`{"workspaceId":"","question":"why?"}`))
 		if callErr == nil {
-			t.Fatal("expected guided dispatch validation error")
+			t.Fatal("expected ask validation error")
 		}
 	}
 	if !found {
-		t.Fatal("subagent_dispatch_guided not registered")
+		t.Fatal("subagent_ask not registered")
 	}
 }
 

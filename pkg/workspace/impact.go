@@ -1,9 +1,8 @@
 package workspace
 
 import (
-	"gopkg.in/yaml.v3"
-
 	core "dappco.re/go/core"
+	coreconfig "dappco.re/go/core/config"
 	coreio "dappco.re/go/core/io"
 )
 
@@ -63,12 +62,12 @@ func downstreamDependents(medium coreio.Medium, root string) []string {
 	if !medium.Exists(reposPath) {
 		return nil
 	}
-	content, err := medium.Read(reposPath)
+	data, err := coreconfig.Load(medium, reposPath)
 	if err != nil {
 		return nil
 	}
 	var repos reposFile
-	if err := yaml.Unmarshal([]byte(content), &repos); err != nil {
+	if result := core.JSONUnmarshalString(core.JSONMarshalString(data), &repos); !result.OK {
 		return nil
 	}
 	current := core.PathBase(root)

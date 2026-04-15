@@ -8,7 +8,6 @@ import (
 	goio "io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	core "dappco.re/go/core"
@@ -307,8 +306,8 @@ func homeDir() string {
 	if home != "" {
 		return home
 	}
-	if resolved, err := os.UserHomeDir(); err == nil {
-		return resolved
+	if home = core.Env("HOME"); home != "" {
+		return home
 	}
 	return "."
 }

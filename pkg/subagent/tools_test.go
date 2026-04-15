@@ -351,9 +351,9 @@ func TestTools_HandleAnswer_Good(t *testing.T) {
 
 func TestTools_HandleDispatchGuided_Good(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
-	_, out, err := subsystem.handleDispatchGuidedTool(context.Background(), nil, DispatchGuidedInput{Repo: "core/ide", Task: "investigate"})
+	out, err := subsystem.DispatchGuided(context.Background(), DispatchGuidedInput{Repo: "core/ide", Task: "investigate"})
 	if err != nil {
-		t.Fatalf("handleDispatchGuidedTool: %v", err)
+		t.Fatalf("DispatchGuided: %v", err)
 	}
 	if out.WorkspaceID == "" || !out.Success {
 		t.Fatalf("unexpected dispatch output %#v", out)

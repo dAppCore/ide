@@ -28,7 +28,6 @@ func TestSubagent_RegisterActions_Good(t *testing.T) {
 		"ide.subagent.progress",
 		"ide.subagent.watch",
 		"ide.subagent.answer",
-		"ide.subagent.dispatch_guided",
 	} {
 		if !c.Action(name).Exists() {
 			t.Fatalf("expected action %s", name)
@@ -47,7 +46,7 @@ func TestSubagent_RegisterTools_Good(t *testing.T) {
 	for _, tool := range svc.Tools() {
 		names[tool.Name] = true
 	}
-	for _, name := range []string{"subagent_guide", "subagent_ask", "subagent_progress", "subagent_watch", "subagent_answer", "subagent_dispatch_guided"} {
+	for _, name := range []string{"subagent_guide", "subagent_ask", "subagent_progress", "subagent_watch", "subagent_answer"} {
 		if !names[name] {
 			t.Fatalf("expected tool %s", name)
 		}

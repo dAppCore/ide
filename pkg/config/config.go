@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"time"
 
 	core "dappco.re/go/core"
@@ -270,7 +269,7 @@ type CLIOverrides struct {
 	BrainAgentID  string
 }
 
-//   cfg, err := Load(DefaultPaths("")...)
+// cfg, err := Load(DefaultPaths("")...)
 func Load(paths ...string) (IDEConfig, error) {
 	return LoadWithOptions(LoaderOptions{Paths: paths})
 }
@@ -488,8 +487,8 @@ func homeDir() string {
 	if home != "" {
 		return home
 	}
-	if resolved, err := os.UserHomeDir(); err == nil {
-		return resolved
+	if home = core.Env("HOME"); home != "" {
+		return home
 	}
 	return "."
 }
