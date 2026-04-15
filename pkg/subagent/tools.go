@@ -263,7 +263,8 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	if relayURL == "" || core.Trim(s.relayToken) == "" {
 		return nil, false, false, false
 	}
-	if err := validateRelayURL(relayURL); err != nil {
+	normalizedRelayURL, err := canonicalRelayURL(relayURL)
+	if err != nil {
 		return nil, false, false, false
 	}
 	headers := http.Header{}
@@ -272,7 +273,7 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	}
 	dialer := *websocket.DefaultDialer
 	dialer.HandshakeTimeout = 5 * time.Second
-	conn, _, err := dialer.DialContext(ctx, relayURL, headers)
+	conn, _, err := dialer.DialContext(ctx, normalizedRelayURL, headers)
 	if err != nil {
 		return nil, false, false, false
 	}
@@ -363,31 +364,42 @@ func normalizeWorkspaceID(value string) (string, error) {
 }
 
 func validateRelayURL(value string) error {
+	_, err := canonicalRelayURL(value)
+	return err
+}
+
+func canonicalRelayURL(value string) (string, error) {
 	parsed, err := url.Parse(core.Trim(value))
 	if err != nil {
-		return core.E("ide.subagent.relayURL", "invalid relay URL", err)
+		return "", core.E("ide.subagent.relayURL", "invalid relay URL", err)
 	}
 	switch parsed.Scheme {
 	case "ws", "wss", "http", "https":
 	default:
-		return core.E("ide.subagent.relayURL", "unsupported relay URL scheme", nil)
+		return "", core.E("ide.subagent.relayURL", "unsupported relay URL scheme", nil)
 	}
 	if parsed.Host == "" {
-		return core.E("ide.subagent.relayURL", "relay URL host is required", nil)
+		return "", core.E("ide.subagent.relayURL", "relay URL host is required", nil)
 	}
 	if parsed.User != nil {
-		return core.E("ide.subagent.relayURL", "relay URL must not include userinfo", nil)
+		return "", core.E("ide.subagent.relayURL", "relay URL must not include userinfo", nil)
 	}
 	if core.Trim(parsed.RawQuery) != "" {
-		return core.E("ide.subagent.relayURL", "relay URL must not include a query string", nil)
+		return "", core.E("ide.subagent.relayURL", "relay URL must not include a query string", nil)
 	}
 	if core.Trim(parsed.Fragment) != "" {
-		return core.E("ide.subagent.relayURL", "relay URL must not include a fragment", nil)
+		return "", core.E("ide.subagent.relayURL", "relay URL must not include a fragment", nil)
 	}
 	if !isLoopbackHost(parsed.Hostname()) {
-		return core.E("ide.subagent.relayURL", "relay URL must target localhost or loopback", nil)
+		return "", core.E("ide.subagent.relayURL", "relay URL must target localhost or loopback", nil)
 	}
-	return nil
+	switch parsed.Scheme {
+	case "http":
+		parsed.Scheme = "ws"
+	case "https":
+		parsed.Scheme = "wss"
+	}
+	return parsed.String(), nil
 }
 
 func isLoopbackHost(host string) bool {
