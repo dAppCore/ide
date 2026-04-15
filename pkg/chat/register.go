@@ -6,6 +6,7 @@ import (
 
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	gui_chat "forge.lthn.ai/core/gui/pkg/chat"
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
@@ -20,11 +21,6 @@ type ToolExecutor interface {
 type Executor struct {
 	gui *guimcp.Subsystem
 	mcp *coremcp.Service
-}
-
-type Service struct {
-	*core.ServiceRuntime[config.Chat]
-	executor ToolExecutor
 }
 
 func NewExecutor(guiSubsystem *guimcp.Subsystem, mcpService *coremcp.Service) *Executor {
@@ -84,12 +80,13 @@ func (e *Executor) CallTool(ctx context.Context, name string, arguments map[stri
 	return "", core.E("ide.chat.CallTool", core.Concat("tool not found: ", name), nil)
 }
 
+// NewRegister wires the GUI chat subsystem with the shared tool executor.
+//
+//	core.WithService(chat.NewRegister(cfg.Ide.Chat, sharedExecutor))
 func NewRegister(cfg config.Chat, executor ToolExecutor) func(*core.Core) core.Result {
-	return func(c *core.Core) core.Result {
-		return core.Result{Value: &Service{ServiceRuntime: core.NewServiceRuntime[config.Chat](c, cfg), executor: executor}, OK: true}
-	}
-}
-
-func (s *Service) OnStartup(context.Context) core.Result {
-	return core.Result{OK: true}
+	return gui_chat.Register(func(opts *gui_chat.Options) {
+		opts.APIURL = cfg.APIURL
+		opts.StorePath = cfg.StorePath
+		opts.ToolExecutor = executor
+	})
 }

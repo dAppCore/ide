@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	core "dappco.re/go/core"
@@ -65,7 +64,7 @@ func (c *Client) Install(ctx context.Context, input InstallInput) (InstallOutput
 	if core.Trim(input.Code) == "" {
 		return InstallOutput{}, core.E("ide.marketplace.install", "code is required", nil)
 	}
-	switch strings.ToLower(strings.TrimSpace(c.cfg.InstallVia)) {
+	switch core.Lower(core.Trim(c.cfg.InstallVia)) {
 	case "", "go-scm":
 		return c.installViaGoSCM(ctx, input)
 	case "api":

@@ -2,7 +2,8 @@ package navigate
 
 import (
 	"context"
-	"strings"
+
+	core "dappco.re/go/core"
 )
 
 func (s *Subsystem) resolveStore(ctx context.Context, _ Filter) (Data, Schema, error) {
@@ -66,5 +67,5 @@ func filterString(filter Filter, key string) string {
 		return ""
 	}
 	text, _ := value.(string)
-	return strings.TrimSpace(text)
+	return core.Trim(text)
 }

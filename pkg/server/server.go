@@ -37,7 +37,7 @@ func Compose(options Options) (*Server, error) {
 	hub := ws.NewHub()
 	guiExecutor := chatpkg.NewExecutor(nil, nil)
 
-	c := core.New(
+	services := []core.CoreOption{
 		core.WithName("ws", func(_ *core.Core) core.Result {
 			return core.Result{Value: hub, OK: true}
 		}),
@@ -62,12 +62,16 @@ func Compose(options Options) (*Server, error) {
 		core.WithName("marketplace", func(_ *core.Core) core.Result {
 			return core.Result{Value: marketplacepkg.New(cfg.Ide.Marketplace), OK: true}
 		}),
-		core.WithName("gui_mcp", func(c *core.Core) core.Result {
-			return core.Result{Value: guimcp.New(c), OK: true}
-		}),
 		core.WithService(coremcp.Register),
-	)
-	if config.BoolValue(cfg.Ide.Chat.Enabled, true) {
+	}
+	if options.GUI {
+		services = append(services, core.WithName("gui_mcp", func(c *core.Core) core.Result {
+			return core.Result{Value: guimcp.New(c), OK: true}
+		}))
+	}
+
+	c := core.New(services...)
+	if options.GUI && config.BoolValue(cfg.Ide.Chat.Enabled, true) {
 		result := chatpkg.NewRegister(cfg.Ide.Chat, guiExecutor)(c)
 		if !result.OK {
 			if err, ok := result.Value.(error); ok {
@@ -103,8 +107,10 @@ func Compose(options Options) (*Server, error) {
 	if !ok {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
 	}
-	guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
-	guiExecutor.Attach(guiSubsystem, mcpService)
+	if options.GUI {
+		guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
+		guiExecutor.Attach(guiSubsystem, mcpService)
+	}
 
 	transport, err := SelectTransport(cfg, options.MCP)
 	if err != nil {

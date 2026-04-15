@@ -28,6 +28,7 @@ func (s *Subsystem) registerRoutes() {
 		return
 	}
 	s.router.Handle("core://store", s.resolveStore)
+	s.router.Handle("core://store/{namespace}", s.resolveStoreNamespace)
 	if s.routeEnabled("core://models") {
 		s.router.Handle("core://models", s.resolveModels)
 	}
@@ -74,9 +75,50 @@ func (r *Router) Resolve(ctx context.Context, route string, filter Filter) (Data
 	if r == nil {
 		return nil, nil, core.E("ide.navigate.Resolve", "router is nil", nil)
 	}
-	handler, ok := r.handlers[core.Trim(route)]
-	if !ok {
-		return nil, nil, core.E("ide.navigate.Resolve", core.Concat("unknown route ", core.Trim(route)), nil)
+	route = core.Trim(route)
+	if handler, ok := r.handlers[route]; ok {
+		return handler(ctx, filter)
 	}
-	return handler(ctx, filter)
+	for pattern, handler := range r.handlers {
+		routeFilter, ok := matchRoutePattern(pattern, route)
+		if !ok {
+			continue
+		}
+		merged := Filter{Values: map[string]any{}}
+		for key, value := range filter.Values {
+			merged.Values[key] = value
+		}
+		for key, value := range routeFilter.Values {
+			merged.Values[key] = value
+		}
+		return handler(ctx, merged)
+	}
+	return nil, nil, core.E("ide.navigate.Resolve", core.Concat("unknown route ", route), nil)
+}
+
+func matchRoutePattern(pattern, route string) (Filter, bool) {
+	pattern = core.Trim(pattern)
+	route = core.Trim(route)
+	if pattern == "" || route == "" {
+		return Filter{}, false
+	}
+	if pattern == route {
+		return Filter{}, true
+	}
+	const namespacePattern = "{namespace}"
+	if !core.HasSuffix(pattern, namespacePattern) {
+		return Filter{}, false
+	}
+	prefix := core.TrimSuffix(pattern, namespacePattern)
+	if !core.HasSuffix(prefix, "/") {
+		return Filter{}, false
+	}
+	if !core.HasPrefix(route, prefix) {
+		return Filter{}, false
+	}
+	value := core.TrimPrefix(route, prefix)
+	if value == "" || core.Contains(value, "/") {
+		return Filter{}, false
+	}
+	return Filter{Values: map[string]any{"namespace": value}}, true
 }
