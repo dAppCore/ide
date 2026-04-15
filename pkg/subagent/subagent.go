@@ -2,6 +2,7 @@ package subagent
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	core "dappco.re/go/core"
@@ -15,6 +16,7 @@ import (
 type Subsystem struct {
 	cfg     config.Subagent
 	hub     *ws.Hub
+	mu      sync.RWMutex
 	answers map[string]chan string
 	events  map[string][]Event
 }

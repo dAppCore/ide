@@ -5,8 +5,8 @@ import (
 	"sort"
 
 	core "dappco.re/go/core"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
 )
