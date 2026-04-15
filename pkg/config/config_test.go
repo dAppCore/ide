@@ -98,6 +98,41 @@ func TestConfig_LoadWithOptions_Ugly(t *testing.T) {
 	}
 }
 
+func TestConfig_LoadWithOptions_UglySymlinkedPath(t *testing.T) {
+	home := t.TempDir()
+	workspace := t.TempDir()
+	realCore := t.TempDir()
+	homeConfigPath := filepath.Join(home, ".core", "ide.yaml")
+	projectConfigPath := filepath.Join(workspace, ".core", "ide.yaml")
+
+	if err := os.MkdirAll(filepath.Dir(homeConfigPath), 0o755); err != nil {
+		t.Fatalf("mkdir home config: %v", err)
+	}
+	if err := os.MkdirAll(realCore, 0o755); err != nil {
+		t.Fatalf("mkdir real core: %v", err)
+	}
+	if err := os.WriteFile(homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://home.example\n"), 0o644); err != nil {
+		t.Fatalf("write home config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(realCore, "ide.yaml"), []byte("ide:\n  brain:\n    agent_id: symlinked-project\n"), 0o644); err != nil {
+		t.Fatalf("write project config: %v", err)
+	}
+	if err := os.Symlink(realCore, filepath.Join(workspace, ".core")); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+
+	cfg, err := LoadWithOptions(LoaderOptions{Medium: coreio.Local, Paths: []string{homeConfigPath, projectConfigPath}})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Ide.Brain.Endpoint != "https://home.example" {
+		t.Fatalf("expected regular config to load, got %#v", cfg.Ide.Brain)
+	}
+	if cfg.Ide.Brain.AgentID == "symlinked-project" {
+		t.Fatalf("expected symlinked project config to be ignored, got %#v", cfg.Ide.Brain)
+	}
+}
+
 func TestConfig_Load_Bad(t *testing.T) {
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/broken/.core/ide.yaml", "ide: [")

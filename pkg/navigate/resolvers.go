@@ -2,6 +2,7 @@ package navigate
 
 import (
 	"context"
+	"net/url"
 	"reflect"
 
 	core "dappco.re/go/core"
@@ -56,7 +57,19 @@ func (s *Subsystem) resolveSettings(ctx context.Context, _ Filter) (Data, Schema
 }
 
 func (s *Subsystem) resolveIdentity(ctx context.Context, _ Filter) (Data, Schema, error) {
-	return s.resolveQuery(ctx, "identity.status")
+	output, schema, err := s.resolveQuery(ctx, "identity.status")
+	if err != nil {
+		return nil, nil, err
+	}
+	identity, ok := output.(Output)
+	if !ok {
+		return output, schema, nil
+	}
+	if !identity.Available {
+		return identity, schema, nil
+	}
+	identity.Data = redactSensitiveValue(identity.Data)
+	return identity, schema, nil
 }
 
 func (s *Subsystem) resolveWallet(ctx context.Context, _ Filter) (Data, Schema, error) {
@@ -237,6 +250,17 @@ func redactSensitiveString(value string) string {
 	lower := core.Lower(trimmed)
 	if core.HasPrefix(lower, "bearer ") || core.HasPrefix(lower, "basic ") {
 		return "[redacted]"
+	}
+	if parsed, err := url.Parse(trimmed); err == nil && parsed.Scheme != "" && parsed.Host != "" {
+		if parsed.User != nil {
+			return "[redacted]"
+		}
+		query := parsed.Query()
+		for key := range query {
+			if isSensitiveKey(key) {
+				return "[redacted]"
+			}
+		}
 	}
 	if core.HasPrefix(lower, "--") {
 		lower = core.TrimPrefix(lower, "--")

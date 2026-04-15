@@ -33,7 +33,8 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 					"brain":     map[string]any{"key": "secret-key"},
 					"identity":  map[string]any{"privateKey": "camel-secret"},
 					"nested":    []any{map[string]any{"api_key": "abc123"}},
-					"flags":     []any{"--token=secret-token", "--safe=value", "Authorization: Bearer secret"},
+					"flags":     []any{"--token=secret-token", "--safe=value", "Authorization: Bearer secret", "https://example.com/callback?api_key=secret"},
+					"urls":      []any{"https://user:pass@example.com/path", "https://example.com/path?token=secret"},
 				},
 			}, OK: true}
 		}
@@ -76,11 +77,18 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 		t.Fatalf("expected nested api key redaction, got %#v", nested[0])
 	}
 	flags, ok := ide["flags"].([]any)
-	if !ok || len(flags) != 3 {
+	if !ok || len(flags) != 4 {
 		t.Fatalf("expected flag payload, got %#v", ide["flags"])
 	}
-	if flags[0] != "[redacted]" || flags[1] != "--safe=value" || flags[2] != "[redacted]" {
+	if flags[0] != "[redacted]" || flags[1] != "--safe=value" || flags[2] != "[redacted]" || flags[3] != "[redacted]" {
 		t.Fatalf("expected string slice redaction, got %#v", flags)
+	}
+	urls, ok := ide["urls"].([]any)
+	if !ok || len(urls) != 2 {
+		t.Fatalf("expected URL payload, got %#v", ide["urls"])
+	}
+	if urls[0] != "[redacted]" || urls[1] != "[redacted]" {
+		t.Fatalf("expected URL redaction, got %#v", urls)
 	}
 }
 
@@ -143,6 +151,41 @@ func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 	}
 	if pointer["secret"] != "[redacted]" {
 		t.Fatalf("expected pointer secret redaction, got %#v", pointer["secret"])
+	}
+}
+
+func TestResolvers_Query_UglyIdentityRedaction(t *testing.T) {
+	c := core.New()
+	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
+		if name, ok := query.(string); ok && name == "identity.status" {
+			return core.Result{Value: map[string]any{
+				"tim": map[string]any{
+					"certificates": []any{"cert-a"},
+					"keys":         []any{"secret-key"},
+				},
+			}, OK: true}
+		}
+		return core.Result{}
+	})
+
+	out, _, err := New(config.Navigate{}, c).resolveIdentity(context.Background(), Filter{})
+	if err != nil {
+		t.Fatalf("resolve identity: %v", err)
+	}
+	payload, ok := out.(Output)
+	if !ok || !payload.Available {
+		t.Fatalf("expected available payload, got %#v", out)
+	}
+	data, ok := payload.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map payload, got %#v", payload.Data)
+	}
+	tim, ok := data["tim"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected tim payload, got %#v", data["tim"])
+	}
+	if tim["keys"] != "[redacted]" {
+		t.Fatalf("expected identity key redaction, got %#v", tim["keys"])
 	}
 }
 

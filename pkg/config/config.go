@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
 	core "dappco.re/go/core"
@@ -288,6 +290,9 @@ func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
 		if core.Trim(path) == "" || !medium.Exists(path) {
 			continue
 		}
+		if isUnsafeLocalConfigPath(path) {
+			continue
+		}
 		raw, err := medium.Read(path)
 		if err != nil {
 			return IDEConfig{}, core.E("ide.config.Load", core.Concat("read ", path), err)
@@ -491,4 +496,17 @@ func homeDir() string {
 		return home
 	}
 	return "."
+}
+
+func isUnsafeLocalConfigPath(path string) bool {
+	path = filepath.Clean(path)
+	return isSymlink(path) || isSymlink(filepath.Dir(path))
+}
+
+func isSymlink(path string) bool {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeSymlink != 0
 }
