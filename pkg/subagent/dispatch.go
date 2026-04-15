@@ -81,6 +81,7 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 		s.publish(runningChannel, failed)
 		return DispatchGuidedOutput{Success: false, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: err.Error()}, err
 	}
+	s.bindAgenticWorkspace(workspaceID, core.PathBase(dispatchResult.WorkspaceDir))
 	return DispatchGuidedOutput{Success: dispatchResult.Success, Delivered: true, WorkspaceID: workspaceID, Agent: dispatchResult.Agent, Prompt: prompt}, nil
 }
 

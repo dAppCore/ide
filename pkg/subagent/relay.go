@@ -93,6 +93,65 @@ func (s *Subsystem) collectEvents(workspaceID string, from int) []Event {
 	return out
 }
 
+func (s *Subsystem) bindAgenticWorkspace(workspaceID, name string) {
+	if s == nil || core.Trim(workspaceID) == "" || core.Trim(name) == "" {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ref := s.agentic[workspaceID]
+	ref.Name = core.Trim(name)
+	s.agentic[workspaceID] = ref
+}
+
+func (s *Subsystem) agenticWorkspace(workspaceID string) agenticWorkspace {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.agentic[workspaceID]
+}
+
+func (s *Subsystem) syncAgenticState(workspaceID, state, question string) bool {
+	if s == nil || core.Trim(workspaceID) == "" {
+		return false
+	}
+	state = core.Trim(state)
+	question = core.Trim(question)
+	if state == "" {
+		return false
+	}
+	s.mu.Lock()
+	ref := s.agentic[workspaceID]
+	changed := false
+	if ref.LastState != state {
+		ref.LastState = state
+		changed = true
+	}
+	questionChanged := question != "" && ref.LastQuestion != question
+	if questionChanged {
+		ref.LastQuestion = question
+	}
+	s.agentic[workspaceID] = ref
+	s.mu.Unlock()
+	if changed {
+		s.appendEvent(workspaceID, Event{
+			Type:      "status",
+			Channel:   statusChannel(workspaceID),
+			Message:   state,
+			CreatedAt: time.Now().UTC(),
+		})
+	}
+	if questionChanged {
+		s.appendEvent(workspaceID, Event{
+			Type:       "question",
+			Channel:    questionChannel(workspaceID),
+			Message:    question,
+			QuestionID: "blocked",
+			CreatedAt:  time.Now().UTC(),
+		})
+	}
+	return changed || questionChanged
+}
+
 func (s *Subsystem) publish(channel string, message any) {
 	if s == nil || s.hub == nil {
 		return

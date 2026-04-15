@@ -11,6 +11,7 @@ import (
 	core "dappco.re/go/core"
 	"dappco.re/go/core/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/gorilla/websocket"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -162,7 +163,13 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 	}
 	timeout := clampInt(input.Timeout, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxWatchTimeoutSeconds)
 	if events, completed, failed, ok := s.watchRelay(ctx, workspaceID, timeout); ok {
-		return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
+		if completed || failed {
+			return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
+		}
+		if changed, agenticCompleted, agenticFailed := s.syncAgenticEvents(ctx, workspaceID); changed || agenticCompleted || agenticFailed {
+			events = append(events, s.collectEvents(workspaceID, 0)...)
+			return WatchOutput{Completed: agenticCompleted, Failed: agenticFailed, Events: dedupeEvents(events)}, nil
+		}
 	}
 	deadline := time.After(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(time.Duration(clampInt(input.PollInterval, 2, maxWatchPollInterval)) * time.Second)
@@ -174,6 +181,16 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 		if len(events) > 0 {
 			collected = append(collected, events...)
 			seen += len(events)
+		}
+		if synced, completed, failed := s.syncAgenticEvents(ctx, workspaceID); synced {
+			events = s.collectEvents(workspaceID, seen)
+			if len(events) > 0 {
+				collected = append(collected, events...)
+				seen += len(events)
+			}
+			if completed || failed {
+				return WatchOutput{Completed: completed, Failed: failed, Events: collected}, nil
+			}
 		}
 		completed, failed := state(collected)
 		if completed || failed {
@@ -233,7 +250,7 @@ func state(events []Event) (bool, bool) {
 		switch core.Trim(events[index].Message) {
 		case "completed":
 			return true, false
-		case "failed":
+		case "failed", "blocked":
 			return false, true
 		}
 	}
@@ -251,6 +268,80 @@ func clampInt(value, fallback, max int) int {
 		return 1
 	}
 	return value
+}
+
+func (s *Subsystem) syncAgenticEvents(ctx context.Context, workspaceID string) (bool, bool, bool) {
+	ref := s.agenticWorkspace(workspaceID)
+	if core.Trim(ref.Name) == "" {
+		return false, false, false
+	}
+	statusOutput, err := s.agenticStatus(ctx, ref.Name)
+	if err != nil {
+		return false, false, false
+	}
+	if len(statusOutput.Workspaces) == 0 {
+		return false, false, false
+	}
+	info := statusOutput.Workspaces[0]
+	changed := s.syncAgenticState(workspaceID, info.Status, info.Question)
+	completed, failed := terminalState(info.Status)
+	return changed, completed, failed
+}
+
+func (s *Subsystem) agenticStatus(ctx context.Context, workspace string) (mcpagentic.StatusOutput, error) {
+	service, err := coremcp.New(coremcp.Options{Unrestricted: true})
+	if err != nil {
+		return mcpagentic.StatusOutput{}, core.E("ide.subagent.agenticStatus", "create agentic mcp service", err)
+	}
+	prep := mcpagentic.NewPrep()
+	prep.RegisterTools(service)
+	var handler coremcp.RESTHandler
+	for _, tool := range service.Tools() {
+		if tool.Name == "agentic_status" {
+			handler = tool.RESTHandler
+			break
+		}
+	}
+	if handler == nil {
+		return mcpagentic.StatusOutput{}, core.E("ide.subagent.agenticStatus", "agentic status handler unavailable", nil)
+	}
+	result, err := handler(ctx, []byte(core.JSONMarshalString(mcpagentic.StatusInput{Workspace: workspace})))
+	if err != nil {
+		return mcpagentic.StatusOutput{}, core.E("ide.subagent.agenticStatus", "query agentic status", err)
+	}
+	output, ok := result.(mcpagentic.StatusOutput)
+	if !ok {
+		return mcpagentic.StatusOutput{}, core.E("ide.subagent.agenticStatus", "unexpected agentic status output", nil)
+	}
+	return output, nil
+}
+
+func terminalState(state string) (bool, bool) {
+	switch core.Trim(state) {
+	case "completed", "merged", "ready-for-review":
+		return true, false
+	case "failed", "blocked":
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func dedupeEvents(events []Event) []Event {
+	if len(events) == 0 {
+		return nil
+	}
+	out := make([]Event, 0, len(events))
+	seen := map[string]struct{}{}
+	for _, event := range events {
+		key := core.Concat(event.Type, "|", event.Channel, "|", event.QuestionID, "|", event.Message, "|", event.CreatedAt.UTC().Format(time.RFC3339Nano))
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, event)
+	}
+	return out
 }
 
 func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout int) ([]Event, bool, bool, bool) {

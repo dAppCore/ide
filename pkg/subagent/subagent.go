@@ -18,6 +18,13 @@ type Subsystem struct {
 	mu         sync.RWMutex
 	answers    map[string]map[string]chan string
 	events     map[string][]Event
+	agentic    map[string]agenticWorkspace
+}
+
+type agenticWorkspace struct {
+	Name         string
+	LastState    string
+	LastQuestion string
 }
 
 type GuideInput struct {
@@ -116,6 +123,7 @@ func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
 		relayToken: core.Trim(relayToken),
 		answers:    map[string]map[string]chan string{},
 		events:     map[string][]Event{},
+		agentic:    map[string]agenticWorkspace{},
 	}
 }
 
