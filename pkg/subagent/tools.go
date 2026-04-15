@@ -15,6 +15,9 @@ func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, inp
 
 func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, error) {
 	_ = ctx
+	if !s.cfg.Enabled {
+		return GuideOutput{Delivered: false, Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.WorkspaceID) == "" {
 		return GuideOutput{Delivered: false, Reason: "workspaceId is required"}, nil
 	}
@@ -34,6 +37,9 @@ func (s *Subsystem) handleAsk(ctx context.Context, _ *mcp.CallToolRequest, input
 }
 
 func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) {
+	if !s.cfg.Enabled {
+		return AskOutput{Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.WorkspaceID) == "" {
 		return AskOutput{}, core.E("ide.subagent.ask", "workspaceId is required", nil)
 	}
@@ -70,6 +76,9 @@ func (s *Subsystem) handleProgress(ctx context.Context, _ *mcp.CallToolRequest, 
 
 func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (ProgressOutput, error) {
 	_ = ctx
+	if !s.cfg.Enabled {
+		return ProgressOutput{Delivered: false, Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.WorkspaceID) == "" {
 		return ProgressOutput{}, core.E("ide.subagent.progress", "workspaceId is required", nil)
 	}
@@ -89,6 +98,9 @@ func (s *Subsystem) handleWatch(ctx context.Context, _ *mcp.CallToolRequest, inp
 }
 
 func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, error) {
+	if !s.cfg.Enabled {
+		return WatchOutput{Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.WorkspaceID) == "" {
 		return WatchOutput{Reason: "workspaceId is required"}, nil
 	}
@@ -128,6 +140,9 @@ func (s *Subsystem) handleAnswer(ctx context.Context, _ *mcp.CallToolRequest, in
 
 func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput, error) {
 	_ = ctx
+	if !s.cfg.Enabled {
+		return AnswerOutput{Delivered: false, Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.WorkspaceID) == "" {
 		return AnswerOutput{}, core.E("ide.subagent.answer", "workspaceId is required", nil)
 	}
@@ -154,6 +169,9 @@ func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolReq
 
 func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInput) (DispatchGuidedOutput, error) {
 	_ = ctx
+	if !s.cfg.Enabled {
+		return DispatchGuidedOutput{Success: false, Reason: "subagent is disabled"}, nil
+	}
 	if core.Trim(input.Repo) == "" {
 		return DispatchGuidedOutput{Success: false, Reason: "repo is required"}, core.E("ide.subagent.dispatch_guided", "repo is required", nil)
 	}
@@ -172,7 +190,11 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if workspaceID == "" {
 		workspaceID = core.Sprintf("%s-%d", core.Replace(core.Lower(input.Repo), "/", "-"), time.Now().UTC().UnixNano())
 	}
-	prompt := core.Sprintf("Relay URL: %s\nRelay Token: %s\nWorkspace ID: %s\nTemplate: %s\nAgent: %s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to 60s).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", core.Trim(input.RelayURL), core.Trim(input.RelayToken), workspaceID, template, agent, guideChannel(workspaceID), core.Trim(input.Task))
+	relayURL := core.Trim(input.RelayURL)
+	if relayURL == "" {
+		relayURL = s.cfg.Relay.URL()
+	}
+	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN=%s\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, core.Trim(input.RelayToken), workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
 	if s.hub == nil {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}

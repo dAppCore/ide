@@ -52,15 +52,39 @@ type Workspace struct {
 }
 
 type Subagent struct {
-	Enabled  bool              `yaml:"enabled"`
-	Relay    SubagentRelay     `yaml:"relay"`
-	Dispatch SubagentDispatch  `yaml:"dispatch"`
-	Timeouts SubagentTimeouts  `yaml:"timeouts"`
+	Enabled  bool             `yaml:"enabled"`
+	Relay    SubagentRelay    `yaml:"relay"`
+	Dispatch SubagentDispatch `yaml:"dispatch"`
+	Timeouts SubagentTimeouts `yaml:"timeouts"`
 }
 
 type SubagentRelay struct {
 	Addr string `yaml:"addr"`
 	Path string `yaml:"path"`
+}
+
+func (relay SubagentRelay) URL() string {
+	addr := core.Trim(relay.Addr)
+	if addr == "" {
+		return ""
+	}
+	path := core.Trim(relay.Path)
+	if path == "" {
+		path = "/subagent"
+	}
+	if !core.HasPrefix(path, "/") {
+		path = core.Concat("/", path)
+	}
+	switch {
+	case core.HasPrefix(addr, "ws://"), core.HasPrefix(addr, "wss://"):
+		return core.Concat(addr, path)
+	case core.HasPrefix(addr, "http://"):
+		return core.Concat("ws://", core.TrimPrefix(addr, "http://"), path)
+	case core.HasPrefix(addr, "https://"):
+		return core.Concat("wss://", core.TrimPrefix(addr, "https://"), path)
+	default:
+		return core.Concat("ws://", addr, path)
+	}
 }
 
 type SubagentDispatch struct {

@@ -13,8 +13,9 @@ import (
 )
 
 type Subsystem struct {
-	cfg  config.Navigate
-	core *core.Core
+	cfg    config.Navigate
+	core   *core.Core
+	router *Router
 }
 
 type Input struct {
@@ -31,7 +32,9 @@ type Output struct {
 }
 
 func New(cfg config.Navigate, coreInstance *core.Core) *Subsystem {
-	return &Subsystem{cfg: cfg, core: coreInstance}
+	subsystem := &Subsystem{cfg: cfg, core: coreInstance}
+	subsystem.registerRoutes()
+	return subsystem
 }
 
 func (s *Subsystem) AttachCore(coreInstance *core.Core) {
@@ -68,26 +71,24 @@ func (s *Subsystem) resolve(ctx context.Context, input Input) (Output, error) {
 	if route == "" {
 		return Output{Available: false, Reason: "route is required"}, nil
 	}
-	switch {
-	case route == "core://store":
-		return s.storeSnapshot()
-	case core.HasPrefix(route, "core://store/"):
+	if s.routeEnabled("core://store") && core.HasPrefix(route, "core://store/") {
 		return s.storeNamespace(core.TrimPrefix(route, "core://store/"))
-	case route == "core://models":
-		return s.query(ctx, "ai.models.list")
-	case route == "core://agent":
-		return s.query(ctx, "agent.workspaces.status")
-	case route == "core://network":
-		return s.query(ctx, "network.status")
-	case route == "core://settings":
-		return s.query(ctx, "config.dump")
-	case route == "core://identity":
-		return s.query(ctx, "identity.status")
-	case route == "core://wallet":
-		return s.query(ctx, "wallet.status")
-	default:
-		return Output{Available: false, Reason: core.Concat("unknown route ", route)}, nil
 	}
+	if s.router != nil {
+		if data, schema, err := s.router.Resolve(ctx, route, Filter{Values: input.Filter}); err == nil {
+			out, ok := data.(Output)
+			if ok {
+				return out, nil
+			}
+			return Output{
+				Available: true,
+				Data:      data,
+				Schema:    schema,
+				Sources:   []string{route},
+			}, nil
+		}
+	}
+	return Output{Available: false, Reason: core.Concat("unknown route ", route)}, nil
 }
 
 func (s *Subsystem) query(ctx context.Context, action string) (Output, error) {

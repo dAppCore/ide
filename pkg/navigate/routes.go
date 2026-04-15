@@ -22,6 +22,44 @@ type Router struct {
 	handlers map[string]Handler
 }
 
+func (s *Subsystem) registerRoutes() {
+	s.router = &Router{}
+	if !s.routeEnabled("core://store") {
+		return
+	}
+	s.router.Handle("core://store", s.resolveStore)
+	if s.routeEnabled("core://models") {
+		s.router.Handle("core://models", s.resolveModels)
+	}
+	if s.routeEnabled("core://agent") {
+		s.router.Handle("core://agent", s.resolveAgent)
+	}
+	if s.routeEnabled("core://network") {
+		s.router.Handle("core://network", s.resolveNetwork)
+	}
+	if s.routeEnabled("core://settings") {
+		s.router.Handle("core://settings", s.resolveSettings)
+	}
+	if s.routeEnabled("core://identity") {
+		s.router.Handle("core://identity", s.resolveIdentity)
+	}
+	if s.routeEnabled("core://wallet") {
+		s.router.Handle("core://wallet", s.resolveWallet)
+	}
+}
+
+func (s *Subsystem) routeEnabled(route string) bool {
+	if s == nil || len(s.cfg.Routes) == 0 {
+		return true
+	}
+	for _, candidate := range s.cfg.Routes {
+		if core.Trim(candidate) == route {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *Router) Handle(route string, handler Handler) {
 	if r == nil || core.Trim(route) == "" || handler == nil {
 		return
