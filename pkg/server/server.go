@@ -32,6 +32,7 @@ type Server struct {
 	authToken string
 }
 
+// srv, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
 func Compose(options Options) (*Server, error) {
 	cfg := options.Config.WithDefaults()
 	medium := options.Medium

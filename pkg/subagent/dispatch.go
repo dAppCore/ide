@@ -17,6 +17,7 @@ func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolReq
 	return nil, out, err
 }
 
+// out, err := s.DispatchGuided(ctx, DispatchGuidedInput{Repo: "core/ide", Task: "Implement the missing feature"})
 func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInput) (DispatchGuidedOutput, error) {
 	_ = ctx
 	if !config.BoolValue(s.cfg.Enabled, true) {
