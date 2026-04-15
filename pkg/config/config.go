@@ -285,8 +285,7 @@ func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
 	if len(paths) == 0 {
 		paths = DefaultPaths("")
 	}
-	for index := len(paths) - 1; index >= 0; index-- {
-		path := paths[index]
+	for _, path := range paths {
 		if core.Trim(path) == "" || !medium.Exists(path) {
 			continue
 		}
