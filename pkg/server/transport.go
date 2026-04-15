@@ -88,8 +88,16 @@ func SelectRelayTransport(cfg config.IDEConfig, token string, handler http.Handl
 }
 
 func validateTransportAddress(mode, addr string) error {
-	if core.Trim(addr) == "" {
+	addr = core.Trim(addr)
+	if addr == "" {
 		return nil
+	}
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return core.E("ide.server.SelectTransport", core.Concat("invalid ", mode, " address: ", addr), err)
+	}
+	if !isLoopbackHost(host) {
+		return core.E("ide.server.SelectTransport", core.Concat(mode, " transport must bind to localhost or loopback: ", addr), nil)
 	}
 	switch mode {
 	case "http", "tcp":

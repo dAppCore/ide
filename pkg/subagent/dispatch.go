@@ -5,6 +5,7 @@ import (
 	cryptoRand "crypto/rand"
 	"encoding/hex"
 	"os"
+	"sync"
 	"time"
 
 	core "dappco.re/go/core"
@@ -14,6 +15,8 @@ import (
 
 	"dappco.re/go/core/ide/pkg/config"
 )
+
+var relayEnvMu sync.Mutex
 
 func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolRequest, input DispatchGuidedInput) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
 	out, err := s.DispatchGuided(ctx, input)
@@ -114,12 +117,16 @@ func dispatchViaAgentic(ctx context.Context, input DispatchGuidedInput, agent, t
 		Template: template,
 		Persona:  input.Persona,
 	}
+	relayEnvMu.Lock()
 	restoreEnv := withDispatchEnv(map[string]string{
 		"CORE_IDE_RELAY_URL":   relayURL,
 		"CORE_IDE_RELAY_TOKEN": relayToken,
 		"WORKSPACE_ID":         workspaceID,
 	})
-	defer restoreEnv()
+	defer func() {
+		restoreEnv()
+		relayEnvMu.Unlock()
+	}()
 	result, err := handler(ctx, []byte(core.JSONMarshalString(dispatchInput)))
 	if err != nil {
 		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "dispatch agentic subagent", err)

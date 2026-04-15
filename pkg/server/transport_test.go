@@ -50,9 +50,9 @@ func TestTransport_Select_Good(t *testing.T) {
 func TestTransport_Select_Bad(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Transport.Mode = "http"
-	cfg.Ide.Transport.HTTPAddr = "invalid:addr:port"
+	cfg.Ide.Transport.HTTPAddr = ":9880"
 	if _, err := SelectTransport(cfg, false, true); err == nil {
-		t.Fatal("expected invalid transport address error")
+		t.Fatal("expected loopback transport address error")
 	}
 }
 
@@ -106,5 +106,20 @@ func TestTransport_SelectRelay_Ugly(t *testing.T) {
 	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	if relay.Enabled {
 		t.Fatalf("expected relay to reject non-loopback bind address, got %#v", relay)
+	}
+}
+
+func TestTransport_Select_UglyLoopbackOnly(t *testing.T) {
+	t.Setenv("MCP_HTTP_ADDR", "0.0.0.0:9880")
+	t.Setenv("MCP_ADDR", "")
+	cfg := config.IDEConfig{}.WithDefaults()
+	if _, err := SelectTransport(cfg, false, false); err == nil {
+		t.Fatal("expected wildcard HTTP bind to be rejected")
+	}
+
+	t.Setenv("MCP_HTTP_ADDR", "")
+	t.Setenv("MCP_ADDR", "0.0.0.0:9100")
+	if _, err := SelectTransport(cfg, false, false); err == nil {
+		t.Fatal("expected wildcard TCP bind to be rejected")
 	}
 }
