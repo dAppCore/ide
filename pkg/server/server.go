@@ -38,6 +38,7 @@ func Compose(options Options) (*Server, error) {
 	if medium == nil {
 		medium = coreio.Local
 	}
+	enableGUI := options.GUI && !options.MCP
 	authToken := core.Trim(cfg.Ide.Transport.Token)
 	if authToken == "" {
 		authToken = core.Trim(core.Env("MCP_AUTH_TOKEN"))
@@ -72,30 +73,13 @@ func Compose(options Options) (*Server, error) {
 		}),
 		core.WithService(coremcp.Register),
 	}
-	if options.GUI {
+	if enableGUI {
 		services = append(services, core.WithName("gui_mcp", func(c *core.Core) core.Result {
 			return core.Result{Value: guimcp.New(c), OK: true}
 		}))
 	}
 
 	c := core.New(services...)
-	if options.GUI && config.BoolValue(cfg.Ide.Chat.Enabled, true) {
-		result := chatpkg.NewRegister(cfg.Ide.Chat, guiExecutor)(c)
-		if !result.OK {
-			if err, ok := result.Value.(error); ok {
-				return nil, err
-			}
-			return nil, core.E("ide.server.Compose", "register chat", nil)
-		}
-		if result.Value != nil {
-			if registerErr := c.RegisterService("chat", result.Value); !registerErr.OK {
-				if err, ok := registerErr.Value.(error); ok {
-					return nil, err
-				}
-				return nil, core.E("ide.server.Compose", "register chat service", nil)
-			}
-		}
-	}
 
 	workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
 	brainService, _ := core.ServiceFor[*brainpkg.Subsystem](c, "brain")
@@ -116,12 +100,29 @@ func Compose(options Options) (*Server, error) {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
 	}
 	mcpService.SetAPIToken(authToken)
-	if options.GUI {
+	if enableGUI {
 		guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
 		guiExecutor.Attach(guiSubsystem, mcpService)
 	}
+	if enableGUI && config.BoolValue(cfg.Ide.Chat.Enabled, true) {
+		result := chatpkg.NewRegister(cfg.Ide.Chat, chatExecutor(cfg.Ide.Chat, guiExecutor, mcpService))(c)
+		if !result.OK {
+			if err, ok := result.Value.(error); ok {
+				return nil, err
+			}
+			return nil, core.E("ide.server.Compose", "register chat", nil)
+		}
+		if result.Value != nil {
+			if registerErr := c.RegisterService("chat", result.Value); !registerErr.OK {
+				if err, ok := registerErr.Value.(error); ok {
+					return nil, err
+				}
+				return nil, core.E("ide.server.Compose", "register chat service", nil)
+			}
+		}
+	}
 
-	transport, err := SelectTransport(cfg, false, options.PreferConfiguredTransport)
+	transport, err := SelectTransport(cfg, options.MCP, options.PreferConfiguredTransport)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +134,13 @@ func Compose(options Options) (*Server, error) {
 		relay:     SelectRelayTransport(cfg, authToken, hub.Handler()),
 		authToken: authToken,
 	}, nil
+}
+
+func chatExecutor(cfg config.Chat, shared *chatpkg.Executor, mcpService *coremcp.Service) chatpkg.ToolExecutor {
+	if core.Trim(cfg.ToolExecutor) == "mcp_self" {
+		return chatpkg.NewExecutor(nil, mcpService)
+	}
+	return shared
 }
 
 func (s *Server) Run(ctx context.Context) error {

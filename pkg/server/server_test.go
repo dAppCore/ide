@@ -7,8 +7,12 @@ import (
 	"testing"
 	"time"
 
+	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
+	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
+	chatpkg "dappco.re/go/core/ide/pkg/chat"
 	"dappco.re/go/core/ide/pkg/config"
 )
 
@@ -65,6 +69,55 @@ func TestServer_Compose_Ugly(t *testing.T) {
 	}
 }
 
+func TestServer_Compose_Good_MCPForcesStdioAndDisablesGUI(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Transport.Mode = "http"
+	cfg.Ide.Transport.HTTPAddr = "127.0.0.1:9880"
+	srv, err := Compose(Options{
+		Config: cfg,
+		GUI:    true,
+		MCP:    true,
+		Medium: coreio.NewMemoryMedium(),
+	})
+	if err != nil {
+		t.Fatalf("compose server: %v", err)
+	}
+	if srv.transport.Mode != "stdio" {
+		t.Fatalf("expected stdio transport for --mcp, got %#v", srv.transport)
+	}
+	if _, ok := core.ServiceFor[*guimcp.Subsystem](srv.Core(), "gui_mcp"); ok {
+		t.Fatal("expected GUI subsystem to stay disabled for --mcp")
+	}
+}
+
+func TestServer_ChatExecutor_Good(t *testing.T) {
+	shared := chatpkg.NewExecutor(nil, nil)
+	executor := chatExecutor(config.Chat{ToolExecutor: "gui_mcp"}, shared, nil)
+	if executor != shared {
+		t.Fatalf("expected shared executor, got %#v", executor)
+	}
+}
+
+func TestServer_ChatExecutor_Bad(t *testing.T) {
+	shared := chatpkg.NewExecutor(nil, nil)
+	mcpService, err := coremcp.New(coremcp.Options{})
+	if err != nil {
+		t.Fatalf("mcp: %v", err)
+	}
+	executor := chatExecutor(config.Chat{ToolExecutor: "mcp_self"}, shared, mcpService)
+	if executor == shared {
+		t.Fatal("expected dedicated MCP executor when tool_executor=mcp_self")
+	}
+}
+
+func TestServer_ChatExecutor_Ugly(t *testing.T) {
+	shared := chatpkg.NewExecutor(nil, nil)
+	executor := chatExecutor(config.Chat{ToolExecutor: " unknown "}, shared, nil)
+	if executor != shared {
+		t.Fatalf("expected unknown mode to fall back to shared executor, got %#v", executor)
+	}
+}
+
 func TestServer_Run_Good(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Transport.Mode = "http"
@@ -72,7 +125,7 @@ func TestServer_Run_Good(t *testing.T) {
 	cfg.Ide.Transport.Token = "test-token"
 	srv, err := Compose(Options{
 		Config: cfg,
-		MCP:    true,
+		MCP:    false,
 		Medium: coreio.NewMemoryMedium(),
 	})
 	if err != nil {
@@ -103,7 +156,7 @@ func TestServer_Run_Bad(t *testing.T) {
 	t.Setenv("MCP_AUTH_TOKEN", "")
 	srv, err := Compose(Options{
 		Config: cfg,
-		MCP:    true,
+		MCP:    false,
 		Medium: coreio.NewMemoryMedium(),
 	})
 	if err != nil {
