@@ -32,6 +32,7 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 					"transport": map[string]any{"token": "secret-token"},
 					"brain":     map[string]any{"key": "secret-key"},
 					"nested":    []any{map[string]any{"api_key": "abc123"}},
+					"flags":     []any{"--token=secret-token", "--safe=value", "Authorization: Bearer secret"},
 				},
 			}, OK: true}
 		}
@@ -68,6 +69,13 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 	leaf, ok := nested[0].(map[string]any)
 	if !ok || leaf["api_key"] != "[redacted]" {
 		t.Fatalf("expected nested api key redaction, got %#v", nested[0])
+	}
+	flags, ok := ide["flags"].([]any)
+	if !ok || len(flags) != 3 {
+		t.Fatalf("expected flag payload, got %#v", ide["flags"])
+	}
+	if flags[0] != "[redacted]" || flags[1] != "--safe=value" || flags[2] != "[redacted]" {
+		t.Fatalf("expected string slice redaction, got %#v", flags)
 	}
 }
 

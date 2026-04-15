@@ -165,6 +165,8 @@ func redactReflectValue(value reflect.Value) reflect.Value {
 			}
 		}
 		return out
+	case reflect.String:
+		return reflect.ValueOf(redactSensitiveString(value.String()))
 	case reflect.Struct:
 		out := make(map[string]any, value.NumField())
 		valueType := value.Type()
@@ -187,6 +189,36 @@ func redactReflectValue(value reflect.Value) reflect.Value {
 	default:
 		return value
 	}
+}
+
+func redactSensitiveString(value string) string {
+	trimmed := core.Trim(value)
+	if trimmed == "" {
+		return value
+	}
+	lower := core.Lower(trimmed)
+	if core.HasPrefix(lower, "bearer ") || core.HasPrefix(lower, "basic ") {
+		return "[redacted]"
+	}
+	if core.HasPrefix(lower, "--") {
+		lower = core.TrimPrefix(lower, "--")
+		trimmed = core.TrimPrefix(trimmed, "--")
+	}
+	if core.HasPrefix(lower, "-") {
+		lower = core.TrimPrefix(lower, "-")
+		trimmed = core.TrimPrefix(trimmed, "-")
+	}
+	for _, separator := range []string{"=", ":"} {
+		if parts := core.SplitN(trimmed, separator, 2); len(parts) == 2 {
+			if isSensitiveKey(core.Trim(parts[0])) {
+				return "[redacted]"
+			}
+		}
+	}
+	if parts := core.Split(lower, " "); len(parts) > 0 && isSensitiveKey(parts[0]) {
+		return "[redacted]"
+	}
+	return value
 }
 
 func fieldName(field reflect.StructField) string {

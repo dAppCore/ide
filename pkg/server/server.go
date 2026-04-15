@@ -183,7 +183,21 @@ func chatExecutor(cfg config.Chat, shared *chatpkg.Executor, mcpService *coremcp
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	go s.hub.Run(ctx)
+	if s.transport.Mode == "http" && core.Trim(s.authToken) == "" {
+		return core.E("ide.server.Run", "http transport requires a bearer token", nil)
+	}
+	runtimeCtx, cancelRuntime := context.WithCancel(ctx)
+	defer cancelRuntime()
+
+	go s.hub.Run(runtimeCtx)
+	if result := s.core.ServiceStartup(runtimeCtx, nil); !result.OK {
+		if err, ok := result.Value.(error); ok {
+			return err
+		}
+		return core.E("ide.server.Run", "service startup failed", nil)
+	}
+	defer s.core.ServiceShutdown(context.Background())
+
 	var relayServer *http.Server
 	if s.relay.Enabled {
 		relayServer = &http.Server{
@@ -196,7 +210,7 @@ func (s *Server) Run(ctx context.Context) error {
 			MaxHeaderBytes:    1 << 20,
 		}
 		go func() {
-			<-ctx.Done()
+			<-runtimeCtx.Done()
 			_ = relayServer.Shutdown(context.Background())
 		}()
 		go func() {
@@ -205,20 +219,9 @@ func (s *Server) Run(ctx context.Context) error {
 			}
 		}()
 	}
-	if result := s.core.ServiceStartup(ctx, nil); !result.OK {
-		if err, ok := result.Value.(error); ok {
-			return err
-		}
-		return core.E("ide.server.Run", "service startup failed", nil)
-	}
-	defer s.core.ServiceShutdown(context.Background())
 
 	switch s.transport.Mode {
 	case "http":
-		token := core.Trim(s.authToken)
-		if token == "" {
-			return core.E("ide.server.Run", "http transport requires a bearer token", nil)
-		}
 		return s.mcp.ServeHTTP(ctx, s.transport.Addr)
 	case "tcp":
 		return s.mcp.ServeTCP(ctx, s.transport.Addr)
