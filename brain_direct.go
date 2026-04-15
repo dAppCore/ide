@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -48,6 +49,7 @@ type BrainDirectSubsystem struct {
 	workspaceRoot string
 	apiURL        string
 	apiKey        string
+	agentID       string
 	client        *http.Client
 
 	cache *brainRecallCache
@@ -90,6 +92,7 @@ func NewCachedBrainDirect(workspaceRoot string) (*BrainDirectSubsystem, error) {
 		workspaceRoot: workspaceRoot,
 		apiURL:        apiURL,
 		apiKey:        apiKey,
+		agentID:       strings.TrimSpace(os.Getenv("CORE_BRAIN_AGENT_ID")),
 		client:        &http.Client{Timeout: 30 * time.Second},
 		cache:         cache,
 	}, nil
@@ -107,7 +110,7 @@ func (s *BrainDirectSubsystem) RegisterTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "brain_recall",
-		Description: "Semantic search across OpenBrain memories. Returns memories ranked by similarity. Use agent_id 'cladius' for Cladius's memories.",
+		Description: "Semantic search across OpenBrain memories. Returns memories ranked by similarity. Uses the configured agent identity when none is supplied.",
 	}, s.brainRecall)
 
 	mcp.AddTool(server, &mcp.Tool{
@@ -180,13 +183,19 @@ func (s *BrainDirectSubsystem) apiCall(ctx context.Context, method, path string,
 }
 
 func (s *BrainDirectSubsystem) brainRemember(ctx context.Context, _ *mcp.CallToolRequest, input RememberInput) (*mcp.CallToolResult, RememberOutput, error) {
-	result, err := s.apiCall(ctx, "POST", "/v1/brain/remember", map[string]any{
+	agentID := s.resolvedAgentID()
+	body := map[string]any{
 		"content":  input.Content,
 		"type":     input.Type,
 		"tags":     input.Tags,
 		"project":  input.Project,
-		"agent_id": "cladius",
-	})
+		"agent_id": agentID,
+	}
+	if confidence := inputConfidence(input); confidence != nil {
+		body["confidence"] = confidence
+	}
+
+	result, err := s.apiCall(ctx, "POST", "/v1/brain/remember", body)
 	if err != nil {
 		return nil, RememberOutput{}, err
 	}
@@ -306,7 +315,7 @@ func (s *BrainDirectSubsystem) normalisedRecallRequest(input RecallInput) brainR
 		APIKeyHash:    hashString(s.apiKey),
 		Query:         strings.TrimSpace(input.Query),
 		TopK:          topK,
-		AgentID:       "cladius",
+		AgentID:       s.resolvedAgentID(),
 		Project:       strings.TrimSpace(input.Filter.Project),
 		Type:          input.Filter.Type,
 	}
@@ -362,6 +371,10 @@ func (s *BrainDirectSubsystem) brainList(ctx context.Context, _ *mcp.CallToolReq
 	if limit <= 0 {
 		limit = 50
 	}
+	agentID := strings.TrimSpace(input.AgentID)
+	if agentID == "" {
+		agentID = s.resolvedAgentID()
+	}
 
 	query := "/v1/brain/list?limit=" + fmt.Sprintf("%d", limit)
 	if input.Project != "" {
@@ -370,8 +383,8 @@ func (s *BrainDirectSubsystem) brainList(ctx context.Context, _ *mcp.CallToolReq
 	if input.Type != "" {
 		query += "&type=" + url.QueryEscape(input.Type)
 	}
-	if input.AgentID != "" {
-		query += "&agent_id=" + url.QueryEscape(input.AgentID)
+	if agentID != "" {
+		query += "&agent_id=" + url.QueryEscape(agentID)
 	}
 
 	result, err := s.apiCall(ctx, http.MethodGet, query, nil)
@@ -421,6 +434,47 @@ func brainListResult(result map[string]any) []Memory {
 func hashString(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(sum[:])
+}
+
+func (s *BrainDirectSubsystem) resolvedAgentID() string {
+	if s == nil {
+		return "cladius"
+	}
+	if value := strings.TrimSpace(s.agentID); value != "" {
+		return value
+	}
+	return "cladius"
+}
+
+func inputConfidence(input any) any {
+	value := reflect.ValueOf(input)
+	if !value.IsValid() {
+		return nil
+	}
+	if value.Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return nil
+		}
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Struct {
+		return nil
+	}
+
+	field := value.FieldByName("Confidence")
+	if !field.IsValid() {
+		return nil
+	}
+	switch field.Kind() {
+	case reflect.Float32, reflect.Float64:
+		return field.Float()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(field.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(field.Uint())
+	default:
+		return nil
+	}
 }
 
 type brainRecallCache struct {

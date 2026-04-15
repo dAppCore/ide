@@ -66,6 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialise brain cache: %v", err)
 	}
+	brainDirect.agentID = ideCfg.Ide.Brain.AgentID
 	workspaceSubsystem := NewWorkspaceSubsystem(cwd)
 	marketplaceSubsystem := NewMarketplaceSubsystem(nil)
 	navigateSubsystem := NewNavigateSubsystem(nil)

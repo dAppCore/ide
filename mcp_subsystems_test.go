@@ -8,7 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"forge.lthn.ai/core/go-ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,6 +29,32 @@ func TestSubagentSubsystem_DispatchGuided_Good_NoRelay(t *testing.T) {
 	assert.Equal(t, "no relay", out.Reason)
 	assert.Contains(t, out.Prompt, "Workspace ID:")
 	assert.Contains(t, out.Prompt, "subagent:"+out.WorkspaceID+":guide")
+}
+
+func TestSubagentSubsystem_SubagentWatch_Good_CompletesOnStatusEvent(t *testing.T) {
+	sub := NewSubagentSubsystem(ws.NewHub())
+	sub.appendEvent("workspace-1", SubagentEvent{
+		Type:      "status",
+		Channel:   "subagent:workspace-1:status",
+		Message:   "running",
+		CreatedAt: time.Now().UTC(),
+	})
+	sub.appendEvent("workspace-1", SubagentEvent{
+		Type:      "status",
+		Channel:   "subagent:workspace-1:status",
+		Message:   "completed",
+		CreatedAt: time.Now().UTC(),
+	})
+
+	_, out, err := sub.subagentWatch(context.Background(), nil, SubagentWatchInput{
+		WorkspaceID:  "workspace-1",
+		PollInterval: 1,
+		Timeout:      1,
+	})
+	require.NoError(t, err)
+	assert.True(t, out.Completed)
+	assert.False(t, out.Failed)
+	require.NotEmpty(t, out.Events)
 }
 
 func TestWorkspaceSubsystem_WorkspaceScan_Good(t *testing.T) {

@@ -259,6 +259,9 @@ func applyEnv(cfg *IDEConfig) {
 	if v := strings.TrimSpace(os.Getenv("CORE_BRAIN_KEY")); v != "" {
 		cfg.Ide.Brain.Key = v
 	}
+	if v := strings.TrimSpace(os.Getenv("CORE_BRAIN_AGENT_ID")); v != "" {
+		cfg.Ide.Brain.AgentID = v
+	}
 	if v := strings.TrimSpace(os.Getenv("MCP_UNIX_SOCKET")); v != "" {
 		cfg.Ide.Transport.Mode = "unix"
 		cfg.Ide.Transport.UnixSocket = v

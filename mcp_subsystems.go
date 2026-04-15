@@ -634,17 +634,83 @@ func (s *SubagentSubsystem) subagentProgress(ctx context.Context, _ *mcp.CallToo
 }
 
 func (s *SubagentSubsystem) subagentWatch(ctx context.Context, _ *mcp.CallToolRequest, input SubagentWatchInput) (*mcp.CallToolResult, SubagentWatchOutput, error) {
-	_ = input.PollInterval
-	_ = input.Timeout
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if strings.TrimSpace(input.WorkspaceID) == "" {
+		return nil, SubagentWatchOutput{Completed: false, Failed: false, Reason: "workspaceId is required"}, nil
+	}
 	if s.hub == nil {
 		return nil, SubagentWatchOutput{Completed: false, Failed: false, Reason: "no relay"}, nil
 	}
-	events := s.eventsFor(input.WorkspaceID)
-	return nil, SubagentWatchOutput{
-		Completed: false,
-		Failed:    false,
-		Events:    events,
-	}, nil
+
+	poll := time.Duration(input.PollInterval)
+	if poll <= 0 {
+		poll = 2
+	}
+	timeout := time.Duration(input.Timeout)
+	if timeout <= 0 {
+		timeout = 60
+	}
+
+	ticker := time.NewTicker(poll * time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(timeout * time.Second)
+	defer timer.Stop()
+
+	seen := 0
+	events := make([]SubagentEvent, 0, 8)
+	for {
+		current := s.eventsFor(input.WorkspaceID)
+		if len(current) > seen {
+			events = append(events, current[seen:]...)
+			seen = len(current)
+		}
+
+		if completed, failed := subagentWatchState(events); completed || failed {
+			return nil, SubagentWatchOutput{
+				Completed: completed,
+				Failed:    failed,
+				Events:    events,
+			}, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, SubagentWatchOutput{
+				Completed: false,
+				Failed:    true,
+				Events:    events,
+				Reason:    ctx.Err().Error(),
+			}, ctx.Err()
+		case <-ticker.C:
+		case <-timer.C:
+			return nil, SubagentWatchOutput{
+				Completed: false,
+				Failed:    false,
+				Events:    events,
+				Reason:    "timed out waiting for subagent events",
+			}, nil
+		}
+	}
+}
+
+func subagentWatchState(events []SubagentEvent) (completed bool, failed bool) {
+	for i := len(events) - 1; i >= 0; i-- {
+		if events[i].Type != "status" {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(events[i].Message)) {
+		case "completed":
+			return true, false
+		case "failed":
+			return false, true
+		case "running", "blocked":
+			return false, false
+		}
+	}
+	return false, false
 }
 
 func (s *SubagentSubsystem) subagentAnswer(ctx context.Context, _ *mcp.CallToolRequest, input SubagentAnswerInput) (*mcp.CallToolResult, SubagentAnswerOutput, error) {

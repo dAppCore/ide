@@ -73,6 +73,9 @@ func applyIDEEnvironment(cfg ideconfig.IDEConfig) {
 	if cfg.Ide.Brain.Key != "" {
 		_ = os.Setenv("CORE_BRAIN_KEY", cfg.Ide.Brain.Key)
 	}
+	if cfg.Ide.Brain.AgentID != "" {
+		_ = os.Setenv("CORE_BRAIN_AGENT_ID", cfg.Ide.Brain.AgentID)
+	}
 	if cfg.Ide.Brain.Cache.TTL > 0 {
 		_ = os.Setenv("CORE_BRAIN_RECALL_CACHE_TTL", cfg.Ide.Brain.Cache.TTL.String())
 	}

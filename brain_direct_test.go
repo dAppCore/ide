@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -97,6 +98,71 @@ func TestBrainDirectSubsystem_RecallCachesResults(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, second.Success)
 	require.Equal(t, int32(1), calls.Load())
+}
+
+func TestBrainDirectSubsystem_RecallUsesConfiguredAgentID(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v1/brain/recall", r.URL.Path)
+
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "agent-x", body["agent_id"])
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": nil})
+	}))
+	defer upstream.Close()
+
+	sub := &BrainDirectSubsystem{
+		workspaceRoot: "/workspace",
+		apiURL:        upstream.URL,
+		apiKey:        "secret",
+		agentID:       "agent-x",
+		client:        upstream.Client(),
+	}
+
+	_, _, err := sub.brainRecall(context.Background(), nil, RecallInput{Query: "alpha", TopK: 1})
+	require.NoError(t, err)
+}
+
+func TestBrainDirectSubsystem_RememberUsesConfidenceWhenPresent(t *testing.T) {
+	input := RememberInput{
+		Content: "alpha memory",
+		Type:    "decision",
+		Tags:    []string{"alpha"},
+		Project: "ide",
+	}
+	if field := reflect.ValueOf(&input).Elem().FieldByName("Confidence"); field.IsValid() && field.CanSet() {
+		field.SetFloat(0.8)
+	}
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v1/brain/remember", r.URL.Path)
+
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "agent-x", body["agent_id"])
+		if _, ok := reflect.TypeOf(input).FieldByName("Confidence"); ok {
+			assert.Equal(t, 0.8, body["confidence"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "m-2"})
+	}))
+	defer upstream.Close()
+
+	sub := &BrainDirectSubsystem{
+		workspaceRoot: "/workspace",
+		apiURL:        upstream.URL,
+		apiKey:        "secret",
+		agentID:       "agent-x",
+		client:        upstream.Client(),
+	}
+
+	_, out, err := sub.brainRemember(context.Background(), nil, input)
+	require.NoError(t, err)
+	assert.True(t, out.Success)
+	assert.Equal(t, "m-2", out.MemoryID)
 }
 
 func TestBrainDirectSubsystem_ForgetClearsCache(t *testing.T) {
