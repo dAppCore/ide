@@ -85,8 +85,9 @@ func TestTransport_Select_ConfigWinsWhenPreferred_Good(t *testing.T) {
 func TestTransport_SelectRelay_Good(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
+	cfg.Ide.Subagent.Relay.Path = "relay"
 	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
-	if !relay.Enabled || relay.Addr != "127.0.0.1:9882" || relay.Path != "/subagent" {
+	if !relay.Enabled || relay.Addr != "127.0.0.1:9882" || relay.Path != "/relay" {
 		t.Fatalf("expected enabled relay transport, got %#v", relay)
 	}
 }

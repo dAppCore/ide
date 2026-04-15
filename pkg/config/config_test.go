@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
 )
 
@@ -109,13 +108,53 @@ func TestConfig_Load_Bad(t *testing.T) {
 }
 
 func TestConfig_Load_Ugly(t *testing.T) {
-	cfg := IDEConfig{}.WithDefaults()
-	ApplyCLIOverrides(&cfg, CLIOverrides{TransportMode: "http", HTTPAddr: "127.0.0.1:9888", Token: "abc"})
-	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9888" {
-		t.Fatalf("expected CLI override to win, got %s %s", cfg.Ide.Transport.Mode, cfg.Ide.Transport.HTTPAddr)
+	home := t.TempDir()
+	cwd := t.TempDir()
+	homeConfigPath := filepath.Join(home, ".core", "ide.yaml")
+	cwdConfigPath := filepath.Join(cwd, ".core", "ide.yaml")
+	if err := os.MkdirAll(filepath.Dir(homeConfigPath), 0o755); err != nil {
+		t.Fatalf("mkdir home config: %v", err)
 	}
-	if cfg.Ide.Chat.StorePath != core.JoinPath(core.Env("DIR_HOME"), ".core", "ide", "chat.db") && cfg.Ide.Chat.StorePath == "" {
-		t.Fatal("expected default chat store path")
+	if err := os.MkdirAll(filepath.Dir(cwdConfigPath), 0o755); err != nil {
+		t.Fatalf("mkdir cwd config: %v", err)
+	}
+	if err := os.WriteFile(homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://home.example\n  workspace:\n    root: /home\n"), 0o644); err != nil {
+		t.Fatalf("write home config: %v", err)
+	}
+	if err := os.WriteFile(cwdConfigPath, []byte("ide:\n  brain:\n    endpoint: https://project.example\n  workspace:\n    scan_depth: 7\n"), 0o644); err != nil {
+		t.Fatalf("write cwd config: %v", err)
+	}
+
+	t.Setenv("CORE_BRAIN_URL", "https://env.example")
+	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9777")
+	t.Setenv("CORE_IDE_TOKEN", "env-token")
+
+	cfg, err := Load(homeConfigPath, cwdConfigPath)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Ide.Brain.Endpoint != "https://env.example" {
+		t.Fatalf("expected env override to win over file values, got %q", cfg.Ide.Brain.Endpoint)
+	}
+	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9777" || cfg.Ide.Transport.Token != "env-token" {
+		t.Fatalf("expected env transport overrides, got %#v", cfg.Ide.Transport)
+	}
+	if cfg.Ide.Workspace.Root != "/home" || cfg.Ide.Workspace.ScanDepth != 7 {
+		t.Fatalf("expected merged file values to survive env overrides, got %#v", cfg.Ide.Workspace)
+	}
+
+	cfg = cfg.ApplyFlags(CLIOverrides{
+		TransportMode: "tcp",
+		TCPAddr:       "127.0.0.1:9555",
+		Token:         "cli-token",
+		BrainEndpoint: "https://flag.example",
+		BrainAgentID:  "flag-agent",
+	})
+	if cfg.Ide.Brain.Endpoint != "https://flag.example" || cfg.Ide.Brain.AgentID != "flag-agent" {
+		t.Fatalf("expected CLI overrides to win last, got %#v", cfg.Ide.Brain)
+	}
+	if cfg.Ide.Transport.Mode != "tcp" || cfg.Ide.Transport.TCPAddr != "127.0.0.1:9555" || cfg.Ide.Transport.Token != "cli-token" {
+		t.Fatalf("expected CLI transport overrides to win last, got %#v", cfg.Ide.Transport)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	gui_chat "forge.lthn.ai/core/gui/pkg/chat"
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
 	chatpkg "dappco.re/go/core/ide/pkg/chat"
@@ -19,7 +20,8 @@ import (
 func TestServer_Compose_Good(t *testing.T) {
 	coreInstance, err := Compose(Options{
 		Config: config.IDEConfig{}.WithDefaults(),
-		MCP:    true,
+		GUI:    true,
+		MCP:    false,
 		Medium: coreio.NewMemoryMedium(),
 	})
 	if err != nil {
@@ -56,6 +58,12 @@ func TestServer_Compose_Good(t *testing.T) {
 		if !coreInstance.Service(name).OK {
 			t.Fatalf("expected service %s to be registered", name)
 		}
+	}
+	if _, ok := core.ServiceFor[*guimcp.Subsystem](coreInstance, "gui_mcp"); !ok {
+		t.Fatal("expected gui_mcp service to be registered in GUI mode")
+	}
+	if _, ok := core.ServiceFor[*gui_chat.Service](coreInstance, "chat"); !ok {
+		t.Fatal("expected chat service to be registered in GUI mode")
 	}
 }
 

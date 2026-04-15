@@ -32,6 +32,27 @@ func TestRoutes_Resolve_Good(t *testing.T) {
 	if !ok || data["namespaces"] == nil {
 		t.Fatalf("expected namespaces payload, got %#v", out.Data)
 	}
+
+	router := &Router{}
+	var received Filter
+	router.Handle("core://store/{namespace}", func(ctx context.Context, filter Filter) (Data, Schema, error) {
+		_ = ctx
+		received = filter
+		return map[string]any{
+			"namespace": filterString(filter, "namespace"),
+		}, map[string]any{"type": "object"}, nil
+	})
+	dataAny, schema, err := router.Resolve(context.Background(), "core://store/demo", Filter{Values: map[string]any{"extra": "value"}})
+	if err != nil {
+		t.Fatalf("resolve pattern route: %v", err)
+	}
+	payload, ok := dataAny.(map[string]any)
+	if !ok || payload["namespace"] != "demo" || schema == nil {
+		t.Fatalf("expected pattern route payload, got %#v schema=%#v", dataAny, schema)
+	}
+	if received.Values["namespace"] != "demo" || received.Values["extra"] != "value" {
+		t.Fatalf("expected route filter merge, got %#v", received.Values)
+	}
 }
 
 func TestRoutes_Resolve_Bad(t *testing.T) {

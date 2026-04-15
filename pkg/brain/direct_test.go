@@ -11,6 +11,7 @@ import (
 	coreio "dappco.re/go/core/io"
 	storelib "dappco.re/go/store"
 
+	aipkg "dappco.re/go/core/ide/pkg/ai"
 	"dappco.re/go/core/ide/pkg/config"
 )
 
@@ -29,7 +30,7 @@ func TestDirect_Recall_Good(t *testing.T) {
 			t.Fatalf("expected default top_k in body, got %s", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"memories":[{"id":"m1","content":"alpha"}]}`))
+		_, _ = w.Write([]byte(`{"memories":[{"id":"m1","content":"Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory."}]}`))
 	})
 	defer server.Close()
 
@@ -185,7 +186,7 @@ func TestDirect_Context_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("context: %v", err)
 	}
-	if !strings.Contains(out.Overview, "recent memories") && !strings.Contains(out.Overview, "Loaded") {
+	if !strings.Contains(out.Overview, "Loaded") {
 		t.Fatalf("unexpected overview %q", out.Overview)
 	}
 	if len(out.Recent) != 1 {
@@ -193,6 +194,25 @@ func TestDirect_Context_Good(t *testing.T) {
 	}
 	if len(out.Conventions) == 0 {
 		t.Fatalf("expected workspace conventions, got %#v", out)
+	}
+}
+
+func TestDirect_SemanticConventions_Good(t *testing.T) {
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, &aipkg.Service{})
+	ranked := subsystem.semanticConventions(
+		"/workspace/demo",
+		[]Memory{{Content: "Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory."}},
+		[]string{
+			"Use core primitives and explicit data shapes for public APIs.",
+			"Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory.",
+			"Comments should show usage examples, not restate the signature.",
+		},
+	)
+	if len(ranked) == 0 {
+		t.Fatal("expected ranked conventions")
+	}
+	if ranked[0] != "Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory." {
+		t.Fatalf("expected matching convention to rank first, got %#v", ranked)
 	}
 }
 
