@@ -23,6 +23,9 @@ type RelayTransport struct {
 
 // transport, err := SelectTransport(cfg, true, false)
 func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) (Transport, error) {
+	if mcpOnly {
+		return Transport{Mode: "stdio"}, nil
+	}
 	if preferConfigured {
 		return selectConfiguredTransport(cfg, mcpOnly)
 	}
