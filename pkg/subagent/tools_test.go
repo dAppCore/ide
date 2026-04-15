@@ -221,6 +221,41 @@ func TestTools_ValidateRelayURL_Ugly(t *testing.T) {
 	}
 }
 
+func TestTools_CanonicalRelayURL_Good(t *testing.T) {
+	cases := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{name: "http becomes ws", value: "http://127.0.0.1:9882/subagent", expected: "ws://127.0.0.1:9882/subagent"},
+		{name: "https becomes wss", value: "https://localhost:9882/subagent", expected: "wss://localhost:9882/subagent"},
+		{name: "ws stays ws", value: "ws://127.0.0.1:9882/subagent", expected: "ws://127.0.0.1:9882/subagent"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := canonicalRelayURL(tc.value)
+			if err != nil {
+				t.Fatalf("canonicalRelayURL: %v", err)
+			}
+			if got != tc.expected {
+				t.Fatalf("expected %q, got %q", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestTools_CanonicalRelayURL_Bad(t *testing.T) {
+	if _, err := canonicalRelayURL("ftp://127.0.0.1:9882/subagent"); err == nil {
+		t.Fatal("expected unsupported scheme error")
+	}
+}
+
+func TestTools_CanonicalRelayURL_Ugly(t *testing.T) {
+	if _, err := canonicalRelayURL("ws://user:pass@127.0.0.1:9882/subagent?debug=1#frag"); err == nil {
+		t.Fatal("expected relay URL credential and query rejection")
+	}
+}
+
 func TestTools_State_Good(t *testing.T) {
 	if completed, failed := state([]Event{{Type: "status", Message: "completed"}}); !completed || failed {
 		t.Fatalf("expected completed state, got completed=%v failed=%v", completed, failed)

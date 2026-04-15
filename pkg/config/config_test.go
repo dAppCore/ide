@@ -41,6 +41,64 @@ func TestConfig_Load_Good(t *testing.T) {
 	}
 }
 
+func TestConfig_LoadWithOptions_Good(t *testing.T) {
+	medium := coreio.NewMemoryMedium()
+	homePath := "/home/.core/ide.yaml"
+	projectPath := "/workspace/.core/ide.yaml"
+	if err := medium.Write(homePath, "ide:\n  brain:\n    endpoint: https://home.example\n  workspace:\n    root: /home\n"); err != nil {
+		t.Fatalf("write home config: %v", err)
+	}
+	if err := medium.Write(projectPath, "ide:\n  brain:\n    agent_id: project-agent\n  workspace:\n    scan_depth: 7\n"); err != nil {
+		t.Fatalf("write project config: %v", err)
+	}
+	t.Setenv("CORE_BRAIN_URL", "https://env.example")
+	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9777")
+	t.Setenv("CORE_IDE_TOKEN", "env-token")
+
+	cfg, err := LoadWithOptions(LoaderOptions{Medium: medium, Paths: []string{homePath, projectPath}})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Ide.Brain.Endpoint != "https://env.example" {
+		t.Fatalf("expected env override to win, got %q", cfg.Ide.Brain.Endpoint)
+	}
+	if cfg.Ide.Brain.AgentID != "project-agent" {
+		t.Fatalf("expected project override to win, got %q", cfg.Ide.Brain.AgentID)
+	}
+	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9777" || cfg.Ide.Transport.Token != "env-token" {
+		t.Fatalf("expected env transport overrides, got %#v", cfg.Ide.Transport)
+	}
+	if cfg.Ide.Workspace.Root != "/home" || cfg.Ide.Workspace.ScanDepth != 7 {
+		t.Fatalf("expected file merge to preserve unrelated fields, got %#v", cfg.Ide.Workspace)
+	}
+}
+
+func TestConfig_LoadWithOptions_Bad(t *testing.T) {
+	medium := coreio.NewMemoryMedium()
+	_ = medium.Write("/broken/.core/ide.yaml", "ide: [")
+	_, err := LoadWithOptions(LoaderOptions{Medium: medium, Paths: []string{"/broken/.core/ide.yaml"}})
+	if err == nil {
+		t.Fatal("expected malformed YAML error")
+	}
+}
+
+func TestConfig_LoadWithOptions_Ugly(t *testing.T) {
+	medium := coreio.NewMemoryMedium()
+	_ = medium.Write("/home/.core/ide.yaml", "ide:\n  workspace:\n    root: /home\n")
+	_ = medium.Write("/workspace/.core/ide.yaml", "ide:\n  workspace:\n    scan_depth: 9\n")
+
+	cfg, err := LoadWithOptions(LoaderOptions{
+		Medium: medium,
+		Paths:  []string{"", "/missing/.core/ide.yaml", "/home/.core/ide.yaml", "/workspace/.core/ide.yaml"},
+	})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Ide.Workspace.Root != "/home" || cfg.Ide.Workspace.ScanDepth != 9 {
+		t.Fatalf("expected missing paths to be skipped and later files to win, got %#v", cfg.Ide.Workspace)
+	}
+}
+
 func TestConfig_Load_Bad(t *testing.T) {
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/broken/.core/ide.yaml", "ide: [")
