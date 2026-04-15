@@ -95,6 +95,9 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 	type nestedConfig struct {
 		Token string `json:"token"`
+		Items []struct {
+			Secret string `json:"secret"`
+		} `json:"items"`
 		Meta  struct {
 			APIKey string `yaml:"api_key"`
 		} `json:"meta"`
@@ -105,6 +108,9 @@ func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 
 	payload := nestedConfig{
 		Token: "secret-token",
+		Items: []struct {
+			Secret string `json:"secret"`
+		}{{Secret: "list-secret"}},
 		Pointer: &struct {
 			Secret string `json:"secret"`
 		}{Secret: "pointer-secret"},
@@ -144,6 +150,17 @@ func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 	}
 	if meta["api_key"] != "[redacted]" {
 		t.Fatalf("expected nested api_key redaction, got %#v", meta["api_key"])
+	}
+	items, ok := ide["items"].([]any)
+	if !ok || len(items) != 1 {
+		t.Fatalf("expected redacted slice payload, got %#v", ide["items"])
+	}
+	item, ok := items[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected redacted slice element payload, got %#v", items[0])
+	}
+	if item["secret"] != "[redacted]" {
+		t.Fatalf("expected slice secret redaction, got %#v", item["secret"])
 	}
 	pointer, ok := ide["pointer"].(map[string]any)
 	if !ok {

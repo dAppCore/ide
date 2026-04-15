@@ -191,31 +191,25 @@ func redactReflectValue(value reflect.Value) reflect.Value {
 		}
 		return out
 	case reflect.Slice:
-		out := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+		out := make([]any, 0, value.Len())
 		for i := 0; i < value.Len(); i++ {
 			redacted := redactReflectValue(value.Index(i))
-			if redacted.IsValid() && redacted.Type().AssignableTo(value.Type().Elem()) {
-				out.Index(i).Set(redacted)
-			} else if redacted.IsValid() && redacted.Type().ConvertibleTo(value.Type().Elem()) {
-				out.Index(i).Set(redacted.Convert(value.Type().Elem()))
-			} else {
-				out.Index(i).Set(value.Index(i))
+			if !redacted.IsValid() {
+				continue
 			}
+			out = append(out, redacted.Interface())
 		}
-		return out
+		return reflect.ValueOf(out)
 	case reflect.Array:
-		out := reflect.New(value.Type()).Elem()
+		out := make([]any, 0, value.Len())
 		for i := 0; i < value.Len(); i++ {
 			redacted := redactReflectValue(value.Index(i))
-			if redacted.IsValid() && redacted.Type().AssignableTo(value.Type().Elem()) {
-				out.Index(i).Set(redacted)
-			} else if redacted.IsValid() && redacted.Type().ConvertibleTo(value.Type().Elem()) {
-				out.Index(i).Set(redacted.Convert(value.Type().Elem()))
-			} else {
-				out.Index(i).Set(value.Index(i))
+			if !redacted.IsValid() {
+				continue
 			}
+			out = append(out, redacted.Interface())
 		}
-		return out
+		return reflect.ValueOf(out)
 	case reflect.String:
 		return reflect.ValueOf(redactSensitiveString(value.String()))
 	case reflect.Struct:
