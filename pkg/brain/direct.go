@@ -138,13 +138,18 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 }
 
 func (s *Subsystem) context(ctx context.Context, input ContextInput) (ContextOutput, error) {
-	recall, err := s.recall(ctx, RecallInput{Query: input.Project, TopK: 5, Filter: RecallFilter{Project: input.Project}})
+	project := core.Trim(input.Project)
+	if project == "" && s.workspace != nil {
+		project = s.workspace.Root()
+	}
+
+	recall, err := s.recall(ctx, RecallInput{Query: project, TopK: 5, Filter: RecallFilter{Project: project}})
 	if err != nil {
 		return ContextOutput{}, err
 	}
 	conventions := []string{}
-	if s.workspace != nil {
-		workspaceConventions, conventionsErr := s.workspace.Conventions(ctx, workspace.ConventionsInput{Root: input.Project})
+	if s.workspace != nil && project != "" {
+		workspaceConventions, conventionsErr := s.workspace.Conventions(ctx, workspace.ConventionsInput{Root: project})
 		if conventionsErr == nil {
 			conventions = workspaceConventions.Conventions
 		}

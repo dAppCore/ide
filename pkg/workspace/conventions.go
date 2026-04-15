@@ -46,7 +46,30 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		conventions = append(conventions, pack.Conventions...)
 		notes = append(notes, pack.Notes...)
 	}
-	return conventions, notes
+	return dedupeLastWins(conventions), dedupeLastWins(notes)
+}
+
+func dedupeLastWins(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := map[string]struct{}{}
+	out := make([]string, 0, len(values))
+	for index := len(values) - 1; index >= 0; index-- {
+		value := core.Trim(values[index])
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	for left, right := 0, len(out)-1; left < right; left, right = left+1, right-1 {
+		out[left], out[right] = out[right], out[left]
+	}
+	return out
 }
 
 func readBuildProjectName(medium coreio.Medium, root string) string {
