@@ -456,17 +456,16 @@ func ApplyEnv(cfg *IDEConfig) {
 	if value := core.Trim(core.Env("CORE_BRAIN_AGENT_ID")); value != "" {
 		cfg.Ide.Brain.AgentID = value
 	}
-	if value := core.Trim(core.Env("MCP_HTTP_ADDR")); value != "" {
+	switch {
+	case core.Trim(core.Env("MCP_HTTP_ADDR")) != "":
 		cfg.Ide.Transport.Mode = "http"
-		cfg.Ide.Transport.HTTPAddr = value
-	}
-	if value := core.Trim(core.Env("MCP_ADDR")); value != "" {
+		cfg.Ide.Transport.HTTPAddr = core.Trim(core.Env("MCP_HTTP_ADDR"))
+	case core.Trim(core.Env("MCP_ADDR")) != "":
 		cfg.Ide.Transport.Mode = "tcp"
-		cfg.Ide.Transport.TCPAddr = value
-	}
-	if value := core.Trim(core.Env("MCP_UNIX_SOCKET")); value != "" {
+		cfg.Ide.Transport.TCPAddr = core.Trim(core.Env("MCP_ADDR"))
+	case core.Trim(core.Env("MCP_UNIX_SOCKET")) != "":
 		cfg.Ide.Transport.Mode = "unix"
-		cfg.Ide.Transport.UnixSocket = value
+		cfg.Ide.Transport.UnixSocket = core.Trim(core.Env("MCP_UNIX_SOCKET"))
 	}
 	if value := core.Trim(core.Env("CORE_IDE_TOKEN")); value != "" {
 		cfg.Ide.Transport.Token = value
