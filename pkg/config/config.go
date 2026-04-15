@@ -270,7 +270,7 @@ type CLIOverrides struct {
 	BrainAgentID  string
 }
 
-// cfg, err := Load(DefaultPaths("")...)
+//   cfg, err := Load(DefaultPaths("")...)
 func Load(paths ...string) (IDEConfig, error) {
 	return LoadWithOptions(LoaderOptions{Paths: paths})
 }

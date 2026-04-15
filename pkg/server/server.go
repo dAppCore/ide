@@ -41,7 +41,7 @@ type runtimeParts struct {
 	authToken string
 }
 
-// srv, err := NewServer(Options{Config: cfg, GUI: true, MCP: false})
+//   srv, err := NewServer(Options{Config: cfg, GUI: true, MCP: false})
 func NewServer(options Options) (*Server, error) {
 	parts, err := composeRuntime(options)
 	if err != nil {
@@ -59,7 +59,7 @@ func NewServer(options Options) (*Server, error) {
 
 // Compose builds the Core graph and registers all IDE subsystems.
 //
-// cfg, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
+//   coreInstance, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
 func Compose(options Options) (*core.Core, error) {
 	parts, err := composeRuntime(options)
 	if err != nil {
