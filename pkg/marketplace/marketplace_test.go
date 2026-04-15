@@ -46,8 +46,12 @@ func TestMarketplace_Search_Ugly(t *testing.T) {
 	}))
 	defer server.Close()
 	subsystem := New(config.Marketplace{Endpoint: server.URL, APIPath: ""})
-	if _, err := subsystem.search(context.Background(), SearchInput{}); err == nil {
-		t.Fatal("expected decode error for empty body")
+	out, err := subsystem.search(context.Background(), SearchInput{})
+	if err != nil {
+		t.Fatalf("expected empty body to be tolerated, got %v", err)
+	}
+	if len(out.Packages) != 0 {
+		t.Fatalf("expected empty search result, got %#v", out)
 	}
 }
 

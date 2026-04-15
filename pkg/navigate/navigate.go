@@ -82,7 +82,7 @@ func (s *Subsystem) query(ctx context.Context, action string) (Output, error) {
 	}
 	result := s.core.Query(action)
 	if !result.OK {
-		displayAction := core.TrimPrefix(action, "ai.")
+		displayAction := routeNameFromAction(action)
 		return Output{
 			Available: false,
 			Reason:    core.Concat("action ide.navigate.", displayAction, " not registered"),
@@ -97,6 +97,25 @@ func (s *Subsystem) query(ctx context.Context, action string) (Output, error) {
 		Schema:    map[string]any{"type": "object"},
 		Sources:   []string{action},
 	}, nil
+}
+
+func routeNameFromAction(action string) string {
+	switch {
+	case core.HasPrefix(action, "ai.models."):
+		return "models"
+	case core.HasPrefix(action, "agent."):
+		return "agent"
+	case core.HasPrefix(action, "network."):
+		return "network"
+	case core.HasPrefix(action, "config."):
+		return "settings"
+	case core.HasPrefix(action, "identity."):
+		return "identity"
+	case core.HasPrefix(action, "wallet."):
+		return "wallet"
+	default:
+		return core.TrimPrefix(action, "ai.")
+	}
 }
 
 func (s *Subsystem) storeSnapshot() (Output, error) {

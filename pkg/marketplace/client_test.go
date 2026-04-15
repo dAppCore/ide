@@ -148,7 +148,10 @@ func TestClient_Search_Ugly(t *testing.T) {
 	defer server.Close()
 	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
 	out, err := client.Search(context.Background(), SearchInput{Query: "go"})
-	if err == nil || !strings.Contains(err.Error(), "decode response") {
-		t.Fatalf("expected empty-body decode error, got %#v err=%v", out, err)
+	if err != nil {
+		t.Fatalf("expected empty-body success, got %#v err=%v", out, err)
+	}
+	if len(out.Packages) != 0 {
+		t.Fatalf("expected empty search result, got %#v", out)
 	}
 }

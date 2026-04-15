@@ -157,6 +157,9 @@ func (c *Client) request(ctx context.Context, method, path string, body any, tar
 	if len(raw) > maxResponseBytes {
 		return core.E("ide.marketplace.request", "response too large", nil)
 	}
+	if len(core.Trim(string(raw))) == 0 {
+		return nil
+	}
 	if result := core.JSONUnmarshal(raw, target); !result.OK {
 		if decodeErr, ok := result.Value.(error); ok {
 			return core.E("ide.marketplace.request", "decode response", decodeErr)
