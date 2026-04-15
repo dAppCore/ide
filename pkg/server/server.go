@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"os"
 
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
@@ -28,6 +29,7 @@ type Server struct {
 	hub       *ws.Hub
 	transport Transport
 	relay     RelayTransport
+	authToken string
 }
 
 func Compose(options Options) (*Server, error) {
@@ -36,7 +38,11 @@ func Compose(options Options) (*Server, error) {
 	if medium == nil {
 		medium = coreio.Local
 	}
-	hub := newRelayHub(cfg)
+	authToken := core.Trim(cfg.Ide.Transport.Token)
+	if authToken == "" {
+		authToken = core.Trim(core.Env("MCP_AUTH_TOKEN"))
+	}
+	hub := newRelayHub(authToken)
 	guiExecutor := chatpkg.NewExecutor(nil, nil)
 
 	services := []core.CoreOption{
@@ -56,7 +62,7 @@ func Compose(options Options) (*Server, error) {
 			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService), OK: true}
 		}),
 		core.WithName("subagent", func(_ *core.Core) core.Result {
-			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, cfg.Ide.Transport.Token), OK: true}
+			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, authToken), OK: true}
 		}),
 		core.WithName("navigate", func(c *core.Core) core.Result {
 			return core.Result{Value: navigatepkg.New(cfg.Ide.Navigate, c), OK: true}
@@ -124,6 +130,7 @@ func Compose(options Options) (*Server, error) {
 		hub:       hub,
 		transport: transport,
 		relay:     SelectRelayTransport(cfg, hub.Handler()),
+		authToken: authToken,
 	}, nil
 }
 
@@ -152,6 +159,24 @@ func (s *Server) Run(ctx context.Context) error {
 
 	switch s.transport.Mode {
 	case "http":
+		token := core.Trim(s.authToken)
+		if token == "" {
+			token = core.Trim(core.Env("MCP_AUTH_TOKEN"))
+		}
+		if token == "" {
+			return core.E("ide.server.Run", "http transport requires a bearer token", nil)
+		}
+		restoreToken, hadToken := os.LookupEnv("MCP_AUTH_TOKEN")
+		if err := os.Setenv("MCP_AUTH_TOKEN", token); err != nil {
+			return core.E("ide.server.Run", "set MCP_AUTH_TOKEN", err)
+		}
+		defer func() {
+			if hadToken {
+				_ = os.Setenv("MCP_AUTH_TOKEN", restoreToken)
+				return
+			}
+			_ = os.Unsetenv("MCP_AUTH_TOKEN")
+		}()
 		return s.mcp.ServeHTTP(ctx, s.transport.Addr)
 	case "tcp":
 		return s.mcp.ServeTCP(ctx, s.transport.Addr)
@@ -162,8 +187,8 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func newRelayHub(cfg config.IDEConfig) *ws.Hub {
-	token := core.Trim(cfg.Ide.Transport.Token)
+func newRelayHub(token string) *ws.Hub {
+	token = core.Trim(token)
 	if token == "" {
 		return ws.NewHub()
 	}

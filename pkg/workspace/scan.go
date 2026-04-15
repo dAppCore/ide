@@ -10,6 +10,8 @@ import (
 	"dappco.re/go/core/process"
 )
 
+const maxScanDepth = 16
+
 func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string) ([]Project, error) {
 	_ = ctx
 	root := input.Root
@@ -22,6 +24,9 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 	depth := input.Depth
 	if depth <= 0 {
 		depth = 3
+	}
+	if depth > maxScanDepth {
+		depth = maxScanDepth
 	}
 	projects := make([]Project, 0, depth+1)
 	current := root

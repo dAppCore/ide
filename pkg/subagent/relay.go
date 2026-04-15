@@ -7,6 +7,8 @@ import (
 	"dappco.re/go/core/ws"
 )
 
+const maxEventsPerWorkspace = 1000
+
 func guideChannel(workspaceID string) string {
 	return core.Concat("subagent:", core.Trim(workspaceID), ":guide")
 }
@@ -30,13 +32,23 @@ func statusChannel(workspaceID string) string {
 func (s *Subsystem) appendEvent(workspaceID string, event Event) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.events[workspaceID] = append(s.events[workspaceID], event)
+	events := append(s.events[workspaceID], event)
+	if len(events) > maxEventsPerWorkspace {
+		events = append([]Event(nil), events[len(events)-maxEventsPerWorkspace:]...)
+	}
+	s.events[workspaceID] = events
 }
 
 func (s *Subsystem) appendQuestionChannel(questionID string, channel chan string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.answers[questionID] = channel
+}
+
+func (s *Subsystem) deleteQuestionChannel(questionID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.answers, questionID)
 }
 
 func (s *Subsystem) takeQuestionChannel(questionID string) chan string {

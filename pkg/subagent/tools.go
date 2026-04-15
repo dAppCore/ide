@@ -3,6 +3,8 @@ package subagent
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"regexp"
 	"time"
 
 	core "dappco.re/go/core"
@@ -12,6 +14,15 @@ import (
 
 	"dappco.re/go/core/ide/pkg/config"
 )
+
+const (
+	maxQuestionWaitSeconds = 300
+	maxWatchTimeoutSeconds = 300
+	maxWatchPollInterval   = 30
+	maxWorkspaceIDLength   = 128
+)
+
+var workspaceIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 
 func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, input GuideInput) (*mcp.CallToolResult, GuideOutput, error) {
 	out, err := s.guide(ctx, input)
@@ -23,12 +34,16 @@ func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, e
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return GuideOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
-	if core.Trim(input.WorkspaceID) == "" {
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return GuideOutput{}, err
+	}
+	if workspaceID == "" {
 		return GuideOutput{Delivered: false, Reason: "workspaceId is required"}, nil
 	}
 	message := GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: input.Message, CreatedAt: time.Now().UTC()}
-	channel := guideChannel(input.WorkspaceID)
-	s.appendEvent(input.WorkspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
+	channel := guideChannel(workspaceID)
+	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
 	if s.hub == nil {
 		return GuideOutput{Delivered: false, Reason: "no relay"}, nil
 	}
@@ -45,22 +60,24 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AskOutput{Reason: "subagent is disabled"}, nil
 	}
-	if core.Trim(input.WorkspaceID) == "" {
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return AskOutput{}, err
+	}
+	if workspaceID == "" {
 		return AskOutput{}, core.E("ide.subagent.ask", "workspaceId is required", nil)
 	}
 	if s.hub == nil {
 		return AskOutput{Reason: "no relay"}, nil
 	}
-	waitSeconds := input.WaitSeconds
-	if waitSeconds <= 0 {
-		waitSeconds = int(s.cfg.Timeouts.QuestionWaitDefault.Seconds())
-	}
+	waitSeconds := clampInt(input.WaitSeconds, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxQuestionWaitSeconds)
 	questionID := core.Sprintf("q-%d", time.Now().UTC().UnixNano())
 	answerChannel := make(chan string, 1)
 	s.appendQuestionChannel(questionID, answerChannel)
+	defer s.deleteQuestionChannel(questionID)
 	message := QuestionMessage{Type: "question", Role: "subagent", QuestionID: questionID, Message: input.Question, CreatedAt: time.Now().UTC()}
-	channel := questionChannel(input.WorkspaceID)
-	s.appendEvent(input.WorkspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, QuestionID: questionID, CreatedAt: message.CreatedAt})
+	channel := questionChannel(workspaceID)
+	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, QuestionID: questionID, CreatedAt: message.CreatedAt})
 	s.publish(channel, message)
 	timer := time.NewTimer(time.Duration(waitSeconds) * time.Second)
 	defer timer.Stop()
@@ -84,12 +101,16 @@ func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (Progress
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return ProgressOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
-	if core.Trim(input.WorkspaceID) == "" {
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return ProgressOutput{}, err
+	}
+	if workspaceID == "" {
 		return ProgressOutput{}, core.E("ide.subagent.progress", "workspaceId is required", nil)
 	}
 	message := ProgressMessage{Type: "progress", Role: "subagent", Progress: input.Progress, Total: input.Total, Message: input.Message, CreatedAt: time.Now().UTC()}
-	channel := progressChannel(input.WorkspaceID)
-	s.appendEvent(input.WorkspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
+	channel := progressChannel(workspaceID)
+	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
 	if s.hub == nil {
 		return ProgressOutput{Delivered: false, Reason: "no relay"}, nil
 	}
@@ -106,23 +127,24 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return WatchOutput{Reason: "subagent is disabled"}, nil
 	}
-	if core.Trim(input.WorkspaceID) == "" {
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return WatchOutput{}, err
+	}
+	if workspaceID == "" {
 		return WatchOutput{Reason: "workspaceId is required"}, nil
 	}
-	timeout := input.Timeout
-	if timeout <= 0 {
-		timeout = 60
-	}
-	if events, completed, failed, ok := s.watchRelay(ctx, input.WorkspaceID, timeout); ok {
+	timeout := clampInt(input.Timeout, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxWatchTimeoutSeconds)
+	if events, completed, failed, ok := s.watchRelay(ctx, workspaceID, timeout); ok {
 		return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
 	}
 	deadline := time.After(time.Duration(timeout) * time.Second)
-	ticker := time.NewTicker(time.Duration(maxInt(input.PollInterval, 2)) * time.Second)
+	ticker := time.NewTicker(time.Duration(clampInt(input.PollInterval, 2, maxWatchPollInterval)) * time.Second)
 	defer ticker.Stop()
 	seen := 0
 	collected := []Event{}
 	for {
-		events := s.collectEvents(input.WorkspaceID, seen)
+		events := s.collectEvents(workspaceID, seen)
 		if len(events) > 0 {
 			collected = append(collected, events...)
 			seen += len(events)
@@ -151,8 +173,15 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AnswerOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
-	if core.Trim(input.WorkspaceID) == "" {
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return AnswerOutput{}, err
+	}
+	if workspaceID == "" {
 		return AnswerOutput{}, core.E("ide.subagent.answer", "workspaceId is required", nil)
+	}
+	if core.Trim(input.QuestionID) == "" {
+		return AnswerOutput{}, core.E("ide.subagent.answer", "questionId is required", nil)
 	}
 	if channel := s.takeQuestionChannel(input.QuestionID); channel != nil {
 		select {
@@ -161,8 +190,8 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 		}
 	}
 	message := AnswerMessage{Type: "answer", Role: "orchestrator", QuestionID: input.QuestionID, Message: input.Answer, CreatedAt: time.Now().UTC()}
-	channelName := answerChannel(input.WorkspaceID)
-	s.appendEvent(input.WorkspaceID, Event{Type: message.Type, Channel: channelName, Message: message.Message, QuestionID: input.QuestionID, CreatedAt: message.CreatedAt})
+	channelName := answerChannel(workspaceID)
+	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channelName, Message: message.Message, QuestionID: input.QuestionID, CreatedAt: message.CreatedAt})
 	if s.hub == nil {
 		return AnswerOutput{Delivered: false, Reason: "no relay"}, nil
 	}
@@ -194,19 +223,20 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if template == "" {
 		template = s.cfg.Dispatch.DefaultTemplate
 	}
-	workspaceID := core.Trim(input.WorkspaceID)
+	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
+	if err != nil {
+		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
+	}
 	if workspaceID == "" {
-		workspaceID = core.Sprintf("%s-%d", core.Replace(core.Lower(input.Repo), "/", "-"), time.Now().UTC().UnixNano())
+		workspaceID = core.Sprintf("workspace-%d", time.Now().UTC().UnixNano())
 	}
 	relayURL := core.Trim(input.RelayURL)
 	if relayURL == "" {
 		relayURL = s.cfg.Relay.URL()
+	} else if err := validateRelayURL(relayURL); err != nil {
+		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
 	}
-	relayToken := core.Trim(input.RelayToken)
-	if relayToken == "" {
-		relayToken = s.relayToken
-	}
-	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN=%s\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, relayToken, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
+	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN is injected by the launcher and must not be echoed.\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
 	if s.hub == nil {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}
@@ -233,9 +263,15 @@ func state(events []Event) (bool, bool) {
 	return false, false
 }
 
-func maxInt(value int, floor int) int {
-	if value < floor {
-		return floor
+func clampInt(value, fallback, max int) int {
+	if value <= 0 {
+		value = fallback
+	}
+	if value > max {
+		return max
+	}
+	if value < 1 {
+		return 1
 	}
 	return value
 }
@@ -325,4 +361,31 @@ func eventFromRelayMessage(message ws.Message) (Event, bool) {
 		event.QuestionID = questionID
 	}
 	return event, true
+}
+
+func normalizeWorkspaceID(value string) (string, error) {
+	trimmed := core.Trim(value)
+	if trimmed == "" {
+		return "", nil
+	}
+	if len(trimmed) > maxWorkspaceIDLength || !workspaceIDPattern.MatchString(trimmed) {
+		return "", core.E("ide.subagent.workspaceID", "invalid workspaceId", nil)
+	}
+	return trimmed, nil
+}
+
+func validateRelayURL(value string) error {
+	parsed, err := url.Parse(core.Trim(value))
+	if err != nil {
+		return core.E("ide.subagent.relayURL", "invalid relay URL", err)
+	}
+	switch parsed.Scheme {
+	case "ws", "wss", "http", "https":
+	default:
+		return core.E("ide.subagent.relayURL", "unsupported relay URL scheme", nil)
+	}
+	if parsed.Host == "" {
+		return core.E("ide.subagent.relayURL", "relay URL host is required", nil)
+	}
+	return nil
 }

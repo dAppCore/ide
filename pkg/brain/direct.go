@@ -16,9 +16,23 @@ import (
 	"dappco.re/go/core/ide/pkg/workspace"
 )
 
+const (
+	defaultRecallTopK = 10
+	maxRecallTopK     = 50
+	defaultListLimit  = 50
+	maxListLimit      = 100
+)
+
 func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput, error) {
 	if core.Trim(input.Query) == "" {
 		return RecallOutput{}, core.E("ide.brain.recall", "query is required", nil)
+	}
+	topK := input.TopK
+	switch {
+	case topK <= 0:
+		topK = defaultRecallTopK
+	case topK > maxRecallTopK:
+		topK = maxRecallTopK
 	}
 	project := input.Filter.Project
 	filterType := core.Sprint(input.Filter.Type)
@@ -27,13 +41,13 @@ func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput
 	if s.workspace != nil {
 		workspaceRoot = s.workspace.Root()
 	}
-	key := s.cache.Key(workspaceRoot, s.cfg.Endpoint, s.keyFingerprint(), input.Query, core.Sprint(input.TopK), agentID, project, filterType)
+	key := s.cache.Key(workspaceRoot, s.cfg.Endpoint, s.keyFingerprint(), input.Query, core.Sprint(topK), agentID, project, filterType)
 	if out, ok := s.cache.Get(ctx, key); ok {
 		return out, nil
 	}
 	payload := map[string]any{
 		"query":    input.Query,
-		"top_k":    input.TopK,
+		"top_k":    topK,
 		"agent_id": agentID,
 		"project":  project,
 		"type":     input.Filter.Type,
@@ -85,6 +99,13 @@ func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput
 }
 
 func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, error) {
+	limit := input.Limit
+	switch {
+	case limit <= 0:
+		limit = defaultListLimit
+	case limit > maxListLimit:
+		limit = maxListLimit
+	}
 	query := url.Values{}
 	if input.Project != "" {
 		query.Set("project", input.Project)
@@ -95,9 +116,7 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 	if input.AgentID != "" {
 		query.Set("agent_id", input.AgentID)
 	}
-	if input.Limit > 0 {
-		query.Set("limit", core.Sprint(input.Limit))
-	}
+	query.Set("limit", core.Sprint(limit))
 	path := "/v1/brain/list"
 	if len(query) > 0 {
 		path = core.Concat(path, "?", query.Encode())

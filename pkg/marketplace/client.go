@@ -89,7 +89,11 @@ func (c *Client) installViaGoSCM(ctx context.Context, input InstallInput) (Insta
 	}
 	medium := c.medium
 	if medium == nil {
-		medium = defaultInstallMedium()
+		var mediumErr error
+		medium, mediumErr = defaultInstallMedium()
+		if mediumErr != nil {
+			return InstallOutput{}, mediumErr
+		}
 	}
 	installer := scmmarketplace.NewInstaller(medium, "modules", nil)
 	if err := installer.Install(ctx, info.Package); err != nil {
@@ -143,7 +147,7 @@ func (c *Client) request(ctx context.Context, method, path string, body any, tar
 	return nil
 }
 
-func defaultInstallMedium() coreio.Medium {
+func defaultInstallMedium() (coreio.Medium, error) {
 	home := os.Getenv("DIR_HOME")
 	if home == "" {
 		resolved, err := os.UserHomeDir()
@@ -151,10 +155,13 @@ func defaultInstallMedium() coreio.Medium {
 			home = resolved
 		}
 	}
+	if home == "" {
+		return nil, core.E("ide.marketplace.install", "home directory unavailable", nil)
+	}
 	sandboxRoot := core.JoinPath(home, ".core", "ide", "marketplace")
 	medium, err := coreio.NewSandboxed(sandboxRoot)
 	if err != nil {
-		return coreio.Local
+		return nil, core.E("ide.marketplace.install", "create sandboxed install medium", err)
 	}
-	return medium
+	return medium, nil
 }
