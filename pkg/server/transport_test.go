@@ -19,14 +19,10 @@ func TestTransport_Select_Good(t *testing.T) {
 
 func TestTransport_Select_Bad(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
-	cfg.Ide.Transport.Mode = "unix"
-	cfg.Ide.Transport.UnixSocket = ""
-	transport, err := SelectTransport(cfg, false, false)
-	if err != nil {
-		t.Fatalf("select transport: %v", err)
-	}
-	if transport.Mode != "unix" {
-		t.Fatalf("expected configured unix mode, got %#v", transport)
+	cfg.Ide.Transport.Mode = "http"
+	cfg.Ide.Transport.HTTPAddr = "invalid:addr:port"
+	if _, err := SelectTransport(cfg, false, true); err == nil {
+		t.Fatal("expected invalid transport address error")
 	}
 }
 

@@ -47,3 +47,83 @@ func TestConfig_Load_Ugly(t *testing.T) {
 		t.Fatal("expected default chat store path")
 	}
 }
+
+func TestConfig_TransportURL_Good(t *testing.T) {
+	cases := []struct {
+		name     string
+		relay    SubagentRelay
+		expected string
+	}{
+		{name: "default ws", relay: SubagentRelay{Addr: "127.0.0.1:9882"}, expected: "ws://127.0.0.1:9882/subagent"},
+		{name: "http becomes ws", relay: SubagentRelay{Addr: "http://127.0.0.1:9882", Path: "relay"}, expected: "ws://127.0.0.1:9882/relay"},
+		{name: "https becomes wss", relay: SubagentRelay{Addr: "https://example.com", Path: "/subagent"}, expected: "wss://example.com/subagent"},
+		{name: "blank addr", relay: SubagentRelay{}, expected: ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.relay.URL(); got != tc.expected {
+				t.Fatalf("expected %q, got %q", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestConfig_DefaultPaths_Good(t *testing.T) {
+	paths := DefaultPaths("/custom/ide.yaml")
+	if len(paths) != 1 || paths[0] != "/custom/ide.yaml" {
+		t.Fatalf("expected explicit config path to win, got %#v", paths)
+	}
+}
+
+func TestConfig_Merge_Ugly(t *testing.T) {
+	base := IDEConfig{}.WithDefaults()
+	override := IDEConfig{
+		Ide: Ide{
+			Transport: Transport{Mode: "tcp", TCPAddr: "127.0.0.1:9200"},
+			Brain:     Brain{Endpoint: "https://brain.example", AgentID: "override"},
+			Workspace: Workspace{Root: "/workspace", ScanDepth: 7},
+			Chat:      Chat{Enabled: BoolPtr(false), APIURL: "http://localhost:3000"},
+		},
+	}
+	merged := base.Merge(override)
+	if merged.Ide.Transport.Mode != "tcp" || merged.Ide.Transport.TCPAddr != "127.0.0.1:9200" {
+		t.Fatalf("expected transport override, got %#v", merged.Ide.Transport)
+	}
+	if merged.Ide.Brain.Endpoint != "https://brain.example" || merged.Ide.Brain.AgentID != "override" {
+		t.Fatalf("expected brain override, got %#v", merged.Ide.Brain)
+	}
+	if merged.Ide.Workspace.Root != "/workspace" || merged.Ide.Workspace.ScanDepth != 7 {
+		t.Fatalf("expected workspace override, got %#v", merged.Ide.Workspace)
+	}
+	if BoolValue(merged.Ide.Chat.Enabled, true) {
+		t.Fatalf("expected chat disable override, got %#v", merged.Ide.Chat)
+	}
+}
+
+func TestConfig_ApplyEnv_Good(t *testing.T) {
+	t.Setenv("CORE_BRAIN_URL", "https://brain.example")
+	t.Setenv("CORE_BRAIN_KEY", "secret")
+	t.Setenv("CORE_BRAIN_AGENT_ID", "agent-7")
+	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
+	t.Setenv("CORE_IDE_TOKEN", "token")
+
+	cfg := IDEConfig{}
+	ApplyEnv(&cfg)
+
+	if cfg.Ide.Brain.Endpoint != "https://brain.example" || cfg.Ide.Brain.Key != "secret" || cfg.Ide.Brain.AgentID != "agent-7" {
+		t.Fatalf("expected brain env overrides, got %#v", cfg.Ide.Brain)
+	}
+	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9880" || cfg.Ide.Transport.Token != "token" {
+		t.Fatalf("expected transport env overrides, got %#v", cfg.Ide.Transport)
+	}
+}
+
+func TestConfig_BoolValue_Good(t *testing.T) {
+	if got := BoolValue(nil, true); !got {
+		t.Fatal("expected fallback bool value")
+	}
+	value := false
+	if got := BoolValue(&value, true); got {
+		t.Fatal("expected explicit bool value to win")
+	}
+}
