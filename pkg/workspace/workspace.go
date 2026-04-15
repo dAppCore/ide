@@ -45,7 +45,7 @@ func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput
 		return StatusOutput{}, err
 	}
 	medium := s.workspaceMedium()
-	coreFiles, counts, _, err := readCoreFiles(medium, root)
+	coreFiles, counts, _, err := readCoreFiles(medium, root, s.cfg.Ignore...)
 	if err != nil {
 		return StatusOutput{}, err
 	}
@@ -68,15 +68,15 @@ func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (Co
 		return ConventionsOutput{}, err
 	}
 	medium := s.workspaceMedium()
-	_, _, sources, err := readCoreFiles(medium, root)
+	_, _, sources, err := readCoreFiles(medium, root, s.cfg.Ignore...)
 	if err != nil {
 		return ConventionsOutput{}, err
 	}
-	projects, scanErr := scanProjects(ctx, ScanInput{Root: root, Depth: s.cfg.ScanDepth}, medium, s.process, root)
+	projects, scanErr := scanProjects(ctx, ScanInput{Root: root, Depth: s.cfg.ScanDepth}, medium, s.process, root, s.cfg.Ignore...)
 	if scanErr != nil {
 		return ConventionsOutput{}, scanErr
 	}
-	languages := detectLanguages(medium, root)
+	languages := detectLanguages(medium, root, s.cfg.Ignore...)
 	for _, project := range projects {
 		languages = append(languages, project.Languages...)
 	}
@@ -107,7 +107,7 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 	if err != nil {
 		return ImpactOutput{}, err
 	}
-	areas, checks, notes := classifyImpact(s.workspaceMedium(), root, git.Changes)
+	areas, checks, notes := classifyImpact(s.workspaceMedium(), root, git.Changes, s.cfg.Ignore...)
 	return ImpactOutput{
 		Root:            root,
 		Git:             git,
@@ -126,7 +126,7 @@ func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, erro
 	if depth <= 0 {
 		depth = s.cfg.ScanDepth
 	}
-	projects, err := scanProjects(ctx, ScanInput{Root: root, Depth: depth}, s.workspaceMedium(), s.process, root)
+	projects, err := scanProjects(ctx, ScanInput{Root: root, Depth: depth}, s.workspaceMedium(), s.process, root, s.cfg.Ignore...)
 	if err != nil {
 		return ScanOutput{}, err
 	}

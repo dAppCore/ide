@@ -14,7 +14,7 @@ import (
 const maxScanDepth = 16
 const maxPreviewBytes = 4096
 
-func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string) ([]Project, error) {
+func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string, ignores ...string) ([]Project, error) {
 	_ = ctx
 	root := input.Root
 	if core.Trim(root) == "" {
@@ -33,6 +33,13 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 	projects := make([]Project, 0, depth+1)
 	current := root
 	for i := 0; i <= depth; i++ {
+		if shouldIgnorePath(root, current, ignores) {
+			current = parentDir(current)
+			if current == "" {
+				break
+			}
+			continue
+		}
 		manifestPath := core.JoinPath(current, ".core", "manifest.yaml")
 		buildPath := core.JoinPath(current, ".core", "build.yaml")
 		if medium.Exists(manifestPath) || medium.Exists(buildPath) {
@@ -41,7 +48,7 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 				Root:      current,
 				Manifest:  pickPath(medium.Exists(manifestPath), manifestPath),
 				BuildYaml: pickPath(medium.Exists(buildPath), buildPath),
-				Languages: detectLanguages(medium, current),
+				Languages: detectLanguages(medium, current, ignores...),
 				GitBranch: git.Branch,
 			})
 		}
@@ -54,7 +61,7 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 	return projects, nil
 }
 
-func readCoreFiles(medium coreio.Medium, root string) ([]File, FileCount, []string, error) {
+func readCoreFiles(medium coreio.Medium, root string, ignores ...string) ([]File, FileCount, []string, error) {
 	paths := []string{
 		core.JoinPath(root, "CLAUDE.md"),
 		core.JoinPath(root, "README.md"),
@@ -64,7 +71,7 @@ func readCoreFiles(medium coreio.Medium, root string) ([]File, FileCount, []stri
 	sources := make([]string, 0, len(paths)+4)
 	counts := FileCount{}
 	for _, path := range paths {
-		appendWorkspaceFile(medium, path, &files, &counts, &sources)
+		appendWorkspaceFileWithIgnores(medium, root, path, ignores, &files, &counts, &sources)
 	}
 	coreDir := core.JoinPath(root, ".core")
 	coreEntries, err := medium.List(coreDir)
@@ -72,12 +79,12 @@ func readCoreFiles(medium coreio.Medium, root string) ([]File, FileCount, []stri
 		return files, counts, sources, nil
 	}
 	for _, entry := range sortedEntries(coreEntries) {
-		appendWorkspaceTree(medium, core.JoinPath(coreDir, entry.Name()), &files, &counts, &sources)
+		appendWorkspaceTreeWithIgnores(medium, root, core.JoinPath(coreDir, entry.Name()), ignores, &files, &counts, &sources)
 	}
 	return files, counts, sources, nil
 }
 
-func detectLanguages(medium coreio.Medium, root string) []string {
+func detectLanguages(medium coreio.Medium, root string, ignores ...string) []string {
 	candidates := []struct {
 		Path     string
 		Language string
@@ -90,6 +97,9 @@ func detectLanguages(medium coreio.Medium, root string) []string {
 	}
 	values := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {
+		if shouldIgnorePath(root, candidate.Path, ignores) {
+			continue
+		}
 		if medium.Exists(candidate.Path) {
 			values = append(values, candidate.Language)
 		}
@@ -105,7 +115,14 @@ func preview(content string) string {
 }
 
 func appendWorkspaceTree(medium coreio.Medium, path string, files *[]File, counts *FileCount, sources *[]string) {
+	appendWorkspaceTreeWithIgnores(medium, "", path, nil, files, counts, sources)
+}
+
+func appendWorkspaceTreeWithIgnores(medium coreio.Medium, root, path string, ignores []string, files *[]File, counts *FileCount, sources *[]string) {
 	if medium == nil || !medium.Exists(path) {
+		return
+	}
+	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
 	if medium.IsDir(path) {
@@ -114,15 +131,22 @@ func appendWorkspaceTree(medium coreio.Medium, path string, files *[]File, count
 			return
 		}
 		for _, entry := range sortedEntries(entries) {
-			appendWorkspaceTree(medium, core.JoinPath(path, entry.Name()), files, counts, sources)
+			appendWorkspaceTreeWithIgnores(medium, root, core.JoinPath(path, entry.Name()), ignores, files, counts, sources)
 		}
 		return
 	}
-	appendWorkspaceFile(medium, path, files, counts, sources)
+	appendWorkspaceFileWithIgnores(medium, root, path, ignores, files, counts, sources)
 }
 
 func appendWorkspaceFile(medium coreio.Medium, path string, files *[]File, counts *FileCount, sources *[]string) {
+	appendWorkspaceFileWithIgnores(medium, "", path, nil, files, counts, sources)
+}
+
+func appendWorkspaceFileWithIgnores(medium coreio.Medium, root, path string, ignores []string, files *[]File, counts *FileCount, sources *[]string) {
 	if medium == nil || !medium.Exists(path) {
+		return
+	}
+	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
 	info, err := medium.Stat(path)

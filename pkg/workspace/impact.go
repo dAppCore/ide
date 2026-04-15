@@ -15,11 +15,14 @@ type reposFile struct {
 	} `yaml:"repos"`
 }
 
-func classifyImpact(medium coreio.Medium, root string, changes []GitChange) ([]string, []string, []string) {
+func classifyImpact(medium coreio.Medium, root string, changes []GitChange, ignores ...string) ([]string, []string, []string) {
 	areas := make([]string, 0, len(changes))
 	checks := []string{"go build ./...", "go test ./... -count=1"}
 	notes := []string{"Impact categories are inferred from changed paths and .core configuration files."}
 	for _, change := range changes {
+		if shouldIgnorePath(root, change.Path, ignores) {
+			continue
+		}
 		switch {
 		case core.HasPrefix(change.Path, "frontend/"):
 			areas = append(areas, "frontend")
