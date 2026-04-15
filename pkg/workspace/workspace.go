@@ -3,7 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"os"
 	"strings"
 	"time"
 
@@ -150,28 +150,27 @@ func resolveWorkspaceRoot(base, requested string) (string, error) {
 	if base == "" {
 		base = "."
 	}
-	trusted, err := filepath.Abs(base)
-	if err != nil {
-		return "", core.E("workspace.root", "resolve trusted base", err)
+	if !core.PathIsAbs(base) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", core.E("workspace.root", "resolve trusted base", err)
+		}
+		base = core.Path(cwd, base)
 	}
-	trusted, _ = filepath.EvalSymlinks(trusted)
+	trusted := core.CleanPath(base, core.Env("DS"))
 	requested = core.Trim(requested)
 	if requested == "" {
 		requested = base
 	}
 	candidate := requested
-	if !filepath.IsAbs(candidate) {
-		candidate = filepath.Join(trusted, candidate)
+	if !core.PathIsAbs(candidate) {
+		candidate = core.Path(trusted, candidate)
 	}
-	candidate, err = filepath.Abs(candidate)
-	if err != nil {
-		return "", core.E("workspace.root", "resolve request root", err)
-	}
-	candidate, _ = filepath.EvalSymlinks(candidate)
+	candidate = core.CleanPath(candidate, core.Env("DS"))
 
-	trusted = filepath.Clean(trusted)
-	candidate = filepath.Clean(candidate)
-	sep := string(filepath.Separator)
+	trusted = core.CleanPath(trusted, core.Env("DS"))
+	candidate = core.CleanPath(candidate, core.Env("DS"))
+	sep := core.Env("DS")
 	trustedPrefix := trusted
 	if !strings.HasSuffix(trustedPrefix, sep) {
 		trustedPrefix += sep

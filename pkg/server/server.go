@@ -121,7 +121,7 @@ func Compose(options Options) (*Server, error) {
 		guiExecutor.Attach(guiSubsystem, mcpService)
 	}
 
-	transport, err := SelectTransport(cfg, options.MCP, options.PreferConfiguredTransport)
+	transport, err := SelectTransport(cfg, false, options.PreferConfiguredTransport)
 	if err != nil {
 		return nil, err
 	}
