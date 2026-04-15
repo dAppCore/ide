@@ -1,0 +1,5 @@
+conventions:
+  - "Prefer declarative configuration over imperative setup when the shape is recurring."
+  - "Keep public methods small and explicit about side effects."
+notes:
+  - "PHP pack loaded from workspace/conventions/php.yaml."

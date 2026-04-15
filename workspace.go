@@ -271,6 +271,10 @@ type conventionPack struct {
 }
 
 func conventionPackForLanguage(language string) (conventionPack, bool) {
+	if pack, ok := loadConventionPack(language); ok {
+		return pack, true
+	}
+
 	switch strings.ToLower(strings.TrimSpace(language)) {
 	case "go":
 		return conventionPack{

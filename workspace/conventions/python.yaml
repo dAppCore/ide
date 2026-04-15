@@ -1,0 +1,5 @@
+conventions:
+  - "Use explicit function names and stable data contracts for agent-readable code."
+  - "Keep module paths semantic rather than abbreviated."
+notes:
+  - "Python pack loaded from workspace/conventions/python.yaml."

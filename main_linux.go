@@ -54,6 +54,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialise brain cache: %v", err)
 	}
+	workspaceSubsystem := NewWorkspaceSubsystem(cwd)
+	marketplaceSubsystem := NewMarketplaceSubsystem(nil)
+	navigateSubsystem := NewNavigateSubsystem(nil)
+	subagentSubsystem := NewSubagentSubsystem(hub)
 
 	reg := provider.NewRegistry()
 	reg.Add(processapi.NewProvider(process.DefaultRegistry(), hub))
@@ -81,14 +85,15 @@ func main() {
 			return hub, nil
 		}),
 		core.WithName("mcp", func(c *core.Core) (any, error) {
+			navigateSubsystem.core = c
 			return mcp.New(
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
 				mcp.WithSubsystem(brainDirect),
-				mcp.WithSubsystem(NewWorkspaceSubsystem(cwd)),
-				mcp.WithSubsystem(NewMarketplaceSubsystem(nil)),
-				mcp.WithSubsystem(NewNavigateSubsystem()),
-				mcp.WithSubsystem(NewSubagentSubsystem(hub)),
+				mcp.WithSubsystem(workspaceSubsystem),
+				mcp.WithSubsystem(marketplaceSubsystem),
+				mcp.WithSubsystem(navigateSubsystem),
+				mcp.WithSubsystem(subagentSubsystem),
 				mcp.WithSubsystem(agentic.NewPrep()),
 			)
 		}),
@@ -101,6 +106,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get MCP service: %v", err)
 	}
+	registerIDEActions(c, brainDirect, workspaceSubsystem, marketplaceSubsystem, navigateSubsystem, subagentSubsystem)
 
 	if guiEnabled(cfg) {
 		log.Printf("GUI mode is unavailable in this Linux build; running headless instead")

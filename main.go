@@ -67,6 +67,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialise brain cache: %v", err)
 	}
+	workspaceSubsystem := NewWorkspaceSubsystem(cwd)
+	marketplaceSubsystem := NewMarketplaceSubsystem(nil)
+	navigateSubsystem := NewNavigateSubsystem(nil)
+	subagentSubsystem := NewSubagentSubsystem(hub)
 
 	// ── Service Provider Registry ──────────────────────────────
 	reg := provider.NewRegistry()
@@ -102,14 +106,15 @@ func main() {
 		}),
 		core.WithService(display.Register(nil)), // nil platform until Wails starts
 		core.WithName("mcp", func(c *core.Core) (any, error) {
+			navigateSubsystem.core = c
 			return mcp.New(
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
 				mcp.WithSubsystem(brainDirect),
-				mcp.WithSubsystem(NewWorkspaceSubsystem(cwd)),
-				mcp.WithSubsystem(NewMarketplaceSubsystem(nil)),
-				mcp.WithSubsystem(NewNavigateSubsystem()),
-				mcp.WithSubsystem(NewSubagentSubsystem(hub)),
+				mcp.WithSubsystem(workspaceSubsystem),
+				mcp.WithSubsystem(marketplaceSubsystem),
+				mcp.WithSubsystem(navigateSubsystem),
+				mcp.WithSubsystem(subagentSubsystem),
 				mcp.WithSubsystem(agentic.NewPrep()),
 				mcp.WithSubsystem(guiMCP.New(c)),
 			)
@@ -124,6 +129,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get MCP service: %v", err)
 	}
+	registerIDEActions(c, brainDirect, workspaceSubsystem, marketplaceSubsystem, navigateSubsystem, subagentSubsystem)
 
 	// ── Mode selection ─────────────────────────────────────────
 	if mcpOnly {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"forge.lthn.ai/core/go-ws"
+	"forge.lthn.ai/core/go/pkg/core"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -260,11 +261,13 @@ func (s *MarketplaceSubsystem) pkgInstall(ctx context.Context, _ *mcp.CallToolRe
 	return nil, result, nil
 }
 
+type NavigateSubsystem struct {
+	core *core.Core
+}
+
 // Navigate MCP subsystem.
 
-type NavigateSubsystem struct{}
-
-func NewNavigateSubsystem() *NavigateSubsystem { return &NavigateSubsystem{} }
+func NewNavigateSubsystem(c *core.Core) *NavigateSubsystem { return &NavigateSubsystem{core: c} }
 
 func (s *NavigateSubsystem) Name() string { return "navigate" }
 
@@ -294,18 +297,132 @@ func (s *NavigateSubsystem) coreNavigate(ctx context.Context, _ *mcp.CallToolReq
 		return nil, NavigateOutput{Available: false, Reason: "route is required"}, nil
 	}
 
-	switch route {
-	case "core://store", "core://models", "core://agent", "core://network", "core://settings", "core://identity", "core://wallet":
-		return nil, NavigateOutput{
-			Available: false,
-			Reason:    fmt.Sprintf("action %s not registered", route),
-		}, nil
-	default:
+	resolver := s.routeResolver(route)
+	if resolver == nil {
 		return nil, NavigateOutput{
 			Available: false,
 			Reason:    fmt.Sprintf("unknown route %s", route),
 		}, nil
 	}
+
+	data, schema, sources, err := resolver(ctx, input.Filter)
+	if err != nil {
+		return nil, NavigateOutput{Available: false, Reason: err.Error()}, nil
+	}
+	if status, ok := data.(map[string]any); ok {
+		if available, exists := status["available"].(bool); exists && !available {
+			reason, _ := status["reason"].(string)
+			return nil, NavigateOutput{
+				Available: false,
+				Reason:    reason,
+				Data:      data,
+				Schema:    schema,
+				Sources:   sources,
+			}, nil
+		}
+	}
+
+	return nil, NavigateOutput{
+		Available: true,
+		Data:      data,
+		Schema:    schema,
+		Sources:   sources,
+	}, nil
+}
+
+type navigateRouteResolver func(context.Context, map[string]any) (any, any, []string, error)
+
+func (s *NavigateSubsystem) routeResolver(route string) navigateRouteResolver {
+	switch {
+	case route == "core://store":
+		return s.resolveStoreRoot
+	case strings.HasPrefix(route, "core://store/"):
+		namespace := strings.TrimPrefix(route, "core://store/")
+		return func(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+			return s.resolveStoreNamespace(ctx, namespace)
+		}
+	case route == "core://models":
+		return s.resolveModels
+	case route == "core://agent":
+		return s.resolveAgentWorkspaces
+	case route == "core://network":
+		return s.resolveNetwork
+	case route == "core://settings":
+		return s.resolveSettings
+	case route == "core://identity":
+		return s.resolveIdentity
+	case route == "core://wallet":
+		return s.resolveWallet
+	default:
+		return nil
+	}
+}
+
+func (s *NavigateSubsystem) resolveStoreRoot(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	if s.core == nil {
+		return map[string]any{"available": false, "reason": "core runtime not attached"}, nil, nil, nil
+	}
+	if data, ok, err := s.core.QUERY("store.get_all"); err == nil && ok {
+		return data, map[string]any{"type": "object"}, []string{"store.get_all"}, nil
+	}
+	return map[string]any{
+		"available": false,
+		"reason":    "action store.get_all not registered",
+	}, map[string]any{"type": "object"}, []string{"store.get_all"}, nil
+}
+
+func (s *NavigateSubsystem) resolveStoreNamespace(ctx context.Context, namespace string) (any, any, []string, error) {
+	if namespace == "" {
+		return nil, nil, nil, fmt.Errorf("store namespace is required")
+	}
+	if s.core == nil {
+		return map[string]any{"available": false, "reason": "core runtime not attached"}, nil, nil, nil
+	}
+	queryName := "store.get_namespace:" + namespace
+	if data, ok, err := s.core.QUERY(queryName); err == nil && ok {
+		return data, map[string]any{"type": "object"}, []string{queryName}, nil
+	}
+	return map[string]any{
+		"available": false,
+		"reason":    "action " + queryName + " not registered",
+	}, map[string]any{"type": "object"}, []string{queryName}, nil
+}
+
+func (s *NavigateSubsystem) resolveModels(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "ai.models.list")
+}
+
+func (s *NavigateSubsystem) resolveAgentWorkspaces(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "agent.workspaces.status")
+}
+
+func (s *NavigateSubsystem) resolveNetwork(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "network.status")
+}
+
+func (s *NavigateSubsystem) resolveSettings(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "config.dump")
+}
+
+func (s *NavigateSubsystem) resolveIdentity(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "identity.status")
+}
+
+func (s *NavigateSubsystem) resolveWallet(ctx context.Context, _ map[string]any) (any, any, []string, error) {
+	return s.resolveQueryRoute(ctx, "wallet.status")
+}
+
+func (s *NavigateSubsystem) resolveQueryRoute(ctx context.Context, queryName string) (any, any, []string, error) {
+	if s.core == nil {
+		return map[string]any{"available": false, "reason": "core runtime not attached"}, nil, nil, nil
+	}
+	if data, ok, err := s.core.QUERY(queryName); err == nil && ok {
+		return data, map[string]any{"type": "object"}, []string{queryName}, nil
+	}
+	return map[string]any{
+		"available": false,
+		"reason":    "action " + queryName + " not registered",
+	}, map[string]any{"type": "object"}, []string{queryName}, nil
 }
 
 // Subagent MCP subsystem.
