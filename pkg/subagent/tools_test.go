@@ -209,6 +209,12 @@ func TestTools_ValidateRelayURL_BadRemote(t *testing.T) {
 	}
 }
 
+func TestTools_ValidateRelayURL_BadCredentials(t *testing.T) {
+	if err := validateRelayURL("ws://token@127.0.0.1:9882/subagent?debug=1#frag"); err == nil {
+		t.Fatal("expected relay URL credential and query rejection")
+	}
+}
+
 func TestTools_ValidateRelayURL_Ugly(t *testing.T) {
 	if err := validateRelayURL("://bad"); err == nil {
 		t.Fatal("expected malformed URL error")

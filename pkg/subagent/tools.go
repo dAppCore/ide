@@ -22,6 +22,7 @@ const (
 	maxWatchTimeoutSeconds = 300
 	maxWatchPollInterval   = 30
 	maxWorkspaceIDLength   = 128
+	maxRelayMessageBytes   = 1 << 20
 )
 
 var workspaceIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
@@ -269,11 +270,14 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	if token := core.Trim(s.relayToken); token != "" {
 		headers.Set("Authorization", core.Concat("Bearer ", token))
 	}
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, relayURL, headers)
+	dialer := *websocket.DefaultDialer
+	dialer.HandshakeTimeout = 5 * time.Second
+	conn, _, err := dialer.DialContext(ctx, relayURL, headers)
 	if err != nil {
 		return nil, false, false, false
 	}
 	defer conn.Close()
+	conn.SetReadLimit(maxRelayMessageBytes)
 
 	for _, channel := range []string{
 		progressChannel(workspaceID),
@@ -370,6 +374,15 @@ func validateRelayURL(value string) error {
 	}
 	if parsed.Host == "" {
 		return core.E("ide.subagent.relayURL", "relay URL host is required", nil)
+	}
+	if parsed.User != nil {
+		return core.E("ide.subagent.relayURL", "relay URL must not include userinfo", nil)
+	}
+	if core.Trim(parsed.RawQuery) != "" {
+		return core.E("ide.subagent.relayURL", "relay URL must not include a query string", nil)
+	}
+	if core.Trim(parsed.Fragment) != "" {
+		return core.E("ide.subagent.relayURL", "relay URL must not include a fragment", nil)
 	}
 	if !isLoopbackHost(parsed.Hostname()) {
 		return core.E("ide.subagent.relayURL", "relay URL must target localhost or loopback", nil)

@@ -71,6 +71,68 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 	}
 }
 
+func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
+	type nestedConfig struct {
+		Token string `json:"token"`
+		Meta  struct {
+			APIKey string `yaml:"api_key"`
+		} `json:"meta"`
+		Pointer *struct {
+			Secret string `json:"secret"`
+		} `json:"pointer"`
+	}
+
+	payload := nestedConfig{
+		Token: "secret-token",
+		Pointer: &struct {
+			Secret string `json:"secret"`
+		}{Secret: "pointer-secret"},
+	}
+	payload.Meta.APIKey = "nested-secret"
+
+	c := core.New()
+	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
+		if name, ok := query.(string); ok && name == "config.dump" {
+			return core.Result{Value: map[string]any{"ide": payload}, OK: true}
+		}
+		return core.Result{}
+	})
+
+	out, _, err := New(config.Navigate{}, c).resolveSettings(context.Background(), Filter{})
+	if err != nil {
+		t.Fatalf("resolve settings: %v", err)
+	}
+	payloadOut, ok := out.(Output)
+	if !ok || !payloadOut.Available {
+		t.Fatalf("expected available payload, got %#v", out)
+	}
+	data, ok := payloadOut.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map payload, got %#v", payloadOut.Data)
+	}
+	ide, ok := data["ide"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected nested ide payload, got %#v", data["ide"])
+	}
+	if ide["token"] != "[redacted]" {
+		t.Fatalf("expected struct token redaction, got %#v", ide["token"])
+	}
+	meta, ok := ide["meta"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected nested meta payload, got %#v", ide["meta"])
+	}
+	if meta["api_key"] != "[redacted]" {
+		t.Fatalf("expected nested api_key redaction, got %#v", meta["api_key"])
+	}
+	pointer, ok := ide["pointer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected nested pointer payload, got %#v", ide["pointer"])
+	}
+	if pointer["secret"] != "[redacted]" {
+		t.Fatalf("expected pointer secret redaction, got %#v", pointer["secret"])
+	}
+}
+
 func TestResolvers_Query_Bad(t *testing.T) {
 	out, _, err := New(config.Navigate{}, core.New()).resolveWallet(context.Background(), Filter{})
 	if err != nil {

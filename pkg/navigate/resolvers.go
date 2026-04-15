@@ -2,6 +2,7 @@ package navigate
 
 import (
 	"context"
+	"reflect"
 	"strings"
 
 	core "dappco.re/go/core"
@@ -84,26 +85,11 @@ func filterString(filter Filter, key string) string {
 }
 
 func redactSensitiveValue(value any) any {
-	switch typed := value.(type) {
-	case map[string]any:
-		out := make(map[string]any, len(typed))
-		for key, nested := range typed {
-			if isSensitiveKey(key) {
-				out[key] = "[redacted]"
-				continue
-			}
-			out[key] = redactSensitiveValue(nested)
-		}
-		return out
-	case []any:
-		out := make([]any, len(typed))
-		for i, nested := range typed {
-			out[i] = redactSensitiveValue(nested)
-		}
-		return out
-	default:
+	redacted := redactReflectValue(reflect.ValueOf(value))
+	if !redacted.IsValid() {
 		return value
 	}
+	return redacted.Interface()
 }
 
 func isSensitiveKey(key string) bool {
@@ -113,4 +99,103 @@ func isSensitiveKey(key string) bool {
 		return true
 	}
 	return strings.HasSuffix(key, "_token") || strings.HasSuffix(key, "_key") || strings.HasSuffix(key, "_secret") || strings.HasSuffix(key, "_password")
+}
+
+func redactReflectValue(value reflect.Value) reflect.Value {
+	if !value.IsValid() {
+		return value
+	}
+	switch value.Kind() {
+	case reflect.Interface, reflect.Pointer:
+		if value.IsNil() {
+			return value
+		}
+		return redactReflectValue(value.Elem())
+	case reflect.Map:
+		if value.IsNil() {
+			return value
+		}
+		out := reflect.MakeMapWithSize(value.Type(), value.Len())
+		for _, key := range value.MapKeys() {
+			nested := value.MapIndex(key)
+			if key.Kind() == reflect.String && isSensitiveKey(key.String()) {
+				redacted := reflect.ValueOf("[redacted]")
+				if redacted.Type().AssignableTo(value.Type().Elem()) {
+					out.SetMapIndex(key, redacted)
+				} else if redacted.Type().ConvertibleTo(value.Type().Elem()) {
+					out.SetMapIndex(key, redacted.Convert(value.Type().Elem()))
+				}
+				continue
+			}
+			redacted := redactReflectValue(nested)
+			if !redacted.IsValid() {
+				continue
+			}
+			if redacted.Type().AssignableTo(value.Type().Elem()) {
+				out.SetMapIndex(key, redacted)
+				continue
+			}
+			if redacted.Type().ConvertibleTo(value.Type().Elem()) {
+				out.SetMapIndex(key, redacted.Convert(value.Type().Elem()))
+			}
+		}
+		return out
+	case reflect.Slice:
+		out := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+		for i := 0; i < value.Len(); i++ {
+			redacted := redactReflectValue(value.Index(i))
+			if redacted.IsValid() && redacted.Type().AssignableTo(value.Type().Elem()) {
+				out.Index(i).Set(redacted)
+			} else if redacted.IsValid() && redacted.Type().ConvertibleTo(value.Type().Elem()) {
+				out.Index(i).Set(redacted.Convert(value.Type().Elem()))
+			} else {
+				out.Index(i).Set(value.Index(i))
+			}
+		}
+		return out
+	case reflect.Array:
+		out := reflect.New(value.Type()).Elem()
+		for i := 0; i < value.Len(); i++ {
+			redacted := redactReflectValue(value.Index(i))
+			if redacted.IsValid() && redacted.Type().AssignableTo(value.Type().Elem()) {
+				out.Index(i).Set(redacted)
+			} else if redacted.IsValid() && redacted.Type().ConvertibleTo(value.Type().Elem()) {
+				out.Index(i).Set(redacted.Convert(value.Type().Elem()))
+			} else {
+				out.Index(i).Set(value.Index(i))
+			}
+		}
+		return out
+	case reflect.Struct:
+		out := make(map[string]any, value.NumField())
+		valueType := value.Type()
+		for i := 0; i < value.NumField(); i++ {
+			field := valueType.Field(i)
+			if field.PkgPath != "" {
+				continue
+			}
+			key := fieldName(field)
+			if key == "" {
+				continue
+			}
+			if isSensitiveKey(key) {
+				out[key] = "[redacted]"
+				continue
+			}
+			out[key] = redactReflectValue(value.Field(i)).Interface()
+		}
+		return reflect.ValueOf(out)
+	default:
+		return value
+	}
+}
+
+func fieldName(field reflect.StructField) string {
+	if tag := strings.TrimSpace(field.Tag.Get("json")); tag != "" && tag != "-" {
+		return strings.Split(tag, ",")[0]
+	}
+	if tag := strings.TrimSpace(field.Tag.Get("yaml")); tag != "" && tag != "-" {
+		return strings.Split(tag, ",")[0]
+	}
+	return field.Name
 }
