@@ -8,13 +8,42 @@ import (
 )
 
 func TestTransport_Select_Good(t *testing.T) {
-	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
-	transport, err := SelectTransport(config.IDEConfig{}.WithDefaults(), false, false)
-	if err != nil {
-		t.Fatalf("select transport: %v", err)
+	cases := []struct {
+		name    string
+		setHTTP string
+		mode    string
+		http    string
+		mcpOnly bool
+		want    Transport
+	}{
+		{
+			name:    "env http beats defaults",
+			setHTTP: "127.0.0.1:9880",
+			want:    Transport{Mode: "http", Addr: "127.0.0.1:9880"},
+		},
+		{
+			name:    "mcpOnly forces stdio even when config is invalid",
+			mode:    "http",
+			http:    "invalid:addr:port",
+			mcpOnly: true,
+			want:    Transport{Mode: "stdio"},
+		},
 	}
-	if transport.Mode != "http" || transport.Addr != "127.0.0.1:9880" {
-		t.Fatalf("expected http env to win, got %#v", transport)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("MCP_HTTP_ADDR", tc.setHTTP)
+			t.Setenv("MCP_ADDR", "")
+			cfg := config.IDEConfig{}.WithDefaults()
+			cfg.Ide.Transport.Mode = tc.mode
+			cfg.Ide.Transport.HTTPAddr = tc.http
+			transport, err := SelectTransport(cfg, tc.mcpOnly, false)
+			if err != nil {
+				t.Fatalf("select transport: %v", err)
+			}
+			if transport != tc.want {
+				t.Fatalf("expected %#v, got %#v", tc.want, transport)
+			}
+		})
 	}
 }
 

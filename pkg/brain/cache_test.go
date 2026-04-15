@@ -3,6 +3,7 @@ package brain
 import (
 	"context"
 	"testing"
+	"strings"
 	"time"
 
 	storelib "dappco.re/go/store"
@@ -21,6 +22,57 @@ func TestCache_Get_Good(t *testing.T) {
 	value, ok := cache.Get(context.Background(), "key")
 	if !ok || value.Count != 1 {
 		t.Fatalf("expected cache hit, got ok=%v value=%#v", ok, value)
+	}
+}
+
+func TestCache_Key_Good(t *testing.T) {
+	cache := NewCache(nil, "ide.brain.cache", time.Minute, true)
+	parts := []string{"workspace", "https://api.lthn.sh", "k", "query alpha", "10", "agent", "project", "note"}
+	first := cache.Key(parts...)
+	second := cache.Key(parts...)
+	if first != second {
+		t.Fatalf("expected deterministic key %q == %q", first, second)
+	}
+	if len(first) != 64 {
+		t.Fatalf("expected sha256 key length 64, got %d", len(first))
+	}
+}
+
+func TestCache_Key_Bad(t *testing.T) {
+	cache := NewCache(nil, "ide.brain.cache", time.Minute, true)
+	parts := []string{"workspace", "https://api.lthn.sh", "k", "query alpha", "10", "agent", "project", "note"}
+	base := cache.Key(parts...)
+	cases := []struct {
+		name  string
+		parts []string
+	}{
+		{name: "workspace changed", parts: []string{"workspace-2", "https://api.lthn.sh", "k", "query alpha", "10", "agent", "project", "note"}},
+		{name: "project changed", parts: []string{"workspace", "https://api.lthn.sh", "k", "query alpha", "10", "agent", "project-2", "note"}},
+		{name: "ordered parts swapped", parts: []string{"note", "project", "agent", "10", "query alpha", "k", "https://api.lthn.sh", "workspace"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := cache.Key(tc.parts...)
+			if got == base {
+				t.Fatalf("expected component or order change to alter key")
+			}
+		})
+	}
+}
+
+func TestCache_Key_Ugly(t *testing.T) {
+	cache := NewCache(nil, "ide.brain.cache", time.Minute, true)
+	parts := []string{
+		strings.Repeat("😈", 3),
+		"",
+		"💥\nquery",
+		"10",
+		"agent\x00",
+		"project",
+		"note",
+	}
+	if got := cache.Key(parts...); got == "" || len(got) != 64 {
+		t.Fatalf("expected non-empty deterministic hash for adversarial inputs, got %q", got)
 	}
 }
 
