@@ -15,7 +15,6 @@ const maxScanDepth = 16
 const maxPreviewBytes = 4096
 
 func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string, ignores ...string) ([]Project, error) {
-	_ = ctx
 	root := input.Root
 	if core.Trim(root) == "" {
 		root = fallbackRoot
@@ -43,7 +42,7 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 		manifestPath := core.JoinPath(current, ".core", "manifest.yaml")
 		buildPath := core.JoinPath(current, ".core", "build.yaml")
 		if medium.Exists(manifestPath) || medium.Exists(buildPath) {
-			git, _ := gitStatus(context.Background(), processService, current)
+			git, _ := gitStatus(ctx, processService, current)
 			projects = append(projects, Project{
 				Root:      current,
 				Manifest:  pickPath(medium.Exists(manifestPath), manifestPath),
