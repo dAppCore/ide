@@ -17,7 +17,7 @@ import (
 )
 
 func TestServer_Compose_Good(t *testing.T) {
-	srv, err := Compose(Options{
+	srv, err := NewServer(Options{
 		Config: config.IDEConfig{}.WithDefaults(),
 		MCP:    true,
 		Medium: coreio.NewMemoryMedium(),
@@ -33,7 +33,7 @@ func TestServer_Compose_Good(t *testing.T) {
 func TestServer_Compose_Bad(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Brain.Key = ""
-	srv, err := Compose(Options{Config: cfg, MCP: true, Medium: coreio.NewMemoryMedium()})
+	srv, err := NewServer(Options{Config: cfg, MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestServer_Compose_Bad(t *testing.T) {
 }
 
 func TestServer_Compose_Ugly(t *testing.T) {
-	srv, err := Compose(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
+	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestServer_Compose_Good_MCPForcesStdioAndDisablesGUI(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Transport.Mode = "http"
 	cfg.Ide.Transport.HTTPAddr = "127.0.0.1:9880"
-	srv, err := Compose(Options{
+	srv, err := NewServer(Options{
 		Config: cfg,
 		GUI:    true,
 		MCP:    true,
@@ -123,7 +123,7 @@ func TestServer_Run_Good(t *testing.T) {
 	cfg.Ide.Transport.Mode = "http"
 	cfg.Ide.Transport.HTTPAddr = "127.0.0.1:0"
 	cfg.Ide.Transport.Token = "test-token"
-	srv, err := Compose(Options{
+	srv, err := NewServer(Options{
 		Config: cfg,
 		MCP:    false,
 		Medium: coreio.NewMemoryMedium(),
@@ -154,7 +154,7 @@ func TestServer_Run_Bad(t *testing.T) {
 	cfg.Ide.Transport.Mode = "http"
 	cfg.Ide.Transport.HTTPAddr = "127.0.0.1:0"
 	t.Setenv("MCP_AUTH_TOKEN", "")
-	srv, err := Compose(Options{
+	srv, err := NewServer(Options{
 		Config: cfg,
 		MCP:    false,
 		Medium: coreio.NewMemoryMedium(),
@@ -169,7 +169,7 @@ func TestServer_Run_Bad(t *testing.T) {
 }
 
 func TestServer_Run_Ugly(t *testing.T) {
-	srv, err := Compose(Options{
+	srv, err := NewServer(Options{
 		Config: config.IDEConfig{}.WithDefaults(),
 		MCP:    true,
 		Medium: coreio.NewMemoryMedium(),

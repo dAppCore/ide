@@ -32,8 +32,43 @@ type Server struct {
 	authToken string
 }
 
-// srv, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
-func Compose(options Options) (*Server, error) {
+type runtimeParts struct {
+	core      *core.Core
+	mcp       *coremcp.Service
+	hub       *ws.Hub
+	transport Transport
+	relay     RelayTransport
+	authToken string
+}
+
+// srv, err := NewServer(Options{Config: cfg, GUI: true, MCP: false})
+func NewServer(options Options) (*Server, error) {
+	parts, err := composeRuntime(options)
+	if err != nil {
+		return nil, err
+	}
+	return &Server{
+		core:      parts.core,
+		mcp:       parts.mcp,
+		hub:       parts.hub,
+		transport: parts.transport,
+		relay:     parts.relay,
+		authToken: parts.authToken,
+	}, nil
+}
+
+// Compose builds the Core graph and registers all IDE subsystems.
+//
+// cfg, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
+func Compose(options Options) (*core.Core, error) {
+	parts, err := composeRuntime(options)
+	if err != nil {
+		return nil, err
+	}
+	return parts.core, nil
+}
+
+func composeRuntime(options Options) (*runtimeParts, error) {
 	cfg := options.Config.WithDefaults()
 	medium := options.Medium
 	if medium == nil {
@@ -127,7 +162,7 @@ func Compose(options Options) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{
+	return &runtimeParts{
 		core:      c,
 		mcp:       mcpService,
 		hub:       hub,

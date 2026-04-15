@@ -14,7 +14,7 @@ func TestServerIntegration_Run_Good(t *testing.T) {
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: demo\n")
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Workspace.Root = "/workspace"
-	srv, err := Compose(Options{Config: cfg, MCP: true, Medium: medium})
+	srv, err := NewServer(Options{Config: cfg, MCP: true, Medium: medium})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestServerIntegration_Run_Good(t *testing.T) {
 }
 
 func TestServerIntegration_Run_Bad(t *testing.T) {
-	srv, err := Compose(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
+	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestServerIntegration_Run_Bad(t *testing.T) {
 }
 
 func TestServerIntegration_Run_Ugly(t *testing.T) {
-	srv, err := Compose(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
+	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}

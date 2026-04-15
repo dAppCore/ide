@@ -41,7 +41,7 @@ func main() {
 		cfg.Ide.Chat.Enabled = config.BoolPtr(false)
 	}
 
-	srv, err := server.Compose(server.Options{
+	srv, err := server.NewServer(server.Options{
 		Config:                    cfg,
 		GUI:                       !flags.NoGUI,
 		MCP:                       flags.MCPOnly,
