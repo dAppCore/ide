@@ -221,6 +221,15 @@ func TestDirect_ApiKey_Good(t *testing.T) {
 	if got := subsystem.apiKey(); got != "direct-secret" {
 		t.Fatalf("expected inline key, got %q", got)
 	}
+	medium := coreio.NewMemoryMedium()
+	home := homeDir()
+	if err := medium.Write(home+"/.claude/brain.key", "  file-secret  \n"); err != nil {
+		t.Fatalf("write brain key: %v", err)
+	}
+	subsystem = New(config.Brain{}.WithDefaults(), medium, nil, nil, nil)
+	if got := subsystem.apiKey(); got != "file-secret" {
+		t.Fatalf("expected brain.key fallback, got %q", got)
+	}
 	if got := subsystem.keyFingerprint(); len(got) != 64 {
 		t.Fatalf("expected sha256 fingerprint, got %q", got)
 	}

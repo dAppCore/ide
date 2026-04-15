@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/websocket"
+
 	"dappco.re/go/core/ide/pkg/config"
 	"dappco.re/go/core/ws"
 )
@@ -87,16 +89,112 @@ func TestRelay_Publish_Good(t *testing.T) {
 }
 
 func TestRelay_EventFromRelayMessage_Good(t *testing.T) {
-	event, ok := eventFromRelayMessage(ws.Message{
-		Channel:   "subagent:ws-1:guide",
-		Timestamp: time.Unix(0, 0).UTC(),
-		Data: map[string]any{
-			"type":        "guidance",
-			"message":     "focus",
-			"question_id": "q1",
+	cases := []struct {
+		name     string
+		message  ws.Message
+		expected Event
+	}{
+		{
+			name: "message field",
+			message: ws.Message{
+				Channel:   "subagent:ws-1:guide",
+				Timestamp: time.Unix(0, 0).UTC(),
+				Data: map[string]any{
+					"type":        "guidance",
+					"message":     "focus",
+					"question_id": "q1",
+				},
+			},
+			expected: Event{Type: "guidance", Channel: "subagent:ws-1:guide", Message: "focus", QuestionID: "q1", CreatedAt: time.Unix(0, 0).UTC()},
 		},
-	})
-	if !ok || event.Type != "guidance" || event.QuestionID != "q1" {
-		t.Fatalf("unexpected event %#v ok=%v", event, ok)
+		{
+			name: "state fallback",
+			message: ws.Message{
+				Channel:   "subagent:ws-1:status",
+				Timestamp: time.Unix(1, 0).UTC(),
+				Data: map[string]any{
+					"type":  "status",
+					"state": "blocked",
+				},
+			},
+			expected: Event{Type: "status", Channel: "subagent:ws-1:status", Message: "blocked", CreatedAt: time.Unix(1, 0).UTC()},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			event, ok := eventFromRelayMessage(tc.message)
+			if !ok {
+				t.Fatal("expected relay message to decode")
+			}
+			if event.Type != tc.expected.Type || event.Channel != tc.expected.Channel || event.Message != tc.expected.Message || event.QuestionID != tc.expected.QuestionID || !event.CreatedAt.Equal(tc.expected.CreatedAt) {
+				t.Fatalf("unexpected event %#v", event)
+			}
+		})
+	}
+}
+
+func TestRelay_EventFromRelayMessage_Bad(t *testing.T) {
+	if _, ok := eventFromRelayMessage(ws.Message{Data: "not-a-map"}); ok {
+		t.Fatal("expected malformed relay message to be ignored")
+	}
+}
+
+func TestRelay_WatchRelay_Good(t *testing.T) {
+	upgrader := websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		for i := 0; i < 3; i++ {
+			var msg ws.Message
+			if err := conn.ReadJSON(&msg); err != nil {
+				return
+			}
+		}
+		_ = conn.WriteJSON(ws.Message{
+			Channel:   statusChannel("ws-1"),
+			Timestamp: time.Unix(2, 0).UTC(),
+			Data: map[string]any{
+				"type":  "status",
+				"state": "completed",
+			},
+		})
+	}))
+	defer server.Close()
+
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = server.URL
+	cfg.Ide.Subagent.Relay.Path = "/"
+	subsystem := New(cfg.Ide.Subagent, nil, "relay-token")
+
+	events, completed, failed, ok := subsystem.watchRelay(context.Background(), "ws-1", 1)
+	if !ok || !completed || failed {
+		t.Fatalf("expected completed relay watch, got events=%#v completed=%v failed=%v ok=%v", events, completed, failed, ok)
+	}
+	if len(events) == 0 || events[len(events)-1].Type != "status" || events[len(events)-1].Message != "completed" {
+		t.Fatalf("expected completed status event, got %#v", events)
+	}
+}
+
+func TestRelay_SyncAgenticState_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	if !subsystem.syncAgenticState("ws-1", "running", "why") {
+		t.Fatal("expected first state transition to report change")
+	}
+	events := subsystem.collectEvents("ws-1", 0)
+	if len(events) != 2 || events[0].Type != "status" || events[1].Type != "question" {
+		t.Fatalf("expected status/question events, got %#v", events)
+	}
+	if subsystem.syncAgenticState("ws-1", "running", "why") {
+		t.Fatal("expected repeated state to be ignored")
+	}
+}
+
+func TestRelay_SyncAgenticState_Bad(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	if subsystem.syncAgenticState("", "running", "why") {
+		t.Fatal("expected empty workspace id to be ignored")
 	}
 }

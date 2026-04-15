@@ -120,11 +120,14 @@ func TestClient_Search_Good(t *testing.T) {
 		if r.URL.Path != "/v1/marketplace" {
 			t.Fatalf("unexpected path %s", r.URL.Path)
 		}
+		if got := r.URL.Query().Get("category"); got != "language" {
+			t.Fatalf("expected category query parameter, got %q", got)
+		}
 		_, _ = w.Write([]byte(`[{"code":"go-io","name":"go-io"}]`))
 	}))
 	defer server.Close()
 	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
-	out, err := client.Search(context.Background(), SearchInput{Query: "go"})
+	out, err := client.Search(context.Background(), SearchInput{Query: "go", Category: "language"})
 	if err != nil || len(out.Packages) != 1 {
 		t.Fatalf("unexpected search output %#v err=%v", out, err)
 	}

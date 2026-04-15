@@ -112,6 +112,19 @@ func TestRoutes_StoreNamespace_Good(t *testing.T) {
 	}
 }
 
+func TestRoutes_StoreNamespace_Bad(t *testing.T) {
+	c := core.New(core.WithService(storepkg.Register))
+	subsystem := New(config.Navigate{}, c)
+	data, schema, err := subsystem.resolveStoreNamespace(context.Background(), Filter{})
+	if err != nil {
+		t.Fatalf("resolve store namespace: %v", err)
+	}
+	out, ok := data.(Output)
+	if !ok || out.Available || out.Reason != "namespace is required" || schema != nil {
+		t.Fatalf("expected missing namespace fallback, got %#v schema=%#v", data, schema)
+	}
+}
+
 func TestRoutes_ResolveQuery_Bad(t *testing.T) {
 	subsystem := New(config.Navigate{}, core.New())
 	out, err := subsystem.query(context.Background(), "config.dump")

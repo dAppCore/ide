@@ -265,6 +265,60 @@ func TestTools_State_Good(t *testing.T) {
 	}
 }
 
+func TestTools_DedupeEvents_Good(t *testing.T) {
+	now := time.Unix(123, 0).UTC()
+	events := []Event{
+		{Type: "status", Channel: "subagent:ws-1:status", Message: "running", CreatedAt: now},
+		{Type: "question", Channel: "subagent:ws-1:question", Message: "why", QuestionID: "q1", CreatedAt: now},
+	}
+	if got := dedupeEvents(events); len(got) != len(events) {
+		t.Fatalf("expected unique events to pass through, got %#v", got)
+	}
+}
+
+func TestTools_DedupeEvents_Bad(t *testing.T) {
+	if got := dedupeEvents(nil); got != nil {
+		t.Fatalf("expected nil input to stay nil, got %#v", got)
+	}
+}
+
+func TestTools_DedupeEvents_Ugly(t *testing.T) {
+	now := time.Unix(123, 0).UTC()
+	dup := Event{Type: "status", Channel: "subagent:ws-1:status", Message: "running", CreatedAt: now}
+	got := dedupeEvents([]Event{dup, dup})
+	if len(got) != 1 {
+		t.Fatalf("expected duplicate events to collapse, got %#v", got)
+	}
+}
+
+func TestTools_TerminalState_Good(t *testing.T) {
+	cases := []string{
+		"completed",
+		"merged",
+		"ready-for-review",
+	}
+	for _, tc := range cases {
+		t.Run(tc, func(t *testing.T) {
+			completed, failed := terminalState(tc)
+			if !completed || failed {
+				t.Fatalf("expected completed terminal state for %q, got completed=%v failed=%v", tc, completed, failed)
+			}
+		})
+	}
+}
+
+func TestTools_TerminalState_Bad(t *testing.T) {
+	if completed, failed := terminalState("unknown"); completed || failed {
+		t.Fatalf("expected unknown state to be non-terminal, got completed=%v failed=%v", completed, failed)
+	}
+}
+
+func TestTools_TerminalState_Ugly(t *testing.T) {
+	if completed, failed := terminalState(" blocked "); completed || !failed {
+		t.Fatalf("expected trimmed blocked state to fail, got completed=%v failed=%v", completed, failed)
+	}
+}
+
 func TestTools_ClampInt_Ugly(t *testing.T) {
 	cases := []struct {
 		value    int
