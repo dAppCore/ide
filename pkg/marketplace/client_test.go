@@ -114,3 +114,41 @@ func TestClient_DefaultInstallMedium_Good(t *testing.T) {
 		t.Fatalf("expected temp home to exist: %v", err)
 	}
 }
+
+func TestClient_Search_Good(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/marketplace" {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`[{"code":"go-io","name":"go-io"}]`))
+	}))
+	defer server.Close()
+	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
+	out, err := client.Search(context.Background(), SearchInput{Query: "go"})
+	if err != nil || len(out.Packages) != 1 {
+		t.Fatalf("unexpected search output %#v err=%v", out, err)
+	}
+}
+
+func TestClient_Search_Bad(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer server.Close()
+	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
+	if _, err := client.Search(context.Background(), SearchInput{Query: "go"}); err == nil || !strings.Contains(err.Error(), "502") {
+		t.Fatalf("expected 502 error, got %v", err)
+	}
+}
+
+func TestClient_Search_Ugly(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
+	out, err := client.Search(context.Background(), SearchInput{Query: "go"})
+	if err == nil || !strings.Contains(err.Error(), "decode response") {
+		t.Fatalf("expected empty-body decode error, got %#v err=%v", out, err)
+	}
+}

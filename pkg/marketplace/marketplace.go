@@ -7,7 +7,6 @@ import (
 	coreio "dappco.re/go/core/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	scmmarketplace "dappco.re/go/scm/marketplace"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
 )
@@ -59,52 +58,11 @@ func (s *Subsystem) AttachMedium(medium coreio.Medium) {
 func (s *Subsystem) Name() string { return "marketplace" }
 
 func (s *Subsystem) RegisterTools(svc *coremcp.Service) {
-	server := svc.Server()
-	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_search", Description: "Search the marketplace for packages."}, s.handleSearch)
-	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_info", Description: "Load package details from the marketplace."}, s.handleInfo)
-	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_install", Description: "Install a package from the marketplace."}, s.handleInstall)
+	s.registerTools(svc)
 }
 
 func (s *Subsystem) RegisterActions(c *core.Core) {
-	c.Action("ide.pkg.search", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[SearchInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.search(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-	c.Action("ide.pkg.info", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[InfoInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.info(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-	c.Action("ide.pkg.install", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[InstallInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.install(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-}
-
-func (s *Subsystem) handleSearch(ctx context.Context, _ *mcp.CallToolRequest, input SearchInput) (*mcp.CallToolResult, SearchOutput, error) {
-	out, err := s.search(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) handleInfo(ctx context.Context, _ *mcp.CallToolRequest, input InfoInput) (*mcp.CallToolResult, InfoOutput, error) {
-	out, err := s.info(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) handleInstall(ctx context.Context, _ *mcp.CallToolRequest, input InstallInput) (*mcp.CallToolResult, InstallOutput, error) {
-	out, err := s.install(ctx, input)
-	return nil, out, err
+	s.registerActions(c)
 }
 
 func (s *Subsystem) search(ctx context.Context, input SearchInput) (SearchOutput, error) {

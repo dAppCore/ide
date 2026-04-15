@@ -1,6 +1,10 @@
 package subagent
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +12,15 @@ import (
 	"dappco.re/go/core/ide/pkg/config"
 	"dappco.re/go/core/ws"
 )
+
+type testAuthenticator struct{}
+
+func (testAuthenticator) Authenticate(r *http.Request) ws.AuthResult {
+	if r.Header.Get("Authorization") != "Bearer good-token" {
+		return ws.AuthResult{Error: errors.New("expired token")}
+	}
+	return ws.AuthResult{Valid: true}
+}
 
 func TestRelay_Route_Good(t *testing.T) {
 	cases := map[string]func(string) string{
@@ -26,22 +39,23 @@ func TestRelay_Route_Good(t *testing.T) {
 
 func TestRelay_Route_Bad(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
-	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance"})
-	subsystem.appendQuestionChannel("ws-1", "q1", make(chan string, 1))
-	subsystem.deleteQuestionChannel("ws-1", "q1")
-	if channel := subsystem.takeQuestionChannel("ws-1", "missing"); channel != nil {
+	if channel := subsystem.takeQuestionChannel("missing", "q1"); channel != nil {
 		t.Fatalf("expected missing question channel to be nil, got %#v", channel)
 	}
 }
 
 func TestRelay_Route_Ugly(t *testing.T) {
-	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
-	for index := 0; index < maxEventsPerWorkspace+1; index++ {
-		subsystem.appendEvent("ws-1", Event{Type: "progress", Message: "step", CreatedAt: time.Now()})
-	}
-	events := subsystem.collectEvents("ws-1", 0)
-	if len(events) != maxEventsPerWorkspace {
-		t.Fatalf("expected event trimming, got %d", len(events))
+	hub := ws.NewHubWithConfig(ws.HubConfig{
+		Authenticator: testAuthenticator{},
+	})
+	server := httptest.NewServer(http.HandlerFunc(hub.HandleWebSocket))
+	defer server.Close()
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = server.URL
+	cfg.Ide.Subagent.Relay.Path = "/"
+	subsystem := New(cfg.Ide.Subagent, hub, "expired-token")
+	if _, _, _, ok := subsystem.watchRelay(context.Background(), "ws-1", 1); ok {
+		t.Fatal("expected relay watch to reject expired token")
 	}
 }
 

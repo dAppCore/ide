@@ -6,7 +6,6 @@ import (
 
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
 	storepkg "dappco.re/go/core/ide/pkg/store"
@@ -44,26 +43,11 @@ func (s *Subsystem) AttachCore(coreInstance *core.Core) {
 func (s *Subsystem) Name() string { return "navigate" }
 
 func (s *Subsystem) RegisterTools(svc *coremcp.Service) {
-	coremcp.AddToolRecorded(svc, svc.Server(), "navigate", &mcp.Tool{
-		Name:        "core_navigate",
-		Description: "Inspect a core:// route and return structured JSON.",
-	}, s.handle)
+	s.registerTools(svc)
 }
 
 func (s *Subsystem) RegisterActions(c *core.Core) {
-	c.Action("ide.navigate", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[Input](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.resolve(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-}
-
-func (s *Subsystem) handle(ctx context.Context, _ *mcp.CallToolRequest, input Input) (*mcp.CallToolResult, Output, error) {
-	out, err := s.resolve(ctx, input)
-	return nil, out, err
+	s.registerActions(c)
 }
 
 func (s *Subsystem) resolve(ctx context.Context, input Input) (Output, error) {

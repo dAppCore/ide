@@ -60,13 +60,19 @@ func TestDirect_Recall_Good(t *testing.T) {
 }
 
 func TestDirect_Recall_Bad(t *testing.T) {
+	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
+	})
+	defer server.Close()
+
 	storeInstance, err := storelib.New(":memory:")
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
-	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil {
-		t.Fatal("expected missing API key error")
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil || !strings.Contains(err.Error(), "401") {
+		t.Fatalf("expected 401 error, got %v", err)
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	coreio "dappco.re/go/core/io"
 	"dappco.re/go/core/process"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
 )
@@ -32,78 +31,11 @@ func New(cfg config.Workspace, medium coreio.Medium, processService *process.Ser
 func (s *Subsystem) Name() string { return "workspace" }
 
 func (s *Subsystem) RegisterTools(svc *coremcp.Service) {
-	server := svc.Server()
-	coremcp.AddToolRecorded(svc, server, "workspace", &mcp.Tool{
-		Name:        "workspace_status",
-		Description: "Inspect the current workspace root, git status, and .core files.",
-	}, s.handleStatus)
-	coremcp.AddToolRecorded(svc, server, "workspace", &mcp.Tool{
-		Name:        "workspace_conventions",
-		Description: "Load workspace conventions from .core/build.yaml and repository context.",
-	}, s.handleConventions)
-	coremcp.AddToolRecorded(svc, server, "workspace", &mcp.Tool{
-		Name:        "workspace_impact",
-		Description: "Estimate the impact of the current git diff on the workspace.",
-	}, s.handleImpact)
-	coremcp.AddToolRecorded(svc, server, "workspace", &mcp.Tool{
-		Name:        "workspace_scan",
-		Description: "Scan upward from the workspace root for projects with .core metadata.",
-	}, s.handleScan)
+	s.registerTools(svc)
 }
 
 func (s *Subsystem) RegisterActions(c *core.Core) {
-	c.Action("ide.workspace.status", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[StatusInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.status(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-	c.Action("ide.workspace.conventions", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[ConventionsInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.conventions(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-	c.Action("ide.workspace.impact", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[ImpactInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.impact(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-	c.Action("ide.workspace.scan", func(ctx context.Context, opts core.Options) core.Result {
-		input, err := decode[ScanInput](opts)
-		if err != nil {
-			return core.Result{Value: err, OK: false}
-		}
-		out, err := s.scan(ctx, input)
-		return core.Result{}.New(out, err)
-	})
-}
-
-func (s *Subsystem) handleStatus(ctx context.Context, _ *mcp.CallToolRequest, input StatusInput) (*mcp.CallToolResult, StatusOutput, error) {
-	out, err := s.status(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) handleConventions(ctx context.Context, _ *mcp.CallToolRequest, input ConventionsInput) (*mcp.CallToolResult, ConventionsOutput, error) {
-	out, err := s.conventions(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) handleImpact(ctx context.Context, _ *mcp.CallToolRequest, input ImpactInput) (*mcp.CallToolResult, ImpactOutput, error) {
-	out, err := s.impact(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) handleScan(ctx context.Context, _ *mcp.CallToolRequest, input ScanInput) (*mcp.CallToolResult, ScanOutput, error) {
-	out, err := s.scan(ctx, input)
-	return nil, out, err
+	s.registerActions(c)
 }
 
 func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput, error) {

@@ -13,12 +13,12 @@ type (
 	ForgetOutput   = brainpkg.ForgetOutput
 	ListInput      = brainpkg.ListInput
 	ListOutput     = brainpkg.ListOutput
-	ContextInput struct {
+	ContextInput   struct {
 		Project string `json:"project,omitempty"`
 	}
 	ContextOutput struct {
-		Overview     string   `json:"overview"`
-		Recent       []Memory `json:"recent"`
-		Conventions  []string `json:"conventions"`
+		Overview    string   `json:"overview"`
+		Recent      []Memory `json:"recent"`
+		Conventions []string `json:"conventions"`
 	}
 )

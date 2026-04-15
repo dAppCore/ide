@@ -2,8 +2,6 @@ package subagent
 
 import (
 	"context"
-	cryptoRand "crypto/rand"
-	"encoding/hex"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,6 +9,7 @@ import (
 
 	core "dappco.re/go/core"
 	"dappco.re/go/core/ws"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/gorilla/websocket"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -25,6 +24,21 @@ const (
 )
 
 var workspaceIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
+
+func (s *Subsystem) registerTools(svc *coremcp.Service) {
+	server := svc.Server()
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_guide", Description: "Send guidance to a subagent workspace."}, s.handleGuide)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_ask", Description: "Ask the orchestrator a question and wait for an answer."}, s.handleAsk)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_progress", Description: "Record progress for a subagent workspace."}, s.handleProgress)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_watch", Description: "Watch recent subagent events for a workspace."}, s.handleWatch)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_answer", Description: "Answer a pending subagent question."}, s.handleAnswer)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_dispatch_guided", Description: "Dispatch a guided subagent session."}, s.handleDispatchGuidedTool)
+}
+
+func (s *Subsystem) handleDispatchGuidedTool(ctx context.Context, _ *mcp.CallToolRequest, input DispatchGuidedInput) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
+	out, err := s.DispatchGuided(ctx, input)
+	return nil, out, err
+}
 
 func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, input GuideInput) (*mcp.CallToolResult, GuideOutput, error) {
 	out, err := s.guide(ctx, input)
@@ -214,58 +228,6 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 	return AnswerOutput{Delivered: true}, nil
 }
 
-func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolRequest, input DispatchGuidedInput) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
-	out, err := s.DispatchGuided(ctx, input)
-	return nil, out, err
-}
-
-func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInput) (DispatchGuidedOutput, error) {
-	_ = ctx
-	if !config.BoolValue(s.cfg.Enabled, true) {
-		return DispatchGuidedOutput{Success: false, Reason: "subagent is disabled"}, nil
-	}
-	if core.Trim(input.Repo) == "" {
-		return DispatchGuidedOutput{Success: false, Reason: "repo is required"}, core.E("ide.subagent.dispatch_guided", "repo is required", nil)
-	}
-	if core.Trim(input.Task) == "" {
-		return DispatchGuidedOutput{Success: false, Reason: "task is required"}, core.E("ide.subagent.dispatch_guided", "task is required", nil)
-	}
-	agent := core.Trim(input.Agent)
-	if agent == "" {
-		agent = s.cfg.Dispatch.DefaultAgent
-	}
-	template := core.Trim(input.Template)
-	if template == "" {
-		template = s.cfg.Dispatch.DefaultTemplate
-	}
-	workspaceID, err := normalizeWorkspaceID(input.WorkspaceID)
-	if err != nil {
-		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
-	}
-	if workspaceID == "" {
-		workspaceID, err = newWorkspaceID()
-		if err != nil {
-			return DispatchGuidedOutput{Success: false, Reason: "workspace id generation failed"}, err
-		}
-	}
-	relayURL := core.Trim(input.RelayURL)
-	if relayURL == "" {
-		relayURL = s.cfg.Relay.URL()
-	} else if err := validateRelayURL(relayURL); err != nil {
-		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
-	}
-	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN is injected by the launcher and must not be echoed.\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
-	if s.hub == nil {
-		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
-	}
-	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}
-	statusChannel := statusChannel(workspaceID)
-	s.appendEvent(workspaceID, Event{Type: status.Type, Channel: statusChannel, Message: status.State, CreatedAt: status.CreatedAt})
-	s.publish(statusChannel, status)
-	s.publish(guideChannel(workspaceID), GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: prompt, CreatedAt: time.Now().UTC()})
-	return DispatchGuidedOutput{Success: true, Delivered: true, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt}, nil
-}
-
 func state(events []Event) (bool, bool) {
 	for index := len(events) - 1; index >= 0; index-- {
 		if events[index].Type != "status" {
@@ -414,12 +376,4 @@ func newQuestionID() (string, error) {
 
 func newWorkspaceID() (string, error) {
 	return newRandomID("workspace")
-}
-
-func newRandomID(prefix string) (string, error) {
-	var raw [8]byte
-	if _, err := cryptoRand.Read(raw[:]); err != nil {
-		return "", core.E("ide.subagent.id", "generate id", err)
-	}
-	return core.Concat(prefix, "-", hex.EncodeToString(raw[:])), nil
 }
