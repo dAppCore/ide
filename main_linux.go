@@ -50,12 +50,12 @@ func main() {
 	}
 	bridge := ide.NewBridge(hub, bridgeCfg)
 
-	brainDirect, err := NewCachedBrainDirect(cwd)
+	brainDirect, err := NewCachedBrainDirect(cwd, ideCfg.Ide.Workspace.ConventionPacks...)
 	if err != nil {
 		log.Fatalf("failed to initialise brain cache: %v", err)
 	}
 	brainDirect.agentID = ideCfg.Ide.Brain.AgentID
-	workspaceSubsystem := NewWorkspaceSubsystem(cwd)
+	workspaceSubsystem := NewWorkspaceSubsystem(cwd, ideCfg.Ide.Workspace.ConventionPacks...)
 	marketplaceSubsystem := NewMarketplaceSubsystem(nil)
 	navigateSubsystem := NewNavigateSubsystem(nil)
 	subagentSubsystem := NewSubagentSubsystem(hub)

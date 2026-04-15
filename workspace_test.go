@@ -108,6 +108,19 @@ func TestWorkspaceConventionsForRoot_Good_MergesLanguagePacks(t *testing.T) {
 	assert.Contains(t, strings.Join(resp.Notes, "\n"), "Build manifest detected for demo.")
 }
 
+func TestWorkspaceConventionsForRoot_Good_RespectsConfiguredPacks(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("project:\n  name: demo\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module demo\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "package.json"), []byte("{}\n"), 0o644))
+
+	resp, err := workspaceConventionsForRoot(root, "go")
+	require.NoError(t, err)
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "Go pack loaded")
+	assert.NotContains(t, strings.Join(resp.Notes, "\n"), "TypeScript pack loaded")
+}
+
 func TestWorkspaceConventionsForRoot_Bad_UnknownLanguageFallsBack(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.Mkdir(filepath.Join(root, ".core"), 0o755))

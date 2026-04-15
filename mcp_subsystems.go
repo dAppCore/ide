@@ -17,11 +17,13 @@ import (
 // Workspace MCP subsystem.
 
 type WorkspaceSubsystem struct {
-	root string
+	root            string
+	conventionPacks []string
 }
 
-func NewWorkspaceSubsystem(root string) *WorkspaceSubsystem {
-	return &WorkspaceSubsystem{root: root}
+func NewWorkspaceSubsystem(root string, conventionPacks ...string) *WorkspaceSubsystem {
+	packs := append([]string(nil), conventionPacks...)
+	return &WorkspaceSubsystem{root: root, conventionPacks: packs}
 }
 
 func (s *WorkspaceSubsystem) Name() string { return "workspace" }
@@ -100,7 +102,7 @@ func (s *WorkspaceSubsystem) workspaceConventions(ctx context.Context, _ *mcp.Ca
 	if root == "" {
 		root = s.root
 	}
-	resp, err := workspaceConventionsForRoot(root)
+	resp, err := workspaceConventionsForRoot(root, s.conventionPacks...)
 	if err != nil {
 		return nil, workspaceConventionsResponse{}, err
 	}

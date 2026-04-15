@@ -185,7 +185,7 @@ func collectWorkspaceSnapshot(root string) (*workspaceSnapshot, error) {
 	}, nil
 }
 
-func workspaceConventionsForRoot(root string) (workspaceConventionsResponse, error) {
+func workspaceConventionsForRoot(root string, conventionPacks ...string) (workspaceConventionsResponse, error) {
 	snapshot, err := collectWorkspaceSnapshot(root)
 	if err != nil {
 		return workspaceConventionsResponse{}, err
@@ -203,6 +203,9 @@ func workspaceConventionsForRoot(root string) (workspaceConventionsResponse, err
 	}
 
 	languages := detectWorkspaceLanguages(snapshot.Root)
+	if len(conventionPacks) > 0 {
+		languages = filterConventionLanguages(languages, conventionPacks)
+	}
 	for _, language := range languages {
 		if pack, ok := conventionPackForLanguage(language); ok {
 			conventions = append(conventions, pack.Conventions...)
@@ -224,6 +227,30 @@ func workspaceConventionsForRoot(root string) (workspaceConventionsResponse, err
 		Conventions: conventions,
 		Notes:       notes,
 	}, nil
+}
+
+func filterConventionLanguages(detected []string, allowed []string) []string {
+	if len(allowed) == 0 {
+		return uniqueStrings(detected)
+	}
+
+	allowSet := make(map[string]struct{}, len(allowed))
+	for _, name := range allowed {
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key == "" {
+			continue
+		}
+		allowSet[key] = struct{}{}
+	}
+
+	filtered := make([]string, 0, len(detected))
+	for _, language := range detected {
+		key := strings.ToLower(strings.TrimSpace(language))
+		if _, ok := allowSet[key]; ok {
+			filtered = append(filtered, key)
+		}
+	}
+	return uniqueStrings(filtered)
 }
 
 func workspaceImpactForRoot(root string) (workspaceImpactResponse, error) {

@@ -46,11 +46,12 @@ type (
 // BrainDirectSubsystem implements the OpenBrain MCP tools over the direct HTTP API.
 // brain_recall is cached locally in DuckDB to avoid repeated semantic searches.
 type BrainDirectSubsystem struct {
-	workspaceRoot string
-	apiURL        string
-	apiKey        string
-	agentID       string
-	client        *http.Client
+	workspaceRoot   string
+	conventionPacks []string
+	apiURL          string
+	apiKey          string
+	agentID         string
+	client          *http.Client
 
 	cache *brainRecallCache
 }
@@ -60,7 +61,7 @@ var _ coremcp.SubsystemWithShutdown = (*BrainDirectSubsystem)(nil)
 
 // NewCachedBrainDirect creates the direct OpenBrain subsystem with a DuckDB-backed
 // cache for brain_recall responses.
-func NewCachedBrainDirect(workspaceRoot string) (*BrainDirectSubsystem, error) {
+func NewCachedBrainDirect(workspaceRoot string, conventionPacks ...string) (*BrainDirectSubsystem, error) {
 	apiURL := strings.TrimSpace(os.Getenv("CORE_BRAIN_URL"))
 	if apiURL == "" {
 		apiURL = defaultBrainAPIURL
@@ -89,12 +90,13 @@ func NewCachedBrainDirect(workspaceRoot string) (*BrainDirectSubsystem, error) {
 	}
 
 	return &BrainDirectSubsystem{
-		workspaceRoot: workspaceRoot,
-		apiURL:        apiURL,
-		apiKey:        apiKey,
-		agentID:       strings.TrimSpace(os.Getenv("CORE_BRAIN_AGENT_ID")),
-		client:        &http.Client{Timeout: 30 * time.Second},
-		cache:         cache,
+		workspaceRoot:   workspaceRoot,
+		conventionPacks: append([]string(nil), conventionPacks...),
+		apiURL:          apiURL,
+		apiKey:          apiKey,
+		agentID:         strings.TrimSpace(os.Getenv("CORE_BRAIN_AGENT_ID")),
+		client:          &http.Client{Timeout: 30 * time.Second},
+		cache:           cache,
 	}, nil
 }
 
@@ -409,7 +411,7 @@ func (s *BrainDirectSubsystem) brainContext(ctx context.Context, _ *mcp.CallTool
 	if err != nil {
 		return nil, BrainContextOutput{}, err
 	}
-	conventions, err := workspaceConventionsForRoot(s.workspaceRoot)
+	conventions, err := workspaceConventionsForRoot(s.workspaceRoot, s.conventionPacks...)
 	if err != nil {
 		return nil, BrainContextOutput{}, err
 	}
