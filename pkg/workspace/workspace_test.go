@@ -151,6 +151,13 @@ func TestWorkspace_Conventions_Good(t *testing.T) {
 	if !containsString(out.Conventions, "Use core primitives and explicit data shapes for public APIs.") {
 		t.Fatalf("expected go convention pack, got %#v", out.Conventions)
 	}
+	out2, err := subsystem.Conventions(context.Background(), ConventionsInput{})
+	if err != nil {
+		t.Fatalf("Conventions: %v", err)
+	}
+	if out2.Build.ProjectName != "demo" {
+		t.Fatalf("expected exported Conventions method to match, got %#v", out2.Build)
+	}
 }
 
 func TestWorkspace_Conventions_Bad(t *testing.T) {

@@ -248,6 +248,93 @@ func TestTools_ClampInt_Ugly(t *testing.T) {
 	}
 }
 
+func TestTools_HandleGuide_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	_, out, err := subsystem.handleGuide(context.Background(), nil, GuideInput{WorkspaceID: "ws-1", Message: "focus"})
+	if err != nil {
+		t.Fatalf("handleGuide: %v", err)
+	}
+	if out.Delivered {
+		t.Fatalf("expected no-relay fallback, got %#v", out)
+	}
+}
+
+func TestTools_HandleAsk_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	_, out, err := subsystem.handleAsk(context.Background(), nil, AskInput{WorkspaceID: "ws-1", Question: "why?"})
+	if err != nil {
+		t.Fatalf("handleAsk: %v", err)
+	}
+	if out.Reason != "no relay" {
+		t.Fatalf("expected no-relay fallback, got %#v", out)
+	}
+}
+
+func TestTools_HandleProgress_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	_, out, err := subsystem.handleProgress(context.Background(), nil, ProgressInput{WorkspaceID: "ws-1", Progress: 1, Total: 3, Message: "step"})
+	if err != nil {
+		t.Fatalf("handleProgress: %v", err)
+	}
+	if out.Delivered {
+		t.Fatalf("expected no-relay fallback, got %#v", out)
+	}
+}
+
+func TestTools_HandleWatch_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem.appendEvent("ws-1", Event{Type: "status", Message: "completed", CreatedAt: time.Now()})
+	_, out, err := subsystem.handleWatch(context.Background(), nil, WatchInput{WorkspaceID: "ws-1", Timeout: 1})
+	if err != nil {
+		t.Fatalf("handleWatch: %v", err)
+	}
+	if !out.Completed || out.Failed {
+		t.Fatalf("expected completed watch, got %#v", out)
+	}
+}
+
+func TestTools_HandleAnswer_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
+	_, out, err := subsystem.handleAnswer(context.Background(), nil, AnswerInput{WorkspaceID: "ws-1", QuestionID: "q1", Answer: "because"})
+	if err != nil {
+		t.Fatalf("handleAnswer: %v", err)
+	}
+	if out.Delivered {
+		t.Fatalf("expected no-relay fallback, got %#v", out)
+	}
+	select {
+	case got := <-channel:
+		if got != "because" {
+			t.Fatalf("expected answer delivered to question channel, got %q", got)
+		}
+	default:
+		t.Fatal("expected question channel to receive answer")
+	}
+}
+
+func TestTools_HandleDispatchGuided_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	_, out, err := subsystem.handleDispatchGuidedTool(context.Background(), nil, DispatchGuidedInput{Repo: "core/ide", Task: "investigate"})
+	if err != nil {
+		t.Fatalf("handleDispatchGuidedTool: %v", err)
+	}
+	if out.WorkspaceID == "" || !out.Success {
+		t.Fatalf("unexpected dispatch output %#v", out)
+	}
+}
+
+func TestTools_NewQuestionID_Good(t *testing.T) {
+	got, err := newQuestionID()
+	if err != nil {
+		t.Fatalf("newQuestionID: %v", err)
+	}
+	if !strings.HasPrefix(got, "q-") {
+		t.Fatalf("expected question id prefix, got %q", got)
+	}
+}
+
 func TestSubagent_Decode_Good(t *testing.T) {
 	input, err := decode[GuideInput](core.NewOptions(
 		core.Option{Key: "workspaceId", Value: "ws-1"},

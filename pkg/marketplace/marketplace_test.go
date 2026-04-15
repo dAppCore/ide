@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	core "dappco.re/go/core"
+	coreio "dappco.re/go/core/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
@@ -18,6 +19,7 @@ func TestMarketplace_Search_Good(t *testing.T) {
 	}))
 	defer server.Close()
 	subsystem := New(config.Marketplace{Endpoint: server.URL, APIPath: ""})
+	subsystem.AttachMedium(coreio.NewMemoryMedium())
 	out, err := subsystem.search(context.Background(), SearchInput{Query: "go"})
 	if err != nil {
 		t.Fatalf("search: %v", err)

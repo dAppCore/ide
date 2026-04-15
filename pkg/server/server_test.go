@@ -17,7 +17,7 @@ import (
 )
 
 func TestServer_Compose_Good(t *testing.T) {
-	srv, err := NewServer(Options{
+	coreInstance, err := Compose(Options{
 		Config: config.IDEConfig{}.WithDefaults(),
 		MCP:    true,
 		Medium: coreio.NewMemoryMedium(),
@@ -25,41 +25,62 @@ func TestServer_Compose_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
-	if srv.Core() == nil || srv.MCP() == nil {
-		t.Fatal("expected core and mcp services")
+	for _, name := range []string{
+		"ide.brain.recall",
+		"ide.brain.remember",
+		"ide.brain.forget",
+		"ide.brain.list",
+		"ide.brain.context",
+		"ide.workspace.scan",
+		"ide.workspace.status",
+		"ide.workspace.conventions",
+		"ide.workspace.impact",
+		"ide.subagent.guide",
+		"ide.subagent.ask",
+		"ide.subagent.answer",
+		"ide.subagent.progress",
+		"ide.subagent.watch",
+		"ide.navigate",
+		"ide.pkg.search",
+		"ide.pkg.info",
+		"ide.pkg.install",
+	} {
+		if !coreInstance.Action(name).Exists() {
+			t.Fatalf("expected action %s to exist", name)
+		}
+	}
+	if _, ok := core.ServiceFor[*coremcp.Service](coreInstance, "mcp"); !ok {
+		t.Fatal("expected mcp service to be registered")
 	}
 }
 
 func TestServer_Compose_Bad(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Brain.Key = ""
-	srv, err := NewServer(Options{Config: cfg, MCP: true, Medium: coreio.NewMemoryMedium()})
+	coreInstance, err := Compose(Options{Config: cfg, MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
-	var found bool
-	for _, tool := range srv.MCP().Tools() {
-		if tool.Name != "brain_recall" {
-			continue
-		}
-		found = true
-		_, callErr := tool.RESTHandler(context.Background(), []byte(`{"query":"alpha"}`))
-		if callErr == nil {
-			t.Fatal("expected missing API key error")
-		}
+	result := coreInstance.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "alpha"}))
+	if result.OK {
+		t.Fatalf("expected missing API key error, got %#v", result.Value)
 	}
-	if !found {
-		t.Fatal("brain_recall tool not registered")
+	if result.Value == nil {
+		t.Fatal("expected error value from recall action")
 	}
 }
 
 func TestServer_Compose_Ugly(t *testing.T) {
-	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
+	coreInstance, err := Compose(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
 	}
 	counts := map[string]int{}
-	for _, tool := range srv.MCP().Tools() {
+	mcpService, ok := core.ServiceFor[*coremcp.Service](coreInstance, "mcp")
+	if !ok || mcpService == nil {
+		t.Fatal("expected mcp service")
+	}
+	for _, tool := range mcpService.Tools() {
 		counts[tool.Name]++
 	}
 	for name, count := range counts {

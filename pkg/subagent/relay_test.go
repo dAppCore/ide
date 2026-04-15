@@ -71,6 +71,16 @@ func TestRelay_QuestionChannel_Ugly(t *testing.T) {
 	}
 }
 
+func TestRelay_DeleteQuestionChannel_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
+	subsystem.deleteQuestionChannel("ws-1", "q1")
+	if got := subsystem.takeQuestionChannel("ws-1", "q1"); got != nil {
+		t.Fatalf("expected deleted question channel, got %#v", got)
+	}
+}
+
 func TestRelay_Publish_Good(t *testing.T) {
 	subsystem := &Subsystem{}
 	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance", Message: "focus"})

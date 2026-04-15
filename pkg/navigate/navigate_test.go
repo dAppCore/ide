@@ -18,6 +18,8 @@ func TestNavigate_Resolve_Good(t *testing.T) {
 		return core.Result{}
 	})
 	subsystem := New(config.Navigate{}, c)
+	subsystem.AttachCore(core.New())
+	subsystem.AttachCore(c)
 	out, err := subsystem.resolve(context.Background(), Input{Route: "core://settings"})
 	if err != nil {
 		t.Fatalf("navigate: %v", err)
@@ -46,5 +48,15 @@ func TestNavigate_Resolve_Ugly(t *testing.T) {
 	}
 	if out.Available || out.Data == nil {
 		t.Fatalf("expected fallback unavailable payload, got %#v", out)
+	}
+}
+
+func TestNavigate_RouteEnabled_Good(t *testing.T) {
+	subsystem := New(config.Navigate{Routes: []string{"core://store"}}, core.New())
+	if !subsystem.routeEnabled("core://store") {
+		t.Fatal("expected configured route to be enabled")
+	}
+	if subsystem.routeEnabled("core://models") {
+		t.Fatal("expected unconfigured route to be disabled")
 	}
 }
