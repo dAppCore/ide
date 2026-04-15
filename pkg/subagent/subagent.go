@@ -107,6 +107,9 @@ type DispatchGuidedOutput struct {
 	Reason      string `json:"reason,omitempty"`
 }
 
+type GuidedDispatchInput = DispatchGuidedInput
+type GuidedDispatchOutput = DispatchGuidedOutput
+
 func New(cfg config.Subagent, hub *ws.Hub) *Subsystem {
 	return &Subsystem{cfg: cfg, hub: hub, answers: map[string]chan string{}, events: map[string][]Event{}}
 }
