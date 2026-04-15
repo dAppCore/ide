@@ -6,6 +6,8 @@ import (
 
 	core "dappco.re/go/core"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"dappco.re/go/core/ide/pkg/config"
 )
 
 func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, input GuideInput) (*mcp.CallToolResult, GuideOutput, error) {
@@ -15,7 +17,7 @@ func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, inp
 
 func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, error) {
 	_ = ctx
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return GuideOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.WorkspaceID) == "" {
@@ -37,7 +39,7 @@ func (s *Subsystem) handleAsk(ctx context.Context, _ *mcp.CallToolRequest, input
 }
 
 func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) {
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AskOutput{Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.WorkspaceID) == "" {
@@ -76,7 +78,7 @@ func (s *Subsystem) handleProgress(ctx context.Context, _ *mcp.CallToolRequest, 
 
 func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (ProgressOutput, error) {
 	_ = ctx
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return ProgressOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.WorkspaceID) == "" {
@@ -98,7 +100,7 @@ func (s *Subsystem) handleWatch(ctx context.Context, _ *mcp.CallToolRequest, inp
 }
 
 func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, error) {
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return WatchOutput{Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.WorkspaceID) == "" {
@@ -140,7 +142,7 @@ func (s *Subsystem) handleAnswer(ctx context.Context, _ *mcp.CallToolRequest, in
 
 func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput, error) {
 	_ = ctx
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AnswerOutput{Delivered: false, Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.WorkspaceID) == "" {
@@ -169,7 +171,7 @@ func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolReq
 
 func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInput) (DispatchGuidedOutput, error) {
 	_ = ctx
-	if !s.cfg.Enabled {
+	if !config.BoolValue(s.cfg.Enabled, true) {
 		return DispatchGuidedOutput{Success: false, Reason: "subagent is disabled"}, nil
 	}
 	if core.Trim(input.Repo) == "" {

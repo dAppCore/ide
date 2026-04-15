@@ -38,7 +38,7 @@ func main() {
 		Token:         flags.Token,
 	})
 	if flags.NoGUI {
-		cfg.Ide.Chat.Enabled = false
+		cfg.Ide.Chat.Enabled = config.BoolPtr(false)
 	}
 
 	srv, err := server.Compose(server.Options{

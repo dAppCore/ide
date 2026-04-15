@@ -14,6 +14,7 @@ type Cache struct {
 	store     *storelib.Store
 	namespace string
 	ttl       time.Duration
+	enabled   bool
 }
 
 type cacheEntry struct {
@@ -21,8 +22,8 @@ type cacheEntry struct {
 	Output    RecallOutput `json:"output"`
 }
 
-func NewCache(storeInstance *storelib.Store, namespace string, ttl time.Duration) *Cache {
-	return &Cache{store: storeInstance, namespace: namespace, ttl: ttl}
+func NewCache(storeInstance *storelib.Store, namespace string, ttl time.Duration, enabled bool) *Cache {
+	return &Cache{store: storeInstance, namespace: namespace, ttl: ttl, enabled: enabled}
 }
 
 func (c *Cache) Key(parts ...string) string {
@@ -32,7 +33,7 @@ func (c *Cache) Key(parts ...string) string {
 
 func (c *Cache) Get(ctx context.Context, key string) (RecallOutput, bool) {
 	_ = ctx
-	if c == nil || c.store == nil {
+	if c == nil || c.store == nil || !c.enabled {
 		return RecallOutput{}, false
 	}
 	raw, err := c.store.Get(c.namespace, key)
@@ -52,7 +53,7 @@ func (c *Cache) Get(ctx context.Context, key string) (RecallOutput, bool) {
 
 func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error {
 	_ = ctx
-	if c == nil || c.store == nil {
+	if c == nil || c.store == nil || !c.enabled {
 		return nil
 	}
 	entry := cacheEntry{Output: output}
@@ -64,7 +65,7 @@ func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error 
 
 func (c *Cache) Clear(ctx context.Context) error {
 	_ = ctx
-	if c == nil || c.store == nil {
+	if c == nil || c.store == nil || !c.enabled {
 		return nil
 	}
 	return c.store.DeleteGroup(c.namespace)

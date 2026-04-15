@@ -15,7 +15,7 @@ type reposFile struct {
 	} `yaml:"repos"`
 }
 
-func classifyImpact(root string, changes []GitChange) ([]string, []string, []string) {
+func classifyImpact(medium coreio.Medium, root string, changes []GitChange) ([]string, []string, []string) {
 	areas := make([]string, 0, len(changes))
 	checks := []string{"go build ./...", "go test ./... -count=1"}
 	notes := []string{"Impact categories are inferred from changed paths and .core configuration files."}
@@ -33,8 +33,8 @@ func classifyImpact(root string, changes []GitChange) ([]string, []string, []str
 			}
 		}
 	}
-	if hasManifestDependencyChange(changes) {
-		dependents := downstreamDependents(coreio.Local, root)
+	if hasDependencyManifestChange(changes) {
+		dependents := downstreamDependents(medium, root)
 		if len(dependents) > 0 {
 			areas = append(areas, "downstream dependents")
 			notes = append(notes, core.Concat("Repos listed in repos.yaml depend on the current workspace: ", core.Join(", ", dependents...), "."))
@@ -43,9 +43,12 @@ func classifyImpact(root string, changes []GitChange) ([]string, []string, []str
 	return unique(areas), unique(checks), unique(notes)
 }
 
-func hasManifestDependencyChange(changes []GitChange) bool {
+func hasDependencyManifestChange(changes []GitChange) bool {
 	for _, change := range changes {
 		if change.Path == ".core/manifest.yaml" || change.Path == "manifest.yaml" {
+			return true
+		}
+		if change.Path == ".core/manifest.yaml.depends" || change.Path == "manifest.yaml.depends" {
 			return true
 		}
 	}

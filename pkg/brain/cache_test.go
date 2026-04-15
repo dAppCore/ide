@@ -13,7 +13,7 @@ func TestCache_Get_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute)
+	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute, true)
 	expected := RecallOutput{Success: true, Count: 1}
 	if err := cache.Set(context.Background(), "key", expected); err != nil {
 		t.Fatalf("cache set: %v", err)
@@ -29,7 +29,7 @@ func TestCache_Get_Bad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	cache := NewCache(storeInstance, "ide.brain.cache", time.Millisecond)
+	cache := NewCache(storeInstance, "ide.brain.cache", time.Millisecond, true)
 	_ = cache.Set(context.Background(), "key", RecallOutput{Success: true})
 	time.Sleep(5 * time.Millisecond)
 	if _, ok := cache.Get(context.Background(), "key"); ok {
@@ -42,7 +42,7 @@ func TestCache_Get_Ugly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute)
+	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute, true)
 	for index := 0; index < 10; index++ {
 		if err := cache.Set(context.Background(), cache.Key("k", string(rune('a'+index))), RecallOutput{Count: index}); err != nil {
 			t.Fatalf("cache set %d: %v", index, err)

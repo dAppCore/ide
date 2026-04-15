@@ -39,7 +39,7 @@ type Brain struct {
 }
 
 type Cache struct {
-	Enabled   bool          `yaml:"enabled"`
+	Enabled   *bool         `yaml:"enabled"`
 	TTL       time.Duration `yaml:"ttl"`
 	Namespace string        `yaml:"namespace"`
 }
@@ -52,7 +52,7 @@ type Workspace struct {
 }
 
 type Subagent struct {
-	Enabled  bool             `yaml:"enabled"`
+	Enabled  *bool            `yaml:"enabled"`
 	Relay    SubagentRelay    `yaml:"relay"`
 	Dispatch SubagentDispatch `yaml:"dispatch"`
 	Timeouts SubagentTimeouts `yaml:"timeouts"`
@@ -108,7 +108,7 @@ type Marketplace struct {
 }
 
 type Chat struct {
-	Enabled      bool   `yaml:"enabled"`
+	Enabled      *bool  `yaml:"enabled"`
 	APIURL       string `yaml:"api_url"`
 	StorePath    string `yaml:"store_path"`
 	ToolExecutor string `yaml:"tool_executor"`
@@ -195,8 +195,8 @@ func (cfg IDEConfig) WithDefaults() IDEConfig {
 	if cfg.Ide.Brain.AgentID == "" {
 		cfg.Ide.Brain.AgentID = "cladius"
 	}
-	if !cfg.Ide.Brain.Cache.Enabled {
-		cfg.Ide.Brain.Cache.Enabled = true
+	if cfg.Ide.Brain.Cache.Enabled == nil {
+		cfg.Ide.Brain.Cache.Enabled = BoolPtr(true)
 	}
 	if cfg.Ide.Brain.Cache.TTL == 0 {
 		cfg.Ide.Brain.Cache.TTL = 5 * time.Minute
@@ -216,8 +216,8 @@ func (cfg IDEConfig) WithDefaults() IDEConfig {
 	if len(cfg.Ide.Workspace.ConventionPacks) == 0 {
 		cfg.Ide.Workspace.ConventionPacks = []string{"go", "php", "typescript", "python"}
 	}
-	if !cfg.Ide.Subagent.Enabled {
-		cfg.Ide.Subagent.Enabled = true
+	if cfg.Ide.Subagent.Enabled == nil {
+		cfg.Ide.Subagent.Enabled = BoolPtr(true)
 	}
 	if cfg.Ide.Subagent.Relay.Addr == "" {
 		cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
@@ -257,8 +257,8 @@ func (cfg IDEConfig) WithDefaults() IDEConfig {
 	if cfg.Ide.Marketplace.InstallVia == "" {
 		cfg.Ide.Marketplace.InstallVia = "go-scm"
 	}
-	if !cfg.Ide.Chat.Enabled {
-		cfg.Ide.Chat.Enabled = true
+	if cfg.Ide.Chat.Enabled == nil {
+		cfg.Ide.Chat.Enabled = BoolPtr(true)
 	}
 	if cfg.Ide.Chat.APIURL == "" {
 		cfg.Ide.Chat.APIURL = "http://localhost:8090"
@@ -330,6 +330,17 @@ func ApplyEnv(cfg *IDEConfig) {
 	if value := core.Trim(core.Env("CORE_IDE_TOKEN")); value != "" {
 		cfg.Ide.Transport.Token = value
 	}
+}
+
+func BoolPtr(value bool) *bool {
+	return &value
+}
+
+func BoolValue(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
 }
 
 func homeDir() string {

@@ -13,6 +13,7 @@ import (
 	aipkg "dappco.re/go/core/ide/pkg/ai"
 	brainpkg "dappco.re/go/core/ide/pkg/brain"
 	chatpkg "dappco.re/go/core/ide/pkg/chat"
+	"dappco.re/go/core/ide/pkg/config"
 	marketplacepkg "dappco.re/go/core/ide/pkg/marketplace"
 	navigatepkg "dappco.re/go/core/ide/pkg/navigate"
 	storepkg "dappco.re/go/core/ide/pkg/store"
@@ -66,7 +67,7 @@ func Compose(options Options) (*Server, error) {
 		}),
 		core.WithService(coremcp.Register),
 	)
-	if cfg.Ide.Chat.Enabled {
+	if config.BoolValue(cfg.Ide.Chat.Enabled, true) {
 		result := chatpkg.NewRegister(cfg.Ide.Chat, guiExecutor)(c)
 		if !result.OK {
 			if err, ok := result.Value.(error); ok {

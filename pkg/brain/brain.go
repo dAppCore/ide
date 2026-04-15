@@ -31,7 +31,7 @@ func New(cfg config.Brain, medium coreio.Medium, storeInstance *storelib.Store, 
 		cfg:       cfg,
 		medium:    medium,
 		client:    &http.Client{Timeout: 30 * time.Second},
-		cache:     NewCache(storeInstance, cfg.Cache.Namespace, cfg.Cache.TTL),
+		cache:     NewCache(storeInstance, cfg.Cache.Namespace, cfg.Cache.TTL, config.BoolValue(cfg.Cache.Enabled, true)),
 		workspace: workspaceSubsystem,
 	}
 }

@@ -155,7 +155,7 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 	if err != nil {
 		return ImpactOutput{}, err
 	}
-	areas, checks, notes := classifyImpact(root, git.Changes)
+	areas, checks, notes := classifyImpact(s.medium, root, git.Changes)
 	return ImpactOutput{
 		Root:            root,
 		Git:             git,
