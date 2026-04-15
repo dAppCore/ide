@@ -2,6 +2,7 @@ package server
 
 import (
 	"net"
+	"net/http"
 
 	core "dappco.re/go/core"
 
@@ -13,7 +14,17 @@ type Transport struct {
 	Addr string
 }
 
-func SelectTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
+type RelayTransport struct {
+	Enabled bool
+	Addr    string
+	Path    string
+	Handler http.Handler
+}
+
+func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) (Transport, error) {
+	if preferConfigured {
+		return selectConfiguredTransport(cfg, mcpOnly)
+	}
 	if value := core.Trim(core.Env("MCP_HTTP_ADDR")); value != "" {
 		if err := validateTransportAddress("http", value); err != nil {
 			return Transport{}, err
@@ -29,6 +40,10 @@ func SelectTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
 	if value := core.Trim(core.Env("MCP_UNIX_SOCKET")); value != "" {
 		return Transport{Mode: "unix", Addr: value}, nil
 	}
+	return selectConfiguredTransport(cfg, mcpOnly)
+}
+
+func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
 	if mcpOnly {
 		return Transport{Mode: "stdio"}, nil
 	}
@@ -47,6 +62,25 @@ func SelectTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
 		return Transport{Mode: "unix", Addr: cfg.Ide.Transport.UnixSocket}, nil
 	default:
 		return Transport{Mode: "stdio"}, nil
+	}
+}
+
+func SelectRelayTransport(cfg config.IDEConfig, handler http.Handler) RelayTransport {
+	addr := core.Trim(cfg.Ide.Subagent.Relay.Addr)
+	path := core.Trim(cfg.Ide.Subagent.Relay.Path)
+	if !config.BoolValue(cfg.Ide.Subagent.Enabled, true) || addr == "" || path == "" || handler == nil {
+		return RelayTransport{}
+	}
+	if !core.HasPrefix(path, "/") {
+		path = core.Concat("/", path)
+	}
+	mux := http.NewServeMux()
+	mux.Handle(path, handler)
+	return RelayTransport{
+		Enabled: true,
+		Addr:    addr,
+		Path:    path,
+		Handler: mux,
 	}
 }
 

@@ -14,11 +14,12 @@ import (
 )
 
 type Subsystem struct {
-	cfg     config.Subagent
-	hub     *ws.Hub
-	mu      sync.RWMutex
-	answers map[string]chan string
-	events  map[string][]Event
+	cfg        config.Subagent
+	hub        *ws.Hub
+	relayToken string
+	mu         sync.RWMutex
+	answers    map[string]chan string
+	events     map[string][]Event
 }
 
 type GuideInput struct {
@@ -110,8 +111,14 @@ type DispatchGuidedOutput struct {
 type GuidedDispatchInput = DispatchGuidedInput
 type GuidedDispatchOutput = DispatchGuidedOutput
 
-func New(cfg config.Subagent, hub *ws.Hub) *Subsystem {
-	return &Subsystem{cfg: cfg, hub: hub, answers: map[string]chan string{}, events: map[string][]Event{}}
+func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
+	return &Subsystem{
+		cfg:        cfg,
+		hub:        hub,
+		relayToken: core.Trim(relayToken),
+		answers:    map[string]chan string{},
+		events:     map[string][]Event{},
+	}
 }
 
 func (s *Subsystem) Name() string { return "subagent" }

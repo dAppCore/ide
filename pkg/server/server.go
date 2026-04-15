@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
@@ -26,6 +27,7 @@ type Server struct {
 	mcp       *coremcp.Service
 	hub       *ws.Hub
 	transport Transport
+	relay     RelayTransport
 }
 
 func Compose(options Options) (*Server, error) {
@@ -34,7 +36,7 @@ func Compose(options Options) (*Server, error) {
 	if medium == nil {
 		medium = coreio.Local
 	}
-	hub := ws.NewHub()
+	hub := newRelayHub(cfg)
 	guiExecutor := chatpkg.NewExecutor(nil, nil)
 
 	services := []core.CoreOption{
@@ -54,7 +56,7 @@ func Compose(options Options) (*Server, error) {
 			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService), OK: true}
 		}),
 		core.WithName("subagent", func(_ *core.Core) core.Result {
-			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub), OK: true}
+			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, cfg.Ide.Transport.Token), OK: true}
 		}),
 		core.WithName("navigate", func(c *core.Core) core.Result {
 			return core.Result{Value: navigatepkg.New(cfg.Ide.Navigate, c), OK: true}
@@ -112,15 +114,34 @@ func Compose(options Options) (*Server, error) {
 		guiExecutor.Attach(guiSubsystem, mcpService)
 	}
 
-	transport, err := SelectTransport(cfg, options.MCP)
+	transport, err := SelectTransport(cfg, options.MCP, options.PreferConfiguredTransport)
 	if err != nil {
 		return nil, err
 	}
-	return &Server{core: c, mcp: mcpService, hub: hub, transport: transport}, nil
+	return &Server{
+		core:      c,
+		mcp:       mcpService,
+		hub:       hub,
+		transport: transport,
+		relay:     SelectRelayTransport(cfg, hub.Handler()),
+	}, nil
 }
 
 func (s *Server) Run(ctx context.Context) error {
 	go s.hub.Run(ctx)
+	var relayServer *http.Server
+	if s.relay.Enabled {
+		relayServer = &http.Server{Addr: s.relay.Addr, Handler: s.relay.Handler}
+		go func() {
+			<-ctx.Done()
+			_ = relayServer.Shutdown(context.Background())
+		}()
+		go func() {
+			if err := relayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				core.Error("ide.server.Run", "relay", err)
+			}
+		}()
+	}
 	if result := s.core.ServiceStartup(ctx, nil); !result.OK {
 		if err, ok := result.Value.(error); ok {
 			return err
@@ -139,6 +160,16 @@ func (s *Server) Run(ctx context.Context) error {
 	default:
 		return s.mcp.ServeStdio(ctx)
 	}
+}
+
+func newRelayHub(cfg config.IDEConfig) *ws.Hub {
+	token := core.Trim(cfg.Ide.Transport.Token)
+	if token == "" {
+		return ws.NewHub()
+	}
+	return ws.NewHubWithConfig(ws.HubConfig{
+		Authenticator: ws.NewAPIKeyAuth(map[string]string{token: "core-ide"}),
+	})
 }
 
 func (s *Server) Core() *core.Core {

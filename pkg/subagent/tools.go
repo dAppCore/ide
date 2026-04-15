@@ -2,9 +2,12 @@ package subagent
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	core "dappco.re/go/core"
+	"dappco.re/go/core/ws"
+	"github.com/gorilla/websocket"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
@@ -110,6 +113,9 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 	if timeout <= 0 {
 		timeout = 60
 	}
+	if events, completed, failed, ok := s.watchRelay(ctx, input.WorkspaceID, timeout); ok {
+		return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
+	}
 	deadline := time.After(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(time.Duration(maxInt(input.PollInterval, 2)) * time.Second)
 	defer ticker.Stop()
@@ -196,7 +202,11 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if relayURL == "" {
 		relayURL = s.cfg.Relay.URL()
 	}
-	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN=%s\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, core.Trim(input.RelayToken), workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
+	relayToken := core.Trim(input.RelayToken)
+	if relayToken == "" {
+		relayToken = s.relayToken
+	}
+	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN=%s\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, relayToken, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
 	if s.hub == nil {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}
@@ -228,4 +238,91 @@ func maxInt(value int, floor int) int {
 		return floor
 	}
 	return value
+}
+
+func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout int) ([]Event, bool, bool, bool) {
+	relayURL := core.Trim(s.cfg.Relay.URL())
+	if relayURL == "" {
+		return nil, false, false, false
+	}
+	headers := http.Header{}
+	if token := core.Trim(s.relayToken); token != "" {
+		headers.Set("Authorization", core.Concat("Bearer ", token))
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, relayURL, headers)
+	if err != nil {
+		return nil, false, false, false
+	}
+	defer conn.Close()
+
+	for _, channel := range []string{
+		progressChannel(workspaceID),
+		questionChannel(workspaceID),
+		statusChannel(workspaceID),
+	} {
+		if writeErr := conn.WriteJSON(ws.Message{Type: ws.TypeSubscribe, Data: channel, Timestamp: time.Now().UTC()}); writeErr != nil {
+			return nil, false, false, false
+		}
+	}
+
+	if timeout > 0 {
+		_ = conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+	}
+	events := []Event{}
+	for {
+		select {
+		case <-ctx.Done():
+			return events, false, true, true
+		default:
+		}
+		var message ws.Message
+		if err := conn.ReadJSON(&message); err != nil {
+			if len(events) == 0 {
+				return nil, false, false, false
+			}
+			return events, false, false, true
+		}
+		event, ok := eventFromRelayMessage(message)
+		if !ok {
+			continue
+		}
+		events = append(events, event)
+		if event.Type != "status" {
+			continue
+		}
+		switch core.Trim(event.Message) {
+		case "completed":
+			return events, true, false, true
+		case "failed":
+			return events, false, true, true
+		}
+	}
+}
+
+func eventFromRelayMessage(message ws.Message) (Event, bool) {
+	rawType, ok := message.Data.(map[string]any)
+	if !ok {
+		return Event{}, false
+	}
+	eventType, _ := rawType["type"].(string)
+	if core.Trim(eventType) == "" {
+		return Event{}, false
+	}
+	event := Event{
+		Type:      core.Trim(eventType),
+		Channel:   core.Trim(message.Channel),
+		CreatedAt: message.Timestamp.UTC(),
+	}
+	if messageText, ok := rawType["message"].(string); ok {
+		event.Message = messageText
+	}
+	if event.Message == "" {
+		if state, ok := rawType["state"].(string); ok {
+			event.Message = state
+		}
+	}
+	if questionID, ok := rawType["question_id"].(string); ok {
+		event.QuestionID = questionID
+	}
+	return event, true
 }

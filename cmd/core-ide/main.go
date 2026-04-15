@@ -42,9 +42,10 @@ func main() {
 	}
 
 	srv, err := server.Compose(server.Options{
-		Config: cfg,
-		GUI:    !flags.NoGUI,
-		MCP:    flags.MCPOnly,
+		Config:                    cfg,
+		GUI:                       !flags.NoGUI,
+		MCP:                       flags.MCPOnly,
+		PreferConfiguredTransport: flags.MCPOnly || flags.HTTPAddr != "",
 	})
 	if err != nil {
 		core.Error("ide.main", "compose", err)

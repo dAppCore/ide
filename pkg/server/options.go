@@ -7,8 +7,9 @@ import (
 )
 
 type Options struct {
-	Config config.IDEConfig
-	GUI    bool
-	Medium coreio.Medium
-	MCP    bool
+	Config                    config.IDEConfig
+	GUI                       bool
+	Medium                    coreio.Medium
+	MCP                       bool
+	PreferConfiguredTransport bool
 }
