@@ -2,9 +2,7 @@ package workspace
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	core "dappco.re/go/core"
@@ -172,11 +170,11 @@ func resolveWorkspaceRoot(base, requested string) (string, error) {
 	candidate = core.CleanPath(candidate, core.Env("DS"))
 	sep := core.Env("DS")
 	trustedPrefix := trusted
-	if !strings.HasSuffix(trustedPrefix, sep) {
+	if !core.HasSuffix(trustedPrefix, sep) {
 		trustedPrefix += sep
 	}
-	if candidate != trusted && !strings.HasPrefix(candidate, trustedPrefix) {
-		return "", core.E("workspace.root", fmt.Sprintf("root %q is outside allowed workspace root %q", candidate, trusted), nil)
+	if candidate != trusted && !core.HasPrefix(candidate, trustedPrefix) {
+		return "", core.E("workspace.root", core.Concat("root ", candidate, " is outside allowed workspace root ", trusted), nil)
 	}
 
 	return candidate, nil

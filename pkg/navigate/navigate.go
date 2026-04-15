@@ -82,10 +82,11 @@ func (s *Subsystem) query(ctx context.Context, action string) (Output, error) {
 	}
 	result := s.core.Query(action)
 	if !result.OK {
+		displayAction := core.TrimPrefix(action, "ai.")
 		return Output{
 			Available: false,
-			Reason:    core.Concat("action ", action, " not registered"),
-			Data:      map[string]any{"available": false, "reason": core.Concat("action ", action, " not registered")},
+			Reason:    core.Concat("action ide.navigate.", displayAction, " not registered"),
+			Data:      map[string]any{"available": false, "reason": core.Concat("action ide.navigate.", displayAction, " not registered")},
 			Schema:    map[string]any{"type": "object"},
 			Sources:   []string{action},
 		}, nil
