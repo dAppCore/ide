@@ -106,6 +106,10 @@ func main() {
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
 				mcp.WithSubsystem(brainDirect),
+				mcp.WithSubsystem(NewWorkspaceSubsystem(cwd)),
+				mcp.WithSubsystem(NewMarketplaceSubsystem(nil)),
+				mcp.WithSubsystem(NewNavigateSubsystem()),
+				mcp.WithSubsystem(NewSubagentSubsystem(hub)),
 				mcp.WithSubsystem(agentic.NewPrep()),
 				mcp.WithSubsystem(guiMCP.New(c)),
 			)

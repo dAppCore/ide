@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -113,6 +114,16 @@ func (s *BrainDirectSubsystem) RegisterTools(server *mcp.Server) {
 		Name:        "brain_forget",
 		Description: "Remove a memory from OpenBrain by ID.",
 	}, s.brainForget)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "brain_list",
+		Description: "List memories in OpenBrain with optional filtering by project, type, and agent.",
+	}, s.brainList)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "brain_context",
+		Description: "Combine recent OpenBrain memories with workspace conventions for a project.",
+	}, s.brainContext)
 }
 
 // Shutdown implements mcp.SubsystemWithShutdown.
@@ -260,6 +271,29 @@ type brainRecallRequest struct {
 	Type          any    `json:"type,omitempty"`
 }
 
+type BrainListInput struct {
+	Project string `json:"project,omitempty"`
+	Type    string `json:"type,omitempty"`
+	AgentID string `json:"agentId,omitempty"`
+	Limit   int    `json:"limit,omitempty"`
+}
+
+type BrainListOutput struct {
+	Success  bool     `json:"success"`
+	Count    int      `json:"count"`
+	Memories []Memory `json:"memories"`
+}
+
+type BrainContextInput struct {
+	Project string `json:"project,omitempty"`
+}
+
+type BrainContextOutput struct {
+	Overview    string   `json:"overview"`
+	Recent      []Memory `json:"recent"`
+	Conventions []string `json:"conventions"`
+}
+
 func (s *BrainDirectSubsystem) normalisedRecallRequest(input RecallInput) brainRecallRequest {
 	topK := input.TopK
 	if topK <= 0 {
@@ -321,6 +355,67 @@ func brainRecallResult(result map[string]any) RecallOutput {
 		Count:    len(memories),
 		Memories: memories,
 	}
+}
+
+func (s *BrainDirectSubsystem) brainList(ctx context.Context, _ *mcp.CallToolRequest, input BrainListInput) (*mcp.CallToolResult, BrainListOutput, error) {
+	limit := input.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+
+	query := "/v1/brain/list?limit=" + fmt.Sprintf("%d", limit)
+	if input.Project != "" {
+		query += "&project=" + url.QueryEscape(input.Project)
+	}
+	if input.Type != "" {
+		query += "&type=" + url.QueryEscape(input.Type)
+	}
+	if input.AgentID != "" {
+		query += "&agent_id=" + url.QueryEscape(input.AgentID)
+	}
+
+	result, err := s.apiCall(ctx, http.MethodGet, query, nil)
+	if err != nil {
+		return nil, BrainListOutput{}, err
+	}
+
+	memories := brainListResult(result)
+	return nil, BrainListOutput{
+		Success:  true,
+		Count:    len(memories),
+		Memories: memories,
+	}, nil
+}
+
+func (s *BrainDirectSubsystem) brainContext(ctx context.Context, _ *mcp.CallToolRequest, input BrainContextInput) (*mcp.CallToolResult, BrainContextOutput, error) {
+	recall, _, err := s.brainRecall(ctx, nil, RecallInput{
+		Query:  input.Project,
+		TopK:   5,
+		Filter: RecallFilter{Project: input.Project},
+	})
+	if err != nil {
+		return nil, BrainContextOutput{}, err
+	}
+	conventions, err := workspaceConventionsForRoot(s.workspaceRoot)
+	if err != nil {
+		return nil, BrainContextOutput{}, err
+	}
+
+	overview := "Workspace context for " + strings.TrimSpace(input.Project)
+	if input.Project == "" {
+		overview = "Workspace context"
+	}
+
+	return nil, BrainContextOutput{
+		Overview:    overview,
+		Recent:      recall.Memories,
+		Conventions: conventions.Conventions,
+	}, nil
+}
+
+func brainListResult(result map[string]any) []Memory {
+	output := brainRecallResult(result)
+	return output.Memories
 }
 
 func hashString(value string) string {

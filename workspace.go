@@ -127,66 +127,21 @@ func (w *WorkspaceAPI) status(c *gin.Context) {
 }
 
 func (w *WorkspaceAPI) conventions(c *gin.Context) {
-	snapshot, err := collectWorkspaceSnapshot(w.root)
+	resp, err := workspaceConventionsForRoot(w.root)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-
-	conventions := []string{
-		"Use UK English in documentation and user-facing strings.",
-		"Use conventional commits: type(scope): description.",
-		"Go code lives in package main for this module.",
-		"Prefer core build for production builds and core go test for Go tests.",
-	}
-
-	notes := []string{
-		"Design input was derived from CLAUDE.md, docs/development.md, and .core/build.yaml.",
-	}
-	if !snapshot.Git.Clean {
-		notes = append(notes, "The worktree is dirty, so any new work should account for local changes.")
-	}
-
-	c.JSON(200, workspaceConventionsResponse{
-		Root:        snapshot.Root,
-		Sources:     snapshot.SourceFiles,
-		Build:       snapshot.Build,
-		Conventions: conventions,
-		Notes:       notes,
-	})
+	c.JSON(200, resp)
 }
 
 func (w *WorkspaceAPI) impact(c *gin.Context) {
-	snapshot, err := collectWorkspaceSnapshot(w.root)
+	resp, err := workspaceImpactForRoot(w.root)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-
-	impactedAreas := classifyImpact(snapshot.Git.Changes, snapshot.SourceFiles)
-	suggestedChecks := []string{"go build ./...", "go vet ./...", "go test ./... -count=1 -timeout 120s", "go test -cover ./..."}
-
-	if hasPathPrefix(snapshot.SourceFiles, ".core/") {
-		suggestedChecks = append([]string{"core build"}, suggestedChecks...)
-	}
-	if hasAnyImpact(snapshot.Git.Changes, "frontend/") {
-		suggestedChecks = append(suggestedChecks, "cd frontend && npm test")
-	}
-
-	notes := []string{
-		"Impact categories are inferred from changed paths and .core configuration files.",
-	}
-	if snapshot.Git.Clean {
-		notes = append(notes, "The worktree is clean, so there is no active change set to assess.")
-	}
-
-	c.JSON(200, workspaceImpactResponse{
-		Root:            snapshot.Root,
-		Git:             snapshot.Git,
-		ImpactedAreas:   impactedAreas,
-		SuggestedChecks: uniqueStrings(suggestedChecks),
-		Notes:           notes,
-	})
+	c.JSON(200, resp)
 }
 
 type workspaceSnapshot struct {
@@ -227,6 +182,67 @@ func collectWorkspaceSnapshot(root string) (*workspaceSnapshot, error) {
 		Counts:      counts,
 		Build:       buildSummary,
 		SourceFiles: sourceFiles,
+	}, nil
+}
+
+func workspaceConventionsForRoot(root string) (workspaceConventionsResponse, error) {
+	snapshot, err := collectWorkspaceSnapshot(root)
+	if err != nil {
+		return workspaceConventionsResponse{}, err
+	}
+
+	conventions := []string{
+		"Use UK English in documentation and user-facing strings.",
+		"Use conventional commits: type(scope): description.",
+		"Go code lives in package main for this module.",
+		"Prefer core build for production builds and core go test for Go tests.",
+	}
+
+	notes := []string{
+		"Design input was derived from CLAUDE.md, docs/development.md, and .core/build.yaml.",
+	}
+	if !snapshot.Git.Clean {
+		notes = append(notes, "The worktree is dirty, so any new work should account for local changes.")
+	}
+
+	return workspaceConventionsResponse{
+		Root:        snapshot.Root,
+		Sources:     snapshot.SourceFiles,
+		Build:       snapshot.Build,
+		Conventions: conventions,
+		Notes:       notes,
+	}, nil
+}
+
+func workspaceImpactForRoot(root string) (workspaceImpactResponse, error) {
+	snapshot, err := collectWorkspaceSnapshot(root)
+	if err != nil {
+		return workspaceImpactResponse{}, err
+	}
+
+	impactedAreas := classifyImpact(snapshot.Git.Changes, snapshot.SourceFiles)
+	suggestedChecks := []string{"go build ./...", "go vet ./...", "go test ./... -count=1 -timeout 120s", "go test -cover ./..."}
+
+	if hasPathPrefix(snapshot.SourceFiles, ".core/") {
+		suggestedChecks = append([]string{"core build"}, suggestedChecks...)
+	}
+	if hasAnyImpact(snapshot.Git.Changes, "frontend/") {
+		suggestedChecks = append(suggestedChecks, "cd frontend && npm test")
+	}
+
+	notes := []string{
+		"Impact categories are inferred from changed paths and .core configuration files.",
+	}
+	if snapshot.Git.Clean {
+		notes = append(notes, "The worktree is clean, so there is no active change set to assess.")
+	}
+
+	return workspaceImpactResponse{
+		Root:            snapshot.Root,
+		Git:             snapshot.Git,
+		ImpactedAreas:   impactedAreas,
+		SuggestedChecks: uniqueStrings(suggestedChecks),
+		Notes:           notes,
 	}, nil
 }
 
