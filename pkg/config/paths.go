@@ -6,7 +6,13 @@ import (
 	core "dappco.re/go/core"
 )
 
+// paths := resolveIDEConfigPaths("")
+// core.Println(paths) // [~/.core/ide.yaml ./ .core/ide.yaml]
 func DefaultPaths(configPath string) []string {
+	return resolveIDEConfigPaths(configPath)
+}
+
+func resolveIDEConfigPaths(configPath string) []string {
 	if core.Trim(configPath) != "" {
 		return []string{configPath}
 	}

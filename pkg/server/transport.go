@@ -21,6 +21,7 @@ type RelayTransport struct {
 	Handler http.Handler
 }
 
+// transport, err := SelectTransport(cfg, true, false)
 func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) (Transport, error) {
 	if preferConfigured {
 		return selectConfiguredTransport(cfg, mcpOnly)
@@ -65,6 +66,7 @@ func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, e
 	}
 }
 
+// relay := SelectRelayTransport(cfg, token, handler)
 func SelectRelayTransport(cfg config.IDEConfig, token string, handler http.Handler) RelayTransport {
 	addr := core.Trim(cfg.Ide.Subagent.Relay.Addr)
 	path := core.Trim(cfg.Ide.Subagent.Relay.Path)
