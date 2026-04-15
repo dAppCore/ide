@@ -131,7 +131,15 @@ func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (Co
 	if err != nil {
 		return ConventionsOutput{}, err
 	}
-	packs, notes := loadConventionPacks(detectLanguages(s.medium, root), s.cfg.ConventionPacks)
+	projects, scanErr := scanProjects(ctx, ScanInput{Root: root, Depth: s.cfg.ScanDepth}, s.medium, s.process, root)
+	if scanErr != nil {
+		return ConventionsOutput{}, scanErr
+	}
+	languages := detectLanguages(s.medium, root)
+	for _, project := range projects {
+		languages = append(languages, project.Languages...)
+	}
+	packs, notes := loadConventionPacks(unique(languages), s.cfg.ConventionPacks)
 	git, _ := gitStatus(ctx, s.process, root)
 	if !git.Clean {
 		notes = append(notes, "The worktree is dirty, so any new work should account for local changes.")

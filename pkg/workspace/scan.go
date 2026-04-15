@@ -37,7 +37,6 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 				Languages: detectLanguages(medium, current),
 				GitBranch: git.Branch,
 			})
-			break
 		}
 		parent := parentDir(current)
 		if parent == current {
