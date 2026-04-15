@@ -47,6 +47,12 @@ func gitStatus(ctx context.Context, processService *process.Service, root string
 func parseBranch(line string) string {
 	trimmed := core.TrimPrefix(line, "##")
 	trimmed = core.Trim(trimmed)
+	switch {
+	case trimmed == "HEAD (no branch)":
+		return "HEAD"
+	case core.HasPrefix(trimmed, "HEAD detached at "):
+		return core.TrimPrefix(trimmed, "HEAD detached at ")
+	}
 	parts := core.Split(trimmed, "...")
 	return core.Trim(parts[0])
 }

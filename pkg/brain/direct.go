@@ -3,9 +3,12 @@ package brain
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	goio "io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	core "dappco.re/go/core"
@@ -20,7 +23,11 @@ func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput
 	project := input.Filter.Project
 	filterType := core.Sprint(input.Filter.Type)
 	agentID := s.agentID(input.Filter.AgentID)
-	key := s.cache.Key(s.cfg.Endpoint, input.Query, core.Sprint(input.TopK), agentID, project, filterType)
+	workspaceRoot := ""
+	if s.workspace != nil {
+		workspaceRoot = s.workspace.Root()
+	}
+	key := s.cache.Key(workspaceRoot, s.cfg.Endpoint, s.keyFingerprint(), input.Query, core.Sprint(input.TopK), agentID, project, filterType)
 	if out, ok := s.cache.Get(ctx, key); ok {
 		return out, nil
 	}
@@ -173,7 +180,7 @@ func (s *Subsystem) apiKey() string {
 	if core.Trim(s.cfg.Key) != "" {
 		return core.Trim(s.cfg.Key)
 	}
-	keyPath := core.JoinPath(core.Env("DIR_HOME"), ".claude", "brain.key")
+	keyPath := core.JoinPath(homeDir(), ".claude", "brain.key")
 	if s.medium != nil && s.medium.Exists(keyPath) {
 		raw, err := s.medium.Read(keyPath)
 		if err == nil {
@@ -181,6 +188,15 @@ func (s *Subsystem) apiKey() string {
 		}
 	}
 	return ""
+}
+
+func (s *Subsystem) keyFingerprint() string {
+	key := s.apiKey()
+	if key == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:])
 }
 
 func (s *Subsystem) agentID(value string) string {
@@ -193,4 +209,15 @@ func (s *Subsystem) agentID(value string) string {
 func stringValue(value any) string {
 	text, _ := value.(string)
 	return text
+}
+
+func homeDir() string {
+	home := core.Env("DIR_HOME")
+	if home != "" {
+		return home
+	}
+	if resolved, err := os.UserHomeDir(); err == nil {
+		return resolved
+	}
+	return "."
 }

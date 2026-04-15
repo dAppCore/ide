@@ -45,7 +45,7 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		conventions = append(conventions, pack.Conventions...)
 		notes = append(notes, pack.Notes...)
 	}
-	return unique(conventions), unique(notes)
+	return conventions, notes
 }
 
 func readBuildProjectName(medium interface {

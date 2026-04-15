@@ -5,9 +5,12 @@ import (
 	goio "io"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	core "dappco.re/go/core"
+	coreio "dappco.re/go/core/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	scmmarketplace "dappco.re/go/scm/marketplace"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -19,6 +22,7 @@ import (
 type Subsystem struct {
 	cfg    config.Marketplace
 	client *http.Client
+	medium coreio.Medium
 }
 
 type SearchInput struct {
@@ -27,8 +31,8 @@ type SearchInput struct {
 }
 
 type SearchOutput struct {
-	Query    string                `json:"query,omitempty"`
-	Category string                `json:"category,omitempty"`
+	Query    string                  `json:"query,omitempty"`
+	Category string                  `json:"category,omitempty"`
 	Packages []scmmarketplace.Module `json:"packages"`
 }
 
@@ -51,6 +55,10 @@ type InstallOutput struct {
 
 func New(cfg config.Marketplace) *Subsystem {
 	return &Subsystem{cfg: cfg, client: &http.Client{Timeout: 15 * time.Second}}
+}
+
+func (s *Subsystem) AttachMedium(medium coreio.Medium) {
+	s.medium = medium
 }
 
 func (s *Subsystem) Name() string { return "marketplace" }
@@ -124,6 +132,9 @@ func (s *Subsystem) search(ctx context.Context, input SearchInput) (SearchOutput
 }
 
 func (s *Subsystem) info(ctx context.Context, input InfoInput) (InfoOutput, error) {
+	if core.Trim(input.Code) == "" {
+		return InfoOutput{}, core.E("ide.marketplace.info", "code is required", nil)
+	}
 	var pkg scmmarketplace.Module
 	if err := s.get(ctx, core.Concat(s.cfg.APIPath, "/", url.PathEscape(input.Code)), &pkg); err != nil {
 		return InfoOutput{}, err
@@ -132,8 +143,39 @@ func (s *Subsystem) info(ctx context.Context, input InfoInput) (InfoOutput, erro
 }
 
 func (s *Subsystem) install(ctx context.Context, input InstallInput) (InstallOutput, error) {
+	if core.Trim(input.Code) == "" {
+		return InstallOutput{}, core.E("ide.marketplace.install", "code is required", nil)
+	}
+	switch strings.ToLower(strings.TrimSpace(s.cfg.InstallVia)) {
+	case "", "go-scm":
+		return s.installViaGoSCM(ctx, input)
+	case "api":
+		return s.installViaAPI(ctx, input)
+	default:
+		return s.installViaGoSCM(ctx, input)
+	}
+}
+
+func (s *Subsystem) installViaAPI(ctx context.Context, input InstallInput) (InstallOutput, error) {
 	if err := s.post(ctx, core.Concat(s.cfg.APIPath, "/", url.PathEscape(input.Code), "/install"), nil, nil); err != nil {
 		return InstallOutput{}, err
+	}
+	_ = ai.Record(ai.Event{Type: "ide.pkg.install", Repo: input.Code})
+	return InstallOutput{Installed: true, Code: input.Code}, nil
+}
+
+func (s *Subsystem) installViaGoSCM(ctx context.Context, input InstallInput) (InstallOutput, error) {
+	info, err := s.info(ctx, InfoInput{Code: input.Code})
+	if err != nil {
+		return InstallOutput{}, err
+	}
+	medium := s.medium
+	if medium == nil {
+		medium = defaultInstallMedium()
+	}
+	installer := scmmarketplace.NewInstaller(medium, "modules", nil)
+	if err := installer.Install(ctx, info.Package); err != nil {
+		return InstallOutput{}, core.E("ide.marketplace.install", "install module", err)
 	}
 	_ = ai.Record(ai.Event{Type: "ide.pkg.install", Repo: input.Code})
 	return InstallOutput{Installed: true, Code: input.Code}, nil
@@ -181,4 +223,20 @@ func (s *Subsystem) request(ctx context.Context, method, path string, body any, 
 		return core.E("ide.marketplace.request", "decode response", nil)
 	}
 	return nil
+}
+
+func defaultInstallMedium() coreio.Medium {
+	home := os.Getenv("DIR_HOME")
+	if home == "" {
+		resolved, err := os.UserHomeDir()
+		if err == nil {
+			home = resolved
+		}
+	}
+	sandboxRoot := core.JoinPath(home, ".core", "ide", "marketplace")
+	medium, err := coreio.NewSandboxed(sandboxRoot)
+	if err != nil {
+		return coreio.Local
+	}
+	return medium
 }

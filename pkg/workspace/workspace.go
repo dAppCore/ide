@@ -205,3 +205,7 @@ func (s *Subsystem) root(override string) string {
 	}
 	return "."
 }
+
+func (s *Subsystem) Root() string {
+	return s.root("")
+}

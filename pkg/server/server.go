@@ -7,11 +7,11 @@ import (
 	coreio "dappco.re/go/core/io"
 	"dappco.re/go/core/process"
 	"dappco.re/go/core/ws"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
-	brainpkg "dappco.re/go/core/ide/pkg/brain"
 	aipkg "dappco.re/go/core/ide/pkg/ai"
+	brainpkg "dappco.re/go/core/ide/pkg/brain"
 	chatpkg "dappco.re/go/core/ide/pkg/chat"
 	marketplacepkg "dappco.re/go/core/ide/pkg/marketplace"
 	navigatepkg "dappco.re/go/core/ide/pkg/navigate"
@@ -89,6 +89,9 @@ func Compose(options Options) (*Server, error) {
 	subagentService, _ := core.ServiceFor[*subagentpkg.Subsystem](c, "subagent")
 	navigateService, _ := core.ServiceFor[*navigatepkg.Subsystem](c, "navigate")
 	marketplaceService, _ := core.ServiceFor[*marketplacepkg.Subsystem](c, "marketplace")
+	if options.Medium != nil && options.Medium != coreio.Local {
+		marketplaceService.AttachMedium(medium)
+	}
 	brainService.RegisterActions(c)
 	workspaceService.RegisterActions(c)
 	subagentService.RegisterActions(c)
