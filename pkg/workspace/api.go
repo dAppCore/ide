@@ -27,3 +27,39 @@ func ScanWithMedium(ctx context.Context, medium coreio.Medium, input ScanInput) 
 	}
 	return output.Projects, nil
 }
+
+// status, err := Status(context.Background(), StatusInput{Root: "."})
+// core.Println(status.Git.Branch)
+func Status(ctx context.Context, input StatusInput) (StatusOutput, error) {
+	return StatusWithMedium(ctx, coreio.Local, input)
+}
+
+// status, err := StatusWithMedium(ctx, coreio.NewMemoryMedium(), StatusInput{Root: "/workspace"})
+func StatusWithMedium(ctx context.Context, medium coreio.Medium, input StatusInput) (StatusOutput, error) {
+	subsystem := New(config.Workspace{Root: input.Root}, medium, nil)
+	return subsystem.status(ctx, input)
+}
+
+// out, err := Conventions(context.Background(), ConventionsInput{Root: "."})
+// core.Println(out.Build.ProjectName)
+func Conventions(ctx context.Context, input ConventionsInput) (ConventionsOutput, error) {
+	return ConventionsWithMedium(ctx, coreio.Local, input)
+}
+
+// out, err := ConventionsWithMedium(ctx, coreio.NewMemoryMedium(), ConventionsInput{Root: "/workspace"})
+func ConventionsWithMedium(ctx context.Context, medium coreio.Medium, input ConventionsInput) (ConventionsOutput, error) {
+	subsystem := New(config.Workspace{Root: input.Root}, medium, nil)
+	return subsystem.conventions(ctx, input)
+}
+
+// out, err := Impact(context.Background(), ImpactInput{Root: "."})
+// core.Println(out.ImpactedAreas)
+func Impact(ctx context.Context, input ImpactInput) (ImpactOutput, error) {
+	return ImpactWithMedium(ctx, coreio.Local, input)
+}
+
+// out, err := ImpactWithMedium(ctx, coreio.NewMemoryMedium(), ImpactInput{Root: "/workspace"})
+func ImpactWithMedium(ctx context.Context, medium coreio.Medium, input ImpactInput) (ImpactOutput, error) {
+	subsystem := New(config.Workspace{Root: input.Root}, medium, nil)
+	return subsystem.impact(ctx, input)
+}
