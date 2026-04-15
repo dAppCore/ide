@@ -27,24 +27,23 @@ func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) 
 		return Transport{Mode: "stdio"}, nil
 	}
 	if preferConfigured {
-		return selectConfiguredTransport(cfg, mcpOnly)
-	}
-	if value := core.Trim(core.Env("MCP_HTTP_ADDR")); value != "" {
-		if err := validateTransportAddress("http", value); err != nil {
+		transport, err := selectConfiguredTransport(cfg, false)
+		if err != nil {
 			return Transport{}, err
 		}
-		return Transport{Mode: "http", Addr: value}, nil
-	}
-	if value := core.Trim(core.Env("MCP_ADDR")); value != "" {
-		if err := validateTransportAddress("tcp", value); err != nil {
-			return Transport{}, err
+		if transport.Mode != "" && transport.Mode != "stdio" {
+			return transport, nil
 		}
-		return Transport{Mode: "tcp", Addr: value}, nil
+		return selectEnvironmentTransport()
 	}
-	if value := core.Trim(core.Env("MCP_UNIX_SOCKET")); value != "" {
-		return Transport{Mode: "unix", Addr: value}, nil
+	transport, err := selectEnvironmentTransport()
+	if err != nil {
+		return Transport{}, err
 	}
-	return selectConfiguredTransport(cfg, mcpOnly)
+	if transport.Mode != "" {
+		return transport, nil
+	}
+	return selectConfiguredTransport(cfg, false)
 }
 
 func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
@@ -65,8 +64,27 @@ func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, e
 	case "unix":
 		return Transport{Mode: "unix", Addr: cfg.Ide.Transport.UnixSocket}, nil
 	default:
-		return Transport{Mode: "stdio"}, nil
+		return Transport{}, nil
 	}
+}
+
+func selectEnvironmentTransport() (Transport, error) {
+	if value := core.Trim(core.Env("MCP_HTTP_ADDR")); value != "" {
+		if err := validateTransportAddress("http", value); err != nil {
+			return Transport{}, err
+		}
+		return Transport{Mode: "http", Addr: value}, nil
+	}
+	if value := core.Trim(core.Env("MCP_ADDR")); value != "" {
+		if err := validateTransportAddress("tcp", value); err != nil {
+			return Transport{}, err
+		}
+		return Transport{Mode: "tcp", Addr: value}, nil
+	}
+	if value := core.Trim(core.Env("MCP_UNIX_SOCKET")); value != "" {
+		return Transport{Mode: "unix", Addr: value}, nil
+	}
+	return Transport{}, nil
 }
 
 // relay := SelectRelayTransport(cfg, token, handler)
