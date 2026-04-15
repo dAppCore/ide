@@ -17,11 +17,6 @@ type Cache struct {
 	enabled   bool
 }
 
-type cacheEntry struct {
-	ExpiresAt time.Time    `json:"expires_at"`
-	Output    RecallOutput `json:"output"`
-}
-
 func NewCache(storeInstance *storelib.Store, namespace string, ttl time.Duration, enabled bool) *Cache {
 	return &Cache{store: storeInstance, namespace: namespace, ttl: ttl, enabled: enabled}
 }
@@ -40,15 +35,11 @@ func (c *Cache) Get(ctx context.Context, key string) (RecallOutput, bool) {
 	if err != nil {
 		return RecallOutput{}, false
 	}
-	var entry cacheEntry
-	if result := core.JSONUnmarshalString(raw, &entry); !result.OK {
+	var output RecallOutput
+	if result := core.JSONUnmarshalString(raw, &output); !result.OK {
 		return RecallOutput{}, false
 	}
-	if !entry.ExpiresAt.IsZero() && time.Now().After(entry.ExpiresAt) {
-		_ = c.store.Delete(c.namespace, key)
-		return RecallOutput{}, false
-	}
-	return entry.Output, true
+	return output, true
 }
 
 func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error {
@@ -56,11 +47,10 @@ func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error 
 	if c == nil || c.store == nil || !c.enabled {
 		return nil
 	}
-	entry := cacheEntry{Output: output}
 	if c.ttl > 0 {
-		entry.ExpiresAt = time.Now().Add(c.ttl)
+		return c.store.SetWithTTL(c.namespace, key, core.JSONMarshalString(output), c.ttl)
 	}
-	return c.store.Set(c.namespace, key, core.JSONMarshalString(entry))
+	return c.store.Set(c.namespace, key, core.JSONMarshalString(output))
 }
 
 func (c *Cache) Clear(ctx context.Context) error {

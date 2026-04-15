@@ -91,7 +91,17 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 	}
 }
 
-func (s *Subsystem) handleProgress(ctx context.Context, _ *mcp.CallToolRequest, input ProgressInput) (*mcp.CallToolResult, ProgressOutput, error) {
+func (s *Subsystem) handleProgress(ctx context.Context, req *mcp.CallToolRequest, input ProgressInput) (*mcp.CallToolResult, ProgressOutput, error) {
+	if req != nil && req.Session != nil && req.Params != nil {
+		if token := req.Params.GetProgressToken(); token != nil {
+			_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
+				ProgressToken: token,
+				Progress:      input.Progress,
+				Total:         input.Total,
+				Message:       input.Message,
+			})
+		}
+	}
 	out, err := s.progress(ctx, input)
 	return nil, out, err
 }
