@@ -27,7 +27,7 @@ func TestPaths_Default_Ugly(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(originalWD) })
 	_ = os.Chdir(cwd)
 	paths := DefaultPaths("")
-	if len(paths) != 2 || filepath.Base(filepath.Dir(paths[1])) != ".core" || filepath.Base(paths[1]) != "ide.yaml" || paths[0] == paths[1] {
+	if len(paths) != 1 || filepath.Base(filepath.Dir(paths[0])) != ".core" || filepath.Base(paths[0]) != "ide.yaml" {
 		t.Fatalf("unexpected derived paths %#v", paths)
 	}
 }

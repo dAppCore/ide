@@ -101,13 +101,8 @@ func TestConfig_DefaultPaths_Ugly(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	currentWD, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd after chdir: %v", err)
-	}
 	paths := DefaultPaths("")
-	expectedCwd := filepath.Join(currentWD, ".core", "ide.yaml")
-	if len(paths) != 2 || paths[1] != expectedCwd || paths[0] == "" || paths[0] == paths[1] {
+	if len(paths) != 1 || filepath.Base(filepath.Dir(paths[0])) != ".core" || filepath.Base(paths[0]) != "ide.yaml" {
 		t.Fatalf("expected home and cwd defaults, got %#v", paths)
 	}
 }

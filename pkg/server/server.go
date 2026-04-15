@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
 	"time"
 
 	core "dappco.re/go/core"
@@ -116,6 +115,7 @@ func Compose(options Options) (*Server, error) {
 	if !ok {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
 	}
+	mcpService.SetAPIToken(authToken)
 	if options.GUI {
 		guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
 		guiExecutor.Attach(guiSubsystem, mcpService)
@@ -170,22 +170,8 @@ func (s *Server) Run(ctx context.Context) error {
 	case "http":
 		token := core.Trim(s.authToken)
 		if token == "" {
-			token = core.Trim(core.Env("MCP_AUTH_TOKEN"))
-		}
-		if token == "" {
 			return core.E("ide.server.Run", "http transport requires a bearer token", nil)
 		}
-		restoreToken, hadToken := os.LookupEnv("MCP_AUTH_TOKEN")
-		if err := os.Setenv("MCP_AUTH_TOKEN", token); err != nil {
-			return core.E("ide.server.Run", "set MCP_AUTH_TOKEN", err)
-		}
-		defer func() {
-			if hadToken {
-				_ = os.Setenv("MCP_AUTH_TOKEN", restoreToken)
-				return
-			}
-			_ = os.Unsetenv("MCP_AUTH_TOKEN")
-		}()
 		return s.mcp.ServeHTTP(ctx, s.transport.Addr)
 	case "tcp":
 		return s.mcp.ServeTCP(ctx, s.transport.Addr)

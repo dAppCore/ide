@@ -2,6 +2,9 @@ package workspace
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	core "dappco.re/go/core"
@@ -39,7 +42,10 @@ func (s *Subsystem) RegisterActions(c *core.Core) {
 }
 
 func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput, error) {
-	root := s.root(input.Root)
+	root, err := s.root(input.Root)
+	if err != nil {
+		return StatusOutput{}, err
+	}
 	coreFiles, counts, _, err := readCoreFiles(s.medium, root)
 	if err != nil {
 		return StatusOutput{}, err
@@ -58,7 +64,10 @@ func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput
 }
 
 func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (ConventionsOutput, error) {
-	root := s.root(input.Root)
+	root, err := s.root(input.Root)
+	if err != nil {
+		return ConventionsOutput{}, err
+	}
 	_, _, sources, err := readCoreFiles(s.medium, root)
 	if err != nil {
 		return ConventionsOutput{}, err
@@ -90,7 +99,10 @@ func (s *Subsystem) Conventions(ctx context.Context, input ConventionsInput) (Co
 }
 
 func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput, error) {
-	root := s.root(input.Root)
+	root, err := s.root(input.Root)
+	if err != nil {
+		return ImpactOutput{}, err
+	}
 	git, err := gitStatus(ctx, s.process, root)
 	if err != nil {
 		return ImpactOutput{}, err
@@ -106,7 +118,10 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 }
 
 func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, error) {
-	root := s.root(input.Root)
+	root, err := s.root(input.Root)
+	if err != nil {
+		return ScanOutput{}, err
+	}
 	depth := input.Depth
 	if depth <= 0 {
 		depth = s.cfg.ScanDepth
@@ -118,16 +133,52 @@ func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, erro
 	return ScanOutput{Projects: projects}, nil
 }
 
-func (s *Subsystem) root(override string) string {
-	if core.Trim(override) != "" {
-		return override
+func (s *Subsystem) Root() string {
+	root, err := resolveWorkspaceRoot(s.cfg.Root, "")
+	if err != nil {
+		return core.CleanPath(core.Trim(s.cfg.Root), ".")
 	}
-	if core.Trim(s.cfg.Root) != "" {
-		return s.cfg.Root
-	}
-	return "."
+	return root
 }
 
-func (s *Subsystem) Root() string {
-	return s.root("")
+func (s *Subsystem) root(override string) (string, error) {
+	return resolveWorkspaceRoot(s.cfg.Root, override)
+}
+
+func resolveWorkspaceRoot(base, requested string) (string, error) {
+	base = core.Trim(base)
+	if base == "" {
+		base = "."
+	}
+	trusted, err := filepath.Abs(base)
+	if err != nil {
+		return "", core.E("workspace.root", "resolve trusted base", err)
+	}
+	trusted, _ = filepath.EvalSymlinks(trusted)
+	requested = core.Trim(requested)
+	if requested == "" {
+		requested = base
+	}
+	candidate := requested
+	if !filepath.IsAbs(candidate) {
+		candidate = filepath.Join(trusted, candidate)
+	}
+	candidate, err = filepath.Abs(candidate)
+	if err != nil {
+		return "", core.E("workspace.root", "resolve request root", err)
+	}
+	candidate, _ = filepath.EvalSymlinks(candidate)
+
+	trusted = filepath.Clean(trusted)
+	candidate = filepath.Clean(candidate)
+	sep := string(filepath.Separator)
+	trustedPrefix := trusted
+	if !strings.HasSuffix(trustedPrefix, sep) {
+		trustedPrefix += sep
+	}
+	if candidate != trusted && !strings.HasPrefix(candidate, trustedPrefix) {
+		return "", core.E("workspace.root", fmt.Sprintf("root %q is outside allowed workspace root %q", candidate, trusted), nil)
+	}
+
+	return candidate, nil
 }

@@ -16,7 +16,6 @@ type runtimeFlags struct {
 	MCPOnly    bool
 	NoGUI      bool
 	HTTPAddr   string
-	Token      string
 	ConfigPath string
 }
 
@@ -35,7 +34,6 @@ func main() {
 	config.ApplyCLIOverrides(&cfg, config.CLIOverrides{
 		TransportMode: transportMode(flags),
 		HTTPAddr:      flags.HTTPAddr,
-		Token:         flags.Token,
 	})
 	if flags.NoGUI {
 		cfg.Ide.Chat.Enabled = config.BoolPtr(false)
