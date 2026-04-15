@@ -1,14 +1,20 @@
 package config
 
-import core "dappco.re/go/core"
+import (
+	"os"
+
+	core "dappco.re/go/core"
+)
 
 func DefaultPaths(configPath string) []string {
-	paths := make([]string, 0, 2)
 	if core.Trim(configPath) != "" {
 		return []string{configPath}
 	}
-	home := homeDir()
-	if home != "" {
+	paths := make([]string, 0, 2)
+	if cwd, err := os.Getwd(); err == nil && core.Trim(cwd) != "" {
+		paths = append(paths, core.JoinPath(cwd, ".core", "ide.yaml"))
+	}
+	if home := homeDir(); home != "" {
 		paths = append(paths, core.JoinPath(home, ".core", "ide.yaml"))
 	}
 	return paths

@@ -102,8 +102,14 @@ func TestConfig_DefaultPaths_Ugly(t *testing.T) {
 	}
 
 	paths := DefaultPaths("")
-	if len(paths) != 1 || filepath.Base(filepath.Dir(paths[0])) != ".core" || filepath.Base(paths[0]) != "ide.yaml" {
-		t.Fatalf("expected home and cwd defaults, got %#v", paths)
+	if len(paths) != 2 {
+		t.Fatalf("expected project-local and home defaults, got %#v", paths)
+	}
+	if filepath.Base(filepath.Dir(paths[0])) != ".core" || filepath.Base(paths[0]) != "ide.yaml" {
+		t.Fatalf("expected project-local config first, got %#v", paths)
+	}
+	if filepath.Base(filepath.Dir(paths[1])) != ".core" || filepath.Base(paths[1]) != "ide.yaml" {
+		t.Fatalf("expected home config second, got %#v", paths)
 	}
 }
 
