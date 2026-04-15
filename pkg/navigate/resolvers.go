@@ -2,6 +2,7 @@ package navigate
 
 import (
 	"context"
+	"strings"
 
 	core "dappco.re/go/core"
 )
@@ -39,7 +40,19 @@ func (s *Subsystem) resolveNetwork(ctx context.Context, _ Filter) (Data, Schema,
 }
 
 func (s *Subsystem) resolveSettings(ctx context.Context, _ Filter) (Data, Schema, error) {
-	return s.resolveQuery(ctx, "config.dump")
+	output, schema, err := s.resolveQuery(ctx, "config.dump")
+	if err != nil {
+		return nil, nil, err
+	}
+	settings, ok := output.(Output)
+	if !ok {
+		return output, schema, nil
+	}
+	if !settings.Available {
+		return settings, schema, nil
+	}
+	settings.Data = redactSensitiveValue(settings.Data)
+	return settings, schema, nil
 }
 
 func (s *Subsystem) resolveIdentity(ctx context.Context, _ Filter) (Data, Schema, error) {
@@ -68,4 +81,36 @@ func filterString(filter Filter, key string) string {
 	}
 	text, _ := value.(string)
 	return core.Trim(text)
+}
+
+func redactSensitiveValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, nested := range typed {
+			if isSensitiveKey(key) {
+				out[key] = "[redacted]"
+				continue
+			}
+			out[key] = redactSensitiveValue(nested)
+		}
+		return out
+	case []any:
+		out := make([]any, len(typed))
+		for i, nested := range typed {
+			out[i] = redactSensitiveValue(nested)
+		}
+		return out
+	default:
+		return value
+	}
+}
+
+func isSensitiveKey(key string) bool {
+	key = strings.ToLower(core.Trim(key))
+	switch key {
+	case "token", "key", "secret", "password", "passphrase", "api_key", "apikey", "client_secret", "access_token", "refresh_token", "private_key", "authorization", "bearer":
+		return true
+	}
+	return strings.HasSuffix(key, "_token") || strings.HasSuffix(key, "_key") || strings.HasSuffix(key, "_secret") || strings.HasSuffix(key, "_password")
 }

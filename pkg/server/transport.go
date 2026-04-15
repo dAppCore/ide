@@ -71,7 +71,7 @@ func SelectRelayTransport(cfg config.IDEConfig, token string, handler http.Handl
 	if !config.BoolValue(cfg.Ide.Subagent.Enabled, true) || core.Trim(token) == "" || addr == "" || path == "" || handler == nil {
 		return RelayTransport{}
 	}
-	if err := validateTransportAddress("http", addr); err != nil {
+	if err := validateRelayTransportAddress(addr); err != nil {
 		return RelayTransport{}
 	}
 	if !core.HasPrefix(path, "/") {
@@ -98,4 +98,31 @@ func validateTransportAddress(mode, addr string) error {
 		}
 	}
 	return nil
+}
+
+func validateRelayTransportAddress(addr string) error {
+	if core.Trim(addr) == "" {
+		return nil
+	}
+	if err := validateTransportAddress("http", addr); err != nil {
+		return err
+	}
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return core.E("ide.server.SelectRelayTransport", core.Concat("invalid relay address: ", addr), err)
+	}
+	if !isLoopbackHost(host) {
+		return core.E("ide.server.SelectRelayTransport", "relay transport must bind to localhost or loopback", nil)
+	}
+	return nil
+}
+
+func isLoopbackHost(host string) bool {
+	host = core.Trim(host)
+	switch host {
+	case "localhost":
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }

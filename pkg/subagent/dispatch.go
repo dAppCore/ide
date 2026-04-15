@@ -50,7 +50,8 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	relayURL := core.Trim(input.RelayURL)
 	if relayURL == "" {
 		relayURL = s.cfg.Relay.URL()
-	} else if err := validateRelayURL(relayURL); err != nil {
+	}
+	if err := validateRelayURL(relayURL); err != nil {
 		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
 	}
 	relayToken := core.Trim(input.RelayToken)

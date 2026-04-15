@@ -44,7 +44,8 @@ func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput
 	if err != nil {
 		return StatusOutput{}, err
 	}
-	coreFiles, counts, _, err := readCoreFiles(s.medium, root)
+	medium := s.workspaceMedium()
+	coreFiles, counts, _, err := readCoreFiles(medium, root)
 	if err != nil {
 		return StatusOutput{}, err
 	}
@@ -66,15 +67,16 @@ func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (Co
 	if err != nil {
 		return ConventionsOutput{}, err
 	}
-	_, _, sources, err := readCoreFiles(s.medium, root)
+	medium := s.workspaceMedium()
+	_, _, sources, err := readCoreFiles(medium, root)
 	if err != nil {
 		return ConventionsOutput{}, err
 	}
-	projects, scanErr := scanProjects(ctx, ScanInput{Root: root, Depth: s.cfg.ScanDepth}, s.medium, s.process, root)
+	projects, scanErr := scanProjects(ctx, ScanInput{Root: root, Depth: s.cfg.ScanDepth}, medium, s.process, root)
 	if scanErr != nil {
 		return ConventionsOutput{}, scanErr
 	}
-	languages := detectLanguages(s.medium, root)
+	languages := detectLanguages(medium, root)
 	for _, project := range projects {
 		languages = append(languages, project.Languages...)
 	}
@@ -86,7 +88,7 @@ func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (Co
 	return ConventionsOutput{
 		Root:        root,
 		Sources:     sources,
-		Build:       BuildSummary{ProjectName: readBuildProjectName(s.medium, root)},
+		Build:       BuildSummary{ProjectName: readBuildProjectName(medium, root)},
 		Conventions: packs,
 		Notes:       notes,
 	}, nil
@@ -105,7 +107,7 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 	if err != nil {
 		return ImpactOutput{}, err
 	}
-	areas, checks, notes := classifyImpact(s.medium, root, git.Changes)
+	areas, checks, notes := classifyImpact(s.workspaceMedium(), root, git.Changes)
 	return ImpactOutput{
 		Root:            root,
 		Git:             git,
@@ -124,11 +126,26 @@ func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, erro
 	if depth <= 0 {
 		depth = s.cfg.ScanDepth
 	}
-	projects, err := scanProjects(ctx, ScanInput{Root: root, Depth: depth}, s.medium, s.process, root)
+	projects, err := scanProjects(ctx, ScanInput{Root: root, Depth: depth}, s.workspaceMedium(), s.process, root)
 	if err != nil {
 		return ScanOutput{}, err
 	}
 	return ScanOutput{Projects: projects}, nil
+}
+
+func (s *Subsystem) workspaceMedium() coreio.Medium {
+	if s == nil || s.medium == nil || s.medium != coreio.Local {
+		return s.medium
+	}
+	base, err := resolveWorkspaceRoot(s.cfg.Root, "")
+	if err != nil || core.Trim(base) == "" {
+		return s.medium
+	}
+	sandboxed, err := coreio.NewSandboxed(base)
+	if err != nil {
+		return s.medium
+	}
+	return &rootedMedium{medium: sandboxed, root: base, bound: true}
 }
 
 func (s *Subsystem) Root() string {

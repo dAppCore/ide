@@ -2,6 +2,7 @@ package subagent
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -261,6 +262,9 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	if relayURL == "" || core.Trim(s.relayToken) == "" {
 		return nil, false, false, false
 	}
+	if err := validateRelayURL(relayURL); err != nil {
+		return nil, false, false, false
+	}
 	headers := http.Header{}
 	if token := core.Trim(s.relayToken); token != "" {
 		headers.Set("Authorization", core.Concat("Bearer ", token))
@@ -367,7 +371,20 @@ func validateRelayURL(value string) error {
 	if parsed.Host == "" {
 		return core.E("ide.subagent.relayURL", "relay URL host is required", nil)
 	}
+	if !isLoopbackHost(parsed.Hostname()) {
+		return core.E("ide.subagent.relayURL", "relay URL must target localhost or loopback", nil)
+	}
 	return nil
+}
+
+func isLoopbackHost(host string) bool {
+	host = core.Trim(host)
+	switch host {
+	case "localhost":
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func newQuestionID() (string, error) {

@@ -93,6 +93,39 @@ func TestWorkspace_Status_Good(t *testing.T) {
 	}
 }
 
+func TestWorkspace_Status_UglySymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	secretDir := t.TempDir()
+	secretPath := filepath.Join(secretDir, "secret.txt")
+	if err := os.WriteFile(secretPath, []byte("super-secret-token\n"), 0o600); err != nil {
+		t.Fatalf("write secret: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
+		t.Fatalf("mkdir core: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
+		t.Fatalf("write manifest: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644); err != nil {
+		t.Fatalf("write build: %v", err)
+	}
+	if err := os.Symlink(secretPath, filepath.Join(root, ".core", "leak.txt")); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+	initGitRepo(t, root)
+
+	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, coreio.Local, testProcessService(t))
+	out, err := subsystem.status(context.Background(), StatusInput{})
+	if err != nil {
+		t.Fatalf("status: %v", err)
+	}
+	for _, file := range out.CoreFiles {
+		if strings.Contains(file.Preview, "super-secret-token") {
+			t.Fatalf("expected symlink escape to stay unreadable, got %#v", out.CoreFiles)
+		}
+	}
+}
+
 func TestWorkspace_Status_Bad(t *testing.T) {
 	root := t.TempDir()
 	medium := coreio.NewMemoryMedium()

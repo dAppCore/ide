@@ -203,6 +203,12 @@ func TestTools_ValidateRelayURL_Bad(t *testing.T) {
 	}
 }
 
+func TestTools_ValidateRelayURL_BadRemote(t *testing.T) {
+	if err := validateRelayURL("https://example.com/subagent"); err == nil {
+		t.Fatal("expected relay URL host restriction")
+	}
+}
+
 func TestTools_ValidateRelayURL_Ugly(t *testing.T) {
 	if err := validateRelayURL("://bad"); err == nil {
 		t.Fatal("expected malformed URL error")

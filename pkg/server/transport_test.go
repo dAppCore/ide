@@ -99,3 +99,12 @@ func TestTransport_SelectRelay_Bad(t *testing.T) {
 		t.Fatalf("expected relay to stay disabled without token, got %#v", relay)
 	}
 }
+
+func TestTransport_SelectRelay_Ugly(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "0.0.0.0:9882"
+	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if relay.Enabled {
+		t.Fatalf("expected relay to reject non-loopback bind address, got %#v", relay)
+	}
+}

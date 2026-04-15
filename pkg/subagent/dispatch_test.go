@@ -27,3 +27,10 @@ func TestDispatch_Guided_Ugly(t *testing.T) {
 		t.Fatalf("expected secret-free prompt, got %#v err=%v", out, err)
 	}
 }
+
+func TestDispatch_Guided_BadRelayURL(t *testing.T) {
+	_, err := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "").DispatchGuided(context.Background(), DispatchGuidedInput{Repo: "core/ide", Task: "investigate", RelayURL: "https://example.com/subagent"})
+	if err == nil {
+		t.Fatal("expected relay URL host validation error")
+	}
+}
