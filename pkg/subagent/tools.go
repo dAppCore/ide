@@ -28,6 +28,8 @@ const (
 
 var workspaceIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 
+var agenticWatchCall = defaultAgenticWatchCall
+
 func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	server := svc.Server()
 	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_guide", Description: "Send guidance to a subagent workspace."}, s.handleGuide)
@@ -162,6 +164,7 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 		return WatchOutput{Reason: "workspaceId is required"}, nil
 	}
 	timeout := clampInt(input.Timeout, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxWatchTimeoutSeconds)
+	pollInterval := clampInt(input.PollInterval, 2, maxWatchPollInterval)
 	if events, completed, failed, ok := s.watchRelay(ctx, workspaceID, timeout); ok {
 		if completed || failed {
 			return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
@@ -171,8 +174,11 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 			return WatchOutput{Completed: agenticCompleted, Failed: agenticFailed, Events: dedupeEvents(events)}, nil
 		}
 	}
+	if output, ok := s.watchAgentic(ctx, workspaceID, pollInterval, timeout); ok {
+		return output, nil
+	}
 	deadline := time.After(time.Duration(timeout) * time.Second)
-	ticker := time.NewTicker(time.Duration(clampInt(input.PollInterval, 2, maxWatchPollInterval)) * time.Second)
+	ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
 	defer ticker.Stop()
 	seen := 0
 	collected := []Event{}
@@ -204,6 +210,37 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 		case <-ticker.C:
 		}
 	}
+}
+
+func (s *Subsystem) watchAgentic(ctx context.Context, workspaceID string, pollInterval, timeout int) (WatchOutput, bool) {
+	ref := s.agenticWorkspace(workspaceID)
+	if core.Trim(ref.Name) == "" {
+		return WatchOutput{}, false
+	}
+	result, err := s.agenticWatch(ctx, ref.Name, pollInterval, timeout)
+	if err != nil {
+		return WatchOutput{}, false
+	}
+	for _, item := range result.Completed {
+		if core.Trim(item.Workspace) != ref.Name {
+			continue
+		}
+		return s.agenticWatchOutput(workspaceID, item), true
+	}
+	for _, item := range result.Failed {
+		if core.Trim(item.Workspace) != ref.Name {
+			continue
+		}
+		return s.agenticWatchOutput(workspaceID, item), true
+	}
+	return WatchOutput{}, false
+}
+
+func (s *Subsystem) agenticWatchOutput(workspaceID string, result mcpagentic.WatchResult) WatchOutput {
+	s.syncAgenticState(workspaceID, result.Status, "")
+	events := dedupeEvents(s.collectEvents(workspaceID, 0))
+	completed, failed := terminalState(result.Status)
+	return WatchOutput{Completed: completed, Failed: failed, Events: events}
 }
 
 func (s *Subsystem) handleAnswer(ctx context.Context, _ *mcp.CallToolRequest, input AnswerInput) (*mcp.CallToolResult, AnswerOutput, error) {
@@ -312,6 +349,42 @@ func (s *Subsystem) agenticStatus(ctx context.Context, workspace string) (mcpage
 	output, ok := result.(mcpagentic.StatusOutput)
 	if !ok {
 		return mcpagentic.StatusOutput{}, core.E("ide.subagent.agenticStatus", "unexpected agentic status output", nil)
+	}
+	return output, nil
+}
+
+func (s *Subsystem) agenticWatch(ctx context.Context, workspace string, pollInterval, timeout int) (mcpagentic.WatchOutput, error) {
+	return agenticWatchCall(ctx, workspace, pollInterval, timeout)
+}
+
+func defaultAgenticWatchCall(ctx context.Context, workspace string, pollInterval, timeout int) (mcpagentic.WatchOutput, error) {
+	service, err := coremcp.New(coremcp.Options{Unrestricted: true})
+	if err != nil {
+		return mcpagentic.WatchOutput{}, core.E("ide.subagent.agenticWatch", "create agentic mcp service", err)
+	}
+	prep := mcpagentic.NewPrep()
+	prep.RegisterTools(service)
+	var handler coremcp.RESTHandler
+	for _, tool := range service.Tools() {
+		if tool.Name == "agentic_watch" {
+			handler = tool.RESTHandler
+			break
+		}
+	}
+	if handler == nil {
+		return mcpagentic.WatchOutput{}, core.E("ide.subagent.agenticWatch", "agentic watch handler unavailable", nil)
+	}
+	result, err := handler(ctx, []byte(core.JSONMarshalString(mcpagentic.WatchInput{
+		Workspaces:   []string{workspace},
+		PollInterval: pollInterval,
+		Timeout:      timeout,
+	})))
+	if err != nil {
+		return mcpagentic.WatchOutput{}, core.E("ide.subagent.agenticWatch", "watch agentic workspace", err)
+	}
+	output, ok := result.(mcpagentic.WatchOutput)
+	if !ok {
+		return mcpagentic.WatchOutput{}, core.E("ide.subagent.agenticWatch", "unexpected agentic watch output", nil)
 	}
 	return output, nil
 }

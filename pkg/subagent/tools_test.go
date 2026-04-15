@@ -9,6 +9,7 @@ import (
 	core "dappco.re/go/core"
 	"dappco.re/go/core/ide/pkg/config"
 	"dappco.re/go/core/ws"
+	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 )
 
 func TestTools_Guide_Good(t *testing.T) {
@@ -175,6 +176,33 @@ func TestTools_Watch_Ugly(t *testing.T) {
 	cancel()
 	if _, err := subsystem.watch(ctx, WatchInput{WorkspaceID: "ws-1"}); err == nil {
 		t.Fatal("expected canceled context")
+	}
+}
+
+func TestTools_Watch_Good_AgenticFallback(t *testing.T) {
+	previous := agenticWatchCall
+	agenticWatchCall = func(context.Context, string, int, int) (mcpagentic.WatchOutput, error) {
+		return mcpagentic.WatchOutput{
+			Success: true,
+			Completed: []mcpagentic.WatchResult{{
+				Workspace: "agentic-ws",
+				Status:    "completed",
+			}},
+		}, nil
+	}
+	t.Cleanup(func() { agenticWatchCall = previous })
+
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem.bindAgenticWorkspace("ws-1", "agentic-ws")
+	out, err := subsystem.watch(context.Background(), WatchInput{WorkspaceID: "ws-1", Timeout: 1})
+	if err != nil {
+		t.Fatalf("watch: %v", err)
+	}
+	if !out.Completed || out.Failed {
+		t.Fatalf("expected completed agentic fallback, got %#v", out)
+	}
+	if len(out.Events) == 0 || out.Events[len(out.Events)-1].Message != "completed" {
+		t.Fatalf("expected completed status event, got %#v", out.Events)
 	}
 }
 
