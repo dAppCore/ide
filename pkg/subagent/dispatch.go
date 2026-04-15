@@ -52,8 +52,12 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	} else if err := validateRelayURL(relayURL); err != nil {
 		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
 	}
+	relayToken := core.Trim(input.RelayToken)
+	if relayToken == "" {
+		relayToken = s.relayToken
+	}
 	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN is injected by the launcher and must not be echoed.\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
-	if s.hub == nil {
+	if s.hub == nil || core.Trim(relayURL) == "" || core.Trim(relayToken) == "" {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}
 	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}

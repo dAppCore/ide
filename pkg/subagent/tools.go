@@ -258,7 +258,7 @@ func clampInt(value, fallback, max int) int {
 
 func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout int) ([]Event, bool, bool, bool) {
 	relayURL := core.Trim(s.cfg.Relay.URL())
-	if relayURL == "" {
+	if relayURL == "" || core.Trim(s.relayToken) == "" {
 		return nil, false, false, false
 	}
 	headers := http.Header{}
