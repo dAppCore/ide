@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	ideconfig "dappco.re/go/core/ide/config"
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
 	"forge.lthn.ai/core/config"
@@ -25,44 +24,12 @@ import (
 )
 
 func main() {
-	mcpOnly := false
-	for _, arg := range os.Args[1:] {
-		if arg == "--mcp" {
-			mcpOnly = true
-		}
-	}
-
 	cfg, _ := config.New()
-	ideCfg, err := ideconfig.Load()
+	ideCfg, flags, err := loadIDEConfig(os.Args[1:])
 	if err != nil {
 		log.Fatalf("failed to load IDE config: %v", err)
 	}
-	if ideCfg.Ide.Brain.Endpoint != "" {
-		_ = os.Setenv("CORE_BRAIN_URL", ideCfg.Ide.Brain.Endpoint)
-	}
-	if ideCfg.Ide.Brain.Key != "" {
-		_ = os.Setenv("CORE_BRAIN_KEY", ideCfg.Ide.Brain.Key)
-	}
-	if ideCfg.Ide.Brain.Cache.TTL > 0 {
-		_ = os.Setenv("CORE_BRAIN_RECALL_CACHE_TTL", ideCfg.Ide.Brain.Cache.TTL.String())
-	}
-	switch ideCfg.Ide.Transport.Mode {
-	case "http":
-		if ideCfg.Ide.Transport.HTTPAddr != "" {
-			_ = os.Setenv("MCP_HTTP_ADDR", ideCfg.Ide.Transport.HTTPAddr)
-		}
-	case "tcp":
-		if ideCfg.Ide.Transport.TCPAddr != "" {
-			_ = os.Setenv("MCP_ADDR", ideCfg.Ide.Transport.TCPAddr)
-		}
-	case "unix":
-		if ideCfg.Ide.Transport.UnixSocket != "" {
-			_ = os.Setenv("MCP_UNIX_SOCKET", ideCfg.Ide.Transport.UnixSocket)
-		}
-	}
-	if ideCfg.Ide.Transport.Token != "" {
-		_ = os.Setenv("CORE_IDE_TOKEN", ideCfg.Ide.Transport.Token)
-	}
+	applyIDEEnvironment(ideCfg)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -139,7 +106,9 @@ func main() {
 	}
 	registerIDEActions(c, brainDirect, workspaceSubsystem, marketplaceSubsystem, navigateSubsystem, subagentSubsystem)
 
-	if guiEnabled(cfg) {
+	if flags.NoGUI {
+		log.Printf("GUI mode disabled via --no-gui; running headless instead")
+	} else if guiEnabled(cfg) {
 		log.Printf("GUI mode is unavailable in this Linux build; running headless instead")
 	}
 
@@ -163,7 +132,7 @@ func main() {
 		}
 	}()
 
-	if mcpOnly {
+	if flags.MCPOnly {
 		if err := mcpSvc.ServeStdio(ctx); err != nil {
 			log.Printf("MCP stdio error: %v", err)
 		}
