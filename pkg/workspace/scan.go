@@ -4,8 +4,6 @@ import (
 	"context"
 	goio "io"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"slices"
 
 	core "dappco.re/go/core"
@@ -126,9 +124,6 @@ func appendWorkspaceTreeWithIgnores(medium coreio.Medium, root, path string, ign
 	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
-	if isRejectedWorkspaceSymlink(root, path) {
-		return
-	}
 	if medium.IsDir(path) {
 		entries, err := medium.List(path)
 		if err != nil {
@@ -151,9 +146,6 @@ func appendWorkspaceFileWithIgnores(medium coreio.Medium, root, path string, ign
 		return
 	}
 	if shouldIgnorePath(root, path, ignores) {
-		return
-	}
-	if isRejectedWorkspaceSymlink(root, path) {
 		return
 	}
 	info, err := medium.Stat(path)
@@ -193,32 +185,6 @@ func readLimitedContent(medium coreio.Medium, path string, maxBytes int64) (stri
 		raw = raw[:maxBytes]
 	}
 	return string(raw), nil
-}
-
-func isRejectedWorkspaceSymlink(root, path string) bool {
-	root = core.Trim(root)
-	path = core.Trim(path)
-	if root == "" || path == "" || !core.PathIsAbs(root) || !core.PathIsAbs(path) {
-		return false
-	}
-	info, err := os.Lstat(path)
-	if err != nil {
-		return false
-	}
-	if info.Mode()&os.ModeSymlink == 0 {
-		return false
-	}
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return true
-	}
-	root = filepath.Clean(root)
-	resolved = filepath.Clean(resolved)
-	if resolved == root {
-		return false
-	}
-	separator := string(os.PathSeparator)
-	return !core.HasPrefix(resolved, root+separator)
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {
