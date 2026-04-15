@@ -69,18 +69,18 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if s.hub == nil || core.Trim(relayURL) == "" || core.Trim(relayToken) == "" {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}
+	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}
+	runningChannel := statusChannel(workspaceID)
+	s.appendEvent(workspaceID, Event{Type: status.Type, Channel: runningChannel, Message: status.State, CreatedAt: status.CreatedAt})
+	s.publish(runningChannel, status)
+	s.publish(guideChannel(workspaceID), GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: prompt, CreatedAt: time.Now().UTC()})
 	dispatchResult, err := dispatchViaAgentic(ctx, input, agent, template, workspaceID, relayURL, relayToken, prompt)
 	if err != nil {
 		failed := StatusMessage{Type: "status", State: "failed", Detail: err.Error(), CreatedAt: time.Now().UTC()}
-		s.appendEvent(workspaceID, Event{Type: failed.Type, Channel: statusChannel(workspaceID), Message: failed.State, CreatedAt: failed.CreatedAt})
-		s.publish(statusChannel(workspaceID), failed)
+		s.appendEvent(workspaceID, Event{Type: failed.Type, Channel: runningChannel, Message: failed.State, CreatedAt: failed.CreatedAt})
+		s.publish(runningChannel, failed)
 		return DispatchGuidedOutput{Success: false, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: err.Error()}, err
 	}
-	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}
-	statusChannel := statusChannel(workspaceID)
-	s.appendEvent(workspaceID, Event{Type: status.Type, Channel: statusChannel, Message: status.State, CreatedAt: status.CreatedAt})
-	s.publish(statusChannel, status)
-	s.publish(guideChannel(workspaceID), GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: prompt, CreatedAt: time.Now().UTC()})
 	return DispatchGuidedOutput{Success: dispatchResult.Success, Delivered: true, WorkspaceID: workspaceID, Agent: dispatchResult.Agent, Prompt: prompt}, nil
 }
 

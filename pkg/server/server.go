@@ -118,12 +118,30 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 
 	c := core.New(services...)
 
-	workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
-	brainService, _ := core.ServiceFor[*brainpkg.Subsystem](c, "brain")
-	subagentService, _ := core.ServiceFor[*subagentpkg.Subsystem](c, "subagent")
-	navigateService, _ := core.ServiceFor[*navigatepkg.Subsystem](c, "navigate")
-	marketplaceService, _ := core.ServiceFor[*marketplacepkg.Subsystem](c, "marketplace")
-	aiService, _ := core.ServiceFor[*aipkg.Service](c, "ai")
+	workspaceService, ok := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
+	if !ok || workspaceService == nil {
+		return nil, core.E("ide.server.Compose", "workspace service not registered", nil)
+	}
+	brainService, ok := core.ServiceFor[*brainpkg.Subsystem](c, "brain")
+	if !ok || brainService == nil {
+		return nil, core.E("ide.server.Compose", "brain service not registered", nil)
+	}
+	subagentService, ok := core.ServiceFor[*subagentpkg.Subsystem](c, "subagent")
+	if !ok || subagentService == nil {
+		return nil, core.E("ide.server.Compose", "subagent service not registered", nil)
+	}
+	navigateService, ok := core.ServiceFor[*navigatepkg.Subsystem](c, "navigate")
+	if !ok || navigateService == nil {
+		return nil, core.E("ide.server.Compose", "navigate service not registered", nil)
+	}
+	marketplaceService, ok := core.ServiceFor[*marketplacepkg.Subsystem](c, "marketplace")
+	if !ok || marketplaceService == nil {
+		return nil, core.E("ide.server.Compose", "marketplace service not registered", nil)
+	}
+	aiService, ok := core.ServiceFor[*aipkg.Service](c, "ai")
+	if !ok || aiService == nil {
+		return nil, core.E("ide.server.Compose", "ai service not registered", nil)
+	}
 	if options.Medium != nil && options.Medium != coreio.Local {
 		marketplaceService.AttachMedium(medium)
 	}
