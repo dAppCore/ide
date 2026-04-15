@@ -3,7 +3,6 @@ package navigate
 import (
 	"context"
 	"reflect"
-	"strings"
 
 	core "dappco.re/go/core"
 )
@@ -93,12 +92,12 @@ func redactSensitiveValue(value any) any {
 }
 
 func isSensitiveKey(key string) bool {
-	key = strings.ToLower(core.Trim(key))
+	key = core.Lower(core.Trim(key))
 	switch key {
 	case "token", "key", "secret", "password", "passphrase", "api_key", "apikey", "client_secret", "access_token", "refresh_token", "private_key", "authorization", "bearer":
 		return true
 	}
-	return strings.HasSuffix(key, "_token") || strings.HasSuffix(key, "_key") || strings.HasSuffix(key, "_secret") || strings.HasSuffix(key, "_password")
+	return core.HasSuffix(key, "_token") || core.HasSuffix(key, "_key") || core.HasSuffix(key, "_secret") || core.HasSuffix(key, "_password")
 }
 
 func redactReflectValue(value reflect.Value) reflect.Value {
@@ -191,11 +190,11 @@ func redactReflectValue(value reflect.Value) reflect.Value {
 }
 
 func fieldName(field reflect.StructField) string {
-	if tag := strings.TrimSpace(field.Tag.Get("json")); tag != "" && tag != "-" {
-		return strings.Split(tag, ",")[0]
+	if tag := core.Trim(field.Tag.Get("json")); tag != "" && tag != "-" {
+		return core.Split(tag, ",")[0]
 	}
-	if tag := strings.TrimSpace(field.Tag.Get("yaml")); tag != "" && tag != "-" {
-		return strings.Split(tag, ",")[0]
+	if tag := core.Trim(field.Tag.Get("yaml")); tag != "" && tag != "-" {
+		return core.Split(tag, ",")[0]
 	}
 	return field.Name
 }
