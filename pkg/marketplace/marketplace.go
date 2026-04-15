@@ -8,6 +8,7 @@ import (
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	scmmarketplace "dappco.re/go/scm/marketplace"
 
+	aipkg "dappco.re/go/core/ide/pkg/ai"
 	"dappco.re/go/core/ide/pkg/config"
 )
 
@@ -46,6 +47,13 @@ type InstallOutput struct {
 
 func New(cfg config.Marketplace) *Subsystem {
 	return &Subsystem{cfg: cfg, client: NewClient(cfg)}
+}
+
+func (s *Subsystem) AttachAI(service *aipkg.Service) {
+	if s.client == nil {
+		s.client = NewClient(s.cfg)
+	}
+	s.client.AttachAI(service)
 }
 
 func (s *Subsystem) AttachMedium(medium coreio.Medium) {

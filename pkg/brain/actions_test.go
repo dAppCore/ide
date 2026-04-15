@@ -22,7 +22,7 @@ func TestActions_Register_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	c := core.New()
 	subsystem.registerActions(c)
 	if !c.Action("ide.brain.recall").Exists() {
@@ -36,7 +36,7 @@ func TestActions_Register_Good(t *testing.T) {
 
 func TestActions_Register_Bad(t *testing.T) {
 	c := core.New()
-	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil).registerActions(c)
+	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil).registerActions(c)
 	result := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "topK", Value: "bad"}))
 	if result.OK {
 		t.Fatalf("expected decode failure, got %#v", result.Value)
@@ -45,7 +45,7 @@ func TestActions_Register_Bad(t *testing.T) {
 
 func TestActions_Register_Ugly(t *testing.T) {
 	c := core.New()
-	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil).registerActions(c)
+	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil).registerActions(c)
 	if c.Action("ide.brain.context").Run(context.Background(), core.NewOptions()).OK {
 		t.Fatal("expected missing API key error to bubble from action")
 	}

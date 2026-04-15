@@ -20,6 +20,7 @@ type Client struct {
 	cfg        config.Marketplace
 	httpClient *http.Client
 	medium     coreio.Medium
+	ai         *ai.Service
 }
 
 const maxResponseBytes = 1 << 20
@@ -30,6 +31,10 @@ func NewClient(cfg config.Marketplace) *Client {
 
 func (c *Client) AttachMedium(medium coreio.Medium) {
 	c.medium = medium
+}
+
+func (c *Client) AttachAI(service *ai.Service) {
+	c.ai = service
 }
 
 func (c *Client) Search(ctx context.Context, input SearchInput) (SearchOutput, error) {
@@ -80,7 +85,7 @@ func (c *Client) installViaAPI(ctx context.Context, input InstallInput) (Install
 	if err := c.post(ctx, core.Concat(c.cfg.APIPath, "/", url.PathEscape(input.Code), "/install"), nil, nil); err != nil {
 		return InstallOutput{}, err
 	}
-	_ = ai.Record(ai.Event{Type: "ide.pkg.install", Repo: input.Code})
+	c.recordInstall(input.Code)
 	return InstallOutput{Installed: true, Code: input.Code}, nil
 }
 
@@ -101,8 +106,17 @@ func (c *Client) installViaGoSCM(ctx context.Context, input InstallInput) (Insta
 	if err := installer.Install(ctx, info.Package); err != nil {
 		return InstallOutput{}, core.E("ide.marketplace.install", "install module", err)
 	}
-	_ = ai.Record(ai.Event{Type: "ide.pkg.install", Repo: input.Code})
+	c.recordInstall(input.Code)
 	return InstallOutput{Installed: true, Code: input.Code}, nil
+}
+
+func (c *Client) recordInstall(code string) {
+	event := ai.Event{Type: "ide.pkg.install", Repo: code}
+	if c.ai != nil {
+		_ = c.ai.Record(event)
+		return
+	}
+	_ = ai.Record(event)
 }
 
 func (c *Client) get(ctx context.Context, path string, target any) error {

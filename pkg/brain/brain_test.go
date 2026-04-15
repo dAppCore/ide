@@ -16,7 +16,7 @@ import (
 )
 
 func TestBrain_New_Good(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if subsystem == nil {
 		t.Fatal("expected subsystem")
 	}
@@ -51,7 +51,7 @@ func TestBrain_RegisterActions_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "cladius"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root))
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "cladius"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root), nil)
 	c := core.New()
 	subsystem.RegisterActions(c)
 	if out := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "alpha"})); !out.OK {
@@ -89,7 +89,7 @@ func TestBrain_RegisterTools_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	svc, err := coremcp.New(coremcp.Options{})
 	if err != nil {
 		t.Fatalf("mcp: %v", err)

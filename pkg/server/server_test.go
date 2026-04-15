@@ -52,6 +52,11 @@ func TestServer_Compose_Good(t *testing.T) {
 	if _, ok := core.ServiceFor[*coremcp.Service](coreInstance, "mcp"); !ok {
 		t.Fatal("expected mcp service to be registered")
 	}
+	for _, name := range []string{"store", "ai", "workspace", "brain", "subagent", "navigate", "marketplace", "mcp"} {
+		if !coreInstance.Service(name).OK {
+			t.Fatalf("expected service %s to be registered", name)
+		}
+	}
 }
 
 func TestServer_Compose_Bad(t *testing.T) {

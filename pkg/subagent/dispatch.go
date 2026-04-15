@@ -4,9 +4,12 @@ import (
 	"context"
 	cryptoRand "crypto/rand"
 	"encoding/hex"
+	"os"
 	"time"
 
 	core "dappco.re/go/core"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
+	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/core/ide/pkg/config"
@@ -58,16 +61,23 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if relayToken == "" {
 		relayToken = s.relayToken
 	}
-	prompt := core.Sprintf("CORE_IDE_RELAY_URL=%s\nCORE_IDE_RELAY_TOKEN is injected by the launcher and must not be echoed.\nWORKSPACE_ID=%s\nDEFAULT_TEMPLATE=%s\nDEFAULT_AGENT=%s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
+	prompt := core.Sprintf("Relay URL: %s\nWorkspace ID: %s\nDefault Template: %s\nDefault Agent: %s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
 	if s.hub == nil || core.Trim(relayURL) == "" || core.Trim(relayToken) == "" {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
+	}
+	dispatchResult, err := dispatchViaAgentic(ctx, input, agent, template, workspaceID, relayURL, relayToken, prompt)
+	if err != nil {
+		failed := StatusMessage{Type: "status", State: "failed", Detail: err.Error(), CreatedAt: time.Now().UTC()}
+		s.appendEvent(workspaceID, Event{Type: failed.Type, Channel: statusChannel(workspaceID), Message: failed.State, CreatedAt: failed.CreatedAt})
+		s.publish(statusChannel(workspaceID), failed)
+		return DispatchGuidedOutput{Success: false, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: err.Error()}, err
 	}
 	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}
 	statusChannel := statusChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: status.Type, Channel: statusChannel, Message: status.State, CreatedAt: status.CreatedAt})
 	s.publish(statusChannel, status)
 	s.publish(guideChannel(workspaceID), GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: prompt, CreatedAt: time.Now().UTC()})
-	return DispatchGuidedOutput{Success: true, Delivered: true, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt}, nil
+	return DispatchGuidedOutput{Success: dispatchResult.Success, Delivered: true, WorkspaceID: workspaceID, Agent: dispatchResult.Agent, Prompt: prompt}, nil
 }
 
 func newRandomID(prefix string) (string, error) {
@@ -76,4 +86,69 @@ func newRandomID(prefix string) (string, error) {
 		return "", core.E("ide.subagent.id", "generate id", err)
 	}
 	return core.Concat(prefix, "-", hex.EncodeToString(raw[:])), nil
+}
+
+func dispatchViaAgentic(ctx context.Context, input DispatchGuidedInput, agent, template, workspaceID, relayURL, relayToken, prompt string) (mcpagentic.DispatchOutput, error) {
+	service, err := coremcp.New(coremcp.Options{Unrestricted: true})
+	if err != nil {
+		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "create agentic mcp service", err)
+	}
+	prep := mcpagentic.NewPrep()
+	prep.RegisterTools(service)
+	var handler coremcp.RESTHandler
+	for _, tool := range service.Tools() {
+		if tool.Name != "agentic_dispatch" {
+			continue
+		}
+		handler = tool.RESTHandler
+		break
+	}
+	if handler == nil {
+		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "agentic dispatch handler unavailable", nil)
+	}
+	dispatchInput := mcpagentic.DispatchInput{
+		Repo:     input.Repo,
+		Task:     core.Sprintf("%s\n\nGuided relay context:\n%s", core.Trim(input.Task), prompt),
+		Agent:    agent,
+		Template: template,
+		Persona:  input.Persona,
+	}
+	restoreEnv := withDispatchEnv(map[string]string{
+		"CORE_IDE_RELAY_URL":   relayURL,
+		"CORE_IDE_RELAY_TOKEN": relayToken,
+		"WORKSPACE_ID":         workspaceID,
+	})
+	defer restoreEnv()
+	result, err := handler(ctx, []byte(core.JSONMarshalString(dispatchInput)))
+	if err != nil {
+		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "dispatch agentic subagent", err)
+	}
+	output, ok := result.(mcpagentic.DispatchOutput)
+	if !ok {
+		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "unexpected agentic dispatch output", nil)
+	}
+	return output, nil
+}
+
+func withDispatchEnv(values map[string]string) func() {
+	previous := make(map[string]*string, len(values))
+	for key, value := range values {
+		current, ok := os.LookupEnv(key)
+		if ok {
+			currentValue := current
+			previous[key] = &currentValue
+		} else {
+			previous[key] = nil
+		}
+		_ = os.Setenv(key, value)
+	}
+	return func() {
+		for key, value := range previous {
+			if value == nil {
+				_ = os.Unsetenv(key)
+				continue
+			}
+			_ = os.Setenv(key, *value)
+		}
+	}
 }

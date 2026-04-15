@@ -25,7 +25,7 @@ func TestTools_BrainRecall_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"})
 	if err != nil {
 		t.Fatalf("recall handler: %v", err)
@@ -55,7 +55,7 @@ func TestTools_BrainRemember_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta", Type: "note"})
 	if err != nil {
 		t.Fatalf("handleRemember: %v", err)
@@ -66,7 +66,7 @@ func TestTools_BrainRemember_Good(t *testing.T) {
 }
 
 func TestTools_BrainRemember_Bad(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta"}); err == nil {
 		t.Fatal("expected missing API key error")
 	}
@@ -82,7 +82,7 @@ func TestTools_BrainRemember_Ugly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta"}); err == nil {
 		t.Fatal("expected decode error")
 	}
@@ -101,7 +101,7 @@ func TestTools_BrainForget_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleForget(context.Background(), nil, ForgetInput{ID: "memory-2"})
 	if err != nil {
 		t.Fatalf("handleForget: %v", err)
@@ -112,7 +112,7 @@ func TestTools_BrainForget_Good(t *testing.T) {
 }
 
 func TestTools_BrainForget_Bad(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleForget(context.Background(), nil, ForgetInput{}); err == nil {
 		t.Fatal("expected validation error")
 	}
@@ -128,7 +128,7 @@ func TestTools_BrainForget_Ugly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleForget(context.Background(), nil, ForgetInput{ID: "memory-2"}); err == nil {
 		t.Fatal("expected decode error for empty response body")
 	}
@@ -147,7 +147,7 @@ func TestTools_BrainList_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleList(context.Background(), nil, ListInput{Project: "demo", Type: "note", AgentID: "agent-x", Limit: 99})
 	if err != nil {
 		t.Fatalf("handleList: %v", err)
@@ -158,7 +158,7 @@ func TestTools_BrainList_Good(t *testing.T) {
 }
 
 func TestTools_BrainList_Bad(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleList(context.Background(), nil, ListInput{Project: "alpha"}); err == nil {
 		t.Fatal("expected missing API key error")
 	}
@@ -174,7 +174,7 @@ func TestTools_BrainList_Ugly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleList(context.Background(), nil, ListInput{}); err == nil {
 		t.Fatal("expected decode error for empty response body")
 	}
@@ -191,7 +191,7 @@ func TestTools_BrainContext_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root))
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root), nil)
 	_, out, err := subsystem.handleContext(context.Background(), nil, ContextInput{Project: root})
 	if err != nil {
 		t.Fatalf("handleContext: %v", err)
@@ -202,7 +202,7 @@ func TestTools_BrainContext_Good(t *testing.T) {
 }
 
 func TestTools_BrainContext_Bad(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleContext(context.Background(), nil, ContextInput{Project: "demo"}); err == nil {
 		t.Fatal("expected missing API key error")
 	}
@@ -218,14 +218,14 @@ func TestTools_BrainContext_Ugly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleContext(context.Background(), nil, ContextInput{Project: "demo"}); err == nil {
 		t.Fatal("expected decode error")
 	}
 }
 
 func TestTools_BrainRecall_Bad(t *testing.T) {
-	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil)
+	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"}); err == nil || !strings.Contains(err.Error(), "API key") {
 		t.Fatalf("expected missing API key error, got %v", err)
 	}
@@ -245,7 +245,7 @@ func TestTools_BrainRecall_Ugly(t *testing.T) {
 	}
 	cfg := config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults()
 	cfg.Cache.Enabled = config.BoolPtr(false)
-	subsystem := New(cfg, coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(cfg, coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, _, err = subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"})
 	if err != nil {
 		t.Fatalf("first recall: %v", err)

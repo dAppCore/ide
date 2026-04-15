@@ -96,7 +96,8 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 		core.WithName("brain", func(c *core.Core) core.Result {
 			storeService, _ := core.ServiceFor[*storepkg.Service](c, "store")
 			workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
-			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService), OK: true}
+			aiService, _ := core.ServiceFor[*aipkg.Service](c, "ai")
+			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService, aiService), OK: true}
 		}),
 		core.WithName("subagent", func(_ *core.Core) core.Result {
 			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, authToken), OK: true}
@@ -122,9 +123,11 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 	subagentService, _ := core.ServiceFor[*subagentpkg.Subsystem](c, "subagent")
 	navigateService, _ := core.ServiceFor[*navigatepkg.Subsystem](c, "navigate")
 	marketplaceService, _ := core.ServiceFor[*marketplacepkg.Subsystem](c, "marketplace")
+	aiService, _ := core.ServiceFor[*aipkg.Service](c, "ai")
 	if options.Medium != nil && options.Medium != coreio.Local {
 		marketplaceService.AttachMedium(medium)
 	}
+	marketplaceService.AttachAI(aiService)
 	brainService.RegisterActions(c)
 	workspaceService.RegisterActions(c)
 	subagentService.RegisterActions(c)

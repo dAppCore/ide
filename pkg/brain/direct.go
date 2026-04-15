@@ -13,6 +13,7 @@ import (
 
 	core "dappco.re/go/core"
 
+	ai "dappco.re/go/core/ide/pkg/ai"
 	"dappco.re/go/core/ide/pkg/workspace"
 )
 
@@ -154,11 +155,73 @@ func (s *Subsystem) context(ctx context.Context, input ContextInput) (ContextOut
 			conventions = workspaceConventions.Conventions
 		}
 	}
+	semanticConventions := s.semanticConventions(project, recall.Memories, conventions)
+	if len(semanticConventions) > 0 {
+		conventions = semanticConventions
+	}
+	overview := core.Sprintf("Loaded %d recent memories.", len(recall.Memories))
+	if len(semanticConventions) > 0 {
+		overview = core.Sprintf("Loaded %d recent memories and ranked %d conventions via RAG.", len(recall.Memories), len(semanticConventions))
+	}
 	return ContextOutput{
-		Overview:    core.Sprintf("Loaded %d recent memories.", len(recall.Memories)),
+		Overview:    overview,
 		Recent:      recall.Memories,
 		Conventions: conventions,
 	}, nil
+}
+
+func (s *Subsystem) semanticConventions(project string, memories []Memory, conventions []string) []string {
+	if s.ai == nil || len(conventions) == 0 {
+		return nil
+	}
+	queryParts := []string{core.PathBase(project)}
+	for _, memory := range memories {
+		content := core.Trim(memory.Content)
+		if content == "" {
+			continue
+		}
+		queryParts = append(queryParts, content)
+	}
+	query := core.Trim(core.Concat(queryParts...))
+	if query == "" {
+		return nil
+	}
+	documents := make([]ai.Document, 0, len(conventions))
+	for index, convention := range conventions {
+		documents = append(documents, ai.Document{
+			ID:    core.Sprintf("convention-%d", index),
+			Title: core.Sprintf("Convention %d", index+1),
+			Text:  convention,
+		})
+	}
+	results := s.ai.Search(ai.SearchInput{
+		Query:     query,
+		Documents: documents,
+		Limit:     len(documents),
+	})
+	if len(results) == 0 {
+		return nil
+	}
+	ranked := make([]string, 0, len(results))
+	seen := map[string]struct{}{}
+	for _, result := range results {
+		text := core.Trim(result.Document.Text)
+		if text == "" {
+			continue
+		}
+		if _, ok := seen[text]; ok {
+			continue
+		}
+		seen[text] = struct{}{}
+		ranked = append(ranked, text)
+	}
+	for _, convention := range conventions {
+		if _, ok := seen[convention]; ok {
+			continue
+		}
+		ranked = append(ranked, convention)
+	}
+	return ranked
 }
 
 func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) (map[string]any, error) {

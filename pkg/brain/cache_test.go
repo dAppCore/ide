@@ -2,8 +2,8 @@ package brain
 
 import (
 	"context"
-	"testing"
 	"strings"
+	"testing"
 	"time"
 
 	storelib "dappco.re/go/store"

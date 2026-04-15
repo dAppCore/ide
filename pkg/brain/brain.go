@@ -8,6 +8,7 @@ import (
 	coreio "dappco.re/go/core/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
+	aipkg "dappco.re/go/core/ide/pkg/ai"
 	"dappco.re/go/core/ide/pkg/config"
 	"dappco.re/go/core/ide/pkg/workspace"
 	storelib "dappco.re/go/store"
@@ -19,9 +20,10 @@ type Subsystem struct {
 	client    *http.Client
 	cache     *Cache
 	workspace *workspace.Subsystem
+	ai        *aipkg.Service
 }
 
-func New(cfg config.Brain, medium coreio.Medium, storeInstance *storelib.Store, workspaceSubsystem *workspace.Subsystem) *Subsystem {
+func New(cfg config.Brain, medium coreio.Medium, storeInstance *storelib.Store, workspaceSubsystem *workspace.Subsystem, aiService *aipkg.Service) *Subsystem {
 	if medium == nil {
 		medium = coreio.Local
 	}
@@ -31,6 +33,7 @@ func New(cfg config.Brain, medium coreio.Medium, storeInstance *storelib.Store, 
 		client:    &http.Client{Timeout: 30 * time.Second},
 		cache:     NewCache(storeInstance, cfg.Cache.Namespace, cfg.Cache.TTL, config.BoolValue(cfg.Cache.Enabled, true)),
 		workspace: workspaceSubsystem,
+		ai:        aiService,
 	}
 }
 
