@@ -134,30 +134,43 @@ func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, erro
 }
 
 func (s *Subsystem) workspaceMedium() coreio.Medium {
-	if s == nil || s.medium == nil || s.medium != coreio.Local {
+	if s == nil {
+		return coreio.Local
+	}
+	root := s.Root()
+	if core.Trim(root) == "" {
 		return s.medium
 	}
-	base, err := resolveWorkspaceRoot(s.cfg.Root, "")
-	if err != nil || core.Trim(base) == "" {
+	if s.medium == nil || s.medium != coreio.Local {
 		return s.medium
 	}
-	sandboxed, err := coreio.NewSandboxed(base)
+	sandboxed, err := coreio.NewSandboxed(root)
 	if err != nil {
 		return s.medium
 	}
-	return &rootedMedium{medium: sandboxed, root: base, bound: true}
+	return &rootedMedium{medium: sandboxed, root: root, bound: true}
 }
 
 func (s *Subsystem) Root() string {
-	root, err := resolveWorkspaceRoot(s.cfg.Root, "")
+	base, err := resolveWorkspaceRoot(s.cfg.Root, "")
 	if err != nil {
 		return core.CleanPath(core.Trim(s.cfg.Root), ".")
 	}
-	return root
+	return discoverWorkspaceRoot(s.scanMedium(), base, s.cfg.ScanDepth)
 }
 
 func (s *Subsystem) root(override string) (string, error) {
-	return resolveWorkspaceRoot(s.cfg.Root, override)
+	if core.Trim(override) == "" {
+		return s.Root(), nil
+	}
+	return resolveWorkspaceRoot(s.Root(), override)
+}
+
+func (s *Subsystem) scanMedium() coreio.Medium {
+	if s == nil || s.medium == nil {
+		return coreio.Local
+	}
+	return s.medium
 }
 
 func resolveWorkspaceRoot(base, requested string) (string, error) {
@@ -195,4 +208,43 @@ func resolveWorkspaceRoot(base, requested string) (string, error) {
 	}
 
 	return candidate, nil
+}
+
+func discoverWorkspaceRoot(medium coreio.Medium, start string, depth int) string {
+	medium = ensureMedium(medium)
+	start = core.Trim(start)
+	if start == "" {
+		return ""
+	}
+	if depth < 0 {
+		depth = 0
+	}
+	current := start
+	for i := 0; i <= depth; i++ {
+		if hasWorkspaceMetadata(medium, current) {
+			return current
+		}
+		parent := parentDir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+	return start
+}
+
+func hasWorkspaceMetadata(medium coreio.Medium, root string) bool {
+	if medium == nil {
+		return false
+	}
+	manifestPath := core.JoinPath(root, ".core", "manifest.yaml")
+	buildPath := core.JoinPath(root, ".core", "build.yaml")
+	return medium.Exists(manifestPath) || medium.Exists(buildPath)
+}
+
+func ensureMedium(medium coreio.Medium) coreio.Medium {
+	if medium != nil {
+		return medium
+	}
+	return coreio.Local
 }
