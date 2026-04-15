@@ -196,4 +196,4 @@ replace dappco.re/go/scm => ../go-scm
 
 replace dappco.re/go/store => ../go-store
 
-replace forge.lthn.ai/core/gui => ../gui
+replace forge.lthn.ai/core/gui => ./third_party/gui
