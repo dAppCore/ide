@@ -29,6 +29,22 @@ func TestWorkspace_Scan_Good(t *testing.T) {
 	}
 }
 
+func TestWorkspace_New_Good(t *testing.T) {
+	subsystem := New(config.Workspace{}, nil, nil)
+	if subsystem == nil {
+		t.Fatal("expected subsystem")
+	}
+	if subsystem.medium == nil {
+		t.Fatalf("expected default medium, got %#v", subsystem)
+	}
+}
+
+func TestWorkspace_Name_Good(t *testing.T) {
+	if got := New(config.Workspace{}, coreio.NewMemoryMedium(), testProcessService(t)).Name(); got != "workspace" {
+		t.Fatalf("expected workspace name, got %q", got)
+	}
+}
+
 func TestWorkspace_Scan_Bad(t *testing.T) {
 	subsystem := New(config.Workspace{Root: "/workspace", ScanDepth: 1}, coreio.NewMemoryMedium(), nil)
 	out, err := subsystem.scan(context.Background(), ScanInput{})

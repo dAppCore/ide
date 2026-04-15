@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"dappco.re/go/core/ide/pkg/config"
+	coreio "dappco.re/go/core/io"
 )
 
 func TestClient_Info_Good(t *testing.T) {
@@ -61,6 +62,27 @@ func TestClient_Install_Bad(t *testing.T) {
 	client := NewClient(config.Marketplace{Endpoint: "https://example.com", APIPath: "/v1/marketplace", InstallVia: "api"})
 	if _, err := client.Install(context.Background(), InstallInput{}); err == nil {
 		t.Fatal("expected code validation error")
+	}
+}
+
+func TestClient_Install_Good_GoSCM(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/marketplace/go-io" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"code":"go-io","name":"go-io"}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
+	client.AttachMedium(coreio.NewMemoryMedium())
+
+	out, err := client.Install(context.Background(), InstallInput{Code: "go-io"})
+	if err != nil {
+		t.Fatalf("install via go-scm: %v", err)
+	}
+	if !out.Installed || out.Code != "go-io" {
+		t.Fatalf("expected go-scm install success, got %#v", out)
 	}
 }
 

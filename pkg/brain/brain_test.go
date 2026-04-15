@@ -27,28 +27,54 @@ func TestBrain_New_Good(t *testing.T) {
 
 func TestBrain_RegisterActions_Good(t *testing.T) {
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/brain/recall" {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/brain/recall":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"memories":[{"id":"m1","content":"alpha"}]}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/brain/remember":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id":"memory-2"}`))
+		case r.Method == http.MethodDelete && r.URL.Path == "/v1/brain/forget/memory-2":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"forgotten":true}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/brain/list":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"memories":[{"id":"m2","content":"beta"}]}`))
+		default:
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"memories":[{"id":"m1","content":"alpha"}]}`))
 	})
 	defer server.Close()
 
+	root := t.TempDir()
 	storeInstance, err := storelib.New(":memory:")
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "cladius"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil)
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "cladius"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root))
 	c := core.New()
 	subsystem.RegisterActions(c)
-	out := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "alpha"}))
-	if !out.OK {
-		t.Fatalf("expected action success, got %#v", out.Value)
+	if out := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "alpha"})); !out.OK {
+		t.Fatalf("expected recall action success, got %#v", out.Value)
 	}
-	result, ok := out.Value.(RecallOutput)
+	if out := c.Action("ide.brain.remember").Run(context.Background(), core.NewOptions(
+		core.Option{Key: "content", Value: "beta"},
+		core.Option{Key: "type", Value: "note"},
+	)); !out.OK {
+		t.Fatalf("expected remember action success, got %#v", out.Value)
+	}
+	if out := c.Action("ide.brain.forget").Run(context.Background(), core.NewOptions(core.Option{Key: "id", Value: "memory-2"})); !out.OK {
+		t.Fatalf("expected forget action success, got %#v", out.Value)
+	}
+	if out := c.Action("ide.brain.list").Run(context.Background(), core.NewOptions(core.Option{Key: "project", Value: "demo"})); !out.OK {
+		t.Fatalf("expected list action success, got %#v", out.Value)
+	}
+	if out := c.Action("ide.brain.context").Run(context.Background(), core.NewOptions(core.Option{Key: "project", Value: root})); !out.OK {
+		t.Fatalf("expected context action success, got %#v", out.Value)
+	}
+	result, ok := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "alpha"})).Value.(RecallOutput)
 	if !ok || result.Count != 1 {
-		t.Fatalf("expected recall output, got %#v", out.Value)
+		t.Fatalf("expected recall output, got %#v", result)
 	}
 }
 

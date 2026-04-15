@@ -56,13 +56,39 @@ func TestMarketplace_Name_Good(t *testing.T) {
 }
 
 func TestMarketplace_RegisterActions_Good(t *testing.T) {
-	subsystem := New(config.Marketplace{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/marketplace":
+			_, _ = w.Write([]byte(`[{"code":"go-io","name":"go-io"}]`))
+		case "/v1/marketplace/go-io":
+			_, _ = w.Write([]byte(`{"code":"go-io","name":"go-io"}`))
+		case "/v1/marketplace/go-io/install":
+			_, _ = w.Write([]byte(`null`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	subsystem := New(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace", InstallVia: "api"})
 	c := core.New()
 	subsystem.RegisterActions(c)
 	for _, name := range []string{"ide.pkg.search", "ide.pkg.info", "ide.pkg.install"} {
 		if !c.Action(name).Exists() {
 			t.Fatalf("expected action %s", name)
 		}
+	}
+	search := c.Action("ide.pkg.search").Run(context.Background(), core.NewOptions(core.Option{Key: "query", Value: "go"}))
+	if !search.OK {
+		t.Fatalf("expected search action success, got %#v", search.Value)
+	}
+	info := c.Action("ide.pkg.info").Run(context.Background(), core.NewOptions(core.Option{Key: "code", Value: "go-io"}))
+	if !info.OK {
+		t.Fatalf("expected info action success, got %#v", info.Value)
+	}
+	install := c.Action("ide.pkg.install").Run(context.Background(), core.NewOptions(core.Option{Key: "code", Value: "go-io"}))
+	if !install.OK {
+		t.Fatalf("expected install action success, got %#v", install.Value)
 	}
 }
 

@@ -120,6 +120,42 @@ func TestRoutes_ResolveQuery_Good(t *testing.T) {
 	}
 }
 
+func TestRoutes_ResolveQueryRoutes_Good(t *testing.T) {
+	c := core.New()
+	c.RegisterQuery(func(_ *core.Core, q core.Query) core.Result {
+		switch name := q.(string); name {
+		case "ai.models.list":
+			return core.Result{Value: map[string]any{"models": []any{map[string]any{"name": "gpt"}}}, OK: true}
+		case "agent.workspaces.status":
+			return core.Result{Value: map[string]any{"workspaces": []any{map[string]any{"name": "demo"}}}, OK: true}
+		case "network.status":
+			return core.Result{Value: map[string]any{"connected": true}, OK: true}
+		case "identity.status":
+			return core.Result{Value: map[string]any{"tim": map[string]any{"keys": []any{}}}, OK: true}
+		default:
+			return core.Result{}
+		}
+	})
+	subsystem := New(config.Navigate{}, c)
+	cases := []struct {
+		route string
+	}{
+		{route: "core://models"},
+		{route: "core://agent"},
+		{route: "core://network"},
+		{route: "core://identity"},
+	}
+	for _, tc := range cases {
+		out, err := subsystem.resolve(context.Background(), Input{Route: tc.route})
+		if err != nil {
+			t.Fatalf("resolve %s: %v", tc.route, err)
+		}
+		if !out.Available || out.Data == nil {
+			t.Fatalf("expected %s route payload, got %#v", tc.route, out)
+		}
+	}
+}
+
 func TestRoutes_ResolveStore_Ugly(t *testing.T) {
 	subsystem := New(config.Navigate{}, core.New())
 	data, schema, err := subsystem.resolveStore(context.Background(), Filter{})

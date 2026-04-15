@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	core "dappco.re/go/core"
@@ -8,20 +10,31 @@ import (
 )
 
 func TestConfig_Load_Good(t *testing.T) {
-	medium := coreio.NewMemoryMedium()
-	_ = medium.Write("/home/test/.core/ide.yaml", "ide:\n  brain:\n    endpoint: https://example.com\n")
-	_ = medium.Write("/workspace/.core/ide.yaml", "ide:\n  transport:\n    mode: http\n    http_addr: 127.0.0.1:9000\n")
-	t.Setenv("DIR_HOME", "/home/test")
-
-	cfg, err := LoadWithOptions(LoaderOptions{
-		Medium: medium,
-		Paths:  []string{"/home/test/.core/ide.yaml", "/workspace/.core/ide.yaml"},
-	})
+	home := t.TempDir()
+	cwd := t.TempDir()
+	homeConfigPath := filepath.Join(home, ".core", "ide.yaml")
+	cwdConfigPath := filepath.Join(cwd, ".core", "ide.yaml")
+	if err := os.MkdirAll(filepath.Dir(homeConfigPath), 0o755); err != nil {
+		t.Fatalf("mkdir home config: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(cwdConfigPath), 0o755); err != nil {
+		t.Fatalf("mkdir cwd config: %v", err)
+	}
+	if err := os.WriteFile(homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://example.com\n    agent_id: user-agent\n"), 0o644); err != nil {
+		t.Fatalf("write home config: %v", err)
+	}
+	if err := os.WriteFile(cwdConfigPath, []byte("ide:\n  transport:\n    mode: http\n    http_addr: 127.0.0.1:9000\n"), 0o644); err != nil {
+		t.Fatalf("write cwd config: %v", err)
+	}
+	cfg, err := Load(homeConfigPath, cwdConfigPath)
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}
 	if cfg.Ide.Brain.Endpoint != "https://example.com" {
 		t.Fatalf("expected merged brain endpoint, got %q", cfg.Ide.Brain.Endpoint)
+	}
+	if cfg.Ide.Brain.AgentID != "user-agent" {
+		t.Fatalf("expected merged user brain agent id, got %q", cfg.Ide.Brain.AgentID)
 	}
 	if cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9000" {
 		t.Fatalf("expected project override http addr, got %q", cfg.Ide.Transport.HTTPAddr)
@@ -75,6 +88,30 @@ func TestConfig_DefaultPaths_Good(t *testing.T) {
 	}
 }
 
+func TestConfig_DefaultPaths_Ugly(t *testing.T) {
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	cwd := t.TempDir()
+	t.Cleanup(func() {
+		_ = os.Chdir(originalWD)
+	})
+	if err := os.Chdir(cwd); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	currentWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd after chdir: %v", err)
+	}
+	paths := DefaultPaths("")
+	expectedCwd := filepath.Join(currentWD, ".core", "ide.yaml")
+	if len(paths) != 2 || paths[1] != expectedCwd || paths[0] == "" || paths[0] == paths[1] {
+		t.Fatalf("expected home and cwd defaults, got %#v", paths)
+	}
+}
+
 func TestConfig_Merge_Ugly(t *testing.T) {
 	base := IDEConfig{}.WithDefaults()
 	override := IDEConfig{
@@ -115,6 +152,24 @@ func TestConfig_ApplyEnv_Good(t *testing.T) {
 	}
 	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9880" || cfg.Ide.Transport.Token != "token" {
 		t.Fatalf("expected transport env overrides, got %#v", cfg.Ide.Transport)
+	}
+}
+
+func TestConfig_ApplyFlags_Good(t *testing.T) {
+	cfg := IDEConfig{}.WithDefaults()
+	updated := cfg.ApplyFlags(CLIOverrides{
+		TransportMode: "http",
+		HTTPAddr:      "127.0.0.1:9999",
+		Token:         "token",
+		BrainEndpoint: "https://brain.example",
+		BrainKey:      "secret",
+		BrainAgentID:  "agent-7",
+	})
+	if updated.Ide.Transport.Mode != "http" || updated.Ide.Transport.HTTPAddr != "127.0.0.1:9999" || updated.Ide.Transport.Token != "token" {
+		t.Fatalf("expected transport flags to apply, got %#v", updated.Ide.Transport)
+	}
+	if updated.Ide.Brain.Endpoint != "https://brain.example" || updated.Ide.Brain.Key != "secret" || updated.Ide.Brain.AgentID != "agent-7" {
+		t.Fatalf("expected brain flags to apply, got %#v", updated.Ide.Brain)
 	}
 }
 
