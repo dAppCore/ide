@@ -17,6 +17,8 @@ import (
 	processapi "forge.lthn.ai/core/go-process/pkg/api"
 	"forge.lthn.ai/core/go-ws"
 	"forge.lthn.ai/core/go/pkg/core"
+	guichat "forge.lthn.ai/core/gui/pkg/chat"
+	guiMCP "forge.lthn.ai/core/gui/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp"
 	"forge.lthn.ai/core/mcp/pkg/mcp/agentic"
 	"forge.lthn.ai/core/mcp/pkg/mcp/brain"
@@ -56,6 +58,7 @@ func main() {
 	marketplaceSubsystem := NewMarketplaceSubsystem(nil)
 	navigateSubsystem := NewNavigateSubsystem(nil)
 	subagentSubsystem := NewSubagentSubsystem(hub)
+	chatExecutor := newSharedChatToolExecutor()
 
 	reg := provider.NewRegistry()
 	reg.Add(processapi.NewProvider(process.DefaultRegistry(), hub))
@@ -84,6 +87,8 @@ func main() {
 		}),
 		core.WithName("mcp", func(c *core.Core) (any, error) {
 			navigateSubsystem.core = c
+			guiMCPSub := guiMCP.New(c)
+			chatExecutor.Attach(guiMCPSub)
 			return mcp.New(
 				mcp.WithWorkspaceRoot(cwd),
 				mcp.WithWSHub(hub),
@@ -93,8 +98,14 @@ func main() {
 				mcp.WithSubsystem(navigateSubsystem),
 				mcp.WithSubsystem(subagentSubsystem),
 				mcp.WithSubsystem(agentic.NewPrep()),
+				mcp.WithSubsystem(guiMCPSub),
 			)
 		}),
+		core.WithService(guichat.Register(func(options *guichat.Options) {
+			options.APIURL = ideCfg.Ide.Chat.APIURL
+			options.StorePath = ideCfg.Ide.Chat.StorePath
+			options.ToolExecutor = chatExecutor
+		})),
 	)
 	if err != nil {
 		log.Fatalf("failed to create core: %v", err)
