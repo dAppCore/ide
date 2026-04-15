@@ -34,6 +34,7 @@ func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_progress", Description: "Record progress for a subagent workspace."}, s.handleProgress)
 	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_watch", Description: "Watch recent subagent events for a workspace."}, s.handleWatch)
 	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_answer", Description: "Answer a pending subagent question."}, s.handleAnswer)
+	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_dispatch_guided", Description: "Dispatch a guided subagent workspace with relay wiring."}, s.handleDispatchGuided)
 }
 
 func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, input GuideInput) (*mcp.CallToolResult, GuideOutput, error) {

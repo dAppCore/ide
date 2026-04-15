@@ -50,4 +50,12 @@ func (s *Subsystem) registerActions(c *core.Core) {
 		out, err := s.answer(ctx, input)
 		return core.Result{}.New(out, err)
 	})
+	register("ide.subagent.dispatch_guided", func(ctx context.Context, opts core.Options) core.Result {
+		input, err := decode[DispatchGuidedInput](opts)
+		if err != nil {
+			return core.Result{Value: err, OK: false}
+		}
+		out, err := s.DispatchGuided(ctx, input)
+		return core.Result{}.New(out, err)
+	})
 }
