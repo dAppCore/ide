@@ -22,7 +22,7 @@ func NewCache(storeInstance *storelib.Store, namespace string, ttl time.Duration
 }
 
 func (c *Cache) Key(parts ...string) string {
-	hash := sha256.Sum256([]byte(core.Join("|", parts...)))
+	hash := sha256.Sum256([]byte(core.Concat(parts...)))
 	return hex.EncodeToString(hash[:])
 }
 
