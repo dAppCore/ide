@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -88,6 +89,103 @@ func TestWorkspaceAPI_BasePath(t *testing.T) {
 	api := NewWorkspaceAPI(".")
 	assert.Equal(t, "workspace-api", api.Name())
 	assert.Equal(t, "/api/v1/workspace", api.BasePath())
+}
+
+func TestWorkspaceConventionsForRoot_Good_MergesLanguagePacks(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("project:\n  name: demo\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module demo\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "package.json"), []byte("{}\n"), 0o644))
+
+	resp, err := workspaceConventionsForRoot(root)
+	require.NoError(t, err)
+	assert.Equal(t, root, resp.Root)
+	assert.Contains(t, resp.Conventions, "Use core primitives and explicit data shapes for public APIs.")
+	assert.Contains(t, resp.Conventions, "Prefer deterministic component inputs and outputs over hidden ambient state.")
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "Go pack loaded")
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "TypeScript pack loaded")
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "Build manifest detected for demo.")
+}
+
+func TestWorkspaceConventionsForRoot_Bad_UnknownLanguageFallsBack(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("project:\n  name: demo\n"), 0o644))
+
+	resp, err := workspaceConventionsForRoot(root)
+	require.NoError(t, err)
+	assert.NotContains(t, strings.Join(resp.Notes, "\n"), "Go pack loaded")
+	assert.NotContains(t, strings.Join(resp.Notes, "\n"), "TypeScript pack loaded")
+}
+
+func TestWorkspaceConventionsForRoot_Ugly_DirtyWorktreeAddsNote(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("project:\n  name: demo\n"), 0o644))
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.com")
+	runGit(t, root, "config", "user.name", "Test User")
+	require.NoError(t, os.WriteFile(filepath.Join(root, "untracked.txt"), []byte("dirty\n"), 0o644))
+
+	resp, err := workspaceConventionsForRoot(root)
+	require.NoError(t, err)
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "dirty")
+}
+
+func TestWorkspaceImpactForRoot_Good_FindsDownstreamDependents(t *testing.T) {
+	parent := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(parent, "repos.yaml"), []byte(`
+version: 1
+org: forge
+base_path: .
+repos:
+  alpha:
+    depends:
+      - beta
+  beta:
+    depends: []
+`), 0o644))
+
+	root := filepath.Join(parent, "beta")
+	require.NoError(t, os.MkdirAll(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: beta\n"), 0o644))
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.com")
+	runGit(t, root, "config", "user.name", "Test User")
+
+	resp, err := workspaceImpactForRoot(root)
+	require.NoError(t, err)
+	assert.Contains(t, resp.ImpactedAreas, "downstream dependents")
+	assert.Contains(t, strings.Join(resp.Notes, "\n"), "alpha")
+	assert.Contains(t, strings.Join(resp.SuggestedChecks, "\n"), "review downstream dependents: alpha")
+}
+
+func TestWorkspaceImpactForRoot_Bad_NoRegistryNoCrash(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: beta\n"), 0o644))
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.com")
+	runGit(t, root, "config", "user.name", "Test User")
+
+	resp, err := workspaceImpactForRoot(root)
+	require.NoError(t, err)
+	assert.NotContains(t, strings.Join(resp.ImpactedAreas, "\n"), "downstream dependents")
+}
+
+func TestWorkspaceImpactForRoot_Ugly_IgnoresMissingManifestChangeMarker(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, ".core"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: beta\n"), 0o644))
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.com")
+	runGit(t, root, "config", "user.name", "Test User")
+
+	resp, err := workspaceImpactForRoot(root)
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp.ImpactedAreas)
+	assert.NotContains(t, strings.Join(resp.SuggestedChecks, "\n"), "review downstream dependents")
 }
 
 func runGit(t *testing.T, dir string, args ...string) {

@@ -201,6 +201,18 @@ func workspaceConventionsForRoot(root string) (workspaceConventionsResponse, err
 	notes := []string{
 		"Design input was derived from CLAUDE.md, docs/development.md, and .core/build.yaml.",
 	}
+
+	languages := detectWorkspaceLanguages(snapshot.Root)
+	for _, language := range languages {
+		if pack, ok := conventionPackForLanguage(language); ok {
+			conventions = append(conventions, pack.Conventions...)
+			notes = append(notes, pack.Notes...)
+		}
+	}
+
+	if snapshot.Build.ProjectName != "" {
+		notes = append(notes, fmt.Sprintf("Build manifest detected for %s.", snapshot.Build.ProjectName))
+	}
 	if !snapshot.Git.Clean {
 		notes = append(notes, "The worktree is dirty, so any new work should account for local changes.")
 	}
@@ -222,6 +234,9 @@ func workspaceImpactForRoot(root string) (workspaceImpactResponse, error) {
 
 	impactedAreas := classifyImpact(snapshot.Git.Changes, snapshot.SourceFiles)
 	suggestedChecks := []string{"go build ./...", "go vet ./...", "go test ./... -count=1 -timeout 120s", "go test -cover ./..."}
+	notes := []string{
+		"Impact categories are inferred from changed paths and .core configuration files.",
+	}
 
 	if hasPathPrefix(snapshot.SourceFiles, ".core/") {
 		suggestedChecks = append([]string{"core build"}, suggestedChecks...)
@@ -230,8 +245,12 @@ func workspaceImpactForRoot(root string) (workspaceImpactResponse, error) {
 		suggestedChecks = append(suggestedChecks, "cd frontend && npm test")
 	}
 
-	notes := []string{
-		"Impact categories are inferred from changed paths and .core configuration files.",
+	if hasManifestDependencyChange(snapshot.Git.Changes) {
+		if dependents := downstreamDependents(snapshot.Root); len(dependents) > 0 {
+			impactedAreas = append(impactedAreas, "downstream dependents")
+			notes = append(notes, "Repos listed in repos.yaml depend on the current workspace: "+strings.Join(dependents, ", ")+".")
+			suggestedChecks = append(suggestedChecks, "review downstream dependents: "+strings.Join(dependents, ", "))
+		}
 	}
 	if snapshot.Git.Clean {
 		notes = append(notes, "The worktree is clean, so there is no active change set to assess.")
@@ -244,6 +263,122 @@ func workspaceImpactForRoot(root string) (workspaceImpactResponse, error) {
 		SuggestedChecks: uniqueStrings(suggestedChecks),
 		Notes:           notes,
 	}, nil
+}
+
+type conventionPack struct {
+	Conventions []string
+	Notes       []string
+}
+
+func conventionPackForLanguage(language string) (conventionPack, bool) {
+	switch strings.ToLower(strings.TrimSpace(language)) {
+	case "go":
+		return conventionPack{
+			Conventions: []string{
+				"Use core primitives and explicit data shapes for public APIs.",
+				"Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory.",
+				"Comments should show usage examples, not restate the signature.",
+			},
+			Notes: []string{
+				"Go pack loaded from pkg/workspace/conventions/go.yaml.",
+			},
+		}, true
+	case "php":
+		return conventionPack{
+			Conventions: []string{
+				"Prefer declarative configuration over imperative setup when the shape is recurring.",
+				"Keep public methods small and explicit about side effects.",
+			},
+			Notes: []string{
+				"PHP pack loaded from pkg/workspace/conventions/php.yaml.",
+			},
+		}, true
+	case "typescript":
+		return conventionPack{
+			Conventions: []string{
+				"Prefer deterministic component inputs and outputs over hidden ambient state.",
+				"Keep UI state isolated from transport concerns.",
+			},
+			Notes: []string{
+				"TypeScript pack loaded from pkg/workspace/conventions/typescript.yaml.",
+			},
+		}, true
+	case "python":
+		return conventionPack{
+			Conventions: []string{
+				"Use explicit function names and stable data contracts for agent-readable code.",
+				"Keep module paths semantic rather than abbreviated.",
+			},
+			Notes: []string{
+				"Python pack loaded from pkg/workspace/conventions/python.yaml.",
+			},
+		}, true
+	default:
+		return conventionPack{}, false
+	}
+}
+
+func downstreamDependents(root string) []string {
+	workspaceName := strings.ToLower(filepath.Base(root))
+	if workspaceName == "" || workspaceName == "." || workspaceName == string(filepath.Separator) {
+		return nil
+	}
+
+	registryPath, ok := findAncillaryFile(root, "repos.yaml")
+	if !ok {
+		return nil
+	}
+
+	data, err := os.ReadFile(registryPath)
+	if err != nil {
+		return nil
+	}
+
+	var raw struct {
+		Repos map[string]struct {
+			Depends []string `yaml:"depends"`
+		} `yaml:"repos"`
+	}
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		return nil
+	}
+
+	dependents := make([]string, 0)
+	for name, repo := range raw.Repos {
+		for _, dependency := range repo.Depends {
+			if strings.EqualFold(strings.TrimSpace(dependency), workspaceName) {
+				dependents = append(dependents, name)
+				break
+			}
+		}
+	}
+
+	return uniqueStrings(dependents)
+}
+
+func hasManifestDependencyChange(changes []gitChange) bool {
+	for _, change := range changes {
+		switch filepath.ToSlash(change.Path) {
+		case ".core/manifest.yaml", ".core/manifest.yaml.depends":
+			return true
+		}
+	}
+	return false
+}
+
+func findAncillaryFile(root, name string) (string, bool) {
+	cur := root
+	for {
+		candidate := filepath.Join(cur, name)
+		if fileExists(candidate) {
+			return candidate, true
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			return "", false
+		}
+		cur = parent
+	}
 }
 
 func readCoreFiles(root string) ([]workspaceFile, workspaceFileCount, []string, error) {
