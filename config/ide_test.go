@@ -70,3 +70,47 @@ ide:
 	assert.Equal(t, "127.0.0.1:8888", cfg.Ide.Transport.TCPAddr)
 	assert.Equal(t, "secret", cfg.Ide.Transport.Token)
 }
+
+func TestLoad_Good_PreservesExplicitFalseValues(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(`
+ide:
+  brain:
+    cache:
+      enabled: false
+  subagent:
+    enabled: false
+  chat:
+    enabled: false
+`), 0o644))
+
+	cfg, err := Load(path)
+	require.NoError(t, err)
+	assert.False(t, cfg.Ide.Brain.Cache.Enabled)
+	assert.False(t, cfg.Ide.Subagent.Enabled)
+	assert.False(t, cfg.Ide.Chat.Enabled)
+}
+
+func TestApplyCLIOverrides_Good(t *testing.T) {
+	cfg := IDEConfig{}.WithDefaults()
+	ApplyCLIOverrides(&cfg, CLIOverrides{
+		TransportMode: "http",
+		HTTPAddr:      "127.0.0.1:9999",
+		TCPAddr:       "127.0.0.1:9101",
+		UnixSocket:    "/tmp/core.sock",
+		Token:         "token",
+		BrainEndpoint: "https://brain.example",
+		BrainKey:      "secret",
+		BrainAgentID:  "agent-x",
+	})
+
+	assert.Equal(t, "http", cfg.Ide.Transport.Mode)
+	assert.Equal(t, "127.0.0.1:9999", cfg.Ide.Transport.HTTPAddr)
+	assert.Equal(t, "127.0.0.1:9101", cfg.Ide.Transport.TCPAddr)
+	assert.Equal(t, "/tmp/core.sock", cfg.Ide.Transport.UnixSocket)
+	assert.Equal(t, "token", cfg.Ide.Transport.Token)
+	assert.Equal(t, "https://brain.example", cfg.Ide.Brain.Endpoint)
+	assert.Equal(t, "secret", cfg.Ide.Brain.Key)
+	assert.Equal(t, "agent-x", cfg.Ide.Brain.AgentID)
+}

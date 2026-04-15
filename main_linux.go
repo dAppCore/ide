@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	ideconfig "dappco.re/go/core/ide/config"
 	"forge.lthn.ai/core/api"
 	"forge.lthn.ai/core/api/pkg/provider"
 	"forge.lthn.ai/core/config"
@@ -32,6 +33,36 @@ func main() {
 	}
 
 	cfg, _ := config.New()
+	ideCfg, err := ideconfig.Load()
+	if err != nil {
+		log.Fatalf("failed to load IDE config: %v", err)
+	}
+	if ideCfg.Ide.Brain.Endpoint != "" {
+		_ = os.Setenv("CORE_BRAIN_URL", ideCfg.Ide.Brain.Endpoint)
+	}
+	if ideCfg.Ide.Brain.Key != "" {
+		_ = os.Setenv("CORE_BRAIN_KEY", ideCfg.Ide.Brain.Key)
+	}
+	if ideCfg.Ide.Brain.Cache.TTL > 0 {
+		_ = os.Setenv("CORE_BRAIN_RECALL_CACHE_TTL", ideCfg.Ide.Brain.Cache.TTL.String())
+	}
+	switch ideCfg.Ide.Transport.Mode {
+	case "http":
+		if ideCfg.Ide.Transport.HTTPAddr != "" {
+			_ = os.Setenv("MCP_HTTP_ADDR", ideCfg.Ide.Transport.HTTPAddr)
+		}
+	case "tcp":
+		if ideCfg.Ide.Transport.TCPAddr != "" {
+			_ = os.Setenv("MCP_ADDR", ideCfg.Ide.Transport.TCPAddr)
+		}
+	case "unix":
+		if ideCfg.Ide.Transport.UnixSocket != "" {
+			_ = os.Setenv("MCP_UNIX_SOCKET", ideCfg.Ide.Transport.UnixSocket)
+		}
+	}
+	if ideCfg.Ide.Transport.Token != "" {
+		_ = os.Setenv("CORE_IDE_TOKEN", ideCfg.Ide.Transport.Token)
+	}
 
 	cwd, err := os.Getwd()
 	if err != nil {

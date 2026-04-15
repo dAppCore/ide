@@ -705,3 +705,91 @@ func (s *SubagentSubsystem) removeAnswer(questionID string) {
 	defer s.mu.Unlock()
 	delete(s.answers, questionID)
 }
+
+type GuidedDispatchInput struct {
+	Repo        string `json:"repo"`
+	Task        string `json:"task"`
+	Agent       string `json:"agent,omitempty"`
+	Template    string `json:"template,omitempty"`
+	Persona     string `json:"persona,omitempty"`
+	WorkspaceID string `json:"workspaceId,omitempty"`
+	RelayURL    string `json:"relayUrl,omitempty"`
+	RelayToken  string `json:"relayToken,omitempty"`
+}
+
+type GuidedDispatchOutput struct {
+	Success     bool   `json:"success"`
+	Delivered   bool   `json:"delivered"`
+	WorkspaceID string `json:"workspaceId,omitempty"`
+	Agent       string `json:"agent,omitempty"`
+	Prompt      string `json:"prompt,omitempty"`
+	Reason      string `json:"reason,omitempty"`
+}
+
+func (s *SubagentSubsystem) DispatchGuided(ctx context.Context, input GuidedDispatchInput) (GuidedDispatchOutput, error) {
+	if strings.TrimSpace(input.Repo) == "" {
+		return GuidedDispatchOutput{Success: false, Reason: "repo is required"}, fmt.Errorf("repo is required")
+	}
+	if strings.TrimSpace(input.Task) == "" {
+		return GuidedDispatchOutput{Success: false, Reason: "task is required"}, fmt.Errorf("task is required")
+	}
+
+	workspaceID := strings.TrimSpace(input.WorkspaceID)
+	if workspaceID == "" {
+		workspaceID = fmt.Sprintf("%s-%d", strings.ReplaceAll(strings.ToLower(input.Repo), "/", "-"), time.Now().UTC().UnixNano())
+	}
+
+	prompt := fmt.Sprintf(
+		"Relay URL: %s\nRelay Token: %s\nWorkspace ID: %s\n\nBefore each prompt cycle, read channel subagent:%s:guide.\nWhen stuck, call subagent_ask and wait for an answer (up to 60s).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s",
+		strings.TrimSpace(input.RelayURL),
+		strings.TrimSpace(input.RelayToken),
+		workspaceID,
+		workspaceID,
+		strings.TrimSpace(input.Task),
+	)
+
+	if s.hub == nil {
+		return GuidedDispatchOutput{
+			Success:     true,
+			Delivered:   false,
+			WorkspaceID: workspaceID,
+			Agent:       input.Agent,
+			Prompt:      prompt,
+			Reason:      "no relay",
+		}, nil
+	}
+
+	s.appendEvent(workspaceID, SubagentEvent{
+		Type:      "status",
+		Channel:   "subagent:" + workspaceID + ":status",
+		Message:   "running",
+		CreatedAt: time.Now().UTC(),
+	})
+	_ = s.hub.SendToChannel("subagent:"+workspaceID+":status", ws.Message{
+		Type: ws.TypeEvent,
+		Data: map[string]any{
+			"state":       "running",
+			"workspace":   workspaceID,
+			"repo":        input.Repo,
+			"agent":       input.Agent,
+			"template":    input.Template,
+			"persona":     input.Persona,
+			"relay_url":   strings.TrimSpace(input.RelayURL),
+			"relay_token": strings.TrimSpace(input.RelayToken),
+		},
+	})
+	_ = s.hub.SendToChannel("subagent:"+workspaceID+":guide", ws.Message{
+		Type: ws.TypeEvent,
+		Data: map[string]any{
+			"message": prompt,
+		},
+	})
+
+	return GuidedDispatchOutput{
+		Success:     true,
+		Delivered:   true,
+		WorkspaceID: workspaceID,
+		Agent:       input.Agent,
+		Prompt:      prompt,
+	}, nil
+}

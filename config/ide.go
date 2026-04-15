@@ -83,6 +83,17 @@ type Chat struct {
 	ToolExecutor string `yaml:"tool_executor"`
 }
 
+type CLIOverrides struct {
+	TransportMode string
+	HTTPAddr      string
+	TCPAddr       string
+	UnixSocket    string
+	Token         string
+	BrainEndpoint string
+	BrainKey      string
+	BrainAgentID  string
+}
+
 func (c IDEConfig) WithDefaults() IDEConfig {
 	if c.Ide.Transport.Mode == "" {
 		c.Ide.Transport.Mode = "stdio"
@@ -203,10 +214,39 @@ func Load(paths ...string) (IDEConfig, error) {
 		if err := yaml.Unmarshal(data, &cfg); err != nil {
 			return IDEConfig{}, fmt.Errorf("parse config %s: %w", path, err)
 		}
-		cfg = cfg.WithDefaults()
 	}
 	applyEnv(&cfg)
-	return cfg.WithDefaults(), nil
+	return cfg, nil
+}
+
+func ApplyCLIOverrides(cfg *IDEConfig, overrides CLIOverrides) {
+	if cfg == nil {
+		return
+	}
+	if v := strings.TrimSpace(overrides.TransportMode); v != "" {
+		cfg.Ide.Transport.Mode = v
+	}
+	if v := strings.TrimSpace(overrides.HTTPAddr); v != "" {
+		cfg.Ide.Transport.HTTPAddr = v
+	}
+	if v := strings.TrimSpace(overrides.TCPAddr); v != "" {
+		cfg.Ide.Transport.TCPAddr = v
+	}
+	if v := strings.TrimSpace(overrides.UnixSocket); v != "" {
+		cfg.Ide.Transport.UnixSocket = v
+	}
+	if v := strings.TrimSpace(overrides.Token); v != "" {
+		cfg.Ide.Transport.Token = v
+	}
+	if v := strings.TrimSpace(overrides.BrainEndpoint); v != "" {
+		cfg.Ide.Brain.Endpoint = v
+	}
+	if v := strings.TrimSpace(overrides.BrainKey); v != "" {
+		cfg.Ide.Brain.Key = v
+	}
+	if v := strings.TrimSpace(overrides.BrainAgentID); v != "" {
+		cfg.Ide.Brain.AgentID = v
+	}
 }
 
 func applyEnv(cfg *IDEConfig) {

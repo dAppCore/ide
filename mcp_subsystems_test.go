@@ -13,6 +13,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSubagentSubsystem_DispatchGuided_Good_NoRelay(t *testing.T) {
+	sub := NewSubagentSubsystem(nil)
+
+	out, err := sub.DispatchGuided(context.Background(), GuidedDispatchInput{
+		Repo: "go-ide",
+		Task: "Read RFC and identify missing features",
+	})
+	require.NoError(t, err)
+	assert.True(t, out.Success)
+	assert.False(t, out.Delivered)
+	assert.NotEmpty(t, out.WorkspaceID)
+	assert.Equal(t, "no relay", out.Reason)
+	assert.Contains(t, out.Prompt, "Workspace ID:")
+	assert.Contains(t, out.Prompt, "subagent:"+out.WorkspaceID+":guide")
+}
+
 func TestWorkspaceSubsystem_WorkspaceScan_Good(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(root, ".core"), 0o755))
