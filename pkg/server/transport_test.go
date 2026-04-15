@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"testing"
 
 	"dappco.re/go/core/ide/pkg/config"
@@ -49,5 +50,23 @@ func TestTransport_Select_ConfigWinsWhenPreferred_Good(t *testing.T) {
 	}
 	if transport.Mode != "http" || transport.Addr != "127.0.0.1:9999" {
 		t.Fatalf("expected configured transport to win, got %#v", transport)
+	}
+}
+
+func TestTransport_SelectRelay_Good(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
+	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if !relay.Enabled || relay.Addr != "127.0.0.1:9882" || relay.Path != "/subagent" {
+		t.Fatalf("expected enabled relay transport, got %#v", relay)
+	}
+}
+
+func TestTransport_SelectRelay_Bad(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
+	relay := SelectRelayTransport(cfg, "", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if relay.Enabled {
+		t.Fatalf("expected relay to stay disabled without token, got %#v", relay)
 	}
 }

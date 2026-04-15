@@ -65,10 +65,13 @@ func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, e
 	}
 }
 
-func SelectRelayTransport(cfg config.IDEConfig, handler http.Handler) RelayTransport {
+func SelectRelayTransport(cfg config.IDEConfig, token string, handler http.Handler) RelayTransport {
 	addr := core.Trim(cfg.Ide.Subagent.Relay.Addr)
 	path := core.Trim(cfg.Ide.Subagent.Relay.Path)
-	if !config.BoolValue(cfg.Ide.Subagent.Enabled, true) || addr == "" || path == "" || handler == nil {
+	if !config.BoolValue(cfg.Ide.Subagent.Enabled, true) || core.Trim(token) == "" || addr == "" || path == "" || handler == nil {
+		return RelayTransport{}
+	}
+	if err := validateTransportAddress("http", addr); err != nil {
 		return RelayTransport{}
 	}
 	if !core.HasPrefix(path, "/") {

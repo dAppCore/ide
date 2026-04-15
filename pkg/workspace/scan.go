@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	goio "io"
 	"io/fs"
 	"slices"
 
@@ -11,6 +12,7 @@ import (
 )
 
 const maxScanDepth = 16
+const maxPreviewBytes = 4096
 
 func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string) ([]Project, error) {
 	_ = ctx
@@ -127,7 +129,7 @@ func appendWorkspaceFile(medium coreio.Medium, path string, files *[]File, count
 	if err != nil {
 		return
 	}
-	content, err := medium.Read(path)
+	content, err := readLimitedContent(medium, path, maxPreviewBytes)
 	if err != nil {
 		return
 	}
@@ -141,6 +143,25 @@ func appendWorkspaceFile(medium coreio.Medium, path string, files *[]File, count
 		IsText:   true,
 	})
 	*sources = append(*sources, path)
+}
+
+func readLimitedContent(medium coreio.Medium, path string, maxBytes int64) (string, error) {
+	if medium == nil {
+		return "", core.E("ide.workspace.readLimitedContent", "medium is nil", nil)
+	}
+	file, err := medium.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	raw, err := goio.ReadAll(goio.LimitReader(file, maxBytes+1))
+	if err != nil {
+		return "", err
+	}
+	if int64(len(raw)) > maxBytes {
+		raw = raw[:maxBytes]
+	}
+	return string(raw), nil
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {

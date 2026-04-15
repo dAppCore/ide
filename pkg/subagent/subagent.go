@@ -18,7 +18,7 @@ type Subsystem struct {
 	hub        *ws.Hub
 	relayToken string
 	mu         sync.RWMutex
-	answers    map[string]chan string
+	answers    map[string]map[string]chan string
 	events     map[string][]Event
 }
 
@@ -116,7 +116,7 @@ func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
 		cfg:        cfg,
 		hub:        hub,
 		relayToken: core.Trim(relayToken),
-		answers:    map[string]chan string{},
+		answers:    map[string]map[string]chan string{},
 		events:     map[string][]Event{},
 	}
 }

@@ -29,6 +29,10 @@ func statusChannel(workspaceID string) string {
 	return core.Concat("subagent:", core.Trim(workspaceID), ":status")
 }
 
+func questionKey(workspaceID, questionID string) string {
+	return core.Concat(core.Trim(workspaceID), "::", core.Trim(questionID))
+}
+
 func (s *Subsystem) appendEvent(workspaceID string, event Event) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -39,23 +43,41 @@ func (s *Subsystem) appendEvent(workspaceID string, event Event) {
 	s.events[workspaceID] = events
 }
 
-func (s *Subsystem) appendQuestionChannel(questionID string, channel chan string) {
+func (s *Subsystem) appendQuestionChannel(workspaceID, questionID string, channel chan string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.answers[questionID] = channel
+	key := questionKey(workspaceID, questionID)
+	if s.answers[workspaceID] == nil {
+		s.answers[workspaceID] = map[string]chan string{}
+	}
+	s.answers[workspaceID][key] = channel
 }
 
-func (s *Subsystem) deleteQuestionChannel(questionID string) {
+func (s *Subsystem) deleteQuestionChannel(workspaceID, questionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(s.answers, questionID)
+	key := questionKey(workspaceID, questionID)
+	if workspaceAnswers := s.answers[workspaceID]; workspaceAnswers != nil {
+		delete(workspaceAnswers, key)
+		if len(workspaceAnswers) == 0 {
+			delete(s.answers, workspaceID)
+		}
+	}
 }
 
-func (s *Subsystem) takeQuestionChannel(questionID string) chan string {
+func (s *Subsystem) takeQuestionChannel(workspaceID, questionID string) chan string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	channel := s.answers[questionID]
-	delete(s.answers, questionID)
+	key := questionKey(workspaceID, questionID)
+	workspaceAnswers := s.answers[workspaceID]
+	if workspaceAnswers == nil {
+		return nil
+	}
+	channel := workspaceAnswers[key]
+	delete(workspaceAnswers, key)
+	if len(workspaceAnswers) == 0 {
+		delete(s.answers, workspaceID)
+	}
 	return channel
 }
 

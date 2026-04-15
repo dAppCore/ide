@@ -21,6 +21,7 @@ const (
 	maxRecallTopK     = 50
 	defaultListLimit  = 50
 	maxListLimit      = 100
+	maxResponseBytes  = 1 << 20
 )
 
 func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput, error) {
@@ -178,9 +179,12 @@ func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) 
 		return nil, core.E("ide.brain.apiCall", "request failed", err)
 	}
 	defer response.Body.Close()
-	raw, err := goio.ReadAll(response.Body)
+	raw, err := goio.ReadAll(goio.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
 		return nil, core.E("ide.brain.apiCall", "read response", err)
+	}
+	if len(raw) > maxResponseBytes {
+		return nil, core.E("ide.brain.apiCall", "response too large", nil)
 	}
 	if response.StatusCode >= http.StatusBadRequest {
 		return nil, core.E("ide.brain.apiCall", core.Concat("upstream returned ", response.Status), nil)

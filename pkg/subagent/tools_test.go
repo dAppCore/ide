@@ -8,6 +8,7 @@ import (
 
 	core "dappco.re/go/core"
 	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/core/ws"
 )
 
 func TestTools_Guide_Good(t *testing.T) {
@@ -95,7 +96,7 @@ func TestTools_Progress_Ugly(t *testing.T) {
 func TestTools_Answer_Good(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	channel := make(chan string, 1)
-	subsystem.appendQuestionChannel("q1", channel)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
 	out, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-1", QuestionID: "q1", Answer: "because"})
 	if err != nil {
 		t.Fatalf("answer: %v", err)
@@ -110,6 +111,24 @@ func TestTools_Answer_Good(t *testing.T) {
 		}
 	default:
 		t.Fatal("expected question channel to receive answer")
+	}
+}
+
+func TestTools_Answer_UglyWorkspaceIsolation(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
+	out, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-2", QuestionID: "q1", Answer: "nope"})
+	if err != nil {
+		t.Fatalf("answer: %v", err)
+	}
+	if !out.Delivered {
+		t.Fatalf("expected answer call to publish on its own workspace, got %#v", out)
+	}
+	select {
+	case got := <-channel:
+		t.Fatalf("expected cross-workspace channel to remain untouched, got %q", got)
+	default:
 	}
 }
 

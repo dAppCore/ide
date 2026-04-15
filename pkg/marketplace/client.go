@@ -22,6 +22,8 @@ type Client struct {
 	medium     coreio.Medium
 }
 
+const maxResponseBytes = 1 << 20
+
 func NewClient(cfg config.Marketplace) *Client {
 	return &Client{cfg: cfg, httpClient: &http.Client{Timeout: 15 * time.Second}}
 }
@@ -134,9 +136,12 @@ func (c *Client) request(ctx context.Context, method, path string, body any, tar
 	if target == nil {
 		return nil
 	}
-	raw, err := goio.ReadAll(response.Body)
+	raw, err := goio.ReadAll(goio.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
 		return core.E("ide.marketplace.request", "read response", err)
+	}
+	if len(raw) > maxResponseBytes {
+		return core.E("ide.marketplace.request", "response too large", nil)
 	}
 	if result := core.JSONUnmarshal(raw, target); !result.OK {
 		if decodeErr, ok := result.Value.(error); ok {

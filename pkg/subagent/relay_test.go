@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"dappco.re/go/core/ws"
 	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/core/ws"
 )
 
 func TestRelay_Route_Good(t *testing.T) {
@@ -27,9 +27,9 @@ func TestRelay_Route_Good(t *testing.T) {
 func TestRelay_Route_Bad(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance"})
-	subsystem.appendQuestionChannel("q1", make(chan string, 1))
-	subsystem.deleteQuestionChannel("q1")
-	if channel := subsystem.takeQuestionChannel("missing"); channel != nil {
+	subsystem.appendQuestionChannel("ws-1", "q1", make(chan string, 1))
+	subsystem.deleteQuestionChannel("ws-1", "q1")
+	if channel := subsystem.takeQuestionChannel("ws-1", "missing"); channel != nil {
 		t.Fatalf("expected missing question channel to be nil, got %#v", channel)
 	}
 }
@@ -45,6 +45,18 @@ func TestRelay_Route_Ugly(t *testing.T) {
 	}
 }
 
+func TestRelay_QuestionChannel_Ugly(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
+	if got := subsystem.takeQuestionChannel("ws-2", "q1"); got != nil {
+		t.Fatalf("expected workspace isolation, got %#v", got)
+	}
+	if got := subsystem.takeQuestionChannel("ws-1", "q1"); got == nil {
+		t.Fatal("expected matching workspace question channel")
+	}
+}
+
 func TestRelay_Publish_Good(t *testing.T) {
 	subsystem := &Subsystem{}
 	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance", Message: "focus"})
@@ -55,8 +67,8 @@ func TestRelay_EventFromRelayMessage_Good(t *testing.T) {
 		Channel:   "subagent:ws-1:guide",
 		Timestamp: time.Unix(0, 0).UTC(),
 		Data: map[string]any{
-			"type":       "guidance",
-			"message":    "focus",
+			"type":        "guidance",
+			"message":     "focus",
 			"question_id": "q1",
 		},
 	})

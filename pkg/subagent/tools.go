@@ -2,6 +2,8 @@ package subagent
 
 import (
 	"context"
+	cryptoRand "crypto/rand"
+	"encoding/hex"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -71,10 +73,13 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 		return AskOutput{Reason: "no relay"}, nil
 	}
 	waitSeconds := clampInt(input.WaitSeconds, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxQuestionWaitSeconds)
-	questionID := core.Sprintf("q-%d", time.Now().UTC().UnixNano())
+	questionID, err := newQuestionID()
+	if err != nil {
+		return AskOutput{}, err
+	}
 	answerChannel := make(chan string, 1)
-	s.appendQuestionChannel(questionID, answerChannel)
-	defer s.deleteQuestionChannel(questionID)
+	s.appendQuestionChannel(workspaceID, questionID, answerChannel)
+	defer s.deleteQuestionChannel(workspaceID, questionID)
 	message := QuestionMessage{Type: "question", Role: "subagent", QuestionID: questionID, Message: input.Question, CreatedAt: time.Now().UTC()}
 	channel := questionChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, QuestionID: questionID, CreatedAt: message.CreatedAt})
@@ -193,7 +198,7 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 	if core.Trim(input.QuestionID) == "" {
 		return AnswerOutput{}, core.E("ide.subagent.answer", "questionId is required", nil)
 	}
-	if channel := s.takeQuestionChannel(input.QuestionID); channel != nil {
+	if channel := s.takeQuestionChannel(workspaceID, input.QuestionID); channel != nil {
 		select {
 		case channel <- input.Answer:
 		default:
@@ -238,7 +243,10 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
 	}
 	if workspaceID == "" {
-		workspaceID = core.Sprintf("workspace-%d", time.Now().UTC().UnixNano())
+		workspaceID, err = newWorkspaceID()
+		if err != nil {
+			return DispatchGuidedOutput{Success: false, Reason: "workspace id generation failed"}, err
+		}
 	}
 	relayURL := core.Trim(input.RelayURL)
 	if relayURL == "" {
@@ -398,4 +406,20 @@ func validateRelayURL(value string) error {
 		return core.E("ide.subagent.relayURL", "relay URL host is required", nil)
 	}
 	return nil
+}
+
+func newQuestionID() (string, error) {
+	return newRandomID("q")
+}
+
+func newWorkspaceID() (string, error) {
+	return newRandomID("workspace")
+}
+
+func newRandomID(prefix string) (string, error) {
+	var raw [8]byte
+	if _, err := cryptoRand.Read(raw[:]); err != nil {
+		return "", core.E("ide.subagent.id", "generate id", err)
+	}
+	return core.Concat(prefix, "-", hex.EncodeToString(raw[:])), nil
 }

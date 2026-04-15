@@ -4,6 +4,7 @@ import (
 	"embed"
 
 	core "dappco.re/go/core"
+	coreio "dappco.re/go/core/io"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,15 +49,12 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 	return conventions, notes
 }
 
-func readBuildProjectName(medium interface {
-	Exists(string) bool
-	Read(string) (string, error)
-}, root string) string {
+func readBuildProjectName(medium coreio.Medium, root string) string {
 	path := core.JoinPath(root, ".core", "build.yaml")
 	if !medium.Exists(path) {
 		return ""
 	}
-	content, err := medium.Read(path)
+	content, err := readLimitedContent(medium, path, 64*1024)
 	if err != nil {
 		return ""
 	}

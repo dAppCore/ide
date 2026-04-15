@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/core/io"
@@ -129,7 +130,7 @@ func Compose(options Options) (*Server, error) {
 		mcp:       mcpService,
 		hub:       hub,
 		transport: transport,
-		relay:     SelectRelayTransport(cfg, hub.Handler()),
+		relay:     SelectRelayTransport(cfg, authToken, hub.Handler()),
 		authToken: authToken,
 	}, nil
 }
@@ -138,7 +139,15 @@ func (s *Server) Run(ctx context.Context) error {
 	go s.hub.Run(ctx)
 	var relayServer *http.Server
 	if s.relay.Enabled {
-		relayServer = &http.Server{Addr: s.relay.Addr, Handler: s.relay.Handler}
+		relayServer = &http.Server{
+			Addr:              s.relay.Addr,
+			Handler:           s.relay.Handler,
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      10 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    1 << 20,
+		}
 		go func() {
 			<-ctx.Done()
 			_ = relayServer.Shutdown(context.Background())
