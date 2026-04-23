@@ -67,12 +67,16 @@ func Compose(options Options) (*core.Core, error) {
 }
 
 func composeRuntime(options Options) (*runtimeParts, error) {
+	return composeRuntimeMode(options, runtimeMode{})
+}
+
+func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error) {
 	cfg := options.Config.WithDefaults()
 	medium := options.Medium
 	if medium == nil {
 		medium = coreio.Local
 	}
-	enableGUI := options.GUI && !options.MCP
+	enableGUI := !mode.conclave && options.GUI && !options.MCP
 	authToken := core.Trim(cfg.Ide.Transport.Token)
 	if authToken == "" {
 		authToken = core.Trim(core.Env("MCP_AUTH_TOKEN"))
@@ -106,12 +110,16 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 		core.WithName("marketplace", func(_ *core.Core) core.Result {
 			return core.Result{Value: marketplacepkg.New(cfg.Ide.Marketplace), OK: true}
 		}),
-		core.WithService(coremcp.Register),
 	}
+	services = append(services, options.extraCoreOptions...)
+	services = append(services, core.WithName("mcp", registerMCP(options, mode)))
 	if enableGUI {
 		services = append(services, core.WithName("gui_mcp", func(c *core.Core) core.Result {
 			return core.Result{Value: guimcp.New(c), OK: true}
 		}))
+	}
+	if mode.conclave {
+		services = append(services, core.WithServiceLock())
 	}
 
 	c := core.New(services...)
@@ -154,7 +162,6 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 	if !ok {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
 	}
-	mcpService.SetAPIToken(authToken)
 	if enableGUI {
 		guiSubsystem, _ := core.ServiceFor[*guimcp.Subsystem](c, "gui_mcp")
 		guiExecutor.Attach(guiSubsystem, mcpService)
@@ -175,6 +182,15 @@ func composeRuntime(options Options) (*runtimeParts, error) {
 				return nil, core.E("ide.server.Compose", "register chat service", nil)
 			}
 		}
+	}
+
+	if mode.conclave {
+		return &runtimeParts{
+			core:      c,
+			mcp:       mcpService,
+			hub:       hub,
+			authToken: authToken,
+		}, nil
 	}
 
 	transport, err := SelectTransport(cfg, options.MCP, options.PreferConfiguredTransport)

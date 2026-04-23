@@ -13,6 +13,7 @@ type Options struct {
 	Medium                    coreio.Medium
 	MCP                       bool
 	PreferConfiguredTransport bool
+	extraCoreOptions          []core.CoreOption
 }
 
 // srv, err := NewServer(Options{Config: cfg, GUI: true, MCP: false})
