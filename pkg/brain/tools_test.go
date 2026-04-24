@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestTools_BrainRecall_Good(t *testing.T) {

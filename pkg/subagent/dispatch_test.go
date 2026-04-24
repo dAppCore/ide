@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestDispatch_Guided_Good(t *testing.T) {

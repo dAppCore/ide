@@ -7,8 +7,8 @@ import (
 	"slices"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
-	"dappco.re/go/core/process"
+	coreio "dappco.re/go/io"
+	"dappco.re/go/process"
 )
 
 const maxScanDepth = 16

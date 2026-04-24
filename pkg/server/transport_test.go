@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestTransport_Select_Good(t *testing.T) {

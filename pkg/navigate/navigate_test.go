@@ -6,7 +6,7 @@ import (
 
 	core "dappco.re/go/core"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestNavigate_Resolve_Good(t *testing.T) {

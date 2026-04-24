@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"testing"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 )
 
 type recordingMedium struct {

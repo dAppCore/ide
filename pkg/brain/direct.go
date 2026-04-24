@@ -12,8 +12,8 @@ import (
 
 	core "dappco.re/go/core"
 
-	ai "dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/workspace"
+	ai "dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/workspace"
 )
 
 const (

@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
-	"dappco.re/go/core/process"
+	coreio "dappco.re/go/io"
+	"dappco.re/go/process"
 )
 
 func TestApi_Scan_Good(t *testing.T) {

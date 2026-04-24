@@ -5,10 +5,10 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/ws"
+	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type Subsystem struct {

@@ -1,12 +1,12 @@
-module dappco.re/go/core/ide
+module dappco.re/go/ide
 
 go 1.26.0
 
 require (
 	dappco.re/go/core v0.8.0-alpha.1
-	dappco.re/go/core/io v0.4.2
-	dappco.re/go/core/process v0.5.0
-	dappco.re/go/core/ws v0.4.0
+	dappco.re/go/io v0.4.2
+	dappco.re/go/process v0.5.0
+	dappco.re/go/ws v0.4.0
 	dappco.re/go/mcp v0.0.0
 	dappco.re/go/scm v0.0.0
 	dappco.re/go/store v0.0.0
@@ -17,11 +17,11 @@ require (
 )
 
 require (
-	dappco.re/go/core/ai v0.2.2 // indirect
-	dappco.re/go/core/api v0.3.0 // indirect
-	dappco.re/go/core/log v0.1.2 // indirect
-	dappco.re/go/core/rag v0.1.13 // indirect
-	dappco.re/go/core/webview v0.2.1 // indirect
+	dappco.re/go/ai v0.2.2 // indirect
+	dappco.re/go/api v0.3.0 // indirect
+	dappco.re/go/log v0.1.2 // indirect
+	dappco.re/go/rag v0.1.13 // indirect
+	dappco.re/go/webview v0.2.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	forge.lthn.ai/core/go-log v0.0.4 // indirect
 	forge.lthn.ai/core/go-webview v0.1.7 // indirect
@@ -186,9 +186,9 @@ require (
 
 replace dappco.re/go/core => ../go
 
-replace dappco.re/go/core/io => ../go-io
+replace dappco.re/go/io => ../go-io
 
-replace dappco.re/go/core/process => ../go-process
+replace dappco.re/go/process => ../go-process
 
 replace dappco.re/go/mcp => ../mcp
 

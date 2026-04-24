@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
-	"dappco.re/go/core/ide/pkg/config"
+	coreio "dappco.re/go/io"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestOptions_Default_Good(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
-	storepkg "dappco.re/go/core/ide/pkg/store"
+	"dappco.re/go/ide/pkg/config"
+	storepkg "dappco.re/go/ide/pkg/store"
 )
 
 type Subsystem struct {

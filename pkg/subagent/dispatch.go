@@ -13,7 +13,7 @@ import (
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 var relayEnvMu sync.Mutex

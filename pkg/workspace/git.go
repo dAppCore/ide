@@ -4,7 +4,7 @@ import (
 	"context"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/process"
+	"dappco.re/go/process"
 )
 
 func gitStatus(ctx context.Context, processService *process.Service, root string) (GitStatus, error) {

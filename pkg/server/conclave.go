@@ -6,8 +6,8 @@ import (
 	"unsafe"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/process"
-	"dappco.re/go/core/ws"
+	"dappco.re/go/process"
+	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )

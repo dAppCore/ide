@@ -4,7 +4,7 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/ws"
+	"dappco.re/go/ws"
 )
 
 const maxEventsPerWorkspace = 1000

@@ -1,10 +1,10 @@
 package server
 
 import (
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type Options struct {

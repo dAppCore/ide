@@ -8,8 +8,8 @@ import (
 
 	core "dappco.re/go/core"
 
-	"dappco.re/go/core/ide/pkg/config"
-	"dappco.re/go/core/ide/pkg/server"
+	"dappco.re/go/ide/pkg/config"
+	"dappco.re/go/ide/pkg/server"
 )
 
 type runtimeFlags struct {

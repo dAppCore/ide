@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 )
 
 func TestConfig_Load_Good(t *testing.T) {

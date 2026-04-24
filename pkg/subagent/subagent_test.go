@@ -8,7 +8,7 @@ import (
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestSubagent_Name_Good(t *testing.T) {

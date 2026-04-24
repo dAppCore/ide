@@ -5,12 +5,12 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	aipkg "dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/config"
-	"dappco.re/go/core/ide/pkg/workspace"
+	aipkg "dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/config"
+	"dappco.re/go/ide/pkg/workspace"
 	storelib "dappco.re/go/store"
 )
 

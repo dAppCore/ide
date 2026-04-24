@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	aipkg "dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/config"
-	coreio "dappco.re/go/core/io"
+	aipkg "dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/config"
+	coreio "dappco.re/go/io"
 )
 
 func TestClient_Info_Good(t *testing.T) {

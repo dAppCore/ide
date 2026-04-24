@@ -7,7 +7,7 @@ import (
 
 	core "dappco.re/go/core"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestActions_Subagent_Good(t *testing.T) {

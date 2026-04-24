@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 )
 
 func TestImpact_Classify_Good(t *testing.T) {

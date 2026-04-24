@@ -2,8 +2,8 @@ package workspace
 
 import (
 	core "dappco.re/go/core"
-	coreconfig "dappco.re/go/core/config"
-	coreio "dappco.re/go/core/io"
+	coreconfig "dappco.re/go/config"
+	coreio "dappco.re/go/io"
 )
 
 type reposFile struct {

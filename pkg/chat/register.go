@@ -9,7 +9,7 @@ import (
 	gui_chat "forge.lthn.ai/core/gui/pkg/chat"
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type ToolExecutor interface {

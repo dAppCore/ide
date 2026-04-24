@@ -6,21 +6,21 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
-	"dappco.re/go/core/process"
-	"dappco.re/go/core/ws"
+	coreio "dappco.re/go/io"
+	"dappco.re/go/process"
+	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
-	aipkg "dappco.re/go/core/ide/pkg/ai"
-	brainpkg "dappco.re/go/core/ide/pkg/brain"
-	chatpkg "dappco.re/go/core/ide/pkg/chat"
-	"dappco.re/go/core/ide/pkg/config"
-	marketplacepkg "dappco.re/go/core/ide/pkg/marketplace"
-	navigatepkg "dappco.re/go/core/ide/pkg/navigate"
-	storepkg "dappco.re/go/core/ide/pkg/store"
-	subagentpkg "dappco.re/go/core/ide/pkg/subagent"
-	workspacepkg "dappco.re/go/core/ide/pkg/workspace"
+	aipkg "dappco.re/go/ide/pkg/ai"
+	brainpkg "dappco.re/go/ide/pkg/brain"
+	chatpkg "dappco.re/go/ide/pkg/chat"
+	"dappco.re/go/ide/pkg/config"
+	marketplacepkg "dappco.re/go/ide/pkg/marketplace"
+	navigatepkg "dappco.re/go/ide/pkg/navigate"
+	storepkg "dappco.re/go/ide/pkg/store"
+	subagentpkg "dappco.re/go/ide/pkg/subagent"
+	workspacepkg "dappco.re/go/ide/pkg/workspace"
 )
 
 type Server struct {

@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestTools_Register_Good(t *testing.T) {

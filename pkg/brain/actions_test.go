@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestActions_Register_Good(t *testing.T) {

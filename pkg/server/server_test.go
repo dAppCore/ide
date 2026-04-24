@@ -7,13 +7,13 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	gui_chat "forge.lthn.ai/core/gui/pkg/chat"
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 
-	chatpkg "dappco.re/go/core/ide/pkg/chat"
-	"dappco.re/go/core/ide/pkg/config"
+	chatpkg "dappco.re/go/ide/pkg/chat"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestServer_Compose_Good(t *testing.T) {

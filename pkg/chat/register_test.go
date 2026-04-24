@@ -10,7 +10,7 @@ import (
 	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type stubExecutor struct {

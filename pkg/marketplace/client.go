@@ -9,11 +9,11 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	scmmarketplace "dappco.re/go/scm/marketplace"
 
-	"dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type Client struct {

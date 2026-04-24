@@ -9,13 +9,13 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/core/ws"
+	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/gorilla/websocket"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 const (

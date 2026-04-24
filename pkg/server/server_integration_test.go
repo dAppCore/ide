@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestServerIntegration_Run_Good(t *testing.T) {

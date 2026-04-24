@@ -4,12 +4,12 @@ import (
 	"context"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	scmmarketplace "dappco.re/go/scm/marketplace"
 
-	aipkg "dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/config"
+	aipkg "dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type Subsystem struct {

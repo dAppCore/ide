@@ -6,11 +6,11 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/core/io"
-	"dappco.re/go/core/process"
+	coreio "dappco.re/go/io"
+	"dappco.re/go/process"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 type Subsystem struct {

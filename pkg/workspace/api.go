@@ -3,9 +3,9 @@ package workspace
 import (
 	"context"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 // projects, err := Scan(context.Background(), ScanInput{Root: ".", Depth: 3})

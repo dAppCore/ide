@@ -8,7 +8,7 @@ import (
 
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
-	"dappco.re/go/core/ide/pkg/config"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestTools_Marketplace_Good(t *testing.T) {

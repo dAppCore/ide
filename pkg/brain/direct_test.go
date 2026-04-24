@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	coreio "dappco.re/go/core/io"
+	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
-	aipkg "dappco.re/go/core/ide/pkg/ai"
-	"dappco.re/go/core/ide/pkg/config"
+	aipkg "dappco.re/go/ide/pkg/ai"
+	"dappco.re/go/ide/pkg/config"
 )
 
 func TestDirect_Recall_Good(t *testing.T) {

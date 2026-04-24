@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"dappco.re/go/core/ide/pkg/config"
-	"dappco.re/go/core/ws"
+	"dappco.re/go/ide/pkg/config"
+	"dappco.re/go/ws"
 )
 
 type testAuthenticator struct{}
