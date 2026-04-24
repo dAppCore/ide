@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -197,7 +196,7 @@ func TestServer_Run_Bad(t *testing.T) {
 		t.Fatalf("compose server: %v", err)
 	}
 
-	if err := srv.Run(context.Background()); err == nil || !strings.Contains(err.Error(), "http transport requires a bearer token") {
+	if err := srv.Run(context.Background()); err == nil || !core.Contains(err.Error(), "http transport requires a bearer token") {
 		t.Fatalf("expected missing token error, got %v", err)
 	}
 }
@@ -213,6 +212,7 @@ func TestServer_Run_Ugly(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	// Note: errors.Is — context.Canceled is stdlib typed error; core has no equivalent chain walker.
 	if err := srv.Run(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context cancelled error, got %v", err)
 	}
