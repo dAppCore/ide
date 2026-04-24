@@ -9,8 +9,8 @@ import (
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
-	gui_chat "forge.lthn.ai/core/gui/pkg/chat"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
+	gui_chat "dappco.re/go/gui/pkg/chat"
+	guimcp "dappco.re/go/gui/pkg/mcp"
 
 	chatpkg "dappco.re/go/ide/pkg/chat"
 	"dappco.re/go/ide/pkg/config"

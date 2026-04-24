@@ -4,27 +4,27 @@ go 1.26.0
 
 require (
 	dappco.re/go/core v0.8.0-alpha.1
-	dappco.re/go/io v0.4.2
-	dappco.re/go/process v0.5.0
-	dappco.re/go/ws v0.4.0
-	dappco.re/go/mcp v0.0.0
-	dappco.re/go/scm v0.0.0
-	dappco.re/go/store v0.0.0
-	forge.lthn.ai/core/gui v0.0.0
+	dappco.re/go/io v0.8.0-alpha.1
+	dappco.re/go/process v0.8.0-alpha.1
+	dappco.re/go/ws v0.8.0-alpha.1
+	dappco.re/go/mcp v0.8.0-alpha.1
+	dappco.re/go/scm v0.8.0-alpha.1
+	dappco.re/go/store v0.8.0-alpha.1
+	dappco.re/go/gui v0.8.0-alpha.1
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	dappco.re/go/ai v0.2.2 // indirect
-	dappco.re/go/api v0.3.0 // indirect
-	dappco.re/go/log v0.1.2 // indirect
-	dappco.re/go/rag v0.1.13 // indirect
-	dappco.re/go/webview v0.2.1 // indirect
+	dappco.re/go/ai v0.8.0-alpha.1 // indirect
+	dappco.re/go/api v0.8.0-alpha.1 // indirect
+	dappco.re/go/log v0.8.0-alpha.1 // indirect
+	dappco.re/go/rag v0.8.0-alpha.1 // indirect
+	dappco.re/go/webview v0.8.0-alpha.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
-	forge.lthn.ai/core/go-log v0.0.4 // indirect
-	forge.lthn.ai/core/go-webview v0.1.7 // indirect
+	dappco.re/go/log v0.8.0-alpha.1 // indirect
+	dappco.re/go/webview v0.8.0-alpha.1 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -196,4 +196,4 @@ replace dappco.re/go/scm => ../go-scm
 
 replace dappco.re/go/store => ../go-store
 
-replace forge.lthn.ai/core/gui => ./third_party/gui
+replace dappco.re/go/gui => ./third_party/gui

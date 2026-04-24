@@ -7,7 +7,7 @@ import (
 
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
+	guimcp "dappco.re/go/gui/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/ide/pkg/config"

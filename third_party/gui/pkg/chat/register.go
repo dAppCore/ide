@@ -4,7 +4,7 @@ import (
 	"context"
 
 	core "dappco.re/go/core"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
+	guimcp "dappco.re/go/gui/pkg/mcp"
 )
 
 type ToolExecutor interface {

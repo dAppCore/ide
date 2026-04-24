@@ -10,7 +10,7 @@ import (
 	"dappco.re/go/process"
 	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
-	guimcp "forge.lthn.ai/core/gui/pkg/mcp"
+	guimcp "dappco.re/go/gui/pkg/mcp"
 
 	aipkg "dappco.re/go/ide/pkg/ai"
 	brainpkg "dappco.re/go/ide/pkg/brain"
