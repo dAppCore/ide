@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	// Note: test-only — error chain inspection needs errors.Is for cancellation propagation.
 	"errors"
+	// Note: test-only — output assertions inspect transport error text directly.
 	"strings"
 	"testing"
 	"time"
