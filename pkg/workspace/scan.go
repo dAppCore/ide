@@ -4,7 +4,8 @@ import (
 	"context"
 	goio "io"
 	"io/fs"
-	"path/filepath" // Note: AX-6 — filepath.Abs/Clean/EvalSymlinks/Rel are filesystem-syscall structural primitives required for symlink-canonicalisation; no core wrapper.
+	"os"
+	"path/filepath" // Note: AX-6 — filepath.Abs/Clean/EvalSymlinks are filesystem-syscall structural primitives required for symlink-canonicalisation; no core wrapper.
 	"slices"
 
 	core "dappco.re/go/core"
@@ -119,16 +120,23 @@ func appendWorkspaceTree(medium coreio.Medium, path string, files *[]File, count
 }
 
 func appendWorkspaceTreeWithIgnores(medium coreio.Medium, root, path string, ignores []string, files *[]File, counts *FileCount, sources *[]string) {
-	if medium == nil || !medium.Exists(path) {
+	if medium == nil {
 		return
 	}
-	if rejectsWorkspacePath(root, path) {
+	info, err := medium.Stat(path)
+	if err != nil {
+		if rejectsWorkspacePathWithWarning(root, path) {
+			return
+		}
+		return
+	}
+	if rejectsWorkspacePathWithWarning(root, path) {
 		return
 	}
 	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
-	if medium.IsDir(path) {
+	if info.IsDir() {
 		entries, err := medium.List(path)
 		if err != nil {
 			return
@@ -146,17 +154,23 @@ func appendWorkspaceFile(medium coreio.Medium, path string, files *[]File, count
 }
 
 func appendWorkspaceFileWithIgnores(medium coreio.Medium, root, path string, ignores []string, files *[]File, counts *FileCount, sources *[]string) {
-	if medium == nil || !medium.Exists(path) {
+	if medium == nil {
 		return
 	}
-	if rejectsWorkspacePath(root, path) {
+	info, err := medium.Stat(path)
+	if err != nil {
+		if rejectsWorkspacePathWithWarning(root, path) {
+			return
+		}
+		return
+	}
+	if rejectsWorkspacePathWithWarning(root, path) {
 		return
 	}
 	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
-	info, err := medium.Stat(path)
-	if err != nil {
+	if info.IsDir() {
 		return
 	}
 	content, err := readLimitedContent(medium, path, maxPreviewBytes)
@@ -196,56 +210,104 @@ func readLimitedContent(medium coreio.Medium, path string, maxBytes int64) (stri
 
 // rejectsWorkspacePath reports whether path must be excluded from a workspace
 // scan because its canonical (symlink-resolved) location escapes the workspace
-// root, or because its canonical location cannot be determined at all.
-//
-// Cerberus F25 (Mantis #983, re-implementation of #579): the prior version
-// fell open on EvalSymlinks errors, defeating the protection it was meant to
-// provide. This implementation fails CLOSED: any error during canonicalisation
-// rejects the path. Empty root or path returns false (delegated to existing
-// guards earlier in the call chain).
-//
-//	if rejectsWorkspacePath(root, path) { return } // skip — symlink escape or unresolvable
+// root, or because an existing host path cannot be canonicalised.
 func rejectsWorkspacePath(root, path string) bool {
-	if core.Trim(root) == "" || core.Trim(path) == "" {
+	rejection := workspacePathRejectionFor(root, path)
+	return rejection.reject
+}
+
+func rejectsWorkspacePathWithWarning(root, path string) bool {
+	rejection := workspacePathRejectionFor(root, path)
+	if !rejection.reject {
 		return false
+	}
+	logWorkspacePathRejection(rejection)
+	return true
+}
+
+type workspacePathRejection struct {
+	reject bool
+	err    error
+}
+
+func workspacePathRejectionFor(root, path string) workspacePathRejection {
+	if core.Trim(root) == "" || core.Trim(path) == "" {
+		return workspacePathRejection{}
 	}
 	resolvedRoot, err := canonicalExistingPath(root)
 	if err != nil {
-		return true
+		if !resolvedRoot.exists {
+			return workspacePathRejection{}
+		}
+		return workspacePathRejection{
+			reject: true,
+			err:    core.E("ide.workspace.scan.canonicalRoot", core.Concat("resolve workspace root ", root), err),
+		}
 	}
 	resolvedPath, err := canonicalExistingPath(path)
 	if err != nil {
-		return true
+		if !resolvedPath.exists {
+			return workspacePathRejection{}
+		}
+		return workspacePathRejection{
+			reject: true,
+			err:    core.E("ide.workspace.scan.canonicalPath", core.Concat("resolve workspace path ", path), err),
+		}
 	}
-	relative, err := filepath.Rel(resolvedRoot, resolvedPath)
-	if err != nil {
-		return true
+	if !canonicalPathHasRoot(resolvedRoot.path, resolvedPath.path) {
+		return workspacePathRejection{
+			reject: true,
+			err:    core.E("ide.workspace.scan.symlinkEscape", core.Concat("workspace path ", resolvedPath.path, " escapes root ", resolvedRoot.path), nil),
+		}
 	}
-	if relative == "." {
-		return false
-	}
-	parentPrefix := core.Concat("..", string(filepath.Separator))
-	if relative == ".." || core.HasPrefix(relative, parentPrefix) {
-		return true
-	}
-	return false
+	return workspacePathRejection{}
 }
 
-// canonicalExistingPath returns the absolute, symlink-resolved, cleaned path
-// for an existing filesystem entry. Returns an error if the path cannot be
-// made absolute or if symlinks cannot be resolved (broken target, permission
-// denied, race-replaced symlink). Callers MUST treat the error case as
-// "reject this path" — see rejectsWorkspacePath.
-func canonicalExistingPath(path string) (string, error) {
+type canonicalPath struct {
+	path   string
+	exists bool
+}
+
+// canonicalExistingPath returns the absolute, symlink-resolved, cleaned path for
+// an existing host filesystem entry. Virtual io.Medium entries may not exist on
+// the host; callers should not reject those solely because host Lstat reports
+// fs.ErrNotExist.
+func canonicalExistingPath(path string) (canonicalPath, error) {
 	absolute, err := filepath.Abs(filepath.Clean(core.Trim(path)))
 	if err != nil {
-		return "", err
+		return canonicalPath{exists: true}, err
+	}
+	if _, err := os.Lstat(absolute); err != nil {
+		if core.Is(err, fs.ErrNotExist) {
+			return canonicalPath{}, err
+		}
+		return canonicalPath{exists: true}, err
 	}
 	resolved, err := filepath.EvalSymlinks(absolute)
 	if err != nil {
-		return "", err
+		return canonicalPath{exists: true}, err
 	}
-	return filepath.Clean(resolved), nil
+	return canonicalPath{path: filepath.Clean(resolved), exists: true}, nil
+}
+
+func canonicalPathHasRoot(root, path string) bool {
+	if path == root {
+		return true
+	}
+	prefix := root
+	separator := string(filepath.Separator)
+	if !core.HasSuffix(prefix, separator) {
+		prefix += separator
+	}
+	return core.HasPrefix(path, prefix)
+}
+
+func logWorkspacePathRejection(rejection workspacePathRejection) {
+	if rejection.err == nil {
+		return
+	}
+	c := core.New()
+	c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root")
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {
