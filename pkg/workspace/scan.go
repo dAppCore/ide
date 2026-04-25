@@ -4,6 +4,7 @@ import (
 	"context"
 	goio "io"
 	"io/fs"
+	"path/filepath" // Note: AX-6 — filepath.Abs/Clean/EvalSymlinks/Rel are filesystem-syscall structural primitives required for symlink-canonicalisation; no core wrapper.
 	"slices"
 
 	core "dappco.re/go/core"
@@ -121,6 +122,9 @@ func appendWorkspaceTreeWithIgnores(medium coreio.Medium, root, path string, ign
 	if medium == nil || !medium.Exists(path) {
 		return
 	}
+	if rejectsWorkspacePath(root, path) {
+		return
+	}
 	if shouldIgnorePath(root, path, ignores) {
 		return
 	}
@@ -143,6 +147,9 @@ func appendWorkspaceFile(medium coreio.Medium, path string, files *[]File, count
 
 func appendWorkspaceFileWithIgnores(medium coreio.Medium, root, path string, ignores []string, files *[]File, counts *FileCount, sources *[]string) {
 	if medium == nil || !medium.Exists(path) {
+		return
+	}
+	if rejectsWorkspacePath(root, path) {
 		return
 	}
 	if shouldIgnorePath(root, path, ignores) {
@@ -185,6 +192,60 @@ func readLimitedContent(medium coreio.Medium, path string, maxBytes int64) (stri
 		raw = raw[:maxBytes]
 	}
 	return string(raw), nil
+}
+
+// rejectsWorkspacePath reports whether path must be excluded from a workspace
+// scan because its canonical (symlink-resolved) location escapes the workspace
+// root, or because its canonical location cannot be determined at all.
+//
+// Cerberus F25 (Mantis #983, re-implementation of #579): the prior version
+// fell open on EvalSymlinks errors, defeating the protection it was meant to
+// provide. This implementation fails CLOSED: any error during canonicalisation
+// rejects the path. Empty root or path returns false (delegated to existing
+// guards earlier in the call chain).
+//
+//	if rejectsWorkspacePath(root, path) { return } // skip — symlink escape or unresolvable
+func rejectsWorkspacePath(root, path string) bool {
+	if core.Trim(root) == "" || core.Trim(path) == "" {
+		return false
+	}
+	resolvedRoot, err := canonicalExistingPath(root)
+	if err != nil {
+		return true
+	}
+	resolvedPath, err := canonicalExistingPath(path)
+	if err != nil {
+		return true
+	}
+	relative, err := filepath.Rel(resolvedRoot, resolvedPath)
+	if err != nil {
+		return true
+	}
+	if relative == "." {
+		return false
+	}
+	parentPrefix := core.Concat("..", string(filepath.Separator))
+	if relative == ".." || core.HasPrefix(relative, parentPrefix) {
+		return true
+	}
+	return false
+}
+
+// canonicalExistingPath returns the absolute, symlink-resolved, cleaned path
+// for an existing filesystem entry. Returns an error if the path cannot be
+// made absolute or if symlinks cannot be resolved (broken target, permission
+// denied, race-replaced symlink). Callers MUST treat the error case as
+// "reject this path" — see rejectsWorkspacePath.
+func canonicalExistingPath(path string) (string, error) {
+	absolute, err := filepath.Abs(filepath.Clean(core.Trim(path)))
+	if err != nil {
+		return "", err
+	}
+	resolved, err := filepath.EvalSymlinks(absolute)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(resolved), nil
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {

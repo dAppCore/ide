@@ -135,6 +135,47 @@ func TestWorkspace_Status_Bad(t *testing.T) {
 	}
 }
 
+// TestWorkspace_Status_UglyBrokenSymlink covers Cerberus F25 (Mantis #983):
+// rejectsWorkspacePath must fail CLOSED when EvalSymlinks errors out — for
+// example on a symlink whose target does not exist. The prior implementation
+// (commit 4bacfcc, dangling) returned "not rejected" on resolution errors,
+// allowing the broken-symlink path to fall through to medium.Stat / Open
+// where the file system might still surface it.
+//
+// Acceptance: a broken symlink at .core/leak.txt -> /nonexistent/secret must
+// NOT appear in the scanned core files — neither by path, by preview, nor by
+// inclusion in the count.
+func TestWorkspace_Status_UglyBrokenSymlink(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
+		t.Fatalf("mkdir core: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
+		t.Fatalf("write manifest: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644); err != nil {
+		t.Fatalf("write build: %v", err)
+	}
+	// Symlink target does NOT exist — EvalSymlinks will return an error.
+	brokenTarget := filepath.Join(t.TempDir(), "nonexistent", "secret")
+	leakPath := filepath.Join(root, ".core", "leak.txt")
+	if err := os.Symlink(brokenTarget, leakPath); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+	initGitRepo(t, root)
+
+	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, coreio.Local, testProcessService(t))
+	out, err := subsystem.status(context.Background(), StatusInput{})
+	if err != nil {
+		t.Fatalf("status: %v", err)
+	}
+	for _, file := range out.CoreFiles {
+		if strings.HasSuffix(file.Path, "leak.txt") {
+			t.Fatalf("broken symlink leaked into scan output: %#v", file)
+		}
+	}
+}
+
 func TestWorkspace_Conventions_Good(t *testing.T) {
 	root := t.TempDir()
 	medium := coreio.NewMemoryMedium()
