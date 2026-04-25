@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -287,10 +288,13 @@ func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
 		paths = DefaultPaths("")
 	}
 	for _, path := range paths {
-		if core.Trim(path) == "" || !medium.Exists(path) {
+		if core.Trim(path) == "" {
 			continue
 		}
-		if isUnsafeLocalConfigPath(path) {
+		if err := rejectUnsafeLocalConfigPath(path); err != nil {
+			return IDEConfig{}, err
+		}
+		if !medium.Exists(path) {
 			continue
 		}
 		raw, err := medium.Read(path)
@@ -498,15 +502,38 @@ func homeDir() string {
 	return "."
 }
 
-func isUnsafeLocalConfigPath(path string) bool {
-	path = filepath.Clean(path)
-	return isSymlink(path) || isSymlink(filepath.Dir(path))
-}
-
-func isSymlink(path string) bool {
-	info, err := os.Lstat(path)
+func rejectUnsafeLocalConfigPath(path string) error {
+	absPath, err := filepath.Abs(filepath.Clean(core.Trim(path)))
 	if err != nil {
-		return false
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", path), err)
 	}
-	return info.Mode()&os.ModeSymlink != 0
+	if _, err := os.Lstat(absPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", absPath), err)
+	}
+	resolvedPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", absPath), err)
+	}
+	resolvedPath = filepath.Clean(resolvedPath)
+	if resolvedPath != absPath {
+		return core.E("ide.config.Load", core.Concat("refuse symlinked config path: ", absPath), nil)
+	}
+	for parent := filepath.Dir(absPath); parent != "." && parent != ""; parent = filepath.Dir(parent) {
+		resolvedParent, err := filepath.EvalSymlinks(parent)
+		if err != nil {
+			return core.E("ide.config.Load", core.Concat("refuse config parent path: ", parent), err)
+		}
+		resolvedParent = filepath.Clean(resolvedParent)
+		if resolvedParent != parent {
+			return core.E("ide.config.Load", core.Concat("refuse symlinked config parent path: ", parent), nil)
+		}
+		next := filepath.Dir(parent)
+		if next == parent {
+			break
+		}
+	}
+	return nil
 }
