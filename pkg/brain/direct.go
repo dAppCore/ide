@@ -1,14 +1,10 @@
 package brain
 
 import (
-	"bytes"
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	goio "io"
-	"net/http"
-	"net/url"
-	"time"
+	"context"  // Note: AX-6 - action and MCP call paths propagate cancellation with context.Context; no core context primitive exists.
+	"io"       // Note: AX-6 - io.LimitReader bounds transient HTTP response bodies; core.ReadAll has no limit primitive.
+	"net/http" // Note: AX-6 - OpenBrain direct mode owns a specific HTTP client boundary; RFC permits specific clients.
+	"time"     // Note: AX-6 - brain output contracts expose time.Time timestamps; no core clock primitive exists.
 
 	core "dappco.re/go/core"
 
@@ -91,7 +87,7 @@ func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput
 	if core.Trim(input.ID) == "" {
 		return ForgetOutput{}, core.E("ide.brain.forget", "id is required", nil)
 	}
-	_, err := s.apiCall(ctx, http.MethodDelete, core.Concat("/v1/brain/forget/", url.PathEscape(input.ID)), nil)
+	_, err := s.apiCall(ctx, http.MethodDelete, core.Concat("/v1/brain/forget/", core.URLPathEscape(input.ID)), nil)
 	if err != nil {
 		return ForgetOutput{}, err
 	}
@@ -107,21 +103,18 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 	case limit > maxListLimit:
 		limit = maxListLimit
 	}
-	query := url.Values{}
+	query := []string{}
 	if input.Project != "" {
-		query.Set("project", input.Project)
+		query = append(query, core.Concat("project=", core.URLEncode(input.Project)))
 	}
 	if input.Type != "" {
-		query.Set("type", input.Type)
+		query = append(query, core.Concat("type=", core.URLEncode(input.Type)))
 	}
 	if input.AgentID != "" {
-		query.Set("agent_id", input.AgentID)
+		query = append(query, core.Concat("agent_id=", core.URLEncode(input.AgentID)))
 	}
-	query.Set("limit", core.Sprint(limit))
-	path := "/v1/brain/list"
-	if len(query) > 0 {
-		path = core.Concat(path, "?", query.Encode())
-	}
+	query = append(query, core.Concat("limit=", core.Sprint(limit)))
+	path := core.Concat("/v1/brain/list?", core.Join("&", query...))
 	result, err := s.apiCall(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return ListOutput{}, err
@@ -228,9 +221,9 @@ func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) 
 	if apiKey == "" {
 		return nil, core.E("ide.brain.apiCall", "no API key configured", nil)
 	}
-	var reader goio.Reader
+	var reader io.Reader
 	if body != nil {
-		reader = bytes.NewReader([]byte(core.JSONMarshalString(body)))
+		reader = core.NewReader(core.JSONMarshalString(body))
 	}
 	request, err := http.NewRequestWithContext(ctx, method, core.Concat(s.cfg.Endpoint, path), reader)
 	if err != nil {
@@ -246,10 +239,14 @@ func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) 
 		return nil, core.E("ide.brain.apiCall", "request failed", err)
 	}
 	defer response.Body.Close()
-	raw, err := goio.ReadAll(goio.LimitReader(response.Body, maxResponseBytes+1))
-	if err != nil {
-		return nil, core.E("ide.brain.apiCall", "read response", err)
+	readResult := core.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
+	if !readResult.OK {
+		if readErr, ok := readResult.Value.(error); ok {
+			return nil, core.E("ide.brain.apiCall", "read response", readErr)
+		}
+		return nil, core.E("ide.brain.apiCall", "read response", nil)
 	}
+	raw := readResult.Value.(string)
 	if len(raw) > maxResponseBytes {
 		return nil, core.E("ide.brain.apiCall", "response too large", nil)
 	}
@@ -257,7 +254,7 @@ func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) 
 		return nil, core.E("ide.brain.apiCall", core.Concat("upstream returned ", response.Status), nil)
 	}
 	out := map[string]any{}
-	if result := core.JSONUnmarshal(raw, &out); !result.OK {
+	if result := core.JSONUnmarshalString(raw, &out); !result.OK {
 		if decodeErr, ok := result.Value.(error); ok {
 			return nil, core.E("ide.brain.apiCall", "decode response", decodeErr)
 		}
@@ -285,8 +282,7 @@ func (s *Subsystem) keyFingerprint() string {
 	if key == "" {
 		return ""
 	}
-	sum := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(sum[:])
+	return core.SHA256HexString(key)
 }
 
 func (s *Subsystem) agentID(value string) string {
