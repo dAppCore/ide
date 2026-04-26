@@ -1,0 +1,66 @@
+package config
+
+import (
+	"os"
+	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Dir are canonical filesystem-safety primitives without Core equivalents.
+
+	core "dappco.re/go/core"
+)
+
+func BoolPtr(value bool) *bool {
+	return &value
+}
+
+func BoolValue(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
+}
+
+func homeDir() string {
+	home := core.Env("DIR_HOME")
+	if home != "" {
+		return home
+	}
+	if home = core.Env("HOME"); home != "" {
+		return home
+	}
+	return "."
+}
+
+func rejectUnsafeLocalConfigPath(path string) error {
+	absPath, err := filepath.Abs(filepath.Clean(core.Trim(path)))
+	if err != nil {
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", path), err)
+	}
+	if _, err := os.Lstat(absPath); err != nil {
+		if core.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", absPath), err)
+	}
+	resolvedPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return core.E("ide.config.Load", core.Concat("refuse config path: ", absPath), err)
+	}
+	resolvedPath = filepath.Clean(resolvedPath)
+	if resolvedPath != absPath {
+		return core.E("ide.config.Load", core.Concat("refuse symlinked config path: ", absPath), nil)
+	}
+	for parent := filepath.Dir(absPath); parent != "." && parent != ""; parent = filepath.Dir(parent) {
+		resolvedParent, err := filepath.EvalSymlinks(parent)
+		if err != nil {
+			return core.E("ide.config.Load", core.Concat("refuse config parent path: ", parent), err)
+		}
+		resolvedParent = filepath.Clean(resolvedParent)
+		if resolvedParent != parent {
+			return core.E("ide.config.Load", core.Concat("refuse symlinked config parent path: ", parent), nil)
+		}
+		next := filepath.Dir(parent)
+		if next == parent {
+			break
+		}
+	}
+	return nil
+}

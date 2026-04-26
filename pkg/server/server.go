@@ -3,14 +3,15 @@ package server
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	core "dappco.re/go/core"
+	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"dappco.re/go/process"
 	"dappco.re/go/ws"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	guimcp "dappco.re/go/gui/pkg/mcp"
 
 	aipkg "dappco.re/go/ide/pkg/ai"
 	brainpkg "dappco.re/go/ide/pkg/brain"
@@ -254,7 +255,9 @@ func (s *Server) Run(ctx context.Context) error {
 
 	switch s.transport.Mode {
 	case "http":
-		return s.mcp.ServeHTTP(ctx, s.transport.Addr)
+		return withMCPAuthToken(s.authToken, func() error {
+			return s.mcp.ServeHTTP(ctx, s.transport.Addr)
+		})
 	case "tcp":
 		return s.mcp.ServeTCP(ctx, s.transport.Addr)
 	case "unix":
@@ -262,6 +265,28 @@ func (s *Server) Run(ctx context.Context) error {
 	default:
 		return s.mcp.ServeStdio(ctx)
 	}
+}
+
+func withMCPAuthToken(token string, run func() error) error {
+	if run == nil {
+		return core.E("ide.server.Run", "http runner is nil", nil)
+	}
+	token = core.Trim(token)
+	if token == "" {
+		return run()
+	}
+	previous, hadPrevious := os.LookupEnv("MCP_AUTH_TOKEN")
+	if err := os.Setenv("MCP_AUTH_TOKEN", token); err != nil {
+		return core.E("ide.server.Run", "set MCP_AUTH_TOKEN", err)
+	}
+	defer func() {
+		if hadPrevious {
+			_ = os.Setenv("MCP_AUTH_TOKEN", previous)
+			return
+		}
+		_ = os.Unsetenv("MCP_AUTH_TOKEN")
+	}()
+	return run()
 }
 
 func newRelayHub(token string) *ws.Hub {

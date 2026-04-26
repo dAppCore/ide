@@ -3,14 +3,15 @@ package server
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
 	core "dappco.re/go/core"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
 	gui_chat "dappco.re/go/gui/pkg/chat"
 	guimcp "dappco.re/go/gui/pkg/mcp"
+	coreio "dappco.re/go/io"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 
 	chatpkg "dappco.re/go/ide/pkg/chat"
 	"dappco.re/go/ide/pkg/config"
@@ -148,6 +149,53 @@ func TestServer_ChatExecutor_Ugly(t *testing.T) {
 	executor := chatExecutor(config.Chat{ToolExecutor: " unknown "}, shared, nil)
 	if executor != shared {
 		t.Fatalf("expected unknown mode to fall back to shared executor, got %#v", executor)
+	}
+}
+
+func TestServer_MCPAuthToken_Good(t *testing.T) {
+	t.Setenv("MCP_AUTH_TOKEN", "old-token")
+	err := withMCPAuthToken("new-token", func() error {
+		if got := core.Env("MCP_AUTH_TOKEN"); got != "new-token" {
+			t.Fatalf("expected runtime token, got %q", got)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("withMCPAuthToken: %v", err)
+	}
+	if got := core.Env("MCP_AUTH_TOKEN"); got != "old-token" {
+		t.Fatalf("expected token restore, got %q", got)
+	}
+}
+
+func TestServer_MCPAuthToken_Bad(t *testing.T) {
+	if err := withMCPAuthToken("token", nil); err == nil {
+		t.Fatal("expected nil runner error")
+	}
+}
+
+func TestServer_MCPAuthToken_Ugly(t *testing.T) {
+	previous, hadPrevious := os.LookupEnv("MCP_AUTH_TOKEN")
+	_ = os.Unsetenv("MCP_AUTH_TOKEN")
+	t.Cleanup(func() {
+		if hadPrevious {
+			_ = os.Setenv("MCP_AUTH_TOKEN", previous)
+			return
+		}
+		_ = os.Unsetenv("MCP_AUTH_TOKEN")
+	})
+	expected := errors.New("stop")
+	err := withMCPAuthToken("new-token", func() error {
+		if got := core.Env("MCP_AUTH_TOKEN"); got != "new-token" {
+			t.Fatalf("expected runtime token, got %q", got)
+		}
+		return expected
+	})
+	if !errors.Is(err, expected) {
+		t.Fatalf("expected runner error, got %v", err)
+	}
+	if _, ok := os.LookupEnv("MCP_AUTH_TOKEN"); ok {
+		t.Fatal("expected token to be unset after restore")
 	}
 }
 

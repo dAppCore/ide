@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"os"
 	"slices"
 	"time"
 	"unicode"
@@ -146,7 +147,7 @@ func Record(event Event) error {
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now()
 	}
-	path := core.JoinPath(core.Env("DIR_HOME"), ".core", "ai", "metrics", event.Timestamp.Format("2006-01-02")+".jsonl")
+	path := core.JoinPath(aiHomeDir(), ".core", "ai", "metrics", event.Timestamp.Format("2006-01-02")+".jsonl")
 	if err := coreio.Local.EnsureDir(core.PathDir(path)); err != nil {
 		return core.E("ide.ai.Record", "ensure metrics dir", err)
 	}
@@ -159,4 +160,17 @@ func Record(event Event) error {
 		return core.E("ide.ai.Record", "write metrics file", err)
 	}
 	return nil
+}
+
+func aiHomeDir() string {
+	if home := core.Trim(os.Getenv("DIR_HOME")); home != "" {
+		return home
+	}
+	if home := core.Trim(core.Env("DIR_HOME")); home != "" {
+		return home
+	}
+	if home := core.Trim(os.Getenv("HOME")); home != "" {
+		return home
+	}
+	return core.Trim(core.Env("HOME"))
 }

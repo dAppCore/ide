@@ -12,7 +12,7 @@ import (
 )
 
 func TestRoutes_Resolve_Good(t *testing.T) {
-	c := core.New(core.WithService(storepkg.Register))
+	c := newStoreCore(t)
 	storeService, ok := core.ServiceFor[*storepkg.Service](c, "store")
 	if !ok || storeService == nil {
 		t.Fatal("expected store service")
@@ -96,7 +96,7 @@ func TestRoutes_FilterString_Ugly(t *testing.T) {
 }
 
 func TestRoutes_StoreNamespace_Good(t *testing.T) {
-	c := core.New(core.WithService(storepkg.Register))
+	c := newStoreCore(t)
 	storeService, ok := core.ServiceFor[*storepkg.Service](c, "store")
 	if !ok || storeService == nil {
 		t.Fatal("expected store service")
@@ -113,7 +113,7 @@ func TestRoutes_StoreNamespace_Good(t *testing.T) {
 }
 
 func TestRoutes_StoreNamespace_Bad(t *testing.T) {
-	c := core.New(core.WithService(storepkg.Register))
+	c := newStoreCore(t)
 	subsystem := New(config.Navigate{}, c)
 	data, schema, err := subsystem.resolveStoreNamespace(context.Background(), Filter{})
 	if err != nil {
@@ -206,6 +206,12 @@ func TestRoutes_RegisterRoutes_Ugly(t *testing.T) {
 	if !out.Available || out.Data == nil {
 		t.Fatalf("expected models route to remain available when store is disabled, got %#v", out)
 	}
+}
+
+func newStoreCore(t *testing.T) *core.Core {
+	t.Helper()
+	t.Setenv("DIR_HOME", t.TempDir())
+	return core.New(core.WithService(storepkg.Register))
 }
 
 func TestRoutes_ResolveStore_Ugly(t *testing.T) {

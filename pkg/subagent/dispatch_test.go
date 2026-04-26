@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	coremcp "dappco.re/go/mcp/pkg/mcp"
+	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
+
 	"dappco.re/go/ide/pkg/config"
 )
 
@@ -51,6 +54,33 @@ func TestDispatch_WithDispatchEnv_Ugly(t *testing.T) {
 	}
 	if got := os.Getenv("CORE_IDE_RELAY_TOKEN"); got != "" {
 		t.Fatalf("expected relay token to be removed, got %q", got)
+	}
+}
+
+func TestDispatch_DefaultAgenticDispatchNoRelayEnv_Good(t *testing.T) {
+	t.Setenv("CORE_IDE_RELAY_URL", "")
+	t.Setenv("CORE_IDE_RELAY_TOKEN", "")
+	service, err := coremcp.New(coremcp.Options{Unrestricted: true})
+	if err != nil {
+		t.Fatalf("mcp service: %v", err)
+	}
+	mcpagentic.NewPrep().RegisterTools(service)
+	var handler coremcp.RESTHandler
+	for _, tool := range service.Tools() {
+		if tool.Name == "agentic_dispatch" {
+			handler = tool.RESTHandler
+			break
+		}
+	}
+	if handler == nil {
+		t.Fatal("expected default agentic_dispatch tool")
+	}
+	_, _ = handler(context.Background(), []byte(`{}`))
+	if got := os.Getenv("CORE_IDE_RELAY_URL"); got != "" {
+		t.Fatalf("expected default dispatch to leave relay URL unset, got %q", got)
+	}
+	if got := os.Getenv("CORE_IDE_RELAY_TOKEN"); got != "" {
+		t.Fatalf("expected default dispatch to leave relay token unset, got %q", got)
 	}
 }
 

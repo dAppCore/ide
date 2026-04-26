@@ -5,7 +5,7 @@ import (
 	goio "io"
 	"io/fs"
 	"os"
-	"path/filepath" // Note: AX-6 — filepath.Abs/Clean/EvalSymlinks are filesystem-syscall structural primitives required for symlink-canonicalisation; no core wrapper.
+	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Separator are canonical filesystem-safety primitives without Core equivalents.
 	"slices"
 
 	core "dappco.re/go/core"
