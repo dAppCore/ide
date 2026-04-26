@@ -244,7 +244,7 @@ func TestServer_Run_Bad(t *testing.T) {
 		t.Fatalf("compose server: %v", err)
 	}
 
-	if err := srv.Run(context.Background()); err == nil || !core.Contains(err.Error(), "http transport requires a bearer token") {
+	if err := srv.Run(context.Background()); err == nil || !core.Contains(err.Error(), "bearer token required for HTTP mode") {
 		t.Fatalf("expected missing token error, got %v", err)
 	}
 }

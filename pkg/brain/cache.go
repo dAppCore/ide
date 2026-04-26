@@ -47,10 +47,10 @@ func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error 
 	if c == nil || c.store == nil || !c.enabled {
 		return nil
 	}
-	if c.ttl > 0 {
-		return c.store.SetWithTTL(c.namespace, key, core.JSONMarshalString(output), c.ttl)
+	if c.ttl <= 0 {
+		return nil
 	}
-	return c.store.Set(c.namespace, key, core.JSONMarshalString(output))
+	return c.store.SetWithTTL(c.namespace, key, core.JSONMarshalString(output), c.ttl)
 }
 
 func (c *Cache) Clear(ctx context.Context) error {

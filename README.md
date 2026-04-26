@@ -1,71 +1,86 @@
-# Wails3 Angular Template
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
 
-- Angular 20
-- Wails3
+# core/ide
 
-![](wails3-angular-template.jpg)
+## What Does `core-ide` Actually Do
 
-Includes all Angular CLI guidelines, Web Awesome, and Font Awesome.
+`core-ide` exposes the Core IDE runtime as MCP tools, named Core actions, and a local chat shell.
+It wires workspace inspection, OpenBrain memory, subagent relay, navigation, and package marketplace helpers into one process.
+It can run as stdio MCP for editor clients, HTTP MCP for local agents, or a Wails desktop shell.
+The GUI mode mounts chat and MCP against the same in-process executor so tool results match non-GUI mode.
+HTTP mode is local-only and bearer-token gated by default.
 
-## Getting Started
+## Connect It To Claude Code
 
-1. Navigate to your project directory in the terminal.
+```json
+{
+  "mcpServers": {
+    "core-ide": {
+      "command": "core-ide",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
 
-make a new project using Wails3:
+## Running Modes
 
-   ```
-   wails3 init -n MyWailsApp -t https://github.com/Snider/wails-angular-template@v0.0.1
-   cd MyWailsApp
-   ```
+| Mode | Command | Use case |
+| --- | --- | --- |
+| stdio MCP | `core-ide --mcp` | Claude Code, Cursor, Continue |
+| HTTP MCP | `core-ide --no-gui --http 127.0.0.1:9880 --token $TOK` | JetBrains, remote agents |
+| GUI shell | `core-ide` (default) | local desktop with chat |
 
-2. To run your application in development mode, use the following command:
+Wildcard binds such as `:9880` and `0.0.0.0:9880` are rejected; use an explicit loopback address.
 
-   ```
-   wails3 dev
-   ```
+## Tools You Get
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+The 19-tool MCP/action parity check is enforced in [pkg/server/integration_action_parity_test.go](pkg/server/integration_action_parity_test.go).
 
-3. To build your application for production, use:
+- `brain_recall`
+- `brain_remember`
+- `brain_forget`
+- `brain_list`
+- `brain_context`
+- `workspace_status`
+- `workspace_conventions`
+- `workspace_impact`
+- `workspace_scan`
+- `subagent_guide`
+- `subagent_ask`
+- `subagent_progress`
+- `subagent_watch`
+- `subagent_answer`
+- `subagent_dispatch_guided`
+- `core_navigate`
+- `pkg_search`
+- `pkg_info`
+- `pkg_install`
 
-   ```
-   wails3 build
-   ```
+## What's Hardened
 
-   This will create a production-ready executable in the `build` directory.
+- HTTP mode refuses to start without a bearer token.
+- REST and MCP-over-HTTP requests require `Authorization: Bearer <token>`; missing or wrong tokens return `401`.
+- HTTP and relay listeners must bind to `localhost` or a loopback IP; wildcard and externally routable addresses are rejected.
+- HTTP read-header, read, write, and idle timeouts are bounded.
+- HTTP headers are capped at 1 MiB and request bodies at 10 MiB.
+- The relay listener is only enabled when a relay path, loopback bind, and bearer token are configured.
 
-## Exploring Wails3 Features
+## Live OpenBrain Smoke
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+The live OpenBrain test is build-tagged and skipped by default:
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+```sh
+CORE_BRAIN_INTEGRATION=1 CORE_BRAIN_KEY=$CORE_BRAIN_KEY \
+  go test -tags integration -run TestLive ./pkg/brain/...
+```
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+## End-to-End Smoke
 
-   ```
-   go run .
-   ```
+After building changes, run:
 
-   Note: Some examples may be under development during the alpha phase.
+```sh
+tests/smoke/run-end-to-end.sh
+```
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
-
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
-
-## Project Structure
-
-Take a moment to familiarize yourself with your project structure:
-
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
-
-## Next Steps
-
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
-
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+The script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.

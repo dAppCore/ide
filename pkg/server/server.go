@@ -30,6 +30,7 @@ type Server struct {
 	hub       *ws.Hub
 	transport Transport
 	relay     RelayTransport
+	gui       *GUIShell
 	authToken string
 }
 
@@ -39,6 +40,7 @@ type runtimeParts struct {
 	hub       *ws.Hub
 	transport Transport
 	relay     RelayTransport
+	gui       *GUIShell
 	authToken string
 }
 
@@ -54,6 +56,7 @@ func NewServer(options Options) (*Server, error) {
 		hub:       parts.hub,
 		transport: parts.transport,
 		relay:     parts.relay,
+		gui:       parts.gui,
 		authToken: parts.authToken,
 	}, nil
 }
@@ -84,6 +87,10 @@ func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error
 	}
 	hub := newRelayHub(authToken)
 	guiExecutor := chatpkg.NewExecutor(nil, nil)
+	var guiShell *GUIShell
+	if enableGUI {
+		guiShell = NewGUIShell()
+	}
 
 	services := []core.CoreOption{
 		core.WithName("ws", func(_ *core.Core) core.Result {
@@ -117,6 +124,9 @@ func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error
 	if enableGUI {
 		services = append(services, core.WithName("gui_mcp", func(c *core.Core) core.Result {
 			return core.Result{Value: guimcp.New(c), OK: true}
+		}))
+		services = append(services, core.WithName("gui_shell", func(_ *core.Core) core.Result {
+			return core.Result{Value: guiShell, OK: true}
 		}))
 	}
 	if mode.conclave {
@@ -198,12 +208,16 @@ func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error
 	if err != nil {
 		return nil, err
 	}
+	if enableGUI && (transport.Mode == "" || transport.Mode == "stdio") && !options.PreferConfiguredTransport {
+		transport = Transport{Mode: "gui"}
+	}
 	return &runtimeParts{
 		core:      c,
 		mcp:       mcpService,
 		hub:       hub,
 		transport: transport,
 		relay:     SelectRelayTransport(cfg, authToken, hub.Handler()),
+		gui:       guiShell,
 		authToken: authToken,
 	}, nil
 }
@@ -217,7 +231,7 @@ func chatExecutor(cfg config.Chat, shared *chatpkg.Executor, mcpService *coremcp
 
 func (s *Server) Run(ctx context.Context) error {
 	if s.transport.Mode == "http" && core.Trim(s.authToken) == "" {
-		return core.E("ide.server.Run", "http transport requires a bearer token", nil)
+		return core.E("ide.server.Run", "bearer token required for HTTP mode", nil)
 	}
 	runtimeCtx, cancelRuntime := context.WithCancel(ctx)
 	defer cancelRuntime()
@@ -256,8 +270,13 @@ func (s *Server) Run(ctx context.Context) error {
 	switch s.transport.Mode {
 	case "http":
 		return withMCPAuthToken(s.authToken, func() error {
-			return s.mcp.ServeHTTP(ctx, s.transport.Addr)
+			return serveHardenedHTTP(ctx, s.mcp, s.transport.Addr, s.authToken)
 		})
+	case "gui":
+		if s.gui == nil {
+			return core.E("ide.server.Run", "gui shell is not registered", nil)
+		}
+		return s.gui.Run(ctx, s.core)
 	case "tcp":
 		return s.mcp.ServeTCP(ctx, s.transport.Addr)
 	case "unix":

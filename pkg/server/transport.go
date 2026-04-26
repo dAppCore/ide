@@ -1,12 +1,27 @@
 package server
 
 import (
+	"context"
 	"net"
 	"net/http"
+	"time"
 
+	api "dappco.re/go/api"
 	core "dappco.re/go/core"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
+	"github.com/gin-gonic/gin"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/ide/pkg/config"
+)
+
+const (
+	httpReadHeaderTimeout = 5 * time.Second
+	httpReadTimeout       = 10 * time.Second
+	httpWriteTimeout      = 10 * time.Second
+	httpIdleTimeout       = 60 * time.Second
+	httpMaxHeaderBytes    = 1 << 20
+	httpMaxBodyBytes      = 10 << 20
 )
 
 type Transport struct {
@@ -120,7 +135,7 @@ func validateTransportAddress(mode, addr string) error {
 		return core.E("ide.server.SelectTransport", core.Concat("invalid ", mode, " address: ", addr), err)
 	}
 	if !isLoopbackHost(host) {
-		return core.E("ide.server.SelectTransport", core.Concat(mode, " transport must bind to localhost or loopback: ", addr), nil)
+		return core.E("ide.server.SelectTransport", core.Concat("loopback-only ", mode, " transport must bind to localhost or loopback: ", addr), nil)
 	}
 	switch mode {
 	case "http", "tcp":
@@ -143,7 +158,7 @@ func validateRelayTransportAddress(addr string) error {
 		return core.E("ide.server.SelectRelayTransport", core.Concat("invalid relay address: ", addr), err)
 	}
 	if !isLoopbackHost(host) {
-		return core.E("ide.server.SelectRelayTransport", "relay transport must bind to localhost or loopback", nil)
+		return core.E("ide.server.SelectRelayTransport", "loopback-only relay transport must bind to localhost or loopback", nil)
 	}
 	return nil
 }
@@ -156,4 +171,80 @@ func isLoopbackHost(host string) bool {
 	}
 	ip := net.ParseIP(host)
 	return ip != nil && ip.IsLoopback()
+}
+
+func serveHardenedHTTP(ctx context.Context, svc *coremcp.Service, addr string, token string) error {
+	if svc == nil {
+		return core.E("ide.server.ServeHTTP", "mcp service is nil", nil)
+	}
+	token = core.Trim(token)
+	if token == "" {
+		return core.E("ide.server.ServeHTTP", "bearer token required for HTTP mode", nil)
+	}
+	if addr == "" {
+		addr = "127.0.0.1:9880"
+	}
+	if err := validateTransportAddress("http", addr); err != nil {
+		return err
+	}
+
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return core.E("ide.server.ServeHTTP", core.Concat("listen ", addr), err)
+	}
+	defer listener.Close()
+
+	httpServer := &http.Server{
+		Addr:              addr,
+		Handler:           hardenedHTTPHandler(svc, token),
+		ReadHeaderTimeout: httpReadHeaderTimeout,
+		ReadTimeout:       httpReadTimeout,
+		WriteTimeout:      httpWriteTimeout,
+		IdleTimeout:       httpIdleTimeout,
+		MaxHeaderBytes:    httpMaxHeaderBytes,
+	}
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownCtx)
+	}()
+	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return core.E("ide.server.ServeHTTP", "serve", err)
+	}
+	return nil
+}
+
+func hardenedHTTPHandler(svc *coremcp.Service, token string) http.Handler {
+	streamHandler := sdkmcp.NewStreamableHTTPHandler(
+		func(_ *http.Request) *sdkmcp.Server {
+			return svc.Server()
+		},
+		&sdkmcp.StreamableHTTPOptions{SessionTimeout: 30 * time.Minute},
+	)
+
+	toolBridge := api.NewToolBridge("/v1/tools")
+	coremcp.BridgeToAPI(svc, toolBridge)
+	toolEngine := gin.New()
+	toolBridge.RegisterRoutes(toolEngine.Group("/v1/tools"))
+
+	mux := http.NewServeMux()
+	mux.Handle("/mcp", bearerAuth(token, streamHandler))
+	mux.Handle("/v1/tools", bearerAuth(token, toolEngine))
+	mux.Handle("/v1/tools/", bearerAuth(token, toolEngine))
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+	return http.MaxBytesHandler(mux, httpMaxBodyBytes)
+}
+
+func bearerAuth(token string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != core.Concat("Bearer ", token) {
+			http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

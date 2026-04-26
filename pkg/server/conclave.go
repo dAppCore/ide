@@ -6,9 +6,9 @@ import (
 	"unsafe"
 
 	core "dappco.re/go/core"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"dappco.re/go/process"
 	"dappco.re/go/ws"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -64,7 +64,28 @@ func newMCPService(c *core.Core) (*coremcp.Service, map[string]bool, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	filterMCPToolsToGroups(svc, groups)
 	return svc, groups, nil
+}
+
+func filterMCPToolsToGroups(svc *coremcp.Service, groups map[string]bool) {
+	if svc == nil || len(groups) == 0 {
+		return
+	}
+	records := svc.Tools()
+	kept := make([]coremcp.ToolRecord, 0, len(records))
+	removed := make([]string, 0)
+	for _, record := range records {
+		if groups[record.Group] || (record.Group == "pkg" && groups["marketplace"]) {
+			kept = append(kept, record)
+			continue
+		}
+		removed = append(removed, record.Name)
+	}
+	if len(removed) > 0 {
+		svc.Server().RemoveTools(removed...)
+	}
+	setToolRecords(svc, kept)
 }
 
 func wrapConclaveTools(svc *coremcp.Service, groups map[string]bool, spawn func() (*runtimeParts, error)) error {

@@ -11,6 +11,7 @@ require (
 	dappco.re/go/scm v0.8.0-alpha.1
 	dappco.re/go/store v0.8.0-alpha.1
 	dappco.re/go/gui v0.8.0-alpha.1
+	github.com/gin-gonic/gin v1.12.0
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	gopkg.in/yaml.v3 v3.0.1
@@ -67,7 +68,6 @@ require (
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/gin-contrib/static v1.1.5 // indirect
 	github.com/gin-contrib/timeout v1.1.0 // indirect
-	github.com/gin-gonic/gin v1.12.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.7.0 // indirect
 	github.com/go-git/go-git/v5 v5.16.4 // indirect
