@@ -8,6 +8,7 @@ import (
 
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
+	"dappco.re/go/ws"
 
 	"dappco.re/go/ide/pkg/config"
 )
@@ -104,6 +105,48 @@ func TestDispatch_BindAgenticWorkspace_Good(t *testing.T) {
 }
 
 func TestDispatch_DispatchViaAgentic_Ugly(t *testing.T) {
-	// Missing seam: dispatchViaAgentic requires an injectable agentic MCP dispatcher to unit test safely.
-	t.Skip("dispatchViaAgentic is exercised indirectly by integration coverage only")
+	previous := agenticDispatchCall
+	var gotRelayToken string
+	agenticDispatchCall = func(_ context.Context, _ DispatchGuidedInput, agent, _ string, _, _, relayToken, prompt string) (mcpagentic.DispatchOutput, error) {
+		gotRelayToken = relayToken
+		if strings.Contains(prompt, "prompt-secret") || strings.Contains(prompt, "relay-secret") {
+			t.Fatalf("expected secret-free prompt, got %q", prompt)
+		}
+		return mcpagentic.DispatchOutput{Success: true, Agent: agent, WorkspaceDir: "/tmp/agentic-ws"}, nil
+	}
+	t.Cleanup(func() { agenticDispatchCall = previous })
+
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "relay-secret")
+	out, err := subsystem.DispatchGuided(context.Background(), DispatchGuidedInput{Repo: "core/ide", Task: "investigate", RelayToken: "prompt-secret"})
+	if err != nil {
+		t.Fatalf("dispatch guided: %v", err)
+	}
+	if !out.Success || !out.Delivered || gotRelayToken != "relay-secret" {
+		t.Fatalf("expected configured relay token to drive dispatch, out=%#v token=%q", out, gotRelayToken)
+	}
+	if got := subsystem.agenticWorkspace(out.WorkspaceID).Name; got != "agentic-ws" {
+		t.Fatalf("expected agentic workspace binding, got %q", got)
+	}
+}
+
+func TestDispatch_Guided_UglyCallerTokenDoesNotEnableRelay(t *testing.T) {
+	previous := agenticDispatchCall
+	called := false
+	agenticDispatchCall = func(context.Context, DispatchGuidedInput, string, string, string, string, string, string) (mcpagentic.DispatchOutput, error) {
+		called = true
+		return mcpagentic.DispatchOutput{Success: true}, nil
+	}
+	t.Cleanup(func() { agenticDispatchCall = previous })
+
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	out, err := subsystem.DispatchGuided(context.Background(), DispatchGuidedInput{Repo: "core/ide", Task: "investigate", RelayToken: "caller-token"})
+	if err != nil {
+		t.Fatalf("dispatch guided: %v", err)
+	}
+	if out.Delivered || out.Reason != "no relay" {
+		t.Fatalf("expected caller token alone to leave relay disabled, got %#v", out)
+	}
+	if called {
+		t.Fatal("expected configured-token gate to prevent agentic dispatch")
+	}
 }

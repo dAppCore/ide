@@ -18,6 +18,8 @@ import (
 
 var relayEnvMu sync.Mutex
 
+var agenticDispatchCall = dispatchViaAgentic
+
 func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolRequest, input DispatchGuidedInput) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
 	out, err := s.DispatchGuided(ctx, input)
 	return nil, out, err
@@ -61,20 +63,17 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	if err != nil {
 		return DispatchGuidedOutput{Success: false, Reason: err.Error()}, err
 	}
-	relayToken := core.Trim(input.RelayToken)
-	if relayToken == "" {
-		relayToken = s.relayToken
-	}
 	prompt := core.Sprintf("Relay URL: %s\nWorkspace ID: %s\nDefault Template: %s\nDefault Agent: %s\n\nBefore each prompt cycle, read channel %s.\nWhen stuck, call subagent_ask and wait for an answer (up to %d seconds).\nEmit progress updates when non-trivial milestones complete.\n\nTask: %s", relayURL, workspaceID, template, agent, guideChannel(workspaceID), int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), core.Trim(input.Task))
-	if s.hub == nil || core.Trim(relayURL) == "" || core.Trim(relayToken) == "" {
+	if !s.relayAvailableForURL(relayURL) {
 		return DispatchGuidedOutput{Success: true, Delivered: false, WorkspaceID: workspaceID, Agent: agent, Prompt: prompt, Reason: "no relay"}, nil
 	}
+	relayToken := core.Trim(s.relayToken)
 	status := StatusMessage{Type: "status", State: "running", CreatedAt: time.Now().UTC()}
 	runningChannel := statusChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: status.Type, Channel: runningChannel, Message: status.State, CreatedAt: status.CreatedAt})
 	s.publish(runningChannel, status)
 	s.publish(guideChannel(workspaceID), GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: prompt, CreatedAt: time.Now().UTC()})
-	dispatchResult, err := dispatchViaAgentic(ctx, input, agent, template, workspaceID, relayURL, relayToken, prompt)
+	dispatchResult, err := agenticDispatchCall(ctx, input, agent, template, workspaceID, relayURL, relayToken, prompt)
 	if err != nil {
 		failed := StatusMessage{Type: "status", State: "failed", Detail: err.Error(), CreatedAt: time.Now().UTC()}
 		s.appendEvent(workspaceID, Event{Type: failed.Type, Channel: runningChannel, Message: failed.State, CreatedAt: failed.CreatedAt})
