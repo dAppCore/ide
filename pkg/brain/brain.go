@@ -2,7 +2,6 @@ package brain
 
 import (
 	"net/http"
-	"time"
 
 	core "dappco.re/go/core"
 	coreio "dappco.re/go/io"
@@ -15,25 +14,29 @@ import (
 )
 
 type Subsystem struct {
-	cfg       config.Brain
-	medium    coreio.Medium
-	client    *http.Client
-	cache     *Cache
-	workspace *workspace.Subsystem
-	ai        *aipkg.Service
+	cfg        config.Brain
+	medium     coreio.Medium
+	client     *http.Client
+	httpClient *openBrainHTTPClient
+	cache      *Cache
+	workspace  *workspace.Subsystem
+	ai         *aipkg.Service
 }
 
 func New(cfg config.Brain, medium coreio.Medium, storeInstance *storelib.Store, workspaceSubsystem *workspace.Subsystem, aiService *aipkg.Service) *Subsystem {
+	cfg = cfg.WithDefaults()
 	if medium == nil {
 		medium = coreio.Local
 	}
+	client := &http.Client{Timeout: cfg.HTTP.Timeout}
 	return &Subsystem{
-		cfg:       cfg,
-		medium:    medium,
-		client:    &http.Client{Timeout: 30 * time.Second},
-		cache:     NewCache(storeInstance, cfg.Cache.Namespace, cfg.Cache.TTL, config.BoolValue(cfg.Cache.Enabled, true)),
-		workspace: workspaceSubsystem,
-		ai:        aiService,
+		cfg:        cfg,
+		medium:     medium,
+		client:     client,
+		httpClient: newOpenBrainHTTPClient(cfg, client),
+		cache:      NewCache(storeInstance, cfg.Cache.Namespace, cfg.Cache.TTL, config.BoolValue(cfg.Cache.Enabled, true)),
+		workspace:  workspaceSubsystem,
+		ai:         aiService,
 	}
 }
 

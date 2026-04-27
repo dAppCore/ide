@@ -47,10 +47,11 @@ func (cfg Transport) WithDefaults() Transport {
 }
 
 type Brain struct {
-	Endpoint string `yaml:"endpoint"`
-	Key      string `yaml:"key"`
-	AgentID  string `yaml:"agent_id"`
-	Cache    Cache  `yaml:"cache"`
+	Endpoint string    `yaml:"endpoint"`
+	Key      string    `yaml:"key"`
+	AgentID  string    `yaml:"agent_id"`
+	Cache    Cache     `yaml:"cache"`
+	HTTP     BrainHTTP `yaml:"http"`
 }
 
 func (cfg Brain) WithDefaults() Brain {
@@ -61,6 +62,7 @@ func (cfg Brain) WithDefaults() Brain {
 		cfg.AgentID = "cladius"
 	}
 	cfg.Cache = cfg.Cache.WithDefaults()
+	cfg.HTTP = cfg.HTTP.WithDefaults()
 	return cfg
 }
 
@@ -79,6 +81,71 @@ func (cfg Cache) WithDefaults() Cache {
 	}
 	if cfg.Namespace == "" {
 		cfg.Namespace = "ide.brain.cache"
+	}
+	return cfg
+}
+
+type BrainHTTP struct {
+	Timeout        time.Duration       `yaml:"timeout"`
+	Retry          BrainRetry          `yaml:"retry"`
+	CircuitBreaker BrainCircuitBreaker `yaml:"circuit_breaker"`
+}
+
+func (cfg BrainHTTP) WithDefaults() BrainHTTP {
+	if cfg.Timeout == 0 {
+		cfg.Timeout = 30 * time.Second
+	}
+	cfg.Retry = cfg.Retry.WithDefaults()
+	cfg.CircuitBreaker = cfg.CircuitBreaker.WithDefaults()
+	return cfg
+}
+
+type BrainRetry struct {
+	Attempts   int           `yaml:"attempts"`
+	Backoff    time.Duration `yaml:"backoff"`
+	MaxBackoff time.Duration `yaml:"max_backoff"`
+}
+
+func (cfg BrainRetry) WithDefaults() BrainRetry {
+	if cfg.Attempts == 0 {
+		cfg.Attempts = 3
+	}
+	if cfg.Attempts < 1 {
+		cfg.Attempts = 1
+	}
+	if cfg.Attempts > 5 {
+		cfg.Attempts = 5
+	}
+	if cfg.Backoff == 0 {
+		cfg.Backoff = 100 * time.Millisecond
+	}
+	if cfg.MaxBackoff == 0 {
+		cfg.MaxBackoff = time.Second
+	}
+	if cfg.MaxBackoff < cfg.Backoff {
+		cfg.MaxBackoff = cfg.Backoff
+	}
+	return cfg
+}
+
+type BrainCircuitBreaker struct {
+	Enabled          *bool         `yaml:"enabled"`
+	FailureThreshold int           `yaml:"failure_threshold"`
+	Cooldown         time.Duration `yaml:"cooldown"`
+}
+
+func (cfg BrainCircuitBreaker) WithDefaults() BrainCircuitBreaker {
+	if cfg.Enabled == nil {
+		cfg.Enabled = BoolPtr(true)
+	}
+	if cfg.FailureThreshold == 0 {
+		cfg.FailureThreshold = 3
+	}
+	if cfg.FailureThreshold < 1 {
+		cfg.FailureThreshold = 1
+	}
+	if cfg.Cooldown == 0 {
+		cfg.Cooldown = 30 * time.Second
 	}
 	return cfg
 }

@@ -1,11 +1,9 @@
 package brain
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	goio "io"
 	"net/http"
 	"net/url"
 	"time"
@@ -226,42 +224,31 @@ func (s *Subsystem) semanticConventions(project string, memories []Memory, conve
 func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) (map[string]any, error) {
 	apiKey := s.apiKey()
 	if apiKey == "" {
-		return nil, core.E("ide.brain.apiCall", "no API key configured", nil)
+		return nil, wrapOpenBrainError("ide.brain.apiCall", "no API key configured", &OpenBrainError{
+			Kind:   OpenBrainErrorMissingAPIKey,
+			Method: method,
+			Path:   path,
+		})
 	}
-	var reader goio.Reader
+	var rawBody []byte
 	if body != nil {
-		reader = bytes.NewReader([]byte(core.JSONMarshalString(body)))
-	}
-	request, err := http.NewRequestWithContext(ctx, method, core.Concat(s.cfg.Endpoint, path), reader)
-	if err != nil {
-		return nil, core.E("ide.brain.apiCall", "build request", err)
-	}
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", core.Concat("Bearer ", apiKey))
-	if body != nil {
-		request.Header.Set("Content-Type", "application/json")
-	}
-	response, err := s.client.Do(request)
-	if err != nil {
-		return nil, core.E("ide.brain.apiCall", "request failed", err)
-	}
-	defer response.Body.Close()
-	raw, err := goio.ReadAll(goio.LimitReader(response.Body, maxResponseBytes+1))
-	if err != nil {
-		return nil, core.E("ide.brain.apiCall", "read response", err)
-	}
-	if len(raw) > maxResponseBytes {
-		return nil, core.E("ide.brain.apiCall", "response too large", nil)
-	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return nil, core.E("ide.brain.apiCall", core.Concat("upstream returned ", response.Status), nil)
-	}
-	out := map[string]any{}
-	if result := core.JSONUnmarshal(raw, &out); !result.OK {
-		if decodeErr, ok := result.Value.(error); ok {
-			return nil, core.E("ide.brain.apiCall", "decode response", decodeErr)
+		result := core.JSONMarshal(body)
+		if !result.OK {
+			if err, ok := result.Value.(error); ok {
+				return nil, core.E("ide.brain.apiCall", "encode request", err)
+			}
+			return nil, core.E("ide.brain.apiCall", "encode request", nil)
 		}
-		return nil, core.E("ide.brain.apiCall", "decode response", nil)
+		rawBody, _ = result.Value.([]byte)
+	}
+	out, err := s.httpClient.DoJSON(ctx, openBrainHTTPRequest{
+		Method: method,
+		Path:   path,
+		APIKey: apiKey,
+		Body:   rawBody,
+	})
+	if err != nil {
+		return nil, core.E("ide.brain.apiCall", "OpenBrain request failed", err)
 	}
 	return out, nil
 }

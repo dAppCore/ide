@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	coreio "dappco.re/go/io"
 )
@@ -45,7 +46,7 @@ func TestConfig_LoadWithOptions_Good(t *testing.T) {
 	medium := coreio.NewMemoryMedium()
 	homePath := "/home/.core/ide.yaml"
 	projectPath := "/workspace/.core/ide.yaml"
-	if err := medium.Write(homePath, "ide:\n  brain:\n    endpoint: https://home.example\n  workspace:\n    root: /home\n"); err != nil {
+	if err := medium.Write(homePath, "ide:\n  brain:\n    endpoint: https://home.example\n    http:\n      retry:\n        attempts: 4\n      circuit_breaker:\n        failure_threshold: 2\n  workspace:\n    root: /home\n"); err != nil {
 		t.Fatalf("write home config: %v", err)
 	}
 	if err := medium.Write(projectPath, "ide:\n  brain:\n    agent_id: project-agent\n  workspace:\n    scan_depth: 7\n"); err != nil {
@@ -64,6 +65,9 @@ func TestConfig_LoadWithOptions_Good(t *testing.T) {
 	}
 	if cfg.Ide.Brain.AgentID != "project-agent" {
 		t.Fatalf("expected project override to win, got %q", cfg.Ide.Brain.AgentID)
+	}
+	if cfg.Ide.Brain.HTTP.Retry.Attempts != 4 || cfg.Ide.Brain.HTTP.CircuitBreaker.FailureThreshold != 2 {
+		t.Fatalf("expected brain HTTP policy to load, got %#v", cfg.Ide.Brain.HTTP)
 	}
 	if cfg.Ide.Transport.Mode != "http" || cfg.Ide.Transport.HTTPAddr != "127.0.0.1:9777" || cfg.Ide.Transport.Token != "env-token" {
 		t.Fatalf("expected env transport overrides, got %#v", cfg.Ide.Transport)
@@ -249,7 +253,14 @@ func TestConfig_Merge_Ugly(t *testing.T) {
 	override := IDEConfig{
 		Ide: Ide{
 			Transport: Transport{Mode: "tcp", TCPAddr: "127.0.0.1:9200"},
-			Brain:     Brain{Endpoint: "https://brain.example", AgentID: "override"},
+			Brain: Brain{
+				Endpoint: "https://brain.example",
+				AgentID:  "override",
+				HTTP: BrainHTTP{
+					Timeout: 2 * time.Second,
+					Retry:   BrainRetry{Attempts: 2},
+				},
+			},
 			Workspace: Workspace{Root: "/workspace", ScanDepth: 7},
 			Chat:      Chat{Enabled: BoolPtr(false), APIURL: "http://localhost:3000"},
 		},
@@ -260,6 +271,9 @@ func TestConfig_Merge_Ugly(t *testing.T) {
 	}
 	if merged.Ide.Brain.Endpoint != "https://brain.example" || merged.Ide.Brain.AgentID != "override" {
 		t.Fatalf("expected brain override, got %#v", merged.Ide.Brain)
+	}
+	if merged.Ide.Brain.HTTP.Timeout != 2*time.Second || merged.Ide.Brain.HTTP.Retry.Attempts != 2 {
+		t.Fatalf("expected brain HTTP override, got %#v", merged.Ide.Brain.HTTP)
 	}
 	if merged.Ide.Workspace.Root != "/workspace" || merged.Ide.Workspace.ScanDepth != 7 {
 		t.Fatalf("expected workspace override, got %#v", merged.Ide.Workspace)

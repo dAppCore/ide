@@ -83,4 +83,4 @@ After building changes, run:
 tests/smoke/run-end-to-end.sh
 ```
 
-The script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.
+The script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, calls `workspace_status` through the HTTP tool bridge, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.

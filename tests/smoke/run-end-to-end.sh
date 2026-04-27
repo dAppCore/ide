@@ -9,6 +9,10 @@ HTTP_ADDR="127.0.0.1:19880"
 TOKEN="smoke-$(date +%s)-$$"
 HTTP_PID=""
 
+export GOWORK="${GOWORK:-off}"
+export GOPATH="${CORE_IDE_GOPATH:-/tmp/core-ide-gopath}"
+export GOCACHE="${CORE_IDE_GOCACHE:-/tmp/core-ide-go-build}"
+
 cleanup() {
   if [[ -n "${HTTP_PID}" ]] && kill -0 "${HTTP_PID}" 2>/dev/null; then
     kill "${HTTP_PID}" 2>/dev/null || true
@@ -118,6 +122,23 @@ with urllib.request.urlopen(request, timeout=5) as response:
     if response.status != 200 or not envelope.get("success") or len(tools) != 19:
         raise RuntimeError(f"expected 19 HTTP tools, got status={response.status} body={body}")
 print("HTTP MCP bearer: 19 tools")
+
+payload = json.dumps({"root": "."}).encode("utf-8")
+request = urllib.request.Request(
+    base + "/v1/tools/workspace_status",
+    data=payload,
+    headers={
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+    },
+)
+with urllib.request.urlopen(request, timeout=5) as response:
+    body = response.read().decode("utf-8")
+    envelope = json.loads(body)
+    data = envelope.get("data", {})
+    if response.status != 200 or not envelope.get("success") or not data.get("root"):
+        raise RuntimeError(f"expected workspace_status success, got status={response.status} body={body}")
+print("HTTP tool bridge workspace_status: ok")
 
 try:
     urllib.request.urlopen(base + "/v1/tools", timeout=5)

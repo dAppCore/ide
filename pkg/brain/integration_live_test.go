@@ -55,6 +55,35 @@ func TestLive_BrainRecall_Good_RealEndpoint(t *testing.T) {
 	}
 }
 
+func TestLive_BrainRecall_Good_ActionFlow(t *testing.T) {
+	brainConfig, ok, reason := liveBrainConfigFromEnv()
+	if !ok {
+		t.Skip(reason)
+	}
+	storeInstance, err := storelib.New(":memory:")
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	subsystem := brainpkg.New(brainConfig, coreio.NewMemoryMedium(), storeInstance, nil, nil)
+	coreInstance := core.New()
+	subsystem.RegisterActions(coreInstance)
+
+	result := coreInstance.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(
+		core.Option{Key: "query", Value: "core ide live action smoke"},
+		core.Option{Key: "topK", Value: 1},
+	))
+	if !result.OK {
+		t.Fatalf("live action recall: %v", result.Value)
+	}
+	out, ok := result.Value.(brainpkg.RecallOutput)
+	if !ok {
+		t.Fatalf("expected RecallOutput, got %T", result.Value)
+	}
+	if !out.Success || out.Count < 0 {
+		t.Fatalf("unexpected live action recall shape: %#v", out)
+	}
+}
+
 func TestLive_BrainRecall_Bad_SkipsWithoutOptIn(t *testing.T) {
 	t.Setenv("CORE_BRAIN_INTEGRATION", "0")
 	t.Setenv("CORE_BRAIN_KEY", "")

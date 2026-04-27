@@ -2,6 +2,7 @@ package brain
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -72,8 +73,13 @@ func TestDirect_Recall_Bad(t *testing.T) {
 		t.Fatalf("store: %v", err)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
-	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil || !strings.Contains(err.Error(), "401") {
+	_, err = subsystem.recall(context.Background(), RecallInput{Query: "alpha"})
+	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Fatalf("expected 401 error, got %v", err)
+	}
+	var apiErr *OpenBrainError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusUnauthorized || apiErr.Retryable {
+		t.Fatalf("expected typed non-retryable 401 error, got %#v", apiErr)
 	}
 }
 
@@ -253,6 +259,8 @@ func TestDirect_ApiCall_Bad(t *testing.T) {
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.apiCall(context.Background(), http.MethodGet, "/v1/brain/list", nil); err == nil {
 		t.Fatal("expected missing api key error")
+	} else if !IsOpenBrainError(err, OpenBrainErrorMissingAPIKey) {
+		t.Fatalf("expected typed missing API key error, got %v", err)
 	}
 }
 

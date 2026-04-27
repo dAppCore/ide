@@ -38,6 +38,27 @@ func (cfg IDEConfig) Merge(override IDEConfig) IDEConfig {
 	if override.Ide.Brain.Cache.Namespace != "" {
 		cfg.Ide.Brain.Cache.Namespace = override.Ide.Brain.Cache.Namespace
 	}
+	if override.Ide.Brain.HTTP.Timeout != 0 {
+		cfg.Ide.Brain.HTTP.Timeout = override.Ide.Brain.HTTP.Timeout
+	}
+	if override.Ide.Brain.HTTP.Retry.Attempts != 0 {
+		cfg.Ide.Brain.HTTP.Retry.Attempts = override.Ide.Brain.HTTP.Retry.Attempts
+	}
+	if override.Ide.Brain.HTTP.Retry.Backoff != 0 {
+		cfg.Ide.Brain.HTTP.Retry.Backoff = override.Ide.Brain.HTTP.Retry.Backoff
+	}
+	if override.Ide.Brain.HTTP.Retry.MaxBackoff != 0 {
+		cfg.Ide.Brain.HTTP.Retry.MaxBackoff = override.Ide.Brain.HTTP.Retry.MaxBackoff
+	}
+	if override.Ide.Brain.HTTP.CircuitBreaker.Enabled != nil {
+		cfg.Ide.Brain.HTTP.CircuitBreaker.Enabled = override.Ide.Brain.HTTP.CircuitBreaker.Enabled
+	}
+	if override.Ide.Brain.HTTP.CircuitBreaker.FailureThreshold != 0 {
+		cfg.Ide.Brain.HTTP.CircuitBreaker.FailureThreshold = override.Ide.Brain.HTTP.CircuitBreaker.FailureThreshold
+	}
+	if override.Ide.Brain.HTTP.CircuitBreaker.Cooldown != 0 {
+		cfg.Ide.Brain.HTTP.CircuitBreaker.Cooldown = override.Ide.Brain.HTTP.CircuitBreaker.Cooldown
+	}
 	if override.Ide.Workspace.Root != "" {
 		cfg.Ide.Workspace.Root = override.Ide.Workspace.Root
 	}
