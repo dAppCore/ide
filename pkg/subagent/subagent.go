@@ -5,8 +5,8 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
-	"dappco.re/go/ws"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	"dappco.re/go/ws"
 
 	"dappco.re/go/ide/pkg/config"
 )
@@ -18,6 +18,7 @@ type Subsystem struct {
 	mu         sync.RWMutex
 	answers    map[string]map[string]chan string
 	events     map[string][]Event
+	eventSeq   map[string]int
 	agentic    map[string]agenticWorkspace
 }
 
@@ -65,6 +66,8 @@ type WatchInput struct {
 	WorkspaceID  string `json:"workspaceId"`
 	PollInterval int    `json:"pollInterval,omitempty"`
 	Timeout      int    `json:"timeout,omitempty"`
+	Cursor       int    `json:"cursor,omitempty"`
+	Limit        int    `json:"limit,omitempty"`
 }
 
 type Event struct {
@@ -73,13 +76,16 @@ type Event struct {
 	Message    string    `json:"message,omitempty"`
 	QuestionID string    `json:"questionId,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
+	Cursor     int       `json:"cursor,omitempty"`
 }
 
 type WatchOutput struct {
-	Completed bool    `json:"completed"`
-	Failed    bool    `json:"failed"`
-	Events    []Event `json:"events"`
-	Reason    string  `json:"reason,omitempty"`
+	Completed  bool    `json:"completed"`
+	Failed     bool    `json:"failed"`
+	Events     []Event `json:"events"`
+	NextCursor int     `json:"nextCursor,omitempty"`
+	HasMore    bool    `json:"hasMore,omitempty"`
+	Reason     string  `json:"reason,omitempty"`
 }
 
 type AnswerInput struct {
@@ -123,6 +129,7 @@ func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
 		relayToken: core.Trim(relayToken),
 		answers:    map[string]map[string]chan string{},
 		events:     map[string][]Event{},
+		eventSeq:   map[string]int{},
 		agentic:    map[string]agenticWorkspace{},
 	}
 }

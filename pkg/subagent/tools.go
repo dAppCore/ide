@@ -15,6 +15,8 @@ const (
 	maxQuestionWaitSeconds = 300
 	maxWatchTimeoutSeconds = 300
 	maxWatchPollInterval   = 30
+	defaultWatchEventLimit = 100
+	maxWatchEventLimit     = 500
 	maxWorkspaceIDLength   = 128
 	maxRelayMessageBytes   = 1 << 20
 )
@@ -154,48 +156,49 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 	}
 	timeout := clampInt(input.Timeout, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxWatchTimeoutSeconds)
 	pollInterval := clampInt(input.PollInterval, 2, maxWatchPollInterval)
-	if events, completed, failed, ok := s.watchRelay(ctx, workspaceID, timeout); ok {
-		if completed || failed {
-			return WatchOutput{Completed: completed, Failed: failed, Events: events}, nil
+	cursor := normalizeCursor(input.Cursor)
+	limit := clampInt(input.Limit, defaultWatchEventLimit, maxWatchEventLimit)
+	if snapshot := s.watchSnapshot(workspaceID, cursor, limit, ""); snapshot.Completed || snapshot.Failed || len(snapshot.Events) > 0 {
+		return snapshot, nil
+	}
+	if _, _, _, ok := s.watchRelay(ctx, workspaceID, timeout); ok {
+		if snapshot := s.watchSnapshot(workspaceID, cursor, limit, ""); snapshot.Completed || snapshot.Failed || len(snapshot.Events) > 0 {
+			return snapshot, nil
 		}
 		if changed, agenticCompleted, agenticFailed := s.syncAgenticEvents(ctx, workspaceID); changed || agenticCompleted || agenticFailed {
-			events = append(events, s.collectEvents(workspaceID, 0)...)
-			return WatchOutput{Completed: agenticCompleted, Failed: agenticFailed, Events: dedupeEvents(events)}, nil
+			snapshot := s.watchSnapshot(workspaceID, cursor, limit, "")
+			snapshot.Completed = snapshot.Completed || agenticCompleted
+			snapshot.Failed = snapshot.Failed || agenticFailed
+			return snapshot, nil
 		}
 	}
-	if output, ok := s.watchAgentic(ctx, workspaceID, pollInterval, timeout); ok {
-		return output, nil
+	if _, ok := s.watchAgentic(ctx, workspaceID, pollInterval, timeout); ok {
+		if snapshot := s.watchSnapshot(workspaceID, cursor, limit, ""); snapshot.Completed || snapshot.Failed || len(snapshot.Events) > 0 {
+			return snapshot, nil
+		}
 	}
 	deadline := time.After(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
 	defer ticker.Stop()
-	seen := 0
-	collected := []Event{}
 	for {
-		events := s.collectEvents(workspaceID, seen)
-		if len(events) > 0 {
-			collected = append(collected, events...)
-			seen += len(events)
-		}
-		if synced, completed, failed := s.syncAgenticEvents(ctx, workspaceID); synced {
-			events = s.collectEvents(workspaceID, seen)
-			if len(events) > 0 {
-				collected = append(collected, events...)
-				seen += len(events)
-			}
-			if completed || failed {
-				return WatchOutput{Completed: completed, Failed: failed, Events: collected}, nil
+		if synced, agenticCompleted, agenticFailed := s.syncAgenticEvents(ctx, workspaceID); synced || agenticCompleted || agenticFailed {
+			snapshot := s.watchSnapshot(workspaceID, cursor, limit, "")
+			snapshot.Completed = snapshot.Completed || agenticCompleted
+			snapshot.Failed = snapshot.Failed || agenticFailed
+			if snapshot.Completed || snapshot.Failed || len(snapshot.Events) > 0 {
+				return snapshot, nil
 			}
 		}
-		completed, failed := state(collected)
-		if completed || failed {
-			return WatchOutput{Completed: completed, Failed: failed, Events: collected}, nil
+		if snapshot := s.watchSnapshot(workspaceID, cursor, limit, ""); snapshot.Completed || snapshot.Failed || len(snapshot.Events) > 0 {
+			return snapshot, nil
 		}
 		select {
 		case <-ctx.Done():
-			return WatchOutput{Failed: true, Events: collected, Reason: ctx.Err().Error()}, ctx.Err()
+			snapshot := s.watchSnapshot(workspaceID, cursor, limit, ctx.Err().Error())
+			snapshot.Failed = true
+			return snapshot, ctx.Err()
 		case <-deadline:
-			return WatchOutput{Events: collected, Reason: "timed out waiting for subagent events"}, nil
+			return s.watchSnapshot(workspaceID, cursor, limit, "timed out waiting for subagent events"), nil
 		case <-ticker.C:
 		}
 	}

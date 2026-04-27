@@ -49,7 +49,7 @@ The 19-tool MCP/action parity check is enforced in [pkg/server/integration_actio
 - `subagent_guide`
 - `subagent_ask`
 - `subagent_progress`
-- `subagent_watch`
+- `subagent_watch` (supports `cursor`, `limit`, `nextCursor`, and `hasMore` for paged event history)
 - `subagent_answer`
 - `subagent_dispatch_guided`
 - `core_navigate`
@@ -83,4 +83,4 @@ After building changes, run:
 tests/smoke/run-end-to-end.sh
 ```
 
-The script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, calls `workspace_status` through the HTTP tool bridge, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.
+The script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, calls `workspace_status` through the HTTP tool bridge, checks malformed tool input and schema validation failures, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.

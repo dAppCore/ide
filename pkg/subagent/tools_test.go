@@ -158,6 +158,34 @@ func TestTools_Watch_Good(t *testing.T) {
 	}
 }
 
+func TestTools_Watch_Good_PagedCursor(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem.appendEvent("ws-1", Event{Type: "progress", Message: "one", CreatedAt: time.Now()})
+	subsystem.appendEvent("ws-1", Event{Type: "progress", Message: "two", CreatedAt: time.Now()})
+
+	first, err := subsystem.watch(context.Background(), WatchInput{WorkspaceID: "ws-1", Limit: 1, Timeout: 1})
+	if err != nil {
+		t.Fatalf("first watch: %v", err)
+	}
+	if len(first.Events) != 1 || first.Events[0].Message != "one" || !first.HasMore {
+		t.Fatalf("expected first event page with more results, got %#v", first)
+	}
+	if first.NextCursor != first.Events[0].Cursor+1 {
+		t.Fatalf("expected next cursor after first event, got %#v", first)
+	}
+
+	second, err := subsystem.watch(context.Background(), WatchInput{WorkspaceID: "ws-1", Cursor: first.NextCursor, Limit: 1, Timeout: 1})
+	if err != nil {
+		t.Fatalf("second watch: %v", err)
+	}
+	if len(second.Events) != 1 || second.Events[0].Message != "two" || second.HasMore {
+		t.Fatalf("expected second event page without more results, got %#v", second)
+	}
+	if second.NextCursor != second.Events[0].Cursor+1 {
+		t.Fatalf("expected second next cursor to advance, got %#v", second)
+	}
+}
+
 func TestTools_Watch_Bad(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	out, err := subsystem.watch(context.Background(), WatchInput{})

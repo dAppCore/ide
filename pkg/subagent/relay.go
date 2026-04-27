@@ -33,14 +33,30 @@ func questionKey(workspaceID, questionID string) string {
 	return core.Concat(core.Trim(workspaceID), "::", core.Trim(questionID))
 }
 
-func (s *Subsystem) appendEvent(workspaceID string, event Event) {
+func (s *Subsystem) appendEvent(workspaceID string, event Event) Event {
+	if s == nil {
+		return event
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.eventSeq == nil {
+		s.eventSeq = map[string]int{}
+	}
+	if event.CreatedAt.IsZero() {
+		event.CreatedAt = time.Now().UTC()
+	}
+	if event.Cursor <= 0 {
+		s.eventSeq[workspaceID]++
+		event.Cursor = s.eventSeq[workspaceID]
+	} else if event.Cursor > s.eventSeq[workspaceID] {
+		s.eventSeq[workspaceID] = event.Cursor
+	}
 	events := append(s.events[workspaceID], event)
 	if len(events) > maxEventsPerWorkspace {
 		events = append([]Event(nil), events[len(events)-maxEventsPerWorkspace:]...)
 	}
 	s.events[workspaceID] = events
+	return event
 }
 
 func (s *Subsystem) appendQuestionChannel(workspaceID, questionID string, channel chan string) {
@@ -82,15 +98,66 @@ func (s *Subsystem) takeQuestionChannel(workspaceID, questionID string) chan str
 }
 
 func (s *Subsystem) collectEvents(workspaceID string, from int) []Event {
+	events, _, _ := s.collectEventPage(workspaceID, from, 0)
+	return events
+}
+
+func (s *Subsystem) collectEventPage(workspaceID string, cursor int, limit int) ([]Event, int, bool) {
+	if s == nil {
+		return nil, normalizeCursor(cursor), false
+	}
+	cursor = normalizeCursor(cursor)
+	threshold := cursor
+	if threshold <= 0 {
+		threshold = 1
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	events := s.events[workspaceID]
-	if from >= len(events) {
-		return nil
+	out := []Event{}
+	nextCursor := threshold
+	hasMore := false
+	for _, event := range events {
+		eventCursor := event.Cursor
+		if eventCursor <= 0 {
+			continue
+		}
+		if eventCursor < threshold {
+			continue
+		}
+		if limit > 0 && len(out) >= limit {
+			hasMore = true
+			break
+		}
+		out = append(out, event)
+		if eventCursor >= nextCursor {
+			nextCursor = eventCursor + 1
+		}
 	}
-	out := make([]Event, len(events[from:]))
-	copy(out, events[from:])
-	return out
+	return out, nextCursor, hasMore
+}
+
+func (s *Subsystem) watchSnapshot(workspaceID string, cursor int, limit int, reason string) WatchOutput {
+	events, nextCursor, hasMore := s.collectEventPage(workspaceID, cursor, limit)
+	completed, failed := s.workspaceState(workspaceID)
+	return WatchOutput{
+		Completed:  completed,
+		Failed:     failed,
+		Events:     events,
+		NextCursor: nextCursor,
+		HasMore:    hasMore,
+		Reason:     reason,
+	}
+}
+
+func (s *Subsystem) workspaceState(workspaceID string) (bool, bool) {
+	if s == nil {
+		return false, false
+	}
+	s.mu.RLock()
+	events := append([]Event(nil), s.events[workspaceID]...)
+	s.mu.RUnlock()
+	return state(events)
 }
 
 func (s *Subsystem) bindAgenticWorkspace(workspaceID, name string) {

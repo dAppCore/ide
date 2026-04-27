@@ -140,6 +140,45 @@ with urllib.request.urlopen(request, timeout=5) as response:
         raise RuntimeError(f"expected workspace_status success, got status={response.status} body={body}")
 print("HTTP tool bridge workspace_status: ok")
 
+request = urllib.request.Request(
+    base + "/v1/tools/workspace_status",
+    data=b"{",
+    headers={
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+    },
+)
+try:
+    urllib.request.urlopen(request, timeout=5)
+except urllib.error.HTTPError as error:
+    body = error.read().decode("utf-8")
+    envelope = json.loads(body)
+    if error.code != 400 or envelope.get("success") or envelope.get("error", {}).get("code") != "invalid_request_body":
+        raise RuntimeError(f"expected malformed tool input 400, got status={error.code} body={body}")
+    print("HTTP tool bridge malformed input: 400")
+else:
+    raise RuntimeError("expected malformed tool input to fail")
+
+payload = json.dumps({}).encode("utf-8")
+request = urllib.request.Request(
+    base + "/v1/tools/brain_recall",
+    data=payload,
+    headers={
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+    },
+)
+try:
+    urllib.request.urlopen(request, timeout=5)
+except urllib.error.HTTPError as error:
+    body = error.read().decode("utf-8")
+    envelope = json.loads(body)
+    if error.code != 400 or envelope.get("success") or envelope.get("error", {}).get("code") != "invalid_request_body":
+        raise RuntimeError(f"expected brain_recall validation 400, got status={error.code} body={body}")
+    print("HTTP tool bridge brain_recall validation: 400")
+else:
+    raise RuntimeError("expected brain_recall validation to fail")
+
 try:
     urllib.request.urlopen(base + "/v1/tools", timeout=5)
 except urllib.error.HTTPError as error:

@@ -187,6 +187,9 @@ func TestRelay_SyncAgenticState_Good(t *testing.T) {
 	if len(events) != 2 || events[0].Type != "status" || events[1].Type != "question" {
 		t.Fatalf("expected status/question events, got %#v", events)
 	}
+	if events[0].Cursor != 1 || events[1].Cursor != 2 {
+		t.Fatalf("expected sequential event cursors, got %#v", events)
+	}
 	if subsystem.syncAgenticState("ws-1", "running", "why") {
 		t.Fatal("expected repeated state to be ignored")
 	}

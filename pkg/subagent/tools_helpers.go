@@ -48,6 +48,13 @@ func clampInt(value int, fallback int, max int) int {
 	return value
 }
 
+func normalizeCursor(value int) int {
+	if value < 0 {
+		return 0
+	}
+	return value
+}
+
 func canonicalRelayURL(value string) (string, error) {
 	parsed, err := parseRelayURL(value)
 	if err != nil {
@@ -134,8 +141,8 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 		if !ok {
 			continue
 		}
+		event = s.appendEvent(workspaceID, event)
 		events = append(events, event)
-		s.appendEvent(workspaceID, event)
 		completed, failed := state(events)
 		if completed || failed {
 			return events, completed, failed, true
@@ -169,19 +176,22 @@ func (s *Subsystem) syncAgenticEvents(ctx context.Context, workspaceID string) (
 }
 
 func (s *Subsystem) watchOutputFromAgentic(workspaceID string, out mcpagentic.WatchOutput) WatchOutput {
-	events := []Event{}
+	completed := false
+	failed := false
 	for _, result := range out.Completed {
 		message := terminalAgenticStatus(result.Status, "completed")
 		s.syncAgenticState(workspaceID, message, "")
-		events = append(events, Event{Type: "status", Channel: statusChannel(workspaceID), Message: message, CreatedAt: time.Now().UTC()})
+		completed = true
 	}
 	for _, result := range out.Failed {
 		message := terminalAgenticStatus(result.Status, "failed")
 		s.syncAgenticState(workspaceID, message, "")
-		events = append(events, Event{Type: "status", Channel: statusChannel(workspaceID), Message: message, CreatedAt: time.Now().UTC()})
+		failed = true
 	}
-	completed, failed := state(events)
-	return WatchOutput{Completed: completed, Failed: failed, Events: events}
+	snapshot := s.watchSnapshot(workspaceID, 0, defaultWatchEventLimit, "")
+	snapshot.Completed = snapshot.Completed || completed
+	snapshot.Failed = snapshot.Failed || failed
+	return snapshot
 }
 
 func terminalAgenticStatus(value string, fallback string) string {

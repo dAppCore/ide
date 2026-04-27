@@ -92,6 +92,15 @@ func TestTools_ClampInt_Ugly(t *testing.T) {
 	}
 }
 
+func TestTools_NormalizeCursor_Ugly(t *testing.T) {
+	if got := normalizeCursor(-10); got != 0 {
+		t.Fatalf("expected negative cursor to clamp to zero, got %d", got)
+	}
+	if got := normalizeCursor(7); got != 7 {
+		t.Fatalf("expected positive cursor to pass through, got %d", got)
+	}
+}
+
 func TestTools_HandleGuide_Good(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	_, out, err := subsystem.handleGuide(context.Background(), nil, GuideInput{WorkspaceID: "ws-1", Message: "focus"})

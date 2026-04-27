@@ -54,6 +54,19 @@ func TestIntegrationActionParity_ToolsHaveActions_Ugly(t *testing.T) {
 	if _, ok := seen["ide.subagent.dispatch_guided"]; !ok {
 		t.Fatal("expected guided dispatch action parity")
 	}
+	tools := map[string]bool{}
+	for _, tool := range srv.MCP().Tools() {
+		tools[tool.Name] = true
+	}
+	for _, action := range srv.Core().Actions() {
+		tool, ok := toolForIdeAction(action)
+		if !ok {
+			continue
+		}
+		if !tools[tool] {
+			t.Fatalf("action %s missing tool %s", action, tool)
+		}
+	}
 }
 
 func ideActionForTool(group, name string) (string, bool) {
@@ -79,4 +92,21 @@ func trimToolPrefix(name, prefix string) string {
 		return name
 	}
 	return name[len(prefix):]
+}
+
+func toolForIdeAction(name string) (string, bool) {
+	switch {
+	case len(name) > len("ide.brain.") && name[:len("ide.brain.")] == "ide.brain.":
+		return "brain_" + name[len("ide.brain."):], true
+	case len(name) > len("ide.workspace.") && name[:len("ide.workspace.")] == "ide.workspace.":
+		return "workspace_" + name[len("ide.workspace."):], true
+	case len(name) > len("ide.subagent.") && name[:len("ide.subagent.")] == "ide.subagent.":
+		return "subagent_" + name[len("ide.subagent."):], true
+	case name == "ide.navigate":
+		return "core_navigate", true
+	case len(name) > len("ide.pkg.") && name[:len("ide.pkg.")] == "ide.pkg.":
+		return "pkg_" + name[len("ide.pkg."):], true
+	default:
+		return "", false
+	}
 }

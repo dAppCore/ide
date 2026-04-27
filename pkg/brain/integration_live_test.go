@@ -16,6 +16,7 @@ import (
 
 	brainpkg "dappco.re/go/ide/pkg/brain"
 	"dappco.re/go/ide/pkg/config"
+	serverpkg "dappco.re/go/ide/pkg/server"
 )
 
 func TestLive_BrainRecall_Good_RealEndpoint(t *testing.T) {
@@ -81,6 +82,41 @@ func TestLive_BrainRecall_Good_ActionFlow(t *testing.T) {
 	}
 	if !out.Success || out.Count < 0 {
 		t.Fatalf("unexpected live action recall shape: %#v", out)
+	}
+}
+
+func TestLive_BrainRecall_Good_ServerConclaveToolFlow(t *testing.T) {
+	brainConfig, ok, reason := liveBrainConfigFromEnv()
+	if !ok {
+		t.Skip(reason)
+	}
+	t.Setenv("DIR_HOME", t.TempDir())
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Brain = brainConfig
+	srv, err := serverpkg.NewServer(serverpkg.Options{Config: cfg, MCP: true, Medium: coreio.NewMemoryMedium()})
+	if err != nil {
+		t.Fatalf("compose live server: %v", err)
+	}
+	var handler coremcp.RESTHandler
+	for _, tool := range srv.MCP().Tools() {
+		if tool.Name == "brain_recall" {
+			handler = tool.RESTHandler
+			break
+		}
+	}
+	if handler == nil {
+		t.Fatal("brain_recall handler not registered")
+	}
+	raw, err := handler(context.Background(), []byte(core.JSONMarshalString(brainpkg.RecallInput{Query: "core ide live conclave smoke", TopK: 1})))
+	if err != nil {
+		t.Fatalf("live conclave recall: %v", err)
+	}
+	out, ok := raw.(brainpkg.RecallOutput)
+	if !ok {
+		t.Fatalf("expected RecallOutput, got %T", raw)
+	}
+	if !out.Success || out.Count < 0 {
+		t.Fatalf("unexpected live conclave recall shape: %#v", out)
 	}
 }
 
