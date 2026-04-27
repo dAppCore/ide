@@ -34,22 +34,26 @@ func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput
 		topK = maxRecallTopK
 	}
 	project := input.Filter.Project
+	org := input.Filter.Org
 	filterType := core.Sprint(input.Filter.Type)
+	minConfidence := core.Sprint(input.Filter.MinConfidence)
 	agentID := s.agentID(input.Filter.AgentID)
 	workspaceRoot := ""
 	if s.workspace != nil {
 		workspaceRoot = s.workspace.Root()
 	}
-	key := s.cache.Key(workspaceRoot, s.cfg.Endpoint, s.keyFingerprint(), input.Query, core.Sprint(topK), agentID, project, filterType)
+	key := s.cache.Key(workspaceRoot, s.cfg.Endpoint, s.keyFingerprint(), input.Query, core.Sprint(topK), agentID, org, project, filterType, minConfidence)
 	if out, ok := s.cache.Get(ctx, key); ok {
 		return out, nil
 	}
 	payload := map[string]any{
-		"query":    input.Query,
-		"top_k":    topK,
-		"agent_id": agentID,
-		"project":  project,
-		"type":     input.Filter.Type,
+		"query":          input.Query,
+		"top_k":          topK,
+		"agent_id":       agentID,
+		"org":            org,
+		"project":        project,
+		"type":           input.Filter.Type,
+		"min_confidence": input.Filter.MinConfidence,
 	}
 	result, err := s.apiCall(ctx, http.MethodPost, "/v1/brain/recall", payload)
 	if err != nil {
@@ -73,9 +77,12 @@ func (s *Subsystem) remember(ctx context.Context, input RememberInput) (Remember
 		"content":    input.Content,
 		"type":       input.Type,
 		"tags":       input.Tags,
+		"org":        input.Org,
 		"project":    input.Project,
 		"agent_id":   s.agentID(""),
 		"confidence": input.Confidence,
+		"supersedes": input.Supersedes,
+		"expires_in": input.ExpiresIn,
 	}
 	result, err := s.apiCall(ctx, http.MethodPost, "/v1/brain/remember", payload)
 	if err != nil {
@@ -106,6 +113,9 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 		limit = maxListLimit
 	}
 	query := url.Values{}
+	if input.Org != "" {
+		query.Set("org", input.Org)
+	}
 	if input.Project != "" {
 		query.Set("project", input.Project)
 	}

@@ -61,6 +61,51 @@ func TestDirect_Recall_Good(t *testing.T) {
 	}
 }
 
+func TestDirect_Recall_UglyFilterCacheIsolation(t *testing.T) {
+	var calls int
+	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/brain/recall" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		body, _ := io.ReadAll(r.Body)
+		text := string(body)
+		if !strings.Contains(text, `"type":"decision"`) || !strings.Contains(text, `"min_confidence":0.75`) {
+			t.Fatalf("expected full recall filter in body, got %s", body)
+		}
+		memoryID := "core"
+		if strings.Contains(text, `"org":"other"`) {
+			memoryID = "other"
+		} else if !strings.Contains(text, `"org":"core"`) {
+			t.Fatalf("expected org filter in body, got %s", body)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"memories":[{"id":"`+memoryID+`","content":"`+memoryID+`"}]}`)
+	})
+	defer server.Close()
+
+	storeInstance, err := storelib.New(":memory:")
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
+	input := RecallInput{Query: "alpha", Filter: RecallFilter{Org: "core", Type: "decision", MinConfidence: 0.75}}
+	if _, err := subsystem.recall(context.Background(), input); err != nil {
+		t.Fatalf("recall core: %v", err)
+	}
+	if _, err := subsystem.recall(context.Background(), input); err != nil {
+		t.Fatalf("recall core cache hit: %v", err)
+	}
+	input.Filter.Org = "other"
+	out, err := subsystem.recall(context.Background(), input)
+	if err != nil {
+		t.Fatalf("recall other: %v", err)
+	}
+	if calls != 2 || len(out.Memories) != 1 || out.Memories[0].ID != "other" {
+		t.Fatalf("expected filter-isolated cache, got calls=%d out=%#v", calls, out)
+	}
+}
+
 func TestDirect_Recall_Bad(t *testing.T) {
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -109,6 +154,13 @@ func TestDirect_Remember_Good(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"memories":[{"id":"cached","content":"alpha"}]}`))
 		case "/v1/brain/remember":
+			body, _ := io.ReadAll(r.Body)
+			text := string(body)
+			for _, expected := range []string{`"org":"core"`, `"supersedes":"memory-1"`, `"expires_in":3600`} {
+				if !strings.Contains(text, expected) {
+					t.Fatalf("expected remember body to contain %s, got %s", expected, body)
+				}
+			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"id":"memory-2"}`))
 		default:
@@ -125,7 +177,7 @@ func TestDirect_Remember_Good(t *testing.T) {
 	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err != nil {
 		t.Fatalf("prime cache: %v", err)
 	}
-	out, err := subsystem.remember(context.Background(), RememberInput{Content: "beta", Type: "note"})
+	out, err := subsystem.remember(context.Background(), RememberInput{Content: "beta", Type: "note", Org: "core", Supersedes: "memory-1", ExpiresIn: 3600})
 	if err != nil {
 		t.Fatalf("remember: %v", err)
 	}
@@ -166,11 +218,11 @@ func TestDirect_List_Good(t *testing.T) {
 		t.Fatalf("store: %v", err)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
-	out, err := subsystem.list(context.Background(), ListInput{Project: "demo", Type: "note", AgentID: "agent-x", Limit: 99})
+	out, err := subsystem.list(context.Background(), ListInput{Org: "core", Project: "demo", Type: "note", AgentID: "agent-x", Limit: 99})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if out.Count != 1 || !strings.Contains(gotPath, "project=demo") || !strings.Contains(gotPath, "limit=99") || !strings.Contains(gotPath, "agent_id=agent-x") {
+	if out.Count != 1 || !strings.Contains(gotPath, "org=core") || !strings.Contains(gotPath, "project=demo") || !strings.Contains(gotPath, "limit=99") || !strings.Contains(gotPath, "agent_id=agent-x") {
 		t.Fatalf("unexpected list response %#v path=%s", out, gotPath)
 	}
 }
