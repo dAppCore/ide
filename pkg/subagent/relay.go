@@ -39,7 +39,8 @@ func (s *Subsystem) appendEvent(workspaceID string, event Event) Event {
 		return event
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	history := s.history
+	var removedEvents []Event
 	if s.eventSeq == nil {
 		s.eventSeq = map[string]int{}
 	}
@@ -54,10 +55,26 @@ func (s *Subsystem) appendEvent(workspaceID string, event Event) Event {
 	}
 	events := append(s.events[workspaceID], event)
 	if len(events) > maxEventsPerWorkspace {
+		removedEvents = append([]Event(nil), events[:len(events)-maxEventsPerWorkspace]...)
 		events = append([]Event(nil), events[len(events)-maxEventsPerWorkspace:]...)
 	}
 	s.events[workspaceID] = events
-	s.pruneWorkspaceHistoryLocked()
+	seq := s.eventSeq[workspaceID]
+	ref := s.agentic[workspaceID]
+	pruned := s.pruneWorkspaceHistoryLocked()
+	if history != nil {
+		for _, removed := range removedEvents {
+			history.deleteEvent(workspaceID, removed.Cursor)
+		}
+		for _, prunedWorkspaceID := range pruned {
+			history.deleteWorkspace(prunedWorkspaceID)
+		}
+		if !workspaceWasPruned(pruned, workspaceID) {
+			history.saveEvent(workspaceID, event)
+			history.saveWorkspace(workspaceID, seq, ref)
+		}
+	}
+	s.mu.Unlock()
 	return event
 }
 
@@ -167,10 +184,15 @@ func (s *Subsystem) bindAgenticWorkspace(workspaceID, name string) {
 		return
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	ref := s.agentic[workspaceID]
 	ref.Name = core.Trim(name)
 	s.agentic[workspaceID] = ref
+	seq := s.eventSeq[workspaceID]
+	history := s.history
+	if history != nil {
+		history.saveWorkspace(workspaceID, seq, ref)
+	}
+	s.mu.Unlock()
 }
 
 func (s *Subsystem) agenticWorkspace(workspaceID string) agenticWorkspace {
@@ -200,6 +222,11 @@ func (s *Subsystem) syncAgenticState(workspaceID, state, question string) bool {
 		ref.LastQuestion = question
 	}
 	s.agentic[workspaceID] = ref
+	seq := s.eventSeq[workspaceID]
+	history := s.history
+	if history != nil && (changed || questionChanged) {
+		history.saveWorkspace(workspaceID, seq, ref)
+	}
 	s.mu.Unlock()
 	if changed {
 		s.appendEvent(workspaceID, Event{
@@ -232,17 +259,20 @@ func (s *Subsystem) publish(channel string, message any) {
 	})
 }
 
-func (s *Subsystem) pruneWorkspaceHistoryLocked() {
+func (s *Subsystem) pruneWorkspaceHistoryLocked() []string {
+	pruned := []string{}
 	for len(s.events) > maxTrackedWorkspaces {
 		workspaceID := s.oldestPrunableWorkspaceLocked(true)
 		if workspaceID == "" {
 			workspaceID = s.oldestPrunableWorkspaceLocked(false)
 		}
 		if workspaceID == "" {
-			return
+			return pruned
 		}
 		s.deleteWorkspaceHistoryLocked(workspaceID)
+		pruned = append(pruned, workspaceID)
 	}
+	return pruned
 }
 
 func (s *Subsystem) oldestPrunableWorkspaceLocked(terminalOnly bool) string {

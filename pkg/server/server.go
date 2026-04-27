@@ -109,7 +109,11 @@ func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error
 			aiService, _ := core.ServiceFor[*aipkg.Service](c, "ai")
 			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService, aiService), OK: true}
 		}),
-		core.WithName("subagent", func(_ *core.Core) core.Result {
+		core.WithName("subagent", func(c *core.Core) core.Result {
+			storeService, _ := core.ServiceFor[*storepkg.Service](c, "store")
+			if storeService != nil {
+				return core.Result{Value: subagentpkg.NewWithHistory(cfg.Ide.Subagent, hub, authToken, storeService.Store), OK: true}
+			}
 			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, authToken), OK: true}
 		}),
 		core.WithName("navigate", func(c *core.Core) core.Result {

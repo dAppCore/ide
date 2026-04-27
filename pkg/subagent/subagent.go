@@ -6,6 +6,7 @@ import (
 
 	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	storelib "dappco.re/go/store"
 	"dappco.re/go/ws"
 
 	"dappco.re/go/ide/pkg/config"
@@ -20,6 +21,7 @@ type Subsystem struct {
 	events     map[string][]Event
 	eventSeq   map[string]int
 	agentic    map[string]agenticWorkspace
+	history    *historyStore
 }
 
 type agenticWorkspace struct {
@@ -132,6 +134,14 @@ func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
 		eventSeq:   map[string]int{},
 		agentic:    map[string]agenticWorkspace{},
 	}
+}
+
+// subsystem := NewWithHistory(cfg, hub, relayToken, storeInstance)
+func NewWithHistory(cfg config.Subagent, hub *ws.Hub, relayToken string, storeInstance *storelib.Store) *Subsystem {
+	subsystem := New(cfg, hub, relayToken)
+	subsystem.history = newHistoryStore(storeInstance)
+	subsystem.loadHistory()
+	return subsystem
 }
 
 func (s *Subsystem) Name() string { return "subagent" }
