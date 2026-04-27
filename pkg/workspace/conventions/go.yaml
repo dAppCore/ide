@@ -1,0 +1,6 @@
+conventions:
+  - "Use core primitives and explicit data shapes for public APIs."
+  - "Tests named TestFilename_Function_{Good,Bad,Ugly}; all three mandatory."
+  - "Comments should show usage examples, not restate the signature."
+notes:
+  - "Go pack loaded from workspace/conventions/go.yaml."

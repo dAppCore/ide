@@ -1,0 +1,126 @@
+package server
+
+import (
+	"net/http"
+	"testing"
+
+	"dappco.re/go/ide/pkg/config"
+)
+
+func TestTransport_Select_Good(t *testing.T) {
+	cases := []struct {
+		name    string
+		setHTTP string
+		mode    string
+		http    string
+		mcpOnly bool
+		want    Transport
+	}{
+		{
+			name:    "env http beats defaults",
+			setHTTP: "127.0.0.1:9880",
+			want:    Transport{Mode: "http", Addr: "127.0.0.1:9880"},
+		},
+		{
+			name:    "mcpOnly forces stdio even when config is invalid",
+			mode:    "http",
+			http:    "invalid:addr:port",
+			mcpOnly: true,
+			want:    Transport{Mode: "stdio"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("MCP_HTTP_ADDR", tc.setHTTP)
+			t.Setenv("MCP_ADDR", "")
+			cfg := config.IDEConfig{}.WithDefaults()
+			cfg.Ide.Transport.Mode = tc.mode
+			cfg.Ide.Transport.HTTPAddr = tc.http
+			transport, err := SelectTransport(cfg, tc.mcpOnly, false)
+			if err != nil {
+				t.Fatalf("select transport: %v", err)
+			}
+			if transport != tc.want {
+				t.Fatalf("expected %#v, got %#v", tc.want, transport)
+			}
+		})
+	}
+}
+
+func TestTransport_Select_Bad(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Transport.Mode = "http"
+	cfg.Ide.Transport.HTTPAddr = ":9880"
+	if _, err := SelectTransport(cfg, false, true); err == nil {
+		t.Fatal("expected loopback transport address error")
+	}
+}
+
+func TestTransport_Select_Ugly(t *testing.T) {
+	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
+	t.Setenv("MCP_ADDR", "127.0.0.1:9100")
+	transport, err := SelectTransport(config.IDEConfig{}.WithDefaults(), false, false)
+	if err != nil {
+		t.Fatalf("select transport: %v", err)
+	}
+	if transport.Mode != "http" {
+		t.Fatalf("expected HTTP precedence, got %#v", transport)
+	}
+}
+
+func TestTransport_Select_ConfigWinsWhenPreferred_Good(t *testing.T) {
+	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Transport.Mode = "http"
+	cfg.Ide.Transport.HTTPAddr = "127.0.0.1:9999"
+	transport, err := SelectTransport(cfg, false, true)
+	if err != nil {
+		t.Fatalf("select transport: %v", err)
+	}
+	if transport.Mode != "http" || transport.Addr != "127.0.0.1:9999" {
+		t.Fatalf("expected configured transport to win, got %#v", transport)
+	}
+}
+
+func TestTransport_SelectRelay_Good(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
+	cfg.Ide.Subagent.Relay.Path = "relay"
+	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if !relay.Enabled || relay.Addr != "127.0.0.1:9882" || relay.Path != "/relay" {
+		t.Fatalf("expected enabled relay transport, got %#v", relay)
+	}
+}
+
+func TestTransport_SelectRelay_Bad(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
+	relay := SelectRelayTransport(cfg, "", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if relay.Enabled {
+		t.Fatalf("expected relay to stay disabled without token, got %#v", relay)
+	}
+}
+
+func TestTransport_SelectRelay_Ugly(t *testing.T) {
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = "0.0.0.0:9882"
+	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if relay.Enabled {
+		t.Fatalf("expected relay to reject non-loopback bind address, got %#v", relay)
+	}
+}
+
+func TestTransport_Select_UglyLoopbackOnly(t *testing.T) {
+	t.Setenv("MCP_HTTP_ADDR", "0.0.0.0:9880")
+	t.Setenv("MCP_ADDR", "")
+	cfg := config.IDEConfig{}.WithDefaults()
+	if _, err := SelectTransport(cfg, false, false); err == nil {
+		t.Fatal("expected wildcard HTTP bind to be rejected")
+	}
+
+	t.Setenv("MCP_HTTP_ADDR", "")
+	t.Setenv("MCP_ADDR", "0.0.0.0:9100")
+	if _, err := SelectTransport(cfg, false, false); err == nil {
+		t.Fatal("expected wildcard TCP bind to be rejected")
+	}
+}
