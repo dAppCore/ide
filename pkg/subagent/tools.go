@@ -48,12 +48,12 @@ func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, e
 	if workspaceID == "" {
 		return GuideOutput{Delivered: false, Reason: "workspaceId is required"}, nil
 	}
+	if !s.relayAvailable() {
+		return GuideOutput{Delivered: false, Reason: "no relay"}, nil
+	}
 	message := GuidanceMessage{Type: "guidance", Role: "orchestrator", Message: input.Message, CreatedAt: time.Now().UTC()}
 	channel := guideChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
-	if s.hub == nil {
-		return GuideOutput{Delivered: false, Reason: "no relay"}, nil
-	}
 	s.publish(channel, message)
 	return GuideOutput{Delivered: true}, nil
 }
@@ -74,7 +74,7 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 	if workspaceID == "" {
 		return AskOutput{}, core.E("ide.subagent.ask", "workspaceId is required", nil)
 	}
-	if s.hub == nil {
+	if !s.relayAvailable() {
 		return AskOutput{Reason: "no relay"}, nil
 	}
 	waitSeconds := clampInt(input.WaitSeconds, int(s.cfg.Timeouts.QuestionWaitDefault.Seconds()), maxQuestionWaitSeconds)
@@ -128,12 +128,12 @@ func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (Progress
 	if workspaceID == "" {
 		return ProgressOutput{}, core.E("ide.subagent.progress", "workspaceId is required", nil)
 	}
+	if !s.relayAvailable() {
+		return ProgressOutput{Delivered: false, Reason: "no relay"}, nil
+	}
 	message := ProgressMessage{Type: "progress", Role: "subagent", Progress: input.Progress, Total: input.Total, Message: input.Message, CreatedAt: time.Now().UTC()}
 	channel := progressChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channel, Message: message.Message, CreatedAt: message.CreatedAt})
-	if s.hub == nil {
-		return ProgressOutput{Delivered: false, Reason: "no relay"}, nil
-	}
 	s.publish(channel, message)
 	return ProgressOutput{Delivered: true}, nil
 }
@@ -224,6 +224,9 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 	if core.Trim(input.QuestionID) == "" {
 		return AnswerOutput{}, core.E("ide.subagent.answer", "questionId is required", nil)
 	}
+	if !s.relayAvailable() {
+		return AnswerOutput{Delivered: false, Reason: "no relay"}, nil
+	}
 	if channel := s.takeQuestionChannel(workspaceID, input.QuestionID); channel != nil {
 		select {
 		case channel <- input.Answer:
@@ -233,9 +236,6 @@ func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput
 	message := AnswerMessage{Type: "answer", Role: "orchestrator", QuestionID: input.QuestionID, Message: input.Answer, CreatedAt: time.Now().UTC()}
 	channelName := answerChannel(workspaceID)
 	s.appendEvent(workspaceID, Event{Type: message.Type, Channel: channelName, Message: message.Message, QuestionID: input.QuestionID, CreatedAt: message.CreatedAt})
-	if s.hub == nil {
-		return AnswerOutput{Delivered: false, Reason: "no relay"}, nil
-	}
 	s.publish(channelName, message)
 	return AnswerOutput{Delivered: true}, nil
 }

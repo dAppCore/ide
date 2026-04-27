@@ -7,6 +7,7 @@ import (
 	"time"
 
 	core "dappco.re/go/core"
+	"dappco.re/go/ws"
 
 	"dappco.re/go/ide/pkg/config"
 )
@@ -147,15 +148,15 @@ func TestTools_HandleWatch_Good(t *testing.T) {
 }
 
 func TestTools_HandleAnswer_Good(t *testing.T) {
-	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "relay-token")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
 	_, out, err := subsystem.handleAnswer(context.Background(), nil, AnswerInput{WorkspaceID: "ws-1", QuestionID: "q1", Answer: "because"})
 	if err != nil {
 		t.Fatalf("handleAnswer: %v", err)
 	}
-	if out.Delivered {
-		t.Fatalf("expected no-relay fallback, got %#v", out)
+	if !out.Delivered {
+		t.Fatalf("expected relay delivery, got %#v", out)
 	}
 	select {
 	case got := <-channel:

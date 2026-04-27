@@ -125,6 +125,7 @@ type GuidedDispatchInput = DispatchGuidedInput
 type GuidedDispatchOutput = DispatchGuidedOutput
 
 func New(cfg config.Subagent, hub *ws.Hub, relayToken string) *Subsystem {
+	cfg = cfg.WithDefaults()
 	return &Subsystem{
 		cfg:        cfg,
 		hub:        hub,

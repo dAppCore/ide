@@ -55,6 +55,14 @@ func normalizeCursor(value int) int {
 	return value
 }
 
+func (s *Subsystem) relayAvailable() bool {
+	if s == nil || s.hub == nil || core.Trim(s.relayToken) == "" {
+		return false
+	}
+	_, err := canonicalRelayURL(s.cfg.Relay.URL())
+	return err == nil
+}
+
 func canonicalRelayURL(value string) (string, error) {
 	parsed, err := parseRelayURL(value)
 	if err != nil {

@@ -22,6 +22,20 @@ func TestTools_Guide_Good(t *testing.T) {
 	}
 }
 
+func TestTools_Guide_Good_RelayTokenRequired(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	out, err := subsystem.guide(context.Background(), GuideInput{WorkspaceID: "ws-1", Message: "focus"})
+	if err != nil {
+		t.Fatalf("guide: %v", err)
+	}
+	if out.Delivered || out.Reason != "no relay" {
+		t.Fatalf("expected tokenless hub to be treated as no relay, got %#v", out)
+	}
+	if got := subsystem.collectEvents("ws-1", 0); len(got) != 0 {
+		t.Fatalf("expected no relay to avoid recording delivered guidance, got %#v", got)
+	}
+}
+
 func TestTools_Guide_Bad(t *testing.T) {
 	cfg := config.IDEConfig{}.WithDefaults().Ide.Subagent
 	disabled := false
@@ -54,6 +68,19 @@ func TestTools_Ask_Good(t *testing.T) {
 	}
 }
 
+func TestTools_Ask_Good_RelayTokenRequired(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	out, err := subsystem.ask(ctx, AskInput{WorkspaceID: "ws-1", Question: "why?", WaitSeconds: 1})
+	if err != nil {
+		t.Fatalf("ask: %v", err)
+	}
+	if out.Reason != "no relay" || out.TimedOut {
+		t.Fatalf("expected immediate no-relay fallback, got %#v", out)
+	}
+}
+
 func TestTools_Ask_Bad(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.ask(context.Background(), AskInput{}); err == nil {
@@ -79,6 +106,20 @@ func TestTools_Progress_Good(t *testing.T) {
 	}
 }
 
+func TestTools_Progress_Good_RelayTokenRequired(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	out, err := subsystem.progress(context.Background(), ProgressInput{WorkspaceID: "ws-1", Progress: 1, Total: 3, Message: "step"})
+	if err != nil {
+		t.Fatalf("progress: %v", err)
+	}
+	if out.Delivered || out.Reason != "no relay" {
+		t.Fatalf("expected tokenless hub to be treated as no relay, got %#v", out)
+	}
+	if got := subsystem.collectEvents("ws-1", 0); len(got) != 0 {
+		t.Fatalf("expected no relay to avoid recording delivered progress, got %#v", got)
+	}
+}
+
 func TestTools_Progress_Bad(t *testing.T) {
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.progress(context.Background(), ProgressInput{}); err == nil {
@@ -94,15 +135,15 @@ func TestTools_Progress_Ugly(t *testing.T) {
 }
 
 func TestTools_Answer_Good(t *testing.T) {
-	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "relay-token")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
 	out, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-1", QuestionID: "q1", Answer: "because"})
 	if err != nil {
 		t.Fatalf("answer: %v", err)
 	}
-	if out.Delivered {
-		t.Fatalf("expected no-relay fallback, got %#v", out)
+	if !out.Delivered {
+		t.Fatalf("expected relay delivery, got %#v", out)
 	}
 	select {
 	case got := <-channel:
@@ -115,7 +156,7 @@ func TestTools_Answer_Good(t *testing.T) {
 }
 
 func TestTools_Answer_UglyWorkspaceIsolation(t *testing.T) {
-	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "relay-token")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
 	out, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-2", QuestionID: "q1", Answer: "nope"})
@@ -128,6 +169,24 @@ func TestTools_Answer_UglyWorkspaceIsolation(t *testing.T) {
 	select {
 	case got := <-channel:
 		t.Fatalf("expected cross-workspace channel to remain untouched, got %q", got)
+	default:
+	}
+}
+
+func TestTools_Answer_Good_RelayTokenRequired(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "")
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-1", "q1", channel)
+	out, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-1", QuestionID: "q1", Answer: "because"})
+	if err != nil {
+		t.Fatalf("answer: %v", err)
+	}
+	if out.Delivered || out.Reason != "no relay" {
+		t.Fatalf("expected tokenless hub to be treated as no relay, got %#v", out)
+	}
+	select {
+	case got := <-channel:
+		t.Fatalf("expected no-relay answer to leave pending channel untouched, got %q", got)
 	default:
 	}
 }
