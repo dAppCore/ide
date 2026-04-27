@@ -123,7 +123,7 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	}
 	defer conn.Close()
 
-	for _, channel := range []string{statusChannel(workspaceID), questionChannel(workspaceID), answerChannel(workspaceID)} {
+	for _, channel := range []string{statusChannel(workspaceID), progressChannel(workspaceID), questionChannel(workspaceID), answerChannel(workspaceID)} {
 		if err := conn.WriteJSON(ws.Message{Type: ws.TypeSubscribe, Channel: channel, Timestamp: time.Now().UTC()}); err != nil {
 			return nil, false, false, false
 		}

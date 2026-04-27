@@ -185,7 +185,7 @@ func TestRelay_WatchRelay_Good(t *testing.T) {
 			return
 		}
 		defer conn.Close()
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 4; i++ {
 			var msg ws.Message
 			if err := conn.ReadJSON(&msg); err != nil {
 				return
@@ -213,6 +213,50 @@ func TestRelay_WatchRelay_Good(t *testing.T) {
 	}
 	if len(events) == 0 || events[len(events)-1].Type != "status" || events[len(events)-1].Message != "completed" {
 		t.Fatalf("expected completed status event, got %#v", events)
+	}
+}
+
+func TestRelay_WatchRelay_UglyProgressChannel(t *testing.T) {
+	upgrader := websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		subscribed := map[string]bool{}
+		for i := 0; i < 4; i++ {
+			var msg ws.Message
+			if err := conn.ReadJSON(&msg); err != nil {
+				return
+			}
+			subscribed[msg.Channel] = true
+		}
+		if !subscribed[progressChannel("ws-1")] {
+			return
+		}
+		_ = conn.WriteJSON(ws.Message{
+			Channel:   progressChannel("ws-1"),
+			Timestamp: time.Unix(3, 0).UTC(),
+			Data: map[string]any{
+				"type":    "progress",
+				"message": "halfway",
+			},
+		})
+	}))
+	defer server.Close()
+
+	cfg := config.IDEConfig{}.WithDefaults()
+	cfg.Ide.Subagent.Relay.Addr = server.URL
+	cfg.Ide.Subagent.Relay.Path = "/"
+	subsystem := New(cfg.Ide.Subagent, nil, "relay-token")
+
+	events, completed, failed, ok := subsystem.watchRelay(context.Background(), "ws-1", 1)
+	if !ok || completed || failed {
+		t.Fatalf("expected progress relay watch, got events=%#v completed=%v failed=%v ok=%v", events, completed, failed, ok)
+	}
+	if len(events) != 1 || events[0].Type != "progress" || events[0].Message != "halfway" {
+		t.Fatalf("expected relay progress event, got %#v", events)
 	}
 }
 
