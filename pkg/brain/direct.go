@@ -1,12 +1,9 @@
 package brain
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"net/http"
-	"net/url"
-	"time"
+	"context"  // Note: AX-6 - action and MCP call paths propagate cancellation with context.Context; no core context primitive exists.
+	"net/http" // Note: AX-6 - OpenBrain direct mode owns a specific HTTP client boundary; RFC permits specific clients.
+	"time"     // Note: AX-6 - brain output contracts expose time.Time timestamps; no core clock primitive exists.
 
 	core "dappco.re/go/core"
 
@@ -96,7 +93,7 @@ func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput
 	if core.Trim(input.ID) == "" {
 		return ForgetOutput{}, core.E("ide.brain.forget", "id is required", nil)
 	}
-	_, err := s.apiCall(ctx, http.MethodDelete, core.Concat("/v1/brain/forget/", url.PathEscape(input.ID)), nil)
+	_, err := s.apiCall(ctx, http.MethodDelete, core.Concat("/v1/brain/forget/", core.URLPathEscape(input.ID)), nil)
 	if err != nil {
 		return ForgetOutput{}, err
 	}
@@ -112,24 +109,21 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 	case limit > maxListLimit:
 		limit = maxListLimit
 	}
-	query := url.Values{}
+	query := []string{}
 	if input.Org != "" {
-		query.Set("org", input.Org)
+		query = append(query, core.Concat("org=", core.URLEncode(input.Org)))
 	}
 	if input.Project != "" {
-		query.Set("project", input.Project)
+		query = append(query, core.Concat("project=", core.URLEncode(input.Project)))
 	}
 	if input.Type != "" {
-		query.Set("type", input.Type)
+		query = append(query, core.Concat("type=", core.URLEncode(input.Type)))
 	}
 	if input.AgentID != "" {
-		query.Set("agent_id", input.AgentID)
+		query = append(query, core.Concat("agent_id=", core.URLEncode(input.AgentID)))
 	}
-	query.Set("limit", core.Sprint(limit))
-	path := "/v1/brain/list"
-	if len(query) > 0 {
-		path = core.Concat(path, "?", query.Encode())
-	}
+	query = append(query, core.Concat("limit=", core.Sprint(limit)))
+	path := core.Concat("/v1/brain/list?", core.Join("&", query...))
 	result, err := s.apiCall(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return ListOutput{}, err
@@ -282,8 +276,7 @@ func (s *Subsystem) keyFingerprint() string {
 	if key == "" {
 		return ""
 	}
-	sum := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(sum[:])
+	return core.SHA256HexString(key)
 }
 
 func (s *Subsystem) agentID(value string) string {

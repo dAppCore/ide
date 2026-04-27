@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	// Note: test-only — error chain inspection needs errors.Is for cancellation propagation.
 	"errors"
+	// Note: test-only — MCP_AUTH_TOKEN env-var lookup/setup uses os.LookupEnv/Setenv directly.
 	"os"
 	"testing"
 	"time"
