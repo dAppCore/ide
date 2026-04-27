@@ -355,8 +355,12 @@ func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
 		if core.Trim(path) == "" {
 			continue
 		}
-		if err := rejectUnsafeLocalConfigPath(path); err != nil {
+		safe, err := safeLocalConfigPath(path)
+		if err != nil {
 			return IDEConfig{}, err
+		}
+		if !safe {
+			continue
 		}
 		if !medium.Exists(path) {
 			continue

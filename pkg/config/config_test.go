@@ -3,7 +3,6 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -127,12 +126,12 @@ func TestConfig_LoadWithOptions_UglySymlinkedPath(t *testing.T) {
 		t.Skipf("symlink unsupported: %v", err)
 	}
 	symlinkedConfigPath := filepath.Join(workspaceLink, ".core", "ide.yaml")
-	_, err = LoadWithOptions(LoaderOptions{Medium: coreio.Local, Paths: []string{symlinkedConfigPath}})
-	if err == nil {
-		t.Fatal("expected symlinked config path to be refused")
+	cfg, err = LoadWithOptions(LoaderOptions{Medium: coreio.Local, Paths: []string{symlinkedConfigPath}})
+	if err != nil {
+		t.Fatalf("expected symlinked config path to be ignored, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "refuse symlinked config path") {
-		t.Fatalf("expected symlink refusal, got %v", err)
+	if cfg.Ide.Brain.AgentID == "direct-project" {
+		t.Fatalf("expected symlinked config to be ignored, got %#v", cfg.Ide.Brain)
 	}
 }
 
