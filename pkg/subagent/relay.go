@@ -8,6 +8,7 @@ import (
 )
 
 const maxEventsPerWorkspace = 1000
+const maxTrackedWorkspaces = 128
 
 func guideChannel(workspaceID string) string {
 	return core.Concat("subagent:", core.Trim(workspaceID), ":guide")
@@ -56,6 +57,7 @@ func (s *Subsystem) appendEvent(workspaceID string, event Event) Event {
 		events = append([]Event(nil), events[len(events)-maxEventsPerWorkspace:]...)
 	}
 	s.events[workspaceID] = events
+	s.pruneWorkspaceHistoryLocked()
 	return event
 }
 
@@ -228,4 +230,57 @@ func (s *Subsystem) publish(channel string, message any) {
 		Data:      message,
 		Timestamp: time.Now().UTC(),
 	})
+}
+
+func (s *Subsystem) pruneWorkspaceHistoryLocked() {
+	for len(s.events) > maxTrackedWorkspaces {
+		workspaceID := s.oldestPrunableWorkspaceLocked(true)
+		if workspaceID == "" {
+			workspaceID = s.oldestPrunableWorkspaceLocked(false)
+		}
+		if workspaceID == "" {
+			return
+		}
+		s.deleteWorkspaceHistoryLocked(workspaceID)
+	}
+}
+
+func (s *Subsystem) oldestPrunableWorkspaceLocked(terminalOnly bool) string {
+	oldestWorkspaceID := ""
+	oldestCreatedAt := time.Time{}
+	for workspaceID, events := range s.events {
+		if s.hasPendingAnswersLocked(workspaceID) {
+			continue
+		}
+		completed, failed := state(events)
+		if terminalOnly && !completed && !failed {
+			continue
+		}
+		createdAt := lastEventCreatedAt(events)
+		if oldestWorkspaceID == "" || createdAt.Before(oldestCreatedAt) {
+			oldestWorkspaceID = workspaceID
+			oldestCreatedAt = createdAt
+		}
+	}
+	return oldestWorkspaceID
+}
+
+func (s *Subsystem) hasPendingAnswersLocked(workspaceID string) bool {
+	return len(s.answers[workspaceID]) > 0
+}
+
+func (s *Subsystem) deleteWorkspaceHistoryLocked(workspaceID string) {
+	delete(s.events, workspaceID)
+	delete(s.eventSeq, workspaceID)
+	delete(s.agentic, workspaceID)
+}
+
+func lastEventCreatedAt(events []Event) time.Time {
+	createdAt := time.Time{}
+	for _, event := range events {
+		if event.CreatedAt.After(createdAt) {
+			createdAt = event.CreatedAt
+		}
+	}
+	return createdAt
 }

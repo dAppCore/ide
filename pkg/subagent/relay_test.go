@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -80,6 +81,43 @@ func TestRelay_DeleteQuestionChannel_Good(t *testing.T) {
 	subsystem.deleteQuestionChannel("ws-1", "q1")
 	if got := subsystem.takeQuestionChannel("ws-1", "q1"); got != nil {
 		t.Fatalf("expected deleted question channel, got %#v", got)
+	}
+}
+
+func TestRelay_EventHistoryRetention_Good(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	base := time.Unix(100, 0).UTC()
+	subsystem.bindAgenticWorkspace("ws-0", "agentic-ws-0")
+	for i := 0; i < maxTrackedWorkspaces+1; i++ {
+		workspaceID := "ws-" + strconv.Itoa(i)
+		subsystem.appendEvent(workspaceID, Event{Type: "status", Message: "completed", CreatedAt: base.Add(time.Duration(i) * time.Second)})
+	}
+	if got := subsystem.collectEvents("ws-0", 0); len(got) != 0 {
+		t.Fatalf("expected oldest terminal workspace history to be pruned, got %#v", got)
+	}
+	if _, ok := subsystem.agentic["ws-0"]; ok {
+		t.Fatal("expected pruned workspace to drop agentic binding")
+	}
+	if len(subsystem.events) != maxTrackedWorkspaces {
+		t.Fatalf("expected workspace history cap %d, got %d", maxTrackedWorkspaces, len(subsystem.events))
+	}
+}
+
+func TestRelay_EventHistoryRetention_UglyPreservesPendingAnswer(t *testing.T) {
+	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
+	base := time.Unix(100, 0).UTC()
+	channel := make(chan string, 1)
+	subsystem.appendQuestionChannel("ws-pending", "q1", channel)
+	subsystem.appendEvent("ws-pending", Event{Type: "status", Message: "completed", CreatedAt: base})
+	for i := 0; i < maxTrackedWorkspaces+1; i++ {
+		workspaceID := "ws-" + strconv.Itoa(i)
+		subsystem.appendEvent(workspaceID, Event{Type: "status", Message: "completed", CreatedAt: base.Add(time.Duration(i+1) * time.Second)})
+	}
+	if got := subsystem.collectEvents("ws-pending", 0); len(got) != 1 {
+		t.Fatalf("expected pending-answer workspace history to be preserved, got %#v", got)
+	}
+	if got := subsystem.takeQuestionChannel("ws-pending", "q1"); got == nil {
+		t.Fatal("expected pending answer channel to be preserved")
 	}
 }
 
