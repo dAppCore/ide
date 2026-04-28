@@ -4,10 +4,10 @@ import (
 	"context"
 	"sort"
 
-	core "dappco.re/go/core"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "dappco.re/go"
 	gui_chat "dappco.re/go/gui/pkg/chat"
 	guimcp "dappco.re/go/gui/pkg/mcp"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 
 	"dappco.re/go/ide/pkg/config"
 )

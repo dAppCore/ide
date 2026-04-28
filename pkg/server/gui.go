@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 

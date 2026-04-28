@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -148,15 +148,21 @@ func withDispatchEnv(values map[string]string) func() {
 		} else {
 			previous[key] = nil
 		}
-		_ = os.Setenv(key, value)
+		if err := os.Setenv(key, value); err != nil {
+			core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
+		}
 	}
 	return func() {
 		for key, value := range previous {
 			if value == nil {
-				_ = os.Unsetenv(key)
+				if err := os.Unsetenv(key); err != nil {
+					core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
+				}
 				continue
 			}
-			_ = os.Setenv(key, *value)
+			if err := os.Setenv(key, *value); err != nil {
+				core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+			}
 		}
 	}
 }

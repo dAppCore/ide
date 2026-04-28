@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
@@ -94,43 +94,43 @@ func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error
 
 	services := []core.CoreOption{
 		core.WithName("ws", func(_ *core.Core) core.Result {
-			return core.Result{Value: hub, OK: true}
+			return core.Ok(hub)
 		}),
 		core.WithService(process.Register),
 		core.WithService(storepkg.Register),
 		core.WithService(aipkg.Register),
 		core.WithName("workspace", func(c *core.Core) core.Result {
 			processService, _ := core.ServiceFor[*process.Service](c, "process")
-			return core.Result{Value: workspacepkg.New(cfg.Ide.Workspace, medium, processService), OK: true}
+			return core.Ok(workspacepkg.New(cfg.Ide.Workspace, medium, processService))
 		}),
 		core.WithName("brain", func(c *core.Core) core.Result {
 			storeService, _ := core.ServiceFor[*storepkg.Service](c, "store")
 			workspaceService, _ := core.ServiceFor[*workspacepkg.Subsystem](c, "workspace")
 			aiService, _ := core.ServiceFor[*aipkg.Service](c, "ai")
-			return core.Result{Value: brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService, aiService), OK: true}
+			return core.Ok(brainpkg.New(cfg.Ide.Brain, medium, storeService.Store, workspaceService, aiService))
 		}),
 		core.WithName("subagent", func(c *core.Core) core.Result {
 			storeService, _ := core.ServiceFor[*storepkg.Service](c, "store")
 			if storeService != nil {
-				return core.Result{Value: subagentpkg.NewWithHistory(cfg.Ide.Subagent, hub, authToken, storeService.Store), OK: true}
+				return core.Ok(subagentpkg.NewWithHistory(cfg.Ide.Subagent, hub, authToken, storeService.Store))
 			}
-			return core.Result{Value: subagentpkg.New(cfg.Ide.Subagent, hub, authToken), OK: true}
+			return core.Ok(subagentpkg.New(cfg.Ide.Subagent, hub, authToken))
 		}),
 		core.WithName("navigate", func(c *core.Core) core.Result {
-			return core.Result{Value: navigatepkg.New(cfg.Ide.Navigate, c), OK: true}
+			return core.Ok(navigatepkg.New(cfg.Ide.Navigate, c))
 		}),
 		core.WithName("marketplace", func(_ *core.Core) core.Result {
-			return core.Result{Value: marketplacepkg.New(cfg.Ide.Marketplace), OK: true}
+			return core.Ok(marketplacepkg.New(cfg.Ide.Marketplace))
 		}),
 	}
 	services = append(services, options.extraCoreOptions...)
 	services = append(services, core.WithName("mcp", registerMCP(options, mode)))
 	if enableGUI {
 		services = append(services, core.WithName("gui_mcp", func(c *core.Core) core.Result {
-			return core.Result{Value: guimcp.New(c), OK: true}
+			return core.Ok(guimcp.New(c))
 		}))
 		services = append(services, core.WithName("gui_shell", func(_ *core.Core) core.Result {
-			return core.Result{Value: guiShell, OK: true}
+			return core.Ok(guiShell)
 		}))
 	}
 	if mode.conclave {
@@ -262,7 +262,9 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 		go func() {
 			<-runtimeCtx.Done()
-			_ = relayServer.Shutdown(context.Background())
+			if err := relayServer.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+				core.Warn("ide.server.Run relay shutdown", "err", err)
+			}
 		}()
 		go func() {
 			if err := relayServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -304,10 +306,14 @@ func withMCPAuthToken(token string, run func() error) error {
 	}
 	defer func() {
 		if hadPrevious {
-			_ = os.Setenv("MCP_AUTH_TOKEN", previous)
+			if err := os.Setenv("MCP_AUTH_TOKEN", previous); err != nil {
+				core.Warn("ide.server.Run restore MCP_AUTH_TOKEN", "err", err)
+			}
 			return
 		}
-		_ = os.Unsetenv("MCP_AUTH_TOKEN")
+		if err := os.Unsetenv("MCP_AUTH_TOKEN"); err != nil {
+			core.Warn("ide.server.Run unset MCP_AUTH_TOKEN", "err", err)
+		}
 	}()
 	return run()
 }

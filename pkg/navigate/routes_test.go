@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
 	"dappco.re/go/ide/pkg/config"
@@ -140,9 +140,9 @@ func TestRoutes_ResolveQuery_Good(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, q core.Query) core.Result {
 		if name, ok := q.(string); ok && name == "config.dump" {
-			return core.Result{Value: map[string]any{"config": "ok"}, OK: true}
+			return core.Ok(map[string]any{"config": "ok"})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 	subsystem := New(config.Navigate{}, c)
 	out, err := subsystem.query(context.Background(), "config.dump")
@@ -159,15 +159,15 @@ func TestRoutes_ResolveQueryRoutes_Good(t *testing.T) {
 	c.RegisterQuery(func(_ *core.Core, q core.Query) core.Result {
 		switch name := q.(string); name {
 		case "ai.models.list":
-			return core.Result{Value: map[string]any{"models": []any{map[string]any{"name": "gpt"}}}, OK: true}
+			return core.Ok(map[string]any{"models": []any{map[string]any{"name": "gpt"}}})
 		case "agent.workspaces.status":
-			return core.Result{Value: map[string]any{"workspaces": []any{map[string]any{"name": "demo"}}}, OK: true}
+			return core.Ok(map[string]any{"workspaces": []any{map[string]any{"name": "demo"}}})
 		case "network.status":
-			return core.Result{Value: map[string]any{"connected": true}, OK: true}
+			return core.Ok(map[string]any{"connected": true})
 		case "identity.status":
-			return core.Result{Value: map[string]any{"tim": map[string]any{"keys": []any{}}}, OK: true}
+			return core.Ok(map[string]any{"tim": map[string]any{"keys": []any{}}})
 		default:
-			return core.Result{}
+			return core.Fail(nil)
 		}
 	})
 	subsystem := New(config.Navigate{}, c)
@@ -194,9 +194,9 @@ func TestRoutes_RegisterRoutes_Ugly(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, q core.Query) core.Result {
 		if name, ok := q.(string); ok && name == "ai.models.list" {
-			return core.Result{Value: map[string]any{"models": []any{map[string]any{"name": "gpt"}}}, OK: true}
+			return core.Ok(map[string]any{"models": []any{map[string]any{"name": "gpt"}}})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 	subsystem := New(config.Navigate{Routes: []string{"core://models"}}, c)
 	out, err := subsystem.resolve(context.Background(), Input{Route: "core://models"})

@@ -1,6 +1,6 @@
 package navigate
 
-import core "dappco.re/go/core"
+import core "dappco.re/go"
 
 func decode[T any](opts core.Options) (T, error) {
 	var out T

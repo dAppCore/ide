@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 )
 
@@ -42,11 +42,11 @@ type Service struct {
 }
 
 func Register(c *core.Core) core.Result {
-	return core.Result{Value: &Service{ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{})}, OK: true}
+	return core.Ok(&Service{ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{})})
 }
 
 func (s *Service) OnStartup(context.Context) core.Result {
-	return core.Result{OK: true}
+	return core.Ok(nil)
 }
 
 func (s *Service) Record(event Event) error {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	scmmarketplace "dappco.re/go/scm/marketplace"
 
@@ -113,10 +113,14 @@ func (c *Client) installViaGoSCM(ctx context.Context, input InstallInput) (Insta
 func (c *Client) recordInstall(code string) {
 	event := ai.Event{Type: "ide.pkg.install", Repo: code}
 	if c.ai != nil {
-		_ = c.ai.Record(event)
+		if err := c.ai.Record(event); err != nil {
+			core.Warn("ide.marketplace.record_install", "err", err)
+		}
 		return
 	}
-	_ = ai.Record(event)
+	if err := ai.Record(event); err != nil {
+		core.Warn("ide.marketplace.record_install", "err", err)
+	}
 }
 
 func (c *Client) get(ctx context.Context, path string, target any) error {

@@ -3,16 +3,15 @@ module dappco.re/go/ide
 go 1.26.2
 
 require (
-	dappco.re/go/api v0.8.0-alpha.1
+	dappco.re/go/api v0.8.0-alpha.1.0.20260427143506-f95002059d53
 	dappco.re/go/config v0.8.0-alpha.1
-	dappco.re/go/core v0.8.0-alpha.1
 	dappco.re/go/gui v0.8.0-alpha.1
 	dappco.re/go/io v0.8.0-alpha.1
 	dappco.re/go/mcp v0.8.0-alpha.1
-	dappco.re/go/process v0.8.0-alpha.1
+	dappco.re/go/process v0.9.0
 	dappco.re/go/scm v0.8.0-alpha.1
 	dappco.re/go/store v0.8.0-alpha.1
-	dappco.re/go/ws v0.8.0-alpha.1
+	dappco.re/go/ws v0.8.0-alpha.1.0.20260427142937-36f01754d2e9
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/modelcontextprotocol/go-sdk v1.5.0
@@ -20,15 +19,16 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require dappco.re/go/core v0.8.0-alpha.1 // indirect
+
 require (
-	dappco.re/go/ai v0.8.0-alpha.1 // indirect
-	dappco.re/go/core/api v0.0.0-00010101000000-000000000000 // indirect
-	dappco.re/go/core/io v0.0.0-00010101000000-000000000000 // indirect
-	dappco.re/go/core/log v0.1.2 // indirect
+	dappco.re/go v0.9.0
+	dappco.re/go/ai v0.8.0-alpha.1.0.20260425225549-d43f4dbd25b8 // indirect
+	dappco.re/go/core/io v0.4.2 // indirect
 	dappco.re/go/inference v0.8.0-alpha.1 // indirect
 	dappco.re/go/log v0.8.0-alpha.1 // indirect
-	dappco.re/go/rag v0.8.0-alpha.1 // indirect
-	dappco.re/go/webview v0.8.0-alpha.1 // indirect
+	dappco.re/go/rag v0.8.0-alpha.1.0.20260427161922-2a59096f2aca // indirect
+	dappco.re/go/webview v0.8.0-alpha.1.0.20260425135446-1c47ae2c183c // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/99designs/gqlgen v0.17.88 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -113,7 +113,6 @@ require (
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kr/fs v0.1.0 // indirect
 	github.com/leaanthony/go-ansi-parser v1.6.1 // indirect
 	github.com/leaanthony/u v1.1.1 // indirect
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728 // indirect
@@ -128,9 +127,6 @@ require (
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/oapi-codegen/runtime v1.0.0 // indirect
 	github.com/ollama/ollama v0.18.2 // indirect
-	github.com/parquet-go/bitpack v1.0.0 // indirect
-	github.com/parquet-go/jsonlite v1.0.0 // indirect
-	github.com/parquet-go/parquet-go v0.29.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
@@ -157,15 +153,11 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1 // indirect
 	github.com/swaggo/swag v1.16.6 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.32 // indirect
 	github.com/wailsapp/go-webview2 v1.0.23 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
@@ -199,8 +191,6 @@ require (
 	modernc.org/sqlite v1.47.0 // indirect
 )
 
-replace dappco.re/go/core => ../go
-
 replace dappco.re/go/core/api => ./third_party/core_api
 
 replace dappco.re/go/core/io => ../core/go-io
@@ -221,8 +211,6 @@ replace dappco.re/go/inference => ../go-inference
 
 replace dappco.re/go/log => ../go-log
 
-replace dappco.re/go/process => ../go-process
-
 replace dappco.re/go/mcp => ../mcp
 
 replace dappco.re/go/rag => ../go-rag
@@ -236,3 +224,7 @@ replace dappco.re/go/webview => ../go-webview
 replace dappco.re/go/ws => ../go-ws
 
 replace dappco.re/go/gui => ./third_party/gui
+
+replace dappco.re/go => ../go
+
+replace dappco.re/go/process => ./third_party/process

@@ -3,9 +3,9 @@ package server
 import (
 	"testing"
 
-	core "dappco.re/go/core"
-	coreio "dappco.re/go/io"
+	core "dappco.re/go"
 	"dappco.re/go/ide/pkg/config"
+	coreio "dappco.re/go/io"
 )
 
 func TestOptions_Default_Good(t *testing.T) {
@@ -32,8 +32,8 @@ func TestOptions_Default_Ugly(t *testing.T) {
 func TestOptions_Register_Good(t *testing.T) {
 	register := Options{
 		Config: config.IDEConfig{}.WithDefaults(),
-		Medium:  coreio.NewMemoryMedium(),
-		MCP:     true,
+		Medium: coreio.NewMemoryMedium(),
+		MCP:    true,
 	}.Register()
 	result := register(core.New())
 	if !result.OK {
@@ -51,7 +51,7 @@ func TestOptions_Register_Bad(t *testing.T) {
 	cfg.Ide.Transport.HTTPAddr = "0.0.0.0:9880"
 	register := Options{
 		Config: cfg,
-		Medium:  coreio.NewMemoryMedium(),
+		Medium: coreio.NewMemoryMedium(),
 	}.Register()
 	result := register(core.New())
 	if result.OK {

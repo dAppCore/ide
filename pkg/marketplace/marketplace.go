@@ -3,7 +3,7 @@ package marketplace
 import (
 	"context"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	scmmarketplace "dappco.re/go/scm/marketplace"

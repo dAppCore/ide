@@ -124,6 +124,9 @@ func TestRelay_EventHistoryRetention_UglyPreservesPendingAnswer(t *testing.T) {
 func TestRelay_Publish_Good(t *testing.T) {
 	subsystem := &Subsystem{}
 	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance", Message: "focus"})
+	if subsystem.hub != nil {
+		t.Fatalf("expected nil-hub publish to leave subsystem unchanged, got %#v", subsystem.hub)
+	}
 }
 
 func TestRelay_EventFromRelayMessage_Good(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"dappco.re/go/ws"
 	"github.com/gorilla/websocket"
@@ -147,7 +147,9 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 	events := []Event{}
 	for {
-		_ = conn.SetReadDeadline(deadline)
+		if err := conn.SetReadDeadline(deadline); err != nil {
+			return events, false, false, len(events) > 0
+		}
 		var message ws.Message
 		if err := conn.ReadJSON(&message); err != nil {
 			return events, false, false, len(events) > 0

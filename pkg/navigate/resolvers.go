@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"reflect"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func (s *Subsystem) resolveStore(ctx context.Context, _ Filter) (Data, Schema, error) {

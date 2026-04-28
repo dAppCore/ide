@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	core "dappco.re/go/core"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "dappco.re/go"
 	guimcp "dappco.re/go/gui/pkg/mcp"
+	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"dappco.re/go/ide/pkg/config"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 

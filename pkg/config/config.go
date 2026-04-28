@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	"gopkg.in/yaml.v3"
 )

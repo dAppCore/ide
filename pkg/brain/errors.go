@@ -3,7 +3,7 @@ package brain
 import (
 	"errors"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 // OpenBrainErrorKind identifies the class of a direct OpenBrain failure.

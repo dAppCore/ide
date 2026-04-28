@@ -4,7 +4,7 @@ import (
 	"flag"
 	goio "io"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func parseRuntimeFlags(args []string) (runtimeFlags, error) {

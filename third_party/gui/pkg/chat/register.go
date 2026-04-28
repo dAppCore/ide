@@ -3,7 +3,7 @@ package chat
 import (
 	"context"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 )
 
@@ -44,28 +44,28 @@ func Register(configure func(*Options)) func(*core.Core) core.Result {
 		}
 		c.Action("gui.chat.tools", func(_ context.Context, _ core.Options) core.Result {
 			if service.options.ToolExecutor == nil {
-				return core.Result{Value: []guimcp.ToolDescriptor{}, OK: true}
+				return core.Ok([]guimcp.ToolDescriptor{})
 			}
-			return core.Result{Value: service.options.ToolExecutor.Manifest(), OK: true}
+			return core.Ok(service.options.ToolExecutor.Manifest())
 		})
 		c.Action("gui.chat.tool_manifest", func(_ context.Context, _ core.Options) core.Result {
 			if service.options.ToolExecutor == nil {
-				return core.Result{Value: "", OK: true}
+				return core.Ok("")
 			}
-			return core.Result{Value: service.options.ToolExecutor.ManifestText(), OK: true}
+			return core.Ok(service.options.ToolExecutor.ManifestText())
 		})
 		c.Action("gui.chat.call_tool", func(ctx context.Context, opts core.Options) core.Result {
 			if service.options.ToolExecutor == nil {
-				return core.Result{Value: core.E("gui.chat.CallTool", "tool executor unavailable", nil), OK: false}
+				return core.Fail(core.E("gui.chat.CallTool", "tool executor unavailable", nil))
 			}
 			input, err := decodeInput[callToolInput](opts)
 			if err != nil {
-				return core.Result{Value: err, OK: false}
+				return core.Fail(err)
 			}
 			output, err := service.options.ToolExecutor.CallTool(ctx, input.Name, input.Arguments)
-			return core.Result{}.New(output, err)
+			return core.ResultOf(output, err)
 		})
-		return core.Result{Value: service, OK: true}
+		return core.Ok(service)
 	}
 }
 

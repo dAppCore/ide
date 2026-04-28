@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 
 	"dappco.re/go/ide/pkg/config"
 )
@@ -13,9 +13,9 @@ func TestResolvers_Query_Good(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
 		if name, ok := query.(string); ok && name == "config.dump" {
-			return core.Result{Value: map[string]any{"config": true}, OK: true}
+			return core.Ok(map[string]any{"config": true})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 	out, schema, err := New(config.Navigate{}, c).resolveSettings(context.Background(), Filter{})
 	if err != nil || out == nil || schema == nil {
@@ -27,7 +27,7 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
 		if name, ok := query.(string); ok && name == "config.dump" {
-			return core.Result{Value: map[string]any{
+			return core.Ok(map[string]any{
 				"ide": map[string]any{
 					"transport": map[string]any{"token": "secret-token"},
 					"brain":     map[string]any{"key": "secret-key"},
@@ -36,9 +36,9 @@ func TestResolvers_Query_UglySecretRedaction(t *testing.T) {
 					"flags":     []any{"--token=secret-token", "--safe=value", "Authorization: Bearer secret", "https://example.com/callback?api_key=secret"},
 					"urls":      []any{"https://user:pass@example.com/path", "https://example.com/path?token=secret"},
 				},
-			}, OK: true}
+			})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 	out, _, err := New(config.Navigate{}, c).resolveSettings(context.Background(), Filter{})
 	if err != nil {
@@ -98,7 +98,7 @@ func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 		Items []struct {
 			Secret string `json:"secret"`
 		} `json:"items"`
-		Meta  struct {
+		Meta struct {
 			APIKey string `yaml:"api_key"`
 		} `json:"meta"`
 		Pointer *struct {
@@ -120,9 +120,9 @@ func TestResolvers_Query_UglySecretRedactionStruct(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
 		if name, ok := query.(string); ok && name == "config.dump" {
-			return core.Result{Value: map[string]any{"ide": payload}, OK: true}
+			return core.Ok(map[string]any{"ide": payload})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 
 	out, _, err := New(config.Navigate{}, c).resolveSettings(context.Background(), Filter{})
@@ -175,14 +175,14 @@ func TestResolvers_Query_UglyIdentityRedaction(t *testing.T) {
 	c := core.New()
 	c.RegisterQuery(func(_ *core.Core, query core.Query) core.Result {
 		if name, ok := query.(string); ok && name == "identity.status" {
-			return core.Result{Value: map[string]any{
+			return core.Ok(map[string]any{
 				"tim": map[string]any{
 					"certificates": []any{"cert-a"},
 					"keys":         []any{"secret-key"},
 				},
-			}, OK: true}
+			})
 		}
-		return core.Result{}
+		return core.Fail(nil)
 	})
 
 	out, _, err := New(config.Navigate{}, c).resolveIdentity(context.Background(), Filter{})

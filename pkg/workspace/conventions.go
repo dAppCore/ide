@@ -3,7 +3,7 @@ package workspace
 import (
 	"embed"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreconfig "dappco.re/go/config"
 	coreio "dappco.re/go/io"
 )
@@ -43,7 +43,7 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		if writeErr := medium.Write(path, string(raw)); writeErr != nil {
 			continue
 		}
-		data, err := coreconfig.Load(medium, path)
+		data, err := coreconfig.Load(workspaceConfigMedium(medium), path)
 		if err != nil {
 			continue
 		}
@@ -93,7 +93,7 @@ func readBuildProjectName(medium coreio.Medium, root string) string {
 	if writeErr := mem.Write(path, content); writeErr != nil {
 		return ""
 	}
-	data, err := coreconfig.Load(mem, path)
+	data, err := coreconfig.Load(workspaceConfigMedium(mem), path)
 	if err != nil {
 		return ""
 	}

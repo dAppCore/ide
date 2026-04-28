@@ -3,7 +3,7 @@ package subagent
 import (
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	"dappco.re/go/ws"
 )
 
@@ -252,11 +252,13 @@ func (s *Subsystem) publish(channel string, message any) {
 	if s == nil || s.hub == nil {
 		return
 	}
-	_ = s.hub.SendToChannel(channel, ws.Message{
+	if err := s.hub.SendToChannel(channel, ws.Message{
 		Type:      ws.TypeEvent,
 		Data:      message,
 		Timestamp: time.Now().UTC(),
-	})
+	}); err != nil {
+		core.Warn("ide.subagent.publish", "channel", channel, "err", err)
+	}
 }
 
 func (s *Subsystem) pruneWorkspaceHistoryLocked() []string {

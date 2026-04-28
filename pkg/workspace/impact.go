@@ -1,7 +1,7 @@
 package workspace
 
 import (
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreconfig "dappco.re/go/config"
 	coreio "dappco.re/go/io"
 )
@@ -62,7 +62,7 @@ func downstreamDependents(medium coreio.Medium, root string) []string {
 	if !medium.Exists(reposPath) {
 		return nil
 	}
-	data, err := coreconfig.Load(medium, reposPath)
+	data, err := coreconfig.Load(workspaceConfigMedium(medium), reposPath)
 	if err != nil {
 		return nil
 	}

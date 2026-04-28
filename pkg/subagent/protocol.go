@@ -3,7 +3,7 @@ package subagent
 import (
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 type GuidanceMessage struct {

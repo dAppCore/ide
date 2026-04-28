@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	gui_chat "dappco.re/go/gui/pkg/chat"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"

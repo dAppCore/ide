@@ -5,10 +5,10 @@ import (
 	"os"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
-	"dappco.re/go/process"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
+	"dappco.re/go/process"
 
 	"dappco.re/go/ide/pkg/config"
 )

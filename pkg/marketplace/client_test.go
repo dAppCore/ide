@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	aipkg "dappco.re/go/ide/pkg/ai"
 	"dappco.re/go/ide/pkg/config"
 	coreio "dappco.re/go/io"

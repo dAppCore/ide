@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 
 	"dappco.re/go/ide/pkg/config"
 	"dappco.re/go/ide/pkg/server"

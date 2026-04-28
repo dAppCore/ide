@@ -8,7 +8,7 @@ import (
 	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Separator are canonical filesystem-safety primitives without Core equivalents.
 	"slices"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	"dappco.re/go/process"
 )

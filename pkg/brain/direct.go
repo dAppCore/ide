@@ -5,7 +5,7 @@ import (
 	"net/http" // Note: AX-6 - OpenBrain direct mode owns a specific HTTP client boundary; RFC permits specific clients.
 	"time"     // Note: AX-6 - brain output contracts expose time.Time timestamps; no core clock primitive exists.
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 
 	ai "dappco.re/go/ide/pkg/ai"
 	"dappco.re/go/ide/pkg/workspace"
@@ -65,7 +65,9 @@ func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput
 		}
 	}
 	output := RecallOutput{Success: true, Count: len(memories), Memories: memories}
-	_ = s.cache.Set(ctx, key, output)
+	if err := s.cache.Set(ctx, key, output); err != nil {
+		core.Warn("ide.brain.recall cache set", "err", err)
+	}
 	return output, nil
 }
 
@@ -85,7 +87,9 @@ func (s *Subsystem) remember(ctx context.Context, input RememberInput) (Remember
 	if err != nil {
 		return RememberOutput{}, err
 	}
-	_ = s.cache.Clear(ctx)
+	if err := s.cache.Clear(ctx); err != nil {
+		core.Warn("ide.brain.remember cache clear", "err", err)
+	}
 	return RememberOutput{Success: true, MemoryID: stringValue(result["id"]), Timestamp: time.Now()}, nil
 }
 
@@ -97,7 +101,9 @@ func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput
 	if err != nil {
 		return ForgetOutput{}, err
 	}
-	_ = s.cache.Clear(ctx)
+	if err := s.cache.Clear(ctx); err != nil {
+		core.Warn("ide.brain.forget cache clear", "err", err)
+	}
 	return ForgetOutput{Success: true, Forgotten: input.ID, Timestamp: time.Now()}, nil
 }
 

@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	storelib "dappco.re/go/store"
 )
 

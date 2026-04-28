@@ -3,7 +3,7 @@ package brain
 import (
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func TestDecode_Options_Good(t *testing.T) {

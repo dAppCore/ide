@@ -3,7 +3,7 @@ package server
 import (
 	coreio "dappco.re/go/io"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	"dappco.re/go/ide/pkg/config"
 )
 
@@ -21,8 +21,8 @@ func (options Options) Register() func(*core.Core) core.Result {
 	return func(_ *core.Core) core.Result {
 		server, err := NewServer(options)
 		if err != nil {
-			return core.Result{Value: err, OK: false}
+			return core.Fail(err)
 		}
-		return core.Result{Value: server, OK: true}
+		return core.Ok(server)
 	}
 }

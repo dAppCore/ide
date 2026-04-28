@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	core "dappco.re/go"
 	api "dappco.re/go/api"
-	core "dappco.re/go/core"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/gin-gonic/gin"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -207,7 +207,9 @@ func serveHardenedHTTP(ctx context.Context, svc *coremcp.Service, addr string, t
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = httpServer.Shutdown(shutdownCtx)
+		if err := httpServer.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
+			core.Warn("ide.server.ServeHTTP shutdown", "err", err)
+		}
 	}()
 	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return core.E("ide.server.ServeHTTP", "serve", err)

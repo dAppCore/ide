@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Dir are canonical filesystem-safety primitives without Core equivalents.
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func BoolPtr(value bool) *bool {

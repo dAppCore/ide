@@ -3,7 +3,7 @@ package subagent
 import (
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func TestDecode_Subagent_Good(t *testing.T) {

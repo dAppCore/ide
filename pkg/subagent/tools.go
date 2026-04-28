@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -104,12 +104,14 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 func (s *Subsystem) handleProgress(ctx context.Context, req *mcp.CallToolRequest, input ProgressInput) (*mcp.CallToolResult, ProgressOutput, error) {
 	if req != nil && req.Session != nil && req.Params != nil {
 		if token := req.Params.GetProgressToken(); token != nil {
-			_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
+			if err := req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
 				ProgressToken: token,
 				Progress:      input.Progress,
 				Total:         input.Total,
 				Message:       input.Message,
-			})
+			}); err != nil {
+				core.Warn("ide.subagent.progress notify", "err", err)
+			}
 		}
 	}
 	out, err := s.progress(ctx, input)

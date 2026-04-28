@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"dappco.re/go/process"
 	"dappco.re/go/ws"
@@ -20,17 +20,17 @@ func registerMCP(options Options, mode runtimeMode) func(*core.Core) core.Result
 	return func(c *core.Core) core.Result {
 		svc, groups, err := newMCPService(c)
 		if err != nil {
-			return core.Result{Value: err, OK: false}
+			return core.Fail(err)
 		}
 		if !mode.conclave {
 			if err := wrapConclaveTools(svc, groups, func() (*runtimeParts, error) {
 				return composeRuntimeMode(options, runtimeMode{conclave: true})
 			}); err != nil {
-				return core.Result{Value: err, OK: false}
+				return core.Fail(err)
 			}
 		}
 		svc.ServiceRuntime = core.NewServiceRuntime(c, struct{}{})
-		return core.Result{Value: svc, OK: true}
+		return core.Ok(svc)
 	}
 }
 
