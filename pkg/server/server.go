@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
 	"time"
 
 	core "dappco.re/go"
+	envpkg "dappco.re/go"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
@@ -45,7 +45,9 @@ type runtimeParts struct {
 }
 
 // srv, err := NewServer(Options{Config: cfg, GUI: true, MCP: false})
-func NewServer(options Options) (*Server, error) {
+func NewServer(
+	options Options,
+) (*Server, error) {
 	parts, err := composeRuntime(options)
 	if err != nil {
 		return nil, err
@@ -62,7 +64,9 @@ func NewServer(options Options) (*Server, error) {
 }
 
 // coreInstance, err := Compose(Options{Config: cfg, GUI: true, MCP: false})
-func Compose(options Options) (*core.Core, error) {
+func Compose(
+	options Options,
+) (*core.Core, error) {
 	parts, err := composeRuntime(options)
 	if err != nil {
 		return nil, err
@@ -70,11 +74,16 @@ func Compose(options Options) (*core.Core, error) {
 	return parts.core, nil
 }
 
-func composeRuntime(options Options) (*runtimeParts, error) {
+func composeRuntime(
+	options Options,
+) (*runtimeParts, error) {
 	return composeRuntimeMode(options, runtimeMode{})
 }
 
-func composeRuntimeMode(options Options, mode runtimeMode) (*runtimeParts, error) {
+func composeRuntimeMode(
+	options Options,
+	mode runtimeMode,
+) (*runtimeParts, error) {
 	cfg := options.Config.WithDefaults()
 	medium := options.Medium
 	if medium == nil {
@@ -233,7 +242,9 @@ func chatExecutor(cfg config.Chat, shared *chatpkg.Executor, mcpService *coremcp
 	return shared
 }
 
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) Run(
+	ctx context.Context,
+) error {
 	if s.transport.Mode == "http" && core.Trim(s.authToken) == "" {
 		return core.E("ide.server.Run", "bearer token required for HTTP mode", nil)
 	}
@@ -292,7 +303,10 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func withMCPAuthToken(token string, run func() error) error {
+func withMCPAuthToken(
+	token string,
+	run func() error,
+) error {
 	if run == nil {
 		return core.E("ide.server.Run", "http runner is nil", nil)
 	}
@@ -300,18 +314,21 @@ func withMCPAuthToken(token string, run func() error) error {
 	if token == "" {
 		return run()
 	}
-	previous, hadPrevious := os.LookupEnv("MCP_AUTH_TOKEN")
-	if err := os.Setenv("MCP_AUTH_TOKEN", token); err != nil {
+	previous, hadPrevious := core.LookupEnv("MCP_AUTH_TOKEN")
+	if result := envpkg.Setenv("MCP_AUTH_TOKEN", token); !result.OK {
+		err, _ := result.Value.(error)
 		return core.E("ide.server.Run", "set MCP_AUTH_TOKEN", err)
 	}
 	defer func() {
 		if hadPrevious {
-			if err := os.Setenv("MCP_AUTH_TOKEN", previous); err != nil {
+			if result := envpkg.Setenv("MCP_AUTH_TOKEN", previous); !result.OK {
+				err, _ := result.Value.(error)
 				core.Warn("ide.server.Run restore MCP_AUTH_TOKEN", "err", err)
 			}
 			return
 		}
-		if err := os.Unsetenv("MCP_AUTH_TOKEN"); err != nil {
+		if result := envpkg.Unsetenv("MCP_AUTH_TOKEN"); !result.OK {
+			err, _ := result.Value.(error)
 			core.Warn("ide.server.Run unset MCP_AUTH_TOKEN", "err", err)
 		}
 	}()

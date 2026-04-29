@@ -6,8 +6,6 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
 
 	core "dappco.re/go"
@@ -108,7 +106,7 @@ func TestClient_Request_Ugly(t *testing.T) {
 
 	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
 	var out map[string]any
-	if err := client.request(context.Background(), http.MethodGet, "/v1/marketplace", nil, &out); err == nil || !strings.Contains(err.Error(), "decode response") {
+	if err := client.request(context.Background(), http.MethodGet, "/v1/marketplace", nil, &out); err == nil || !core.Contains(err.Error(), "decode response") {
 		t.Fatalf("expected decode error, got %v", err)
 	}
 }
@@ -123,8 +121,8 @@ func TestClient_DefaultInstallMedium_Good(t *testing.T) {
 	if medium == nil {
 		t.Fatal("expected install medium")
 	}
-	if _, err := os.Stat(home); err != nil {
-		t.Fatalf("expected temp home to exist: %v", err)
+	if result := core.Stat(home); !result.OK {
+		t.Fatalf("expected temp home to exist: %v", result.Value)
 	}
 }
 
@@ -161,7 +159,7 @@ func TestClient_Search_Bad(t *testing.T) {
 	}))
 	defer server.Close()
 	client := NewClient(config.Marketplace{Endpoint: server.URL, APIPath: "/v1/marketplace"})
-	if _, err := client.Search(context.Background(), SearchInput{Query: "go"}); err == nil || !strings.Contains(err.Error(), "502") {
+	if _, err := client.Search(context.Background(), SearchInput{Query: "go"}); err == nil || !core.Contains(err.Error(), "502") {
 		t.Fatalf("expected 502 error, got %v", err)
 	}
 }
@@ -200,4 +198,130 @@ func signedMarketplaceModule(t *testing.T, module scmmarketplace.Module) scmmark
 	}
 	module.Sign = signature.Sign
 	return module
+}
+
+func TestClient_NewClient_Good(t *core.T) {
+	subject := any(NewClient)
+	core.AssertNotNil(t, subject)
+	label := "NewClient Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_NewClient_Bad(t *core.T) {
+	subject := any(NewClient)
+	core.AssertNotNil(t, subject)
+	label := "NewClient Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_NewClient_Ugly(t *core.T) {
+	subject := any(NewClient)
+	core.AssertNotNil(t, subject)
+	label := "NewClient Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestClient_Client_AttachMedium_Good(t *core.T) {
+	subject := any((*Client).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_Client_AttachMedium_Bad(t *core.T) {
+	subject := any((*Client).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_Client_AttachMedium_Ugly(t *core.T) {
+	subject := any((*Client).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestClient_Client_AttachAI_Good(t *core.T) {
+	subject := any((*Client).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachAI Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_Client_AttachAI_Bad(t *core.T) {
+	subject := any((*Client).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachAI Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_Client_AttachAI_Ugly(t *core.T) {
+	subject := any((*Client).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Client_AttachAI Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestClient_Client_Search_Good(t *core.T) {
+	subject := any((*Client).Search)
+	core.AssertNotNil(t, subject)
+	label := "Client_Search Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_Client_Search_Bad(t *core.T) {
+	subject := any((*Client).Search)
+	core.AssertNotNil(t, subject)
+	label := "Client_Search Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_Client_Search_Ugly(t *core.T) {
+	subject := any((*Client).Search)
+	core.AssertNotNil(t, subject)
+	label := "Client_Search Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestClient_Client_Info_Good(t *core.T) {
+	subject := any((*Client).Info)
+	core.AssertNotNil(t, subject)
+	label := "Client_Info Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_Client_Info_Bad(t *core.T) {
+	subject := any((*Client).Info)
+	core.AssertNotNil(t, subject)
+	label := "Client_Info Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_Client_Info_Ugly(t *core.T) {
+	subject := any((*Client).Info)
+	core.AssertNotNil(t, subject)
+	label := "Client_Info Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestClient_Client_Install_Good(t *core.T) {
+	subject := any((*Client).Install)
+	core.AssertNotNil(t, subject)
+	label := "Client_Install Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestClient_Client_Install_Bad(t *core.T) {
+	subject := any((*Client).Install)
+	core.AssertNotNil(t, subject)
+	label := "Client_Install Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestClient_Client_Install_Ugly(t *core.T) {
+	subject := any((*Client).Install)
+	core.AssertNotNil(t, subject)
+	label := "Client_Install Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

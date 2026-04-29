@@ -6,7 +6,6 @@ package brain_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	core "dappco.re/go"
@@ -137,10 +136,10 @@ func TestLive_BrainRecall_Ugly_SkipsWithoutKey(t *testing.T) {
 }
 
 func liveBrainConfigFromEnv() (config.Brain, bool, string) {
-	if os.Getenv("CORE_BRAIN_INTEGRATION") != "1" {
+	if core.Getenv("CORE_BRAIN_INTEGRATION") != "1" {
 		return config.Brain{}, false, "set CORE_BRAIN_INTEGRATION=1 to run live test"
 	}
-	key := os.Getenv("CORE_BRAIN_KEY")
+	key := core.Getenv("CORE_BRAIN_KEY")
 	if key == "" {
 		return config.Brain{}, false, "CORE_BRAIN_KEY required for live test"
 	}

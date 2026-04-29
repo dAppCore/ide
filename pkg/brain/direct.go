@@ -19,7 +19,10 @@ const (
 	maxResponseBytes  = 1 << 20
 )
 
-func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput, error) {
+func (s *Subsystem) recall(
+	ctx context.Context,
+	input RecallInput,
+) (RecallOutput, error) {
 	if core.Trim(input.Query) == "" {
 		return RecallOutput{}, core.E("ide.brain.recall", "query is required", nil)
 	}
@@ -71,7 +74,10 @@ func (s *Subsystem) recall(ctx context.Context, input RecallInput) (RecallOutput
 	return output, nil
 }
 
-func (s *Subsystem) remember(ctx context.Context, input RememberInput) (RememberOutput, error) {
+func (s *Subsystem) remember(
+	ctx context.Context,
+	input RememberInput,
+) (RememberOutput, error) {
 	payload := map[string]any{
 		"content":    input.Content,
 		"type":       input.Type,
@@ -93,7 +99,10 @@ func (s *Subsystem) remember(ctx context.Context, input RememberInput) (Remember
 	return RememberOutput{Success: true, MemoryID: stringValue(result["id"]), Timestamp: time.Now()}, nil
 }
 
-func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput, error) {
+func (s *Subsystem) forget(
+	ctx context.Context,
+	input ForgetInput,
+) (ForgetOutput, error) {
 	if core.Trim(input.ID) == "" {
 		return ForgetOutput{}, core.E("ide.brain.forget", "id is required", nil)
 	}
@@ -107,7 +116,10 @@ func (s *Subsystem) forget(ctx context.Context, input ForgetInput) (ForgetOutput
 	return ForgetOutput{Success: true, Forgotten: input.ID, Timestamp: time.Now()}, nil
 }
 
-func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, error) {
+func (s *Subsystem) list(
+	ctx context.Context,
+	input ListInput,
+) (ListOutput, error) {
 	limit := input.Limit
 	switch {
 	case limit <= 0:
@@ -145,7 +157,10 @@ func (s *Subsystem) list(ctx context.Context, input ListInput) (ListOutput, erro
 	return ListOutput{Success: true, Count: len(memories), Memories: memories}, nil
 }
 
-func (s *Subsystem) context(ctx context.Context, input ContextInput) (ContextOutput, error) {
+func (s *Subsystem) context(
+	ctx context.Context,
+	input ContextInput,
+) (ContextOutput, error) {
 	project := core.Trim(input.Project)
 	if project == "" && s.workspace != nil {
 		project = s.workspace.Root()
@@ -231,7 +246,12 @@ func (s *Subsystem) semanticConventions(project string, memories []Memory, conve
 	return ranked
 }
 
-func (s *Subsystem) apiCall(ctx context.Context, method, path string, body any) (map[string]any, error) {
+func (s *Subsystem) apiCall(
+	ctx context.Context,
+	method,
+	path string,
+	body any,
+) (map[string]any, error) {
 	apiKey := s.apiKey()
 	if apiKey == "" {
 		return nil, wrapOpenBrainError("ide.brain.apiCall", "no API key configured", &OpenBrainError{

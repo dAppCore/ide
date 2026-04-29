@@ -58,7 +58,11 @@ func (e *Executor) ManifestText() string {
 	return core.Trim(builder.String())
 }
 
-func (e *Executor) CallTool(ctx context.Context, name string, arguments map[string]any) (string, error) {
+func (e *Executor) CallTool(
+	ctx context.Context,
+	name string,
+	arguments map[string]any,
+) (string, error) {
 	if e.gui != nil {
 		for _, descriptor := range e.gui.Manifest() {
 			if descriptor.Name == name {

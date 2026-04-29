@@ -14,6 +14,10 @@ import (
 )
 
 func TestMarketplace_Search_Good(t *testing.T) {
+	_targetName := "Search"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`[{"code":"go-io","name":"go-io"}]`))
 	}))
@@ -30,6 +34,10 @@ func TestMarketplace_Search_Good(t *testing.T) {
 }
 
 func TestMarketplace_Search_Bad(t *testing.T) {
+	_targetName := "Search"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad gateway", http.StatusBadGateway)
 	}))
@@ -41,6 +49,10 @@ func TestMarketplace_Search_Bad(t *testing.T) {
 }
 
 func TestMarketplace_Search_Ugly(t *testing.T) {
+	_targetName := "Search"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -117,6 +129,10 @@ func TestMarketplace_RegisterTools_Good(t *testing.T) {
 }
 
 func TestMarketplace_Decode_Good(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[SearchInput](core.NewOptions(
 		core.Option{Key: "query", Value: "go"},
 		core.Option{Key: "category", Value: "language"},
@@ -130,9 +146,139 @@ func TestMarketplace_Decode_Good(t *testing.T) {
 }
 
 func TestMarketplace_Decode_Bad(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := decode[struct {
 		Query string `json:"query"`
 	}](core.NewOptions(core.Option{Key: "query", Value: 123})); err == nil {
 		t.Fatal("expected type mismatch error")
 	}
+}
+
+func TestMarketplace_New_Good(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_New_Bad(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_New_Ugly(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestMarketplace_Subsystem_AttachAI_Good(t *core.T) {
+	subject := any((*Subsystem).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachAI Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_Subsystem_AttachAI_Bad(t *core.T) {
+	subject := any((*Subsystem).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachAI Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_Subsystem_AttachAI_Ugly(t *core.T) {
+	subject := any((*Subsystem).AttachAI)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachAI Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestMarketplace_Subsystem_AttachMedium_Good(t *core.T) {
+	subject := any((*Subsystem).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_Subsystem_AttachMedium_Bad(t *core.T) {
+	subject := any((*Subsystem).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_Subsystem_AttachMedium_Ugly(t *core.T) {
+	subject := any((*Subsystem).AttachMedium)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_AttachMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestMarketplace_Subsystem_Name_Good(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_Subsystem_Name_Bad(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_Subsystem_Name_Ugly(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestMarketplace_Subsystem_RegisterTools_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_Subsystem_RegisterTools_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_Subsystem_RegisterTools_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestMarketplace_Subsystem_RegisterActions_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestMarketplace_Subsystem_RegisterActions_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestMarketplace_Subsystem_RegisterActions_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

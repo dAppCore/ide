@@ -3,6 +3,10 @@ package workspace
 import "testing"
 
 func TestIgnore_ShouldIgnorePath_Good(t *testing.T) {
+	_targetName := "ShouldIgnorePath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name    string
 		root    string
@@ -42,6 +46,10 @@ func TestIgnore_ShouldIgnorePath_Good(t *testing.T) {
 }
 
 func TestIgnore_ShouldIgnorePath_Bad(t *testing.T) {
+	_targetName := "ShouldIgnorePath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name    string
 		root    string
@@ -77,6 +85,10 @@ func TestIgnore_ShouldIgnorePath_Bad(t *testing.T) {
 }
 
 func TestIgnore_ShouldIgnorePath_Ugly(t *testing.T) {
+	_targetName := "ShouldIgnorePath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name    string
 		root    string

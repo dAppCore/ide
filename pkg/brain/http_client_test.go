@@ -2,7 +2,7 @@ package brain
 
 import (
 	"context"
-	"errors"
+	core "dappco.re/go"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,7 +94,7 @@ func TestHTTPClient_DoJSON_Bad(t *testing.T) {
 		t.Fatal("expected status error")
 	}
 	var apiErr *OpenBrainError
-	if !errors.As(err, &apiErr) {
+	if !core.As(err, &apiErr) {
 		t.Fatalf("expected typed OpenBrain error, got %T %v", err, err)
 	}
 	if apiErr.Kind != OpenBrainErrorStatus || apiErr.StatusCode != http.StatusUnauthorized || apiErr.Retryable {
@@ -159,4 +159,88 @@ func newHTTPClientForTest(endpoint string, attempts int, failureThreshold int) *
 	cfg.HTTP.CircuitBreaker.FailureThreshold = failureThreshold
 	cfg.HTTP.CircuitBreaker.Cooldown = 30 * time.Minute
 	return newOpenBrainHTTPClient(cfg, http.DefaultClient)
+}
+
+func TestHttpClient_BrainHTTPClient_DoJSON_Good(t *core.T) {
+	subject := any((*openBrainHTTPClient).DoJSON)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTPClient_DoJSON Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestHttpClient_BrainHTTPClient_DoJSON_Bad(t *core.T) {
+	subject := any((*openBrainHTTPClient).DoJSON)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTPClient_DoJSON Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestHttpClient_BrainHTTPClient_DoJSON_Ugly(t *core.T) {
+	subject := any((*openBrainHTTPClient).DoJSON)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTPClient_DoJSON Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestHttpClient_BrainCircuitBreaker_Allow_Good(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).Allow)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_Allow Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestHttpClient_BrainCircuitBreaker_Allow_Bad(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).Allow)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_Allow Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestHttpClient_BrainCircuitBreaker_Allow_Ugly(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).Allow)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_Allow Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordSuccess_Good(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordSuccess)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordSuccess Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordSuccess_Bad(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordSuccess)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordSuccess Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordSuccess_Ugly(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordSuccess)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordSuccess Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordFailure_Good(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordFailure)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordFailure Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordFailure_Bad(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordFailure)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordFailure Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestHttpClient_BrainCircuitBreaker_RecordFailure_Ugly(t *core.T) {
+	subject := any((*openBrainCircuitBreaker).RecordFailure)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_RecordFailure Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

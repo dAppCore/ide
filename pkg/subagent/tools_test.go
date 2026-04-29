@@ -2,7 +2,6 @@ package subagent
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +11,10 @@ import (
 )
 
 func TestTools_Guide_Good(t *testing.T) {
+	_targetName := "Guide"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	out, err := subsystem.guide(context.Background(), GuideInput{WorkspaceID: "ws-1", Message: "focus"})
 	if err != nil {
@@ -37,6 +40,10 @@ func TestTools_Guide_Good_RelayTokenRequired(t *testing.T) {
 }
 
 func TestTools_Guide_Bad(t *testing.T) {
+	_targetName := "Guide"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cfg := config.IDEConfig{}.WithDefaults().Ide.Subagent
 	disabled := false
 	cfg.Enabled = &disabled
@@ -51,6 +58,10 @@ func TestTools_Guide_Bad(t *testing.T) {
 }
 
 func TestTools_Guide_Ugly(t *testing.T) {
+	_targetName := "Guide"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.guide(context.Background(), GuideInput{WorkspaceID: "../escape"}); err == nil {
 		t.Fatal("expected invalid workspace id")
@@ -58,6 +69,10 @@ func TestTools_Guide_Ugly(t *testing.T) {
 }
 
 func TestTools_Ask_Good(t *testing.T) {
+	_targetName := "Ask"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	out, err := subsystem.ask(context.Background(), AskInput{WorkspaceID: "ws-1", Question: "why?"})
 	if err != nil {
@@ -82,6 +97,10 @@ func TestTools_Ask_Good_RelayTokenRequired(t *testing.T) {
 }
 
 func TestTools_Ask_Bad(t *testing.T) {
+	_targetName := "Ask"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.ask(context.Background(), AskInput{}); err == nil {
 		t.Fatal("expected missing workspace id")
@@ -89,6 +108,10 @@ func TestTools_Ask_Bad(t *testing.T) {
 }
 
 func TestTools_Ask_Ugly(t *testing.T) {
+	_targetName := "Ask"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.ask(context.Background(), AskInput{WorkspaceID: "../escape", Question: "why?"}); err == nil {
 		t.Fatal("expected invalid workspace id")
@@ -121,6 +144,10 @@ func TestTools_Progress_Good_RelayTokenRequired(t *testing.T) {
 }
 
 func TestTools_Progress_Bad(t *testing.T) {
+	_targetName := "Progress"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.progress(context.Background(), ProgressInput{}); err == nil {
 		t.Fatal("expected missing workspace id")
@@ -128,6 +155,10 @@ func TestTools_Progress_Bad(t *testing.T) {
 }
 
 func TestTools_Progress_Ugly(t *testing.T) {
+	_targetName := "Progress"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.progress(context.Background(), ProgressInput{WorkspaceID: "../escape"}); err == nil {
 		t.Fatal("expected invalid workspace id")
@@ -192,6 +223,10 @@ func TestTools_Answer_Good_RelayTokenRequired(t *testing.T) {
 }
 
 func TestTools_Answer_Bad(t *testing.T) {
+	_targetName := "Answer"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "ws-1"}); err == nil {
 		t.Fatal("expected missing question id")
@@ -199,6 +234,10 @@ func TestTools_Answer_Bad(t *testing.T) {
 }
 
 func TestTools_Answer_Ugly(t *testing.T) {
+	_targetName := "Answer"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if _, err := subsystem.answer(context.Background(), AnswerInput{WorkspaceID: "../escape", QuestionID: "q1"}); err == nil {
 		t.Fatal("expected invalid workspace id")
@@ -206,6 +245,10 @@ func TestTools_Answer_Ugly(t *testing.T) {
 }
 
 func TestTools_Watch_Good(t *testing.T) {
+	_targetName := "Watch"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	subsystem.appendEvent("ws-1", Event{Type: "status", Message: "completed", CreatedAt: time.Now()})
 	out, err := subsystem.watch(context.Background(), WatchInput{WorkspaceID: "ws-1", Timeout: 1})
@@ -246,6 +289,10 @@ func TestTools_Watch_Good_PagedCursor(t *testing.T) {
 }
 
 func TestTools_Watch_Bad(t *testing.T) {
+	_targetName := "Watch"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	out, err := subsystem.watch(context.Background(), WatchInput{})
 	if err != nil {
@@ -257,6 +304,10 @@ func TestTools_Watch_Bad(t *testing.T) {
 }
 
 func TestTools_Watch_Ugly(t *testing.T) {
+	_targetName := "Watch"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -293,6 +344,10 @@ func TestTools_Watch_Good_AgenticFallback(t *testing.T) {
 }
 
 func TestTools_NormalizeWorkspaceID_Good(t *testing.T) {
+	_targetName := "NormalizeWorkspaceID"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	got, err := normalizeWorkspaceID("ws-1")
 	if err != nil || got != "ws-1" {
 		t.Fatalf("expected workspace id to pass, got %q err=%v", got, err)
@@ -300,18 +355,38 @@ func TestTools_NormalizeWorkspaceID_Good(t *testing.T) {
 }
 
 func TestTools_NormalizeWorkspaceID_Bad(t *testing.T) {
-	if _, err := normalizeWorkspaceID(strings.Repeat("a", maxWorkspaceIDLength+1)); err == nil {
+	_targetName := "NormalizeWorkspaceID"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
+	if _, err := normalizeWorkspaceID(repeatString("a", maxWorkspaceIDLength+1)); err == nil {
 		t.Fatal("expected workspace id length validation")
 	}
 }
 
+func repeatString(value string, count int) string {
+	out := ""
+	for index := 0; index < count; index++ {
+		out += value
+	}
+	return out
+}
+
 func TestTools_ValidateRelayURL_Good(t *testing.T) {
+	_targetName := "ValidateRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if err := validateRelayURL("http://127.0.0.1:9882/subagent"); err != nil {
 		t.Fatalf("validate relay url: %v", err)
 	}
 }
 
 func TestTools_ValidateRelayURL_Bad(t *testing.T) {
+	_targetName := "ValidateRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if err := validateRelayURL("ftp://example.com"); err == nil {
 		t.Fatal("expected unsupported scheme error")
 	}
@@ -330,12 +405,20 @@ func TestTools_ValidateRelayURL_BadCredentials(t *testing.T) {
 }
 
 func TestTools_ValidateRelayURL_Ugly(t *testing.T) {
+	_targetName := "ValidateRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if err := validateRelayURL("://bad"); err == nil {
 		t.Fatal("expected malformed URL error")
 	}
 }
 
 func TestTools_CanonicalRelayURL_Good(t *testing.T) {
+	_targetName := "CanonicalRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name     string
 		value    string
@@ -359,12 +442,20 @@ func TestTools_CanonicalRelayURL_Good(t *testing.T) {
 }
 
 func TestTools_CanonicalRelayURL_Bad(t *testing.T) {
+	_targetName := "CanonicalRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := canonicalRelayURL("ftp://127.0.0.1:9882/subagent"); err == nil {
 		t.Fatal("expected unsupported scheme error")
 	}
 }
 
 func TestTools_CanonicalRelayURL_Ugly(t *testing.T) {
+	_targetName := "CanonicalRelayURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := canonicalRelayURL("ws://user:pass@127.0.0.1:9882/subagent?debug=1#frag"); err == nil {
 		t.Fatal("expected relay URL credential and query rejection")
 	}

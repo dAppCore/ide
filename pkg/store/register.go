@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"os"
 
 	core "dappco.re/go"
 	coreio "dappco.re/go/io"
@@ -32,12 +31,12 @@ func Register(c *core.Core) core.Result {
 }
 
 func defaultStorePath() string {
-	home := core.Trim(os.Getenv("DIR_HOME"))
+	home := core.Trim(core.Getenv("DIR_HOME"))
 	if home == "" {
 		home = core.Env("DIR_HOME")
 	}
 	if home == "" {
-		home = core.Trim(os.Getenv("HOME"))
+		home = core.Trim(core.Getenv("HOME"))
 	}
 	if home == "" {
 		home = core.Env("HOME")

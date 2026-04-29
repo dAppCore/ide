@@ -1,15 +1,11 @@
 package brain
 
-import (
-	"errors"
-
-	core "dappco.re/go"
-)
+import core "dappco.re/go"
 
 // OpenBrainErrorKind identifies the class of a direct OpenBrain failure.
 //
 //	var apiErr *OpenBrainError
-//	if errors.As(err, &apiErr) && apiErr.Kind == OpenBrainErrorStatus {
+//	if core.As(err, &apiErr) && apiErr.Kind == OpenBrainErrorStatus {
 //	    status := apiErr.StatusCode
 //	    _ = status
 //	}
@@ -28,7 +24,7 @@ const (
 // OpenBrainError carries machine-readable details for OpenBrain HTTP failures.
 //
 //	var apiErr *OpenBrainError
-//	if errors.As(err, &apiErr) && apiErr.Retryable { /* retry at caller boundary */ }
+//	if core.As(err, &apiErr) && apiErr.Retryable { /* retry at caller boundary */ }
 type OpenBrainError struct {
 	Kind       OpenBrainErrorKind `json:"kind"`
 	Method     string             `json:"method,omitempty"`
@@ -63,7 +59,9 @@ func (err *OpenBrainError) Error() string {
 	return core.Sprintf("openbrain %s", err.Kind)
 }
 
-func (err *OpenBrainError) Unwrap() error {
+func (err *OpenBrainError) Unwrap() (
+	cause error,
+) {
 	if err == nil {
 		return nil
 	}
@@ -75,16 +73,20 @@ func (err *OpenBrainError) Unwrap() error {
 //	if brain.IsOpenBrainError(err, brain.OpenBrainErrorCircuitOpen) { return cachedFallback }
 func IsOpenBrainError(err error, kind OpenBrainErrorKind) bool {
 	var apiErr *OpenBrainError
-	return errors.As(err, &apiErr) && apiErr.Kind == kind
+	return core.As(err, &apiErr) && apiErr.Kind == kind
 }
 
-func wrapOpenBrainError(scope, message string, err *OpenBrainError) error {
+func wrapOpenBrainError(
+	scope,
+	message string,
+	err *OpenBrainError,
+) error {
 	return core.E(scope, message, err)
 }
 
 func openBrainErrorFrom(err error) (*OpenBrainError, bool) {
 	var apiErr *OpenBrainError
-	if errors.As(err, &apiErr) {
+	if core.As(err, &apiErr) {
 		return apiErr, true
 	}
 	return nil, false

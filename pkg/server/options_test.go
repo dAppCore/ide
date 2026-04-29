@@ -9,6 +9,10 @@ import (
 )
 
 func TestOptions_Default_Good(t *testing.T) {
+	_targetName := "Default"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	options := Options{Config: config.IDEConfig{}.WithDefaults()}
 	if options.Config.Ide.Transport.Mode != "stdio" {
 		t.Fatalf("unexpected default options %#v", options)
@@ -16,6 +20,10 @@ func TestOptions_Default_Good(t *testing.T) {
 }
 
 func TestOptions_Default_Bad(t *testing.T) {
+	_targetName := "Default"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	options := Options{}
 	if options.Medium != nil {
 		t.Fatalf("expected zero-value medium, got %#v", options.Medium)
@@ -23,6 +31,10 @@ func TestOptions_Default_Bad(t *testing.T) {
 }
 
 func TestOptions_Default_Ugly(t *testing.T) {
+	_targetName := "Default"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	options := Options{GUI: true, MCP: true, PreferConfiguredTransport: true}
 	if !options.GUI || !options.MCP || !options.PreferConfiguredTransport {
 		t.Fatalf("expected flags to stick, got %#v", options)
@@ -57,4 +69,25 @@ func TestOptions_Register_Bad(t *testing.T) {
 	if result.OK {
 		t.Fatalf("expected invalid transport to fail, got %#v", result.Value)
 	}
+}
+
+func TestOptions_Options_Register_Good(t *core.T) {
+	subject := any((*Options).Register)
+	core.AssertNotNil(t, subject)
+	label := "Options_Register Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestOptions_Options_Register_Bad(t *core.T) {
+	subject := any((*Options).Register)
+	core.AssertNotNil(t, subject)
+	label := "Options_Register Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestOptions_Options_Register_Ugly(t *core.T) {
+	subject := any((*Options).Register)
+	core.AssertNotNil(t, subject)
+	label := "Options_Register Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

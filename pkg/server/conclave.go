@@ -34,7 +34,9 @@ func registerMCP(options Options, mode runtimeMode) func(*core.Core) core.Result
 	}
 }
 
-func newMCPService(c *core.Core) (*coremcp.Service, map[string]bool, error) {
+func newMCPService(
+	c *core.Core,
+) (*coremcp.Service, map[string]bool, error) {
 	var subsystems []coremcp.Subsystem
 	var processService *process.Service
 	var wsHub *ws.Hub
@@ -88,7 +90,11 @@ func filterMCPToolsToGroups(svc *coremcp.Service, groups map[string]bool) {
 	setToolRecords(svc, kept)
 }
 
-func wrapConclaveTools(svc *coremcp.Service, groups map[string]bool, spawn func() (*runtimeParts, error)) error {
+func wrapConclaveTools(
+	svc *coremcp.Service,
+	groups map[string]bool,
+	spawn func() (*runtimeParts, error),
+) error {
 	if svc == nil || len(groups) == 0 {
 		return nil
 	}

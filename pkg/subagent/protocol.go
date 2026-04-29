@@ -45,7 +45,9 @@ type StatusMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func EncodeMessage(message any) ([]byte, error) {
+func EncodeMessage(
+	message any,
+) ([]byte, error) {
 	raw := []byte(core.JSONMarshalString(message))
 	decoded, err := DecodeMessage(raw)
 	if err != nil {
@@ -54,7 +56,9 @@ func EncodeMessage(message any) ([]byte, error) {
 	return []byte(core.JSONMarshalString(decoded)), nil
 }
 
-func DecodeMessage(raw []byte) (any, error) {
+func DecodeMessage(
+	raw []byte,
+) (any, error) {
 	envelope := struct {
 		Type string `json:"type"`
 	}{}
@@ -116,7 +120,10 @@ func DecodeMessage(raw []byte) (any, error) {
 	}
 }
 
-func decodeProtocol(raw []byte, target any) error {
+func decodeProtocol(
+	raw []byte,
+	target any,
+) error {
 	if result := core.JSONUnmarshal(raw, target); !result.OK {
 		if err, ok := result.Value.(error); ok {
 			return err

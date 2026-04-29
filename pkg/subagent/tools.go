@@ -31,12 +31,19 @@ func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	coremcp.AddToolRecorded(svc, server, "subagent", &mcp.Tool{Name: "subagent_dispatch_guided", Description: "Dispatch a guided subagent workspace with relay wiring."}, s.handleDispatchGuided)
 }
 
-func (s *Subsystem) handleGuide(ctx context.Context, _ *mcp.CallToolRequest, input GuideInput) (*mcp.CallToolResult, GuideOutput, error) {
+func (s *Subsystem) handleGuide(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input GuideInput,
+) (*mcp.CallToolResult, GuideOutput, error) {
 	out, err := s.guide(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, error) {
+func (s *Subsystem) guide(
+	ctx context.Context,
+	input GuideInput,
+) (GuideOutput, error) {
 	_ = ctx
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return GuideOutput{Delivered: false, Reason: "subagent is disabled"}, nil
@@ -58,12 +65,19 @@ func (s *Subsystem) guide(ctx context.Context, input GuideInput) (GuideOutput, e
 	return GuideOutput{Delivered: true}, nil
 }
 
-func (s *Subsystem) handleAsk(ctx context.Context, _ *mcp.CallToolRequest, input AskInput) (*mcp.CallToolResult, AskOutput, error) {
+func (s *Subsystem) handleAsk(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input AskInput,
+) (*mcp.CallToolResult, AskOutput, error) {
 	out, err := s.ask(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) {
+func (s *Subsystem) ask(
+	ctx context.Context,
+	input AskInput,
+) (AskOutput, error) {
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AskOutput{Reason: "subagent is disabled"}, nil
 	}
@@ -101,7 +115,11 @@ func (s *Subsystem) ask(ctx context.Context, input AskInput) (AskOutput, error) 
 	}
 }
 
-func (s *Subsystem) handleProgress(ctx context.Context, req *mcp.CallToolRequest, input ProgressInput) (*mcp.CallToolResult, ProgressOutput, error) {
+func (s *Subsystem) handleProgress(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input ProgressInput,
+) (*mcp.CallToolResult, ProgressOutput, error) {
 	if req != nil && req.Session != nil && req.Params != nil {
 		if token := req.Params.GetProgressToken(); token != nil {
 			if err := req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
@@ -118,7 +136,10 @@ func (s *Subsystem) handleProgress(ctx context.Context, req *mcp.CallToolRequest
 	return nil, out, err
 }
 
-func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (ProgressOutput, error) {
+func (s *Subsystem) progress(
+	ctx context.Context,
+	input ProgressInput,
+) (ProgressOutput, error) {
 	_ = ctx
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return ProgressOutput{Delivered: false, Reason: "subagent is disabled"}, nil
@@ -140,12 +161,19 @@ func (s *Subsystem) progress(ctx context.Context, input ProgressInput) (Progress
 	return ProgressOutput{Delivered: true}, nil
 }
 
-func (s *Subsystem) handleWatch(ctx context.Context, _ *mcp.CallToolRequest, input WatchInput) (*mcp.CallToolResult, WatchOutput, error) {
+func (s *Subsystem) handleWatch(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input WatchInput,
+) (*mcp.CallToolResult, WatchOutput, error) {
 	out, err := s.watch(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, error) {
+func (s *Subsystem) watch(
+	ctx context.Context,
+	input WatchInput,
+) (WatchOutput, error) {
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return WatchOutput{Reason: "subagent is disabled"}, nil
 	}
@@ -206,12 +234,19 @@ func (s *Subsystem) watch(ctx context.Context, input WatchInput) (WatchOutput, e
 	}
 }
 
-func (s *Subsystem) handleAnswer(ctx context.Context, _ *mcp.CallToolRequest, input AnswerInput) (*mcp.CallToolResult, AnswerOutput, error) {
+func (s *Subsystem) handleAnswer(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input AnswerInput,
+) (*mcp.CallToolResult, AnswerOutput, error) {
 	out, err := s.answer(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) answer(ctx context.Context, input AnswerInput) (AnswerOutput, error) {
+func (s *Subsystem) answer(
+	ctx context.Context,
+	input AnswerInput,
+) (AnswerOutput, error) {
 	_ = ctx
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return AnswerOutput{Delivered: false, Reason: "subagent is disabled"}, nil

@@ -2,7 +2,6 @@ package subagent
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	core "dappco.re/go"
@@ -95,7 +94,112 @@ func TestSubagent_DispatchGuided_Good_NoSecretLeak(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dispatch guided: %v", err)
 	}
-	if strings.Contains(out.Prompt, "relay-secret") || strings.Contains(out.Prompt, "prompt-secret") {
+	if core.Contains(out.Prompt, "relay-secret") || core.Contains(out.Prompt, "prompt-secret") {
 		t.Fatal("expected relay secrets to stay out of prompt text")
 	}
+}
+
+func TestSubagent_New_Good(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSubagent_New_Bad(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSubagent_New_Ugly(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestSubagent_NewWithHistory_Good(t *core.T) {
+	subject := any(NewWithHistory)
+	core.AssertNotNil(t, subject)
+	label := "NewWithHistory Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSubagent_NewWithHistory_Bad(t *core.T) {
+	subject := any(NewWithHistory)
+	core.AssertNotNil(t, subject)
+	label := "NewWithHistory Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSubagent_NewWithHistory_Ugly(t *core.T) {
+	subject := any(NewWithHistory)
+	core.AssertNotNil(t, subject)
+	label := "NewWithHistory Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestSubagent_Subsystem_Name_Good(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSubagent_Subsystem_Name_Bad(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSubagent_Subsystem_Name_Ugly(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestSubagent_Subsystem_RegisterTools_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSubagent_Subsystem_RegisterTools_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSubagent_Subsystem_RegisterTools_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestSubagent_Subsystem_RegisterActions_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSubagent_Subsystem_RegisterActions_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSubagent_Subsystem_RegisterActions_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

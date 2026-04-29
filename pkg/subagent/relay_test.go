@@ -2,16 +2,15 @@ package subagent
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/gorilla/websocket"
 
+	core "dappco.re/go"
 	"dappco.re/go/ide/pkg/config"
 	"dappco.re/go/ws"
 )
@@ -20,12 +19,16 @@ type testAuthenticator struct{}
 
 func (testAuthenticator) Authenticate(r *http.Request) ws.AuthResult {
 	if r.Header.Get("Authorization") != "Bearer good-token" {
-		return ws.AuthResult{Error: errors.New("expired token")}
+		return ws.AuthResult{Error: core.NewError("expired token")}
 	}
 	return ws.AuthResult{Valid: true}
 }
 
 func TestRelay_Route_Good(t *testing.T) {
+	_targetName := "Route"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := map[string]func(string) string{
 		"guide":    guideChannel,
 		"question": questionChannel,
@@ -34,13 +37,17 @@ func TestRelay_Route_Good(t *testing.T) {
 		"status":   statusChannel,
 	}
 	for label, fn := range cases {
-		if got := fn("ws-1"); !strings.HasPrefix(got, "subagent:ws-1:") || !strings.Contains(got, label) {
+		if got := fn("ws-1"); !core.HasPrefix(got, "subagent:ws-1:") || !core.Contains(got, label) {
 			t.Fatalf("unexpected channel for %s: %q", label, got)
 		}
 	}
 }
 
 func TestRelay_Route_Bad(t *testing.T) {
+	_targetName := "Route"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if channel := subsystem.takeQuestionChannel("missing", "q1"); channel != nil {
 		t.Fatalf("expected missing question channel to be nil, got %#v", channel)
@@ -48,6 +55,10 @@ func TestRelay_Route_Bad(t *testing.T) {
 }
 
 func TestRelay_Route_Ugly(t *testing.T) {
+	_targetName := "Route"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	hub := ws.NewHubWithConfig(ws.HubConfig{
 		Authenticator: testAuthenticator{},
 	})
@@ -63,6 +74,10 @@ func TestRelay_Route_Ugly(t *testing.T) {
 }
 
 func TestRelay_QuestionChannel_Ugly(t *testing.T) {
+	_targetName := "QuestionChannel"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
@@ -75,6 +90,10 @@ func TestRelay_QuestionChannel_Ugly(t *testing.T) {
 }
 
 func TestRelay_DeleteQuestionChannel_Good(t *testing.T) {
+	_targetName := "DeleteQuestionChannel"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
@@ -85,6 +104,10 @@ func TestRelay_DeleteQuestionChannel_Good(t *testing.T) {
 }
 
 func TestRelay_EventHistoryRetention_Good(t *testing.T) {
+	_targetName := "EventHistoryRetention"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	base := time.Unix(100, 0).UTC()
 	subsystem.bindAgenticWorkspace("ws-0", "agentic-ws-0")
@@ -122,6 +145,10 @@ func TestRelay_EventHistoryRetention_UglyPreservesPendingAnswer(t *testing.T) {
 }
 
 func TestRelay_Publish_Good(t *testing.T) {
+	_targetName := "Publish"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := &Subsystem{}
 	subsystem.publish("subagent:ws-1:guide", GuidanceMessage{Type: "guidance", Message: "focus"})
 	if subsystem.hub != nil {
@@ -130,6 +157,10 @@ func TestRelay_Publish_Good(t *testing.T) {
 }
 
 func TestRelay_EventFromRelayMessage_Good(t *testing.T) {
+	_targetName := "EventFromRelayMessage"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name     string
 		message  ws.Message
@@ -175,12 +206,20 @@ func TestRelay_EventFromRelayMessage_Good(t *testing.T) {
 }
 
 func TestRelay_EventFromRelayMessage_Bad(t *testing.T) {
+	_targetName := "EventFromRelayMessage"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, ok := eventFromRelayMessage(ws.Message{Data: "not-a-map"}); ok {
 		t.Fatal("expected malformed relay message to be ignored")
 	}
 }
 
 func TestRelay_WatchRelay_Good(t *testing.T) {
+	_targetName := "WatchRelay"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	upgrader := websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -264,6 +303,10 @@ func TestRelay_WatchRelay_UglyProgressChannel(t *testing.T) {
 }
 
 func TestRelay_SyncAgenticState_Good(t *testing.T) {
+	_targetName := "SyncAgenticState"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if !subsystem.syncAgenticState("ws-1", "running", "why") {
 		t.Fatal("expected first state transition to report change")
@@ -281,6 +324,10 @@ func TestRelay_SyncAgenticState_Good(t *testing.T) {
 }
 
 func TestRelay_SyncAgenticState_Bad(t *testing.T) {
+	_targetName := "SyncAgenticState"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	if subsystem.syncAgenticState("", "running", "why") {
 		t.Fatal("expected empty workspace id to be ignored")

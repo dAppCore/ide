@@ -5,7 +5,6 @@ import (
 	goio "io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	core "dappco.re/go"
@@ -37,7 +36,10 @@ func (c *Client) AttachAI(service *ai.Service) {
 	c.ai = service
 }
 
-func (c *Client) Search(ctx context.Context, input SearchInput) (SearchOutput, error) {
+func (c *Client) Search(
+	ctx context.Context,
+	input SearchInput,
+) (SearchOutput, error) {
 	path := c.cfg.APIPath
 	query := url.Values{}
 	if input.Query != "" {
@@ -56,7 +58,10 @@ func (c *Client) Search(ctx context.Context, input SearchInput) (SearchOutput, e
 	return SearchOutput{Query: input.Query, Category: input.Category, Packages: packages}, nil
 }
 
-func (c *Client) Info(ctx context.Context, input InfoInput) (InfoOutput, error) {
+func (c *Client) Info(
+	ctx context.Context,
+	input InfoInput,
+) (InfoOutput, error) {
 	if core.Trim(input.Code) == "" {
 		return InfoOutput{}, core.E("ide.marketplace.info", "code is required", nil)
 	}
@@ -67,7 +72,10 @@ func (c *Client) Info(ctx context.Context, input InfoInput) (InfoOutput, error) 
 	return InfoOutput{Package: pkg}, nil
 }
 
-func (c *Client) Install(ctx context.Context, input InstallInput) (InstallOutput, error) {
+func (c *Client) Install(
+	ctx context.Context,
+	input InstallInput,
+) (InstallOutput, error) {
 	if core.Trim(input.Code) == "" {
 		return InstallOutput{}, core.E("ide.marketplace.install", "code is required", nil)
 	}
@@ -81,7 +89,10 @@ func (c *Client) Install(ctx context.Context, input InstallInput) (InstallOutput
 	}
 }
 
-func (c *Client) installViaAPI(ctx context.Context, input InstallInput) (InstallOutput, error) {
+func (c *Client) installViaAPI(
+	ctx context.Context,
+	input InstallInput,
+) (InstallOutput, error) {
 	if err := c.post(ctx, core.Concat(c.cfg.APIPath, "/", url.PathEscape(input.Code), "/install"), nil, nil); err != nil {
 		return InstallOutput{}, err
 	}
@@ -89,7 +100,10 @@ func (c *Client) installViaAPI(ctx context.Context, input InstallInput) (Install
 	return InstallOutput{Installed: true, Code: input.Code}, nil
 }
 
-func (c *Client) installViaGoSCM(ctx context.Context, input InstallInput) (InstallOutput, error) {
+func (c *Client) installViaGoSCM(
+	ctx context.Context,
+	input InstallInput,
+) (InstallOutput, error) {
 	info, err := c.Info(ctx, InfoInput{Code: input.Code})
 	if err != nil {
 		return InstallOutput{}, err
@@ -123,15 +137,30 @@ func (c *Client) recordInstall(code string) {
 	}
 }
 
-func (c *Client) get(ctx context.Context, path string, target any) error {
+func (c *Client) get(
+	ctx context.Context,
+	path string,
+	target any,
+) error {
 	return c.request(ctx, http.MethodGet, path, nil, target)
 }
 
-func (c *Client) post(ctx context.Context, path string, body any, target any) error {
+func (c *Client) post(
+	ctx context.Context,
+	path string,
+	body any,
+	target any,
+) error {
 	return c.request(ctx, http.MethodPost, path, body, target)
 }
 
-func (c *Client) request(ctx context.Context, method, path string, body any, target any) error {
+func (c *Client) request(
+	ctx context.Context,
+	method,
+	path string,
+	body any,
+	target any,
+) error {
 	var reader goio.Reader
 	if body != nil {
 		reader = core.NewReader(core.JSONMarshalString(body))
@@ -173,12 +202,15 @@ func (c *Client) request(ctx context.Context, method, path string, body any, tar
 	return nil
 }
 
-func defaultInstallMedium() (coreio.Medium, error) {
-	home := os.Getenv("DIR_HOME")
+func defaultInstallMedium() (
+	coreio.Medium,
+	error,
+) {
+	home := core.Getenv("DIR_HOME")
 	if home == "" {
-		resolved, err := os.UserHomeDir()
-		if err == nil {
-			home = resolved
+		resolved := core.UserHomeDir()
+		if resolved.OK {
+			home = resolved.Value.(string)
 		}
 	}
 	if home == "" {

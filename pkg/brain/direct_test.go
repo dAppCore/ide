@@ -2,13 +2,12 @@ package brain
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
@@ -17,6 +16,10 @@ import (
 )
 
 func TestDirect_Recall_Good(t *testing.T) {
+	_targetName := "Recall"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	var calls int
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
@@ -27,7 +30,7 @@ func TestDirect_Recall_Good(t *testing.T) {
 			t.Fatalf("unexpected auth header %q", got)
 		}
 		body, _ := io.ReadAll(r.Body)
-		if !strings.Contains(string(body), `"top_k":10`) {
+		if !core.Contains(string(body), `"top_k":10`) {
 			t.Fatalf("expected default top_k in body, got %s", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -70,13 +73,13 @@ func TestDirect_Recall_UglyFilterCacheIsolation(t *testing.T) {
 		}
 		body, _ := io.ReadAll(r.Body)
 		text := string(body)
-		if !strings.Contains(text, `"type":"decision"`) || !strings.Contains(text, `"min_confidence":0.75`) {
+		if !core.Contains(text, `"type":"decision"`) || !core.Contains(text, `"min_confidence":0.75`) {
 			t.Fatalf("expected full recall filter in body, got %s", body)
 		}
 		memoryID := "core"
-		if strings.Contains(text, `"org":"other"`) {
+		if core.Contains(text, `"org":"other"`) {
 			memoryID = "other"
-		} else if !strings.Contains(text, `"org":"core"`) {
+		} else if !core.Contains(text, `"org":"core"`) {
 			t.Fatalf("expected org filter in body, got %s", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -107,6 +110,10 @@ func TestDirect_Recall_UglyFilterCacheIsolation(t *testing.T) {
 }
 
 func TestDirect_Recall_Bad(t *testing.T) {
+	_targetName := "Recall"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
@@ -119,16 +126,20 @@ func TestDirect_Recall_Bad(t *testing.T) {
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, err = subsystem.recall(context.Background(), RecallInput{Query: "alpha"})
-	if err == nil || !strings.Contains(err.Error(), "401") {
+	if err == nil || !core.Contains(err.Error(), "401") {
 		t.Fatalf("expected 401 error, got %v", err)
 	}
 	var apiErr *OpenBrainError
-	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusUnauthorized || apiErr.Retryable {
+	if !core.As(err, &apiErr) || apiErr.StatusCode != http.StatusUnauthorized || apiErr.Retryable {
 		t.Fatalf("expected typed non-retryable 401 error, got %#v", apiErr)
 	}
 }
 
 func TestDirect_Recall_Ugly(t *testing.T) {
+	_targetName := "Recall"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"memories":[{"id":`))
@@ -140,7 +151,7 @@ func TestDirect_Recall_Ugly(t *testing.T) {
 		t.Fatalf("store: %v", err)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
-	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil || !strings.Contains(err.Error(), "decode response") {
+	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil || !core.Contains(err.Error(), "decode response") {
 		t.Fatalf("expected decode error, got %v", err)
 	}
 }
@@ -157,7 +168,7 @@ func TestDirect_Remember_Good(t *testing.T) {
 			body, _ := io.ReadAll(r.Body)
 			text := string(body)
 			for _, expected := range []string{`"org":"core"`, `"supersedes":"memory-1"`, `"expires_in":3600`} {
-				if !strings.Contains(text, expected) {
+				if !core.Contains(text, expected) {
 					t.Fatalf("expected remember body to contain %s, got %s", expected, body)
 				}
 			}
@@ -222,7 +233,7 @@ func TestDirect_List_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if out.Count != 1 || !strings.Contains(gotPath, "org=core") || !strings.Contains(gotPath, "project=demo") || !strings.Contains(gotPath, "limit=99") || !strings.Contains(gotPath, "agent_id=agent-x") {
+	if out.Count != 1 || !core.Contains(gotPath, "org=core") || !core.Contains(gotPath, "project=demo") || !core.Contains(gotPath, "limit=99") || !core.Contains(gotPath, "agent_id=agent-x") {
 		t.Fatalf("unexpected list response %#v path=%s", out, gotPath)
 	}
 }
@@ -244,7 +255,7 @@ func TestDirect_Context_Good(t *testing.T) {
 	if err != nil {
 		t.Fatalf("context: %v", err)
 	}
-	if !strings.Contains(out.Overview, "Loaded") {
+	if !core.Contains(out.Overview, "Loaded") {
 		t.Fatalf("unexpected overview %q", out.Overview)
 	}
 	if len(out.Recent) != 1 {

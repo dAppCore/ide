@@ -7,7 +7,11 @@ import (
 	"dappco.re/go/process"
 )
 
-func gitStatus(ctx context.Context, processService *process.Service, root string) (GitStatus, error) {
+func gitStatus(
+	ctx context.Context,
+	processService *process.Service,
+	root string,
+) (GitStatus, error) {
 	if processService == nil {
 		return GitStatus{}, core.E("ide.workspace.gitStatus", "process service is nil", nil)
 	}

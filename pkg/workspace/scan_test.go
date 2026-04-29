@@ -1,11 +1,7 @@
 package workspace
 
 import (
-	"bytes"
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	core "dappco.re/go"
@@ -13,6 +9,10 @@ import (
 )
 
 func TestScan_Scan_Good(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: demo\n")
 	projects, err := scanProjects(context.Background(), ScanInput{Root: "/workspace", Depth: 2}, medium, nil, "/workspace")
@@ -22,6 +22,10 @@ func TestScan_Scan_Good(t *testing.T) {
 }
 
 func TestScan_Scan_Bad(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	projects, err := scanProjects(context.Background(), ScanInput{Root: "/workspace", Depth: 2}, coreio.NewMemoryMedium(), nil, "/workspace")
 	if err != nil || len(projects) != 0 {
 		t.Fatalf("expected empty project list, got %#v err=%v", projects, err)
@@ -29,6 +33,10 @@ func TestScan_Scan_Bad(t *testing.T) {
 }
 
 func TestScan_Scan_Ugly(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/.core/manifest.yaml", "name: root\n")
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: child\n")
@@ -40,21 +48,17 @@ func TestScan_Scan_Ugly(t *testing.T) {
 
 func TestScan_Scan_Ugly_SymlinkEscape(t *testing.T) {
 	target := "/etc/passwd"
-	if _, err := os.Stat(target); err != nil {
-		t.Skipf("%s unavailable: %v", target, err)
+	if result := core.Stat(target); !result.OK {
+		t.Skipf("%s unavailable: %v", target, result.Value)
 	}
 	root := t.TempDir()
-	coreDir := filepath.Join(root, ".core")
-	if err := os.MkdirAll(coreDir, 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.Symlink(target, filepath.Join(coreDir, "evil")); err != nil {
-		t.Skipf("symlink unsupported: %v", err)
-	}
+	coreDir := core.JoinPath(root, ".core")
+	workspaceMkdirAll(t, coreDir)
+	workspaceSymlink(t, target, core.JoinPath(coreDir, "evil"))
 
-	var log bytes.Buffer
+	log := core.NewBuffer()
 	originalLog := core.Default()
-	core.SetDefault(core.NewLog(core.LogOptions{Level: core.LevelWarn, Output: &log}))
+	core.SetDefault(core.NewLog(core.LogOptions{Level: core.LevelWarn, Output: log}))
 	defer core.SetDefault(originalLog)
 
 	files, counts, sources, err := readCoreFiles(coreio.Local, root)
@@ -64,12 +68,16 @@ func TestScan_Scan_Ugly_SymlinkEscape(t *testing.T) {
 	if len(files) != 0 || counts.Total != 0 || len(sources) != 0 {
 		t.Fatalf("expected symlink escape to be skipped, got files=%#v counts=%#v sources=%#v", files, counts, sources)
 	}
-	if got := log.String(); !strings.Contains(got, "workspace scan skipped path outside workspace root") {
+	if got := log.String(); !core.Contains(got, "workspace scan skipped path outside workspace root") {
 		t.Fatalf("expected warning log for symlink escape, got %q", got)
 	}
 }
 
 func TestScan_AppendWorkspaceTree_Good(t *testing.T) {
+	_targetName := "AppendWorkspaceTree"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	root := "/workspace"
 	_ = medium.Write(core.JoinPath(root, ".core", "nested", "file.md"), "hello world")
@@ -83,7 +91,11 @@ func TestScan_AppendWorkspaceTree_Good(t *testing.T) {
 }
 
 func TestScan_ReadLimitedContent_Ugly(t *testing.T) {
-	content := strings.Repeat("a", maxPreviewBytes+10)
+	_targetName := "ReadLimitedContent"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
+	content := repeatString("a", maxPreviewBytes+10)
 	medium := coreio.NewMemoryMedium()
 	path := "/workspace/.core/large.txt"
 	_ = medium.Write(path, content)

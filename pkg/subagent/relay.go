@@ -252,11 +252,12 @@ func (s *Subsystem) publish(channel string, message any) {
 	if s == nil || s.hub == nil {
 		return
 	}
-	if err := s.hub.SendToChannel(channel, ws.Message{
+	if result := s.hub.SendToChannel(channel, ws.Message{
 		Type:      ws.TypeEvent,
 		Data:      message,
 		Timestamp: time.Now().UTC(),
-	}); err != nil {
+	}); !result.OK {
+		err, _ := result.Value.(error)
 		core.Warn("ide.subagent.publish", "channel", channel, "err", err)
 	}
 }

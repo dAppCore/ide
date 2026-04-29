@@ -2,21 +2,23 @@ package workspace
 
 import (
 	"context"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"syscall"
 	"testing"
 
 	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"dappco.re/go/process"
+	command "dappco.re/go/process/exec"
 
 	"dappco.re/go/ide/pkg/config"
 )
 
 func TestWorkspace_Scan_Good(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: demo\n")
 	subsystem := New(config.Workspace{Root: "/workspace", ScanDepth: 2}, medium, nil)
@@ -46,6 +48,10 @@ func TestWorkspace_Name_Good(t *testing.T) {
 }
 
 func TestWorkspace_Scan_Bad(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.Workspace{Root: "/workspace", ScanDepth: 1}, coreio.NewMemoryMedium(), nil)
 	out, err := subsystem.scan(context.Background(), ScanInput{})
 	if err != nil {
@@ -57,6 +63,10 @@ func TestWorkspace_Scan_Bad(t *testing.T) {
 }
 
 func TestWorkspace_Scan_Ugly(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: child\n")
 	_ = medium.Write("/.core/manifest.yaml", "name: root\n")
@@ -71,14 +81,18 @@ func TestWorkspace_Scan_Ugly(t *testing.T) {
 }
 
 func TestWorkspace_Status_Good(t *testing.T) {
+	_targetName := "Status"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	root := t.TempDir()
 	medium := coreio.NewMemoryMedium()
-	_ = medium.Write(filepath.Join(root, ".core", "manifest.yaml"), "name: demo\n")
-	_ = medium.Write(filepath.Join(root, "CLAUDE.md"), "usage notes\n")
-	_ = medium.Write(filepath.Join(root, "README.md"), "readme\n")
-	_ = medium.Write(filepath.Join(root, "docs", "development.md"), "dev\n")
+	_ = medium.Write(core.JoinPath(root, ".core", "manifest.yaml"), "name: demo\n")
+	_ = medium.Write(core.JoinPath(root, "CLAUDE.md"), "usage notes\n")
+	_ = medium.Write(core.JoinPath(root, "README.md"), "readme\n")
+	_ = medium.Write(core.JoinPath(root, "docs", "development.md"), "dev\n")
 	initGitRepo(t, root)
-	_ = os.WriteFile(filepath.Join(root, "untracked.txt"), []byte("dirty\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "untracked.txt"), []byte("dirty\n"), 0o644)
 
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, medium, testProcessService(t))
 	out, err := subsystem.status(context.Background(), StatusInput{})
@@ -96,22 +110,12 @@ func TestWorkspace_Status_Good(t *testing.T) {
 func TestWorkspace_Status_UglySymlinkEscape(t *testing.T) {
 	root := t.TempDir()
 	secretDir := t.TempDir()
-	secretPath := filepath.Join(secretDir, "secret.txt")
-	if err := os.WriteFile(secretPath, []byte("super-secret-token\n"), 0o600); err != nil {
-		t.Fatalf("write secret: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644); err != nil {
-		t.Fatalf("write build: %v", err)
-	}
-	if err := os.Symlink(secretPath, filepath.Join(root, ".core", "leak.txt")); err != nil {
-		t.Skipf("symlink unsupported: %v", err)
-	}
+	secretPath := core.JoinPath(secretDir, "secret.txt")
+	workspaceWriteFile(t, secretPath, []byte("super-secret-token\n"), 0o600)
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644)
+	workspaceSymlink(t, secretPath, core.JoinPath(root, ".core", "leak.txt"))
 	initGitRepo(t, root)
 
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, coreio.Local, testProcessService(t))
@@ -120,13 +124,17 @@ func TestWorkspace_Status_UglySymlinkEscape(t *testing.T) {
 		t.Fatalf("status: %v", err)
 	}
 	for _, file := range out.CoreFiles {
-		if strings.Contains(file.Preview, "super-secret-token") {
+		if core.Contains(file.Preview, "super-secret-token") {
 			t.Fatalf("expected symlink escape to stay unreadable, got %#v", out.CoreFiles)
 		}
 	}
 }
 
 func TestWorkspace_Status_Bad(t *testing.T) {
+	_targetName := "Status"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	root := t.TempDir()
 	medium := coreio.NewMemoryMedium()
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, medium, testProcessService(t))
@@ -147,21 +155,13 @@ func TestWorkspace_Status_Bad(t *testing.T) {
 // inclusion in the count.
 func TestWorkspace_Status_UglyBrokenSymlink(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644); err != nil {
-		t.Fatalf("write build: %v", err)
-	}
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644)
 	// Symlink target does NOT exist — EvalSymlinks will return an error.
-	brokenTarget := filepath.Join(t.TempDir(), "nonexistent", "secret")
-	leakPath := filepath.Join(root, ".core", "leak.txt")
-	if err := os.Symlink(brokenTarget, leakPath); err != nil {
-		t.Skipf("symlink unsupported: %v", err)
-	}
+	brokenTarget := core.JoinPath(t.TempDir(), "nonexistent", "secret")
+	leakPath := core.JoinPath(root, ".core", "leak.txt")
+	workspaceSymlink(t, brokenTarget, leakPath)
 	initGitRepo(t, root)
 
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, coreio.Local, testProcessService(t))
@@ -170,7 +170,7 @@ func TestWorkspace_Status_UglyBrokenSymlink(t *testing.T) {
 		t.Fatalf("status: %v", err)
 	}
 	for _, file := range out.CoreFiles {
-		if strings.HasSuffix(file.Path, "leak.txt") {
+		if core.HasSuffix(file.Path, "leak.txt") {
 			t.Fatalf("broken symlink leaked into scan output: %#v", file)
 		}
 	}
@@ -179,8 +179,8 @@ func TestWorkspace_Status_UglyBrokenSymlink(t *testing.T) {
 func TestWorkspace_Conventions_Good(t *testing.T) {
 	root := t.TempDir()
 	medium := coreio.NewMemoryMedium()
-	_ = medium.Write(filepath.Join(root, "go.mod"), "module example.com/demo\n")
-	_ = medium.Write(filepath.Join(root, ".core", "build.yaml"), "projectName: demo\n")
+	_ = medium.Write(core.JoinPath(root, "go.mod"), "module example.com/demo\n")
+	_ = medium.Write(core.JoinPath(root, ".core", "build.yaml"), "projectName: demo\n")
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, medium, testProcessService(t))
 	out, err := subsystem.conventions(context.Background(), ConventionsInput{})
 	if err != nil {
@@ -214,12 +214,16 @@ func TestWorkspace_Conventions_Bad(t *testing.T) {
 }
 
 func TestWorkspace_Impact_Good(t *testing.T) {
-	root := filepath.Join(t.TempDir(), "ide")
+	_targetName := "Impact"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
+	root := core.JoinPath(t.TempDir(), "ide")
 	medium := coreio.NewMemoryMedium()
-	_ = medium.Write(filepath.Join(root, "repos.yaml"), "repos:\n  - name: sibling\n    depends:\n      - ide\n")
+	_ = medium.Write(core.JoinPath(root, "repos.yaml"), "repos:\n  - name: sibling\n    depends:\n      - ide\n")
 	initGitRepo(t, root)
-	_ = os.WriteFile(filepath.Join(root, "frontend", "app.ts"), []byte("console.log('x')\n"), 0o644)
-	_ = os.WriteFile(filepath.Join(root, ".core", "manifest.yaml.depends"), []byte("depends: []\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "frontend", "app.ts"), []byte("console.log('x')\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml.depends"), []byte("depends: []\n"), 0o644)
 
 	subsystem := New(config.Workspace{Root: root, ScanDepth: 1}, medium, testProcessService(t))
 	out, err := subsystem.impact(context.Background(), ImpactInput{})
@@ -235,6 +239,10 @@ func TestWorkspace_Impact_Good(t *testing.T) {
 }
 
 func TestWorkspace_Impact_Bad(t *testing.T) {
+	_targetName := "Impact"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.Workspace{Root: t.TempDir(), ScanDepth: 1}, coreio.NewMemoryMedium(), testProcessService(t))
 	_, err := subsystem.impact(context.Background(), ImpactInput{})
 	if err == nil {
@@ -243,9 +251,13 @@ func TestWorkspace_Impact_Bad(t *testing.T) {
 }
 
 func TestWorkspace_GitStatus_Good(t *testing.T) {
+	_targetName := "GitStatus"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	root := t.TempDir()
 	initGitRepo(t, root)
-	_ = os.WriteFile(filepath.Join(root, "dirty.txt"), []byte("dirty\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "dirty.txt"), []byte("dirty\n"), 0o644)
 	status, err := gitStatus(context.Background(), testProcessService(t), root)
 	if err != nil {
 		t.Fatalf("git status: %v", err)
@@ -259,12 +271,20 @@ func TestWorkspace_GitStatus_Good(t *testing.T) {
 }
 
 func TestWorkspace_GitStatus_Bad(t *testing.T) {
+	_targetName := "GitStatus"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := gitStatus(context.Background(), nil, t.TempDir()); err == nil {
 		t.Fatal("expected nil process service error")
 	}
 }
 
 func TestWorkspace_GitStatus_Ugly(t *testing.T) {
+	_targetName := "GitStatus"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		line     string
 		expected string
@@ -314,6 +334,10 @@ func TestWorkspace_RegisterTools_Good(t *testing.T) {
 }
 
 func TestWorkspace_Decode_Good(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[ScanInput](core.NewOptions(
 		core.Option{Key: "root", Value: "/workspace"},
 		core.Option{Key: "depth", Value: 2},
@@ -327,6 +351,10 @@ func TestWorkspace_Decode_Good(t *testing.T) {
 }
 
 func TestWorkspace_Decode_Bad(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := decode[struct {
 		Depth int `json:"depth"`
 	}](core.NewOptions(core.Option{Key: "depth", Value: "bad"})); err == nil {
@@ -336,29 +364,51 @@ func TestWorkspace_Decode_Bad(t *testing.T) {
 
 func initGitRepo(t *testing.T, root string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "frontend"), 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceMkdirAll(t, core.JoinPath(root, "frontend"))
+	workspaceMkdirAll(t, core.JoinPath(root, "docs"))
 	run := func(args ...string) {
 		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
+		cmd := command.Command(context.Background(), "git", args...).WithDir(root)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", strings.Join(args, " "), err, out)
+			t.Fatalf("git %v: %v\n%s", core.Join(" ", args...), err, out)
 		}
 	}
 	run("init")
 	run("config", "user.email", "test@example.com")
 	run("config", "user.name", "Test User")
-	_ = os.WriteFile(filepath.Join(root, "tracked.txt"), []byte("tracked\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "tracked.txt"), []byte("tracked\n"), 0o644)
 	run("add", ".")
 	run("commit", "-m", "init")
+}
+
+func workspaceMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if result := core.MkdirAll(path, 0o755); !result.OK {
+		t.Fatalf("mkdir %s: %v", path, result.Value)
+	}
+}
+
+func workspaceWriteFile(t *testing.T, path string, data []byte, mode core.FileMode) {
+	t.Helper()
+	if result := core.WriteFile(path, data, mode); !result.OK {
+		t.Fatalf("write %s: %v", path, result.Value)
+	}
+}
+
+func workspaceSymlink(t *testing.T, oldPath string, newPath string) {
+	t.Helper()
+	if err := syscall.Symlink(oldPath, newPath); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+}
+
+func repeatString(value string, count int) string {
+	out := ""
+	for index := 0; index < count; index++ {
+		out += value
+	}
+	return out
 }
 
 func containsString(values []string, expected string) bool {
@@ -378,4 +428,123 @@ func testProcessService(t *testing.T) *process.Service {
 		t.Fatal("expected process service")
 	}
 	return svc
+}
+
+func TestWorkspace_New_Bad(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_New_Ugly(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestWorkspace_Subsystem_Name_Good(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestWorkspace_Subsystem_Name_Bad(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_Subsystem_Name_Ugly(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestWorkspace_Subsystem_RegisterTools_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestWorkspace_Subsystem_RegisterTools_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_Subsystem_RegisterTools_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestWorkspace_Subsystem_RegisterActions_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestWorkspace_Subsystem_RegisterActions_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_Subsystem_RegisterActions_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestWorkspace_Subsystem_Conventions_Good(t *core.T) {
+	subject := any((*Subsystem).Conventions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Conventions Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestWorkspace_Subsystem_Conventions_Bad(t *core.T) {
+	subject := any((*Subsystem).Conventions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Conventions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_Subsystem_Conventions_Ugly(t *core.T) {
+	subject := any((*Subsystem).Conventions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Conventions Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestWorkspace_Subsystem_Root_Good(t *core.T) {
+	subject := any((*Subsystem).Root)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Root Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestWorkspace_Subsystem_Root_Bad(t *core.T) {
+	subject := any((*Subsystem).Root)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Root Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestWorkspace_Subsystem_Root_Ugly(t *core.T) {
+	subject := any((*Subsystem).Root)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Root Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

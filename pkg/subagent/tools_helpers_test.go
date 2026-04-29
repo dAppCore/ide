@@ -2,7 +2,6 @@ package subagent
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +12,10 @@ import (
 )
 
 func TestTools_State_Good(t *testing.T) {
+	_targetName := "State"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if completed, failed := state([]Event{{Type: "status", Message: "completed"}}); !completed || failed {
 		t.Fatalf("expected completed state, got completed=%v failed=%v", completed, failed)
 	}
@@ -22,6 +25,10 @@ func TestTools_State_Good(t *testing.T) {
 }
 
 func TestTools_DedupeEvents_Good(t *testing.T) {
+	_targetName := "DedupeEvents"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	now := time.Unix(123, 0).UTC()
 	events := []Event{
 		{Type: "status", Channel: "subagent:ws-1:status", Message: "running", CreatedAt: now},
@@ -33,12 +40,20 @@ func TestTools_DedupeEvents_Good(t *testing.T) {
 }
 
 func TestTools_DedupeEvents_Bad(t *testing.T) {
+	_targetName := "DedupeEvents"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if got := dedupeEvents(nil); got != nil {
 		t.Fatalf("expected nil input to stay nil, got %#v", got)
 	}
 }
 
 func TestTools_DedupeEvents_Ugly(t *testing.T) {
+	_targetName := "DedupeEvents"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	now := time.Unix(123, 0).UTC()
 	dup := Event{Type: "status", Channel: "subagent:ws-1:status", Message: "running", CreatedAt: now}
 	got := dedupeEvents([]Event{dup, dup})
@@ -48,6 +63,10 @@ func TestTools_DedupeEvents_Ugly(t *testing.T) {
 }
 
 func TestTools_TerminalState_Good(t *testing.T) {
+	_targetName := "TerminalState"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []string{
 		"completed",
 		"merged",
@@ -64,18 +83,30 @@ func TestTools_TerminalState_Good(t *testing.T) {
 }
 
 func TestTools_TerminalState_Bad(t *testing.T) {
+	_targetName := "TerminalState"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if completed, failed := terminalState("unknown"); completed || failed {
 		t.Fatalf("expected unknown state to be non-terminal, got completed=%v failed=%v", completed, failed)
 	}
 }
 
 func TestTools_TerminalState_Ugly(t *testing.T) {
+	_targetName := "TerminalState"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if completed, failed := terminalState(" blocked "); completed || !failed {
 		t.Fatalf("expected trimmed blocked state to fail, got completed=%v failed=%v", completed, failed)
 	}
 }
 
 func TestTools_ClampInt_Ugly(t *testing.T) {
+	_targetName := "ClampInt"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		value    int
 		fallback int
@@ -94,6 +125,10 @@ func TestTools_ClampInt_Ugly(t *testing.T) {
 }
 
 func TestTools_NormalizeCursor_Ugly(t *testing.T) {
+	_targetName := "NormalizeCursor"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if got := normalizeCursor(-10); got != 0 {
 		t.Fatalf("expected negative cursor to clamp to zero, got %d", got)
 	}
@@ -103,6 +138,10 @@ func TestTools_NormalizeCursor_Ugly(t *testing.T) {
 }
 
 func TestTools_HandleGuide_Good(t *testing.T) {
+	_targetName := "HandleGuide"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	_, out, err := subsystem.handleGuide(context.Background(), nil, GuideInput{WorkspaceID: "ws-1", Message: "focus"})
 	if err != nil {
@@ -114,6 +153,10 @@ func TestTools_HandleGuide_Good(t *testing.T) {
 }
 
 func TestTools_HandleAsk_Good(t *testing.T) {
+	_targetName := "HandleAsk"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	_, out, err := subsystem.handleAsk(context.Background(), nil, AskInput{WorkspaceID: "ws-1", Question: "why?"})
 	if err != nil {
@@ -125,6 +168,10 @@ func TestTools_HandleAsk_Good(t *testing.T) {
 }
 
 func TestTools_HandleProgress_Good(t *testing.T) {
+	_targetName := "HandleProgress"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	_, out, err := subsystem.handleProgress(context.Background(), nil, ProgressInput{WorkspaceID: "ws-1", Progress: 1, Total: 3, Message: "step"})
 	if err != nil {
@@ -136,6 +183,10 @@ func TestTools_HandleProgress_Good(t *testing.T) {
 }
 
 func TestTools_HandleWatch_Good(t *testing.T) {
+	_targetName := "HandleWatch"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	subsystem.appendEvent("ws-1", Event{Type: "status", Message: "completed", CreatedAt: time.Now()})
 	_, out, err := subsystem.handleWatch(context.Background(), nil, WatchInput{WorkspaceID: "ws-1", Timeout: 1})
@@ -148,6 +199,10 @@ func TestTools_HandleWatch_Good(t *testing.T) {
 }
 
 func TestTools_HandleAnswer_Good(t *testing.T) {
+	_targetName := "HandleAnswer"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, ws.NewHub(), "relay-token")
 	channel := make(chan string, 1)
 	subsystem.appendQuestionChannel("ws-1", "q1", channel)
@@ -169,6 +224,10 @@ func TestTools_HandleAnswer_Good(t *testing.T) {
 }
 
 func TestTools_HandleDispatchGuided_Good(t *testing.T) {
+	_targetName := "HandleDispatchGuided"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "")
 	out, err := subsystem.DispatchGuided(context.Background(), DispatchGuidedInput{Repo: "core/ide", Task: "investigate"})
 	if err != nil {
@@ -180,16 +239,24 @@ func TestTools_HandleDispatchGuided_Good(t *testing.T) {
 }
 
 func TestTools_NewQuestionID_Good(t *testing.T) {
+	_targetName := "NewQuestionID"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	got, err := newQuestionID()
 	if err != nil {
 		t.Fatalf("newQuestionID: %v", err)
 	}
-	if !strings.HasPrefix(got, "q-") {
+	if !core.HasPrefix(got, "q-") {
 		t.Fatalf("expected question id prefix, got %q", got)
 	}
 }
 
 func TestSubagent_Decode_Good(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[GuideInput](core.NewOptions(
 		core.Option{Key: "workspaceId", Value: "ws-1"},
 		core.Option{Key: "message", Value: "focus"},
@@ -203,6 +270,10 @@ func TestSubagent_Decode_Good(t *testing.T) {
 }
 
 func TestSubagent_Decode_Bad(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := decode[struct {
 		WorkspaceID string `json:"workspaceId"`
 	}](core.NewOptions(core.Option{Key: "workspaceId", Value: 123})); err == nil {

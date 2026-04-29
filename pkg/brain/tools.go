@@ -16,27 +16,47 @@ func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	coremcp.AddToolRecorded(svc, server, "brain", &mcp.Tool{Name: "brain_context", Description: "Combine recent OpenBrain memories with workspace conventions."}, s.handleContext)
 }
 
-func (s *Subsystem) handleRecall(ctx context.Context, _ *mcp.CallToolRequest, input RecallInput) (*mcp.CallToolResult, RecallOutput, error) {
+func (s *Subsystem) handleRecall(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input RecallInput,
+) (*mcp.CallToolResult, RecallOutput, error) {
 	out, err := s.recall(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleRemember(ctx context.Context, _ *mcp.CallToolRequest, input RememberInput) (*mcp.CallToolResult, RememberOutput, error) {
+func (s *Subsystem) handleRemember(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input RememberInput,
+) (*mcp.CallToolResult, RememberOutput, error) {
 	out, err := s.remember(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleForget(ctx context.Context, _ *mcp.CallToolRequest, input ForgetInput) (*mcp.CallToolResult, ForgetOutput, error) {
+func (s *Subsystem) handleForget(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ForgetInput,
+) (*mcp.CallToolResult, ForgetOutput, error) {
 	out, err := s.forget(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleList(ctx context.Context, _ *mcp.CallToolRequest, input ListInput) (*mcp.CallToolResult, ListOutput, error) {
+func (s *Subsystem) handleList(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ListInput,
+) (*mcp.CallToolResult, ListOutput, error) {
 	out, err := s.list(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleContext(ctx context.Context, _ *mcp.CallToolRequest, input ContextInput) (*mcp.CallToolResult, ContextOutput, error) {
+func (s *Subsystem) handleContext(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ContextInput,
+) (*mcp.CallToolResult, ContextOutput, error) {
 	out, err := s.context(ctx, input)
 	return nil, out, err
 }

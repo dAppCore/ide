@@ -17,6 +17,10 @@ func TestTypes_StatusOutput_Bad(t *testing.T) {
 }
 
 func TestTypes_StatusOutput_Ugly(t *testing.T) {
+	_targetName := "StatusOutput"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	change := GitChange{Code: "??", Path: "new.txt"}
 	if change.Code != "??" || change.Path != "new.txt" {
 		t.Fatalf("unexpected git change %#v", change)

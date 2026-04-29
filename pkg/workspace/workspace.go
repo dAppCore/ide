@@ -2,7 +2,6 @@ package workspace
 
 import (
 	"context"
-	"os"
 	"time"
 
 	core "dappco.re/go"
@@ -39,7 +38,10 @@ func (s *Subsystem) RegisterActions(c *core.Core) {
 	s.registerActions(c)
 }
 
-func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput, error) {
+func (s *Subsystem) status(
+	ctx context.Context,
+	input StatusInput,
+) (StatusOutput, error) {
 	root, err := s.root(input.Root)
 	if err != nil {
 		return StatusOutput{}, err
@@ -62,7 +64,10 @@ func (s *Subsystem) status(ctx context.Context, input StatusInput) (StatusOutput
 	}, nil
 }
 
-func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (ConventionsOutput, error) {
+func (s *Subsystem) conventions(
+	ctx context.Context,
+	input ConventionsInput,
+) (ConventionsOutput, error) {
 	root, err := s.root(input.Root)
 	if err != nil {
 		return ConventionsOutput{}, err
@@ -94,11 +99,17 @@ func (s *Subsystem) conventions(ctx context.Context, input ConventionsInput) (Co
 	}, nil
 }
 
-func (s *Subsystem) Conventions(ctx context.Context, input ConventionsInput) (ConventionsOutput, error) {
+func (s *Subsystem) Conventions(
+	ctx context.Context,
+	input ConventionsInput,
+) (ConventionsOutput, error) {
 	return s.conventions(ctx, input)
 }
 
-func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput, error) {
+func (s *Subsystem) impact(
+	ctx context.Context,
+	input ImpactInput,
+) (ImpactOutput, error) {
 	root, err := s.root(input.Root)
 	if err != nil {
 		return ImpactOutput{}, err
@@ -117,7 +128,10 @@ func (s *Subsystem) impact(ctx context.Context, input ImpactInput) (ImpactOutput
 	}, nil
 }
 
-func (s *Subsystem) scan(ctx context.Context, input ScanInput) (ScanOutput, error) {
+func (s *Subsystem) scan(
+	ctx context.Context,
+	input ScanInput,
+) (ScanOutput, error) {
 	root, err := s.root(input.Root)
 	if err != nil {
 		return ScanOutput{}, err
@@ -159,7 +173,9 @@ func (s *Subsystem) Root() string {
 	return discoverWorkspaceRoot(s.scanMedium(), base, s.cfg.ScanDepth)
 }
 
-func (s *Subsystem) root(override string) (string, error) {
+func (s *Subsystem) root(
+	override string,
+) (string, error) {
 	if core.Trim(override) == "" {
 		return s.Root(), nil
 	}
@@ -173,17 +189,21 @@ func (s *Subsystem) scanMedium() coreio.Medium {
 	return s.medium
 }
 
-func resolveWorkspaceRoot(base, requested string) (string, error) {
+func resolveWorkspaceRoot(
+	base,
+	requested string,
+) (string, error) {
 	base = core.Trim(base)
 	if base == "" {
 		base = "."
 	}
 	if !core.PathIsAbs(base) {
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwd := core.Getwd()
+		if !cwd.OK {
+			err, _ := cwd.Value.(error)
 			return "", core.E("workspace.root", "resolve trusted base", err)
 		}
-		base = core.Path(cwd, base)
+		base = core.Path(cwd.Value.(string), base)
 	}
 	trusted := core.CleanPath(base, core.Env("DS"))
 	requested = core.Trim(requested)

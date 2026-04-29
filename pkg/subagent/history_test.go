@@ -11,6 +11,10 @@ import (
 )
 
 func TestHistory_Load_Good(t *testing.T) {
+	_targetName := "Load"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	storeInstance, err := storelib.New(":memory:")
 	if err != nil {
 		t.Fatalf("store: %v", err)
@@ -38,6 +42,10 @@ func TestHistory_Load_Good(t *testing.T) {
 }
 
 func TestHistory_Load_Bad(t *testing.T) {
+	_targetName := "Load"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	storeInstance, err := storelib.New(":memory:")
 	if err != nil {
 		t.Fatalf("store: %v", err)

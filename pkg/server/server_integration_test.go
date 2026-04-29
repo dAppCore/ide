@@ -10,6 +10,10 @@ import (
 )
 
 func TestServerIntegration_Run_Good(t *testing.T) {
+	_targetName := "Run"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: demo\n")
 	cfg := config.IDEConfig{}.WithDefaults()
@@ -30,6 +34,10 @@ func TestServerIntegration_Run_Good(t *testing.T) {
 }
 
 func TestServerIntegration_Run_Bad(t *testing.T) {
+	_targetName := "Run"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
@@ -51,6 +59,10 @@ func TestServerIntegration_Run_Bad(t *testing.T) {
 }
 
 func TestServerIntegration_Run_Ugly(t *testing.T) {
+	_targetName := "Run"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)

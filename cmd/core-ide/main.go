@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -21,16 +20,16 @@ type runtimeFlags struct {
 }
 
 func main() {
-	flags, err := parseRuntimeFlags(os.Args[1:])
+	flags, err := parseRuntimeFlags(core.Args()[1:])
 	if err != nil {
 		core.Error("ide.main", "flags", err)
-		os.Exit(1)
+		core.Exit(1)
 	}
 
 	cfg, err := config.Load(config.DefaultPaths(flags.ConfigPath)...)
 	if err != nil {
 		core.Error("ide.main", "config", err)
-		os.Exit(1)
+		core.Exit(1)
 	}
 	config.ApplyCLIOverrides(&cfg, config.CLIOverrides{
 		TransportMode: transportMode(flags),
@@ -49,14 +48,14 @@ func main() {
 	})
 	if err != nil {
 		core.Error("ide.main", "compose", err)
-		os.Exit(1)
+		core.Exit(1)
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	if err := srv.Run(ctx); err != nil {
 		core.Error("ide.main", "run", err)
-		os.Exit(1)
+		core.Exit(1)
 	}
 }

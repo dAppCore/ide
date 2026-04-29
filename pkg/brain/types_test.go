@@ -17,6 +17,10 @@ func TestTypes_ContextOutput_Bad(t *testing.T) {
 }
 
 func TestTypes_ContextOutput_Ugly(t *testing.T) {
+	_targetName := "ContextOutput"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	filter := RecallFilter{Project: "demo"}
 	if filter.Project != "demo" {
 		t.Fatalf("expected aliased recall filter fields to remain available, got %#v", filter)

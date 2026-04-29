@@ -7,7 +7,9 @@ import (
 	core "dappco.re/go"
 )
 
-func parseRuntimeFlags(args []string) (runtimeFlags, error) {
+func parseRuntimeFlags(
+	args []string,
+) (runtimeFlags, error) {
 	flags := runtimeFlags{}
 	set := flag.NewFlagSet("core-ide", flag.ContinueOnError)
 	set.SetOutput(goio.Discard)

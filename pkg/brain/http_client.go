@@ -1,7 +1,6 @@
 package brain
 
 import (
-	"bytes"
 	"context"
 	goio "io"
 	"net/http"
@@ -52,7 +51,10 @@ func newOpenBrainHTTPClient(cfg config.Brain, doer httpDoer) *openBrainHTTPClien
 	}
 }
 
-func (client *openBrainHTTPClient) DoJSON(ctx context.Context, request openBrainHTTPRequest) (map[string]any, error) {
+func (client *openBrainHTTPClient) DoJSON(
+	ctx context.Context,
+	request openBrainHTTPRequest,
+) (map[string]any, error) {
 	if client == nil {
 		return nil, wrapOpenBrainError("ide.brain.http", "client unavailable", &OpenBrainError{
 			Kind:      OpenBrainErrorTransport,
@@ -98,8 +100,11 @@ func (client *openBrainHTTPClient) DoJSON(ctx context.Context, request openBrain
 	return nil, finalErr
 }
 
-func (client *openBrainHTTPClient) doOnce(ctx context.Context, input openBrainHTTPRequest) (map[string]any, error) {
-	request, err := http.NewRequestWithContext(ctx, input.Method, joinEndpointPath(client.endpoint, input.Path), bytes.NewReader(input.Body))
+func (client *openBrainHTTPClient) doOnce(
+	ctx context.Context,
+	input openBrainHTTPRequest,
+) (map[string]any, error) {
+	request, err := http.NewRequestWithContext(ctx, input.Method, joinEndpointPath(client.endpoint, input.Path), core.NewBuffer(input.Body))
 	if err != nil {
 		return nil, wrapOpenBrainError("ide.brain.http", "build request", &OpenBrainError{
 			Kind:   OpenBrainErrorRequest,
@@ -169,7 +174,9 @@ func (client *openBrainHTTPClient) doOnce(ctx context.Context, input openBrainHT
 	return out, nil
 }
 
-func readOpenBrainBody(body goio.Reader) ([]byte, error) {
+func readOpenBrainBody(
+	body goio.Reader,
+) ([]byte, error) {
 	return goio.ReadAll(goio.LimitReader(body, maxResponseBytes+1))
 }
 
@@ -199,7 +206,10 @@ func (client *openBrainHTTPClient) backoff(attempt int) time.Duration {
 	return delay
 }
 
-func sleepWithContext(ctx context.Context, delay time.Duration) error {
+func sleepWithContext(
+	ctx context.Context,
+	delay time.Duration,
+) error {
 	if delay <= 0 {
 		return nil
 	}
@@ -255,7 +265,10 @@ func newOpenBrainCircuitBreaker(cfg config.BrainCircuitBreaker) *openBrainCircui
 	}
 }
 
-func (breaker *openBrainCircuitBreaker) Allow(method, path string) error {
+func (breaker *openBrainCircuitBreaker) Allow(
+	method,
+	path string,
+) error {
 	if breaker == nil || !breaker.enabled {
 		return nil
 	}
