@@ -19,9 +19,8 @@ require (
 )
 
 require (
-	dappco.re/go/core v0.8.0-alpha.1 // indirect
 	dappco.re/go/rag v0.10.0 // indirect
-	dappco.re/go/webview v0.8.0-alpha.1 // indirect
+	dappco.re/go/webview v0.9.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
