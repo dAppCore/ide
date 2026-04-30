@@ -5,6 +5,14 @@ frontend/dist
 frontend/node_modules
 build/linux/appimage/build
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exeide
+!build/
+!build/ios/
+!build/ios/*_test.go
+!build/ios/*_example_test.go
+!build/ios/scripts/
+!build/ios/scripts/deps/
+!build/ios/scripts/deps/*_test.go
+!build/ios/scripts/deps/*_example_test.go
 .core/
 .idea/
 ide

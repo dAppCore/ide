@@ -7,7 +7,6 @@ import (
 	"time"
 
 	core "dappco.re/go"
-	api "dappco.re/go/api"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/gin-gonic/gin"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -245,10 +244,8 @@ func hardenedHTTPHandler(svc *coremcp.Service, token string) http.Handler {
 		&sdkmcp.StreamableHTTPOptions{SessionTimeout: 30 * time.Minute},
 	)
 
-	toolBridge := api.NewToolBridge("/v1/tools")
-	coremcp.BridgeToAPI(svc, toolBridge)
 	toolEngine := gin.New()
-	toolBridge.RegisterRoutes(toolEngine.Group("/v1/tools"))
+	coremcp.BridgeToAPI(svc, toolEngine.Group("/v1/tools"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", bearerAuth(token, streamHandler))

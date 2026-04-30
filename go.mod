@@ -3,15 +3,14 @@ module dappco.re/go/ide
 go 1.26.2
 
 require (
-	dappco.re/go/api v0.8.0-alpha.1.0.20260427143506-f95002059d53
-	dappco.re/go/config v0.8.0-alpha.1
+	dappco.re/go/config v0.3.0
 	dappco.re/go/gui v0.8.0-alpha.1
-	dappco.re/go/io v0.8.0-alpha.1
-	dappco.re/go/mcp v0.8.0-alpha.1
-	dappco.re/go/process v0.9.0
-	dappco.re/go/scm v0.8.0-alpha.1
-	dappco.re/go/store v0.8.0-alpha.1
-	dappco.re/go/ws v0.8.0-alpha.1.0.20260427142937-36f01754d2e9
+	dappco.re/go/io v0.9.0
+	dappco.re/go/mcp v0.10.0
+	dappco.re/go/process v0.10.0
+	dappco.re/go/scm v0.10.0
+	dappco.re/go/store v0.9.0
+	dappco.re/go/ws v0.5.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/modelcontextprotocol/go-sdk v1.5.0
@@ -128,41 +127,3 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.47.0 // indirect
 )
-
-replace dappco.re/go/core/api => ./third_party/core_api
-
-replace dappco.re/go/core/io => ../core/go-io
-
-replace dappco.re/go/ai => ../go-ai
-
-replace dappco.re/go/api => ./compat/api
-
-replace dappco.re/go/cli => ../cli
-
-replace dappco.re/go/config => ../go-config
-
-replace dappco.re/go/io => ../go-io
-
-replace dappco.re/go/i18n => ../go-i18n
-
-replace dappco.re/go/inference => ../go-inference
-
-replace dappco.re/go/log => ../go-log
-
-replace dappco.re/go/mcp => ./compat/mcp
-
-replace dappco.re/go/rag => ./compat/rag
-
-replace dappco.re/go/scm => ../go-scm
-
-replace dappco.re/go/store => ../go-store
-
-replace dappco.re/go/webview => ../go-webview
-
-replace dappco.re/go/ws => ../go-ws
-
-replace dappco.re/go/gui => ./third_party/gui
-
-replace dappco.re/go => ../go
-
-replace dappco.re/go/process => ./third_party/process
