@@ -2,6 +2,20 @@
 
 # core/ide
 
+> Lethean IDE — Wails frontend + Go binary; mounts agent + scm + workspace
+
+[![CI](https://github.com/dappcore/ide/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/dappcore/ide/actions/workflows/ci.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=alert_status)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Coverage](https://codecov.io/gh/dappcore/ide/branch/dev/graph/badge.svg)](https://codecov.io/gh/dappcore/ide)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=security_rating)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=code_smells)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=ncloc)](https://sonarcloud.io/dashboard?id=dappcore_ide)
+[![Go Reference](https://pkg.go.dev/badge/dappco.re/go/ide.svg)](https://pkg.go.dev/dappco.re/go/ide)
+[![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](https://eupl.eu/1.2/en/)
+
+
 ## What Does `core-ide` Actually Do
 
 `core-ide` exposes the Core IDE runtime as MCP tools, named Core actions, and a local chat shell.

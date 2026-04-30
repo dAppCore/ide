@@ -84,14 +84,16 @@ brain:
 | `CORE_API_TOKEN` | (empty) | Bearer token for Laravel backend auth |
 | `MCP_ADDR` | (empty) | TCP address for MCP server (headless mode) |
 
-## Workspace Dependencies
+## Go Module Layout (new)
 
-This module uses a Go workspace (`~/Code/go.work`) with `replace` directives for sibling modules:
-- `../go` → `forge.lthn.ai/core/go`
-- `../gui` → `forge.lthn.ai/core/gui`
-- `../mcp` → `forge.lthn.ai/core/mcp`
-- `../config` → `forge.lthn.ai/core/config`
-- `../go-ws` → `forge.lthn.ai/core/go-ws`
+Go sources now live under `go/` and keep the module path unchanged:
+`dappco.re/go/ide`. From repo root:
+- `go/` is the module root (contains `go.mod`, `go.sum`, `cmd/`, `pkg/`, `tests/`, `third_party/`)
+- `frontend/`, `icons/`, `build/`, `dist/`, `bin/`, and `workspace/` remain at root
+- `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to root `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs`
+
+Go commands should be run from the module directory:
+- `cd go && core go test` (or `go test ./...` via module tools)
 
 ## Conventions
 
