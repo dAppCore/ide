@@ -62,12 +62,16 @@ func downstreamDependents(medium coreio.Medium, root string) []string {
 	if !medium.Exists(reposPath) {
 		return nil
 	}
-	result := coreconfig.Load(workspaceConfigMedium(medium), reposPath)
+	result := coreconfig.New(
+		coreconfig.WithMedium(workspaceConfigMedium(medium)),
+		coreconfig.WithPath(reposPath),
+	)
 	if !result.OK {
 		return nil
 	}
-	data, ok := result.Value.(map[string]any)
-	if !ok {
+	var data map[string]any
+	configValue := result.Value.(*coreconfig.Config)
+	if configValue == nil || !configValue.Get("", &data).OK {
 		return nil
 	}
 	var repos reposFile

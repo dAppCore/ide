@@ -6,7 +6,6 @@ import (
 	"time"
 
 	core "dappco.re/go"
-	envpkg "dappco.re/go"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
@@ -258,7 +257,9 @@ func (s *Server) Run(
 		}
 		return core.E("ide.server.Run", "service startup failed", nil)
 	}
-	defer s.core.ServiceShutdown(context.Background())
+	defer func() {
+		_ = s.core.ServiceShutdown(context.Background())
+	}()
 
 	var relayServer *http.Server
 	if s.relay.Enabled {
@@ -315,19 +316,19 @@ func withMCPAuthToken(
 		return run()
 	}
 	previous, hadPrevious := core.LookupEnv("MCP_AUTH_TOKEN")
-	if result := envpkg.Setenv("MCP_AUTH_TOKEN", token); !result.OK {
+	if result := core.Setenv("MCP_AUTH_TOKEN", token); !result.OK {
 		err, _ := result.Value.(error)
 		return core.E("ide.server.Run", "set MCP_AUTH_TOKEN", err)
 	}
 	defer func() {
 		if hadPrevious {
-			if result := envpkg.Setenv("MCP_AUTH_TOKEN", previous); !result.OK {
+			if result := core.Setenv("MCP_AUTH_TOKEN", previous); !result.OK {
 				err, _ := result.Value.(error)
 				core.Warn("ide.server.Run restore MCP_AUTH_TOKEN", "err", err)
 			}
 			return
 		}
-		if result := envpkg.Unsetenv("MCP_AUTH_TOKEN"); !result.OK {
+		if result := core.Unsetenv("MCP_AUTH_TOKEN"); !result.OK {
 			err, _ := result.Value.(error)
 			core.Warn("ide.server.Run unset MCP_AUTH_TOKEN", "err", err)
 		}

@@ -210,7 +210,9 @@ func readLimitedContent(
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	raw, err := goio.ReadAll(goio.LimitReader(file, maxBytes+1))
 	if err != nil {
 		return "", err
@@ -328,7 +330,7 @@ func logWorkspacePathRejection(rejection workspacePathRejection) {
 		return
 	}
 	c := core.New()
-	c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root")
+	_ = c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root")
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {
@@ -373,3 +375,8 @@ func pickPath(ok bool, path string) string {
 func isDir(entry fs.DirEntry) bool {
 	return entry != nil && entry.IsDir()
 }
+
+var _ = appendWorkspaceTree
+var _ = appendWorkspaceFile
+var _ = rejectsWorkspacePath
+var _ = isDir

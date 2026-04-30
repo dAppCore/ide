@@ -128,7 +128,9 @@ func (client *openBrainHTTPClient) doOnce(
 			Cause:     err,
 		})
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 	raw, err := readOpenBrainBody(response.Body)
 	if err != nil {
 		return nil, wrapOpenBrainError("ide.brain.http", "read response", &OpenBrainError{

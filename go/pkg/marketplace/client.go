@@ -104,7 +104,7 @@ func (c *Client) installViaGoSCM(
 	ctx context.Context,
 	input InstallInput,
 ) (InstallOutput, error) {
-	info, err := c.Info(ctx, InfoInput{Code: input.Code})
+	info, err := c.Info(ctx, InfoInput(input))
 	if err != nil {
 		return InstallOutput{}, err
 	}
@@ -176,7 +176,9 @@ func (c *Client) request(
 	if err != nil {
 		return core.E("ide.marketplace.request", "request failed", err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 	if response.StatusCode >= http.StatusBadRequest {
 		return core.E("ide.marketplace.request", core.Concat("upstream returned ", response.Status), nil)
 	}

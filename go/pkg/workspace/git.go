@@ -15,9 +15,16 @@ func gitStatus(
 	if processService == nil {
 		return GitStatus{}, core.E("ide.workspace.gitStatus", "process service is nil", nil)
 	}
-	output, err := processService.Run(ctx, "git", "-C", root, "status", "--short", "--branch", "--untracked-files=all")
-	if err != nil {
-		return GitStatus{}, core.E("ide.workspace.gitStatus", "git status", err)
+	result := processService.Run(ctx, "git", "-C", root, "status", "--short", "--branch", "--untracked-files=all")
+	if !result.OK {
+		if err, ok := result.Value.(error); ok {
+			return GitStatus{}, core.E("ide.workspace.gitStatus", "git status", err)
+		}
+		return GitStatus{}, core.E("ide.workspace.gitStatus", "git status", nil)
+	}
+	output, ok := result.Value.(string)
+	if !ok {
+		return GitStatus{}, core.E("ide.workspace.gitStatus", "git status", nil)
 	}
 	lines := core.Split(core.Trim(output), "\n")
 	status := GitStatus{Clean: true}

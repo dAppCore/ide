@@ -211,7 +211,9 @@ func serveHardenedHTTP(
 	if err != nil {
 		return core.E("ide.server.ServeHTTP", core.Concat("listen ", addr), err)
 	}
-	defer listener.Close()
+	defer func() {
+		_ = listener.Close()
+	}()
 
 	httpServer := &http.Server{
 		Addr:              addr,

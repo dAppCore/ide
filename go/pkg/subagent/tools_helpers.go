@@ -150,7 +150,9 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	if err != nil {
 		return nil, false, false, false
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	for _, channel := range []string{statusChannel(workspaceID), progressChannel(workspaceID), questionChannel(workspaceID), answerChannel(workspaceID)} {
 		if err := conn.WriteJSON(ws.Message{Type: ws.TypeSubscribe, Channel: channel, Timestamp: time.Now().UTC()}); err != nil {
@@ -296,3 +298,7 @@ func terminalState(value string) (bool, bool) {
 		return false, false
 	}
 }
+
+var _ = validateRelayURL
+var _ = (*Subsystem).collectEvents
+var _ = dedupeEvents

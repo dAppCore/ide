@@ -8,7 +8,6 @@ import (
 	"time"
 
 	core "dappco.re/go"
-	envpkg "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -166,24 +165,24 @@ func withDispatchEnv(values map[string]string) func() {
 		} else {
 			previous[key] = nil
 		}
-		if result := envpkg.Setenv(key, value); !result.OK {
-			err, _ := result.Value.(error)
-			core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
-		}
-	}
-	return func() {
-		for key, value := range previous {
-			if value == nil {
-				if result := envpkg.Unsetenv(key); !result.OK {
-					err, _ := result.Value.(error)
-					core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
-				}
-				continue
-			}
-			if result := envpkg.Setenv(key, *value); !result.OK {
+			if result := core.Setenv(key, value); !result.OK {
 				err, _ := result.Value.(error)
-				core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+				core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
 			}
+		}
+		return func() {
+			for key, value := range previous {
+				if value == nil {
+					if result := core.Unsetenv(key); !result.OK {
+						err, _ := result.Value.(error)
+						core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
+					}
+					continue
+				}
+				if result := core.Setenv(key, *value); !result.OK {
+					err, _ := result.Value.(error)
+					core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+				}
 		}
 	}
 }

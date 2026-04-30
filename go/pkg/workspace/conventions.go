@@ -43,14 +43,18 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		if writeErr := medium.Write(path, string(raw)); writeErr != nil {
 			continue
 		}
-		result := coreconfig.Load(workspaceConfigMedium(medium), path)
-		if !result.OK {
-			continue
-		}
-		data, ok := result.Value.(map[string]any)
-		if !ok {
-			continue
-		}
+			result := coreconfig.New(
+				coreconfig.WithMedium(workspaceConfigMedium(medium)),
+				coreconfig.WithPath(path),
+			)
+			if !result.OK {
+				continue
+			}
+			var data map[string]any
+			configValue := result.Value.(*coreconfig.Config)
+			if configValue == nil || !configValue.Get("", &data).OK {
+				continue
+			}
 		var pack conventionPack
 		if result := core.JSONUnmarshalString(core.JSONMarshalString(data), &pack); !result.OK {
 			continue
@@ -97,12 +101,16 @@ func readBuildProjectName(medium coreio.Medium, root string) string {
 	if writeErr := mem.Write(path, content); writeErr != nil {
 		return ""
 	}
-	result := coreconfig.Load(workspaceConfigMedium(mem), path)
+	result := coreconfig.New(
+		coreconfig.WithMedium(workspaceConfigMedium(mem)),
+		coreconfig.WithPath(path),
+	)
 	if !result.OK {
 		return ""
 	}
-	data, ok := result.Value.(map[string]any)
-	if !ok {
+	var data map[string]any
+	configValue := result.Value.(*coreconfig.Config)
+	if configValue == nil || !configValue.Get("", &data).OK {
 		return ""
 	}
 	if value, ok := data["projectName"].(string); ok {
