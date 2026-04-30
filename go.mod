@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	dappco.re/go/config v0.3.0
-	dappco.re/go/gui v0.8.0-alpha.1
+	dappco.re/go/gui v0.9.0
 	dappco.re/go/io v0.9.0
 	dappco.re/go/mcp v0.10.0
 	dappco.re/go/process v0.10.0
