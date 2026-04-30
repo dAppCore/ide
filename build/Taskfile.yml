@@ -5,7 +5,7 @@ tasks:
     summary: Runs `go mod tidy`
     internal: true
     cmds:
-      - go mod tidy
+      - cd go && go mod tidy
 
   install:frontend:deps:
     summary: Install frontend dependencies
@@ -53,8 +53,8 @@ tasks:
       - exclude: frontend/**/*
       - frontend/bindings/**/*
       - "**/*.go"
-      - go.mod
-      - go.sum
+      - go/go.mod
+      - go/go.sum
     generates:
       - frontend/bindings/**/*
     cmds:

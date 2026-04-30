@@ -50,7 +50,7 @@ tasks:
       - task: common:generate:icons
       - task: generate:dotdesktop
     cmds:
-      - go build {{.BUILD_FLAGS}} -o {{.OUTPUT}}
+      - cd go && go build {{.BUILD_FLAGS}} -o {{.OUTPUT}}
     vars:
       BUILD_FLAGS: '{{if eq .DEV "true"}}{{if .EXTRA_TAGS}}-tags {{.EXTRA_TAGS}} {{end}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s"{{end}}'
       DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
@@ -89,7 +89,7 @@ tasks:
       # Extract replace directives from go.mod and create -v mounts for each
       REPLACE_MOUNTS:
         sh: |
-          grep -E '^replace .* => ' go.mod 2>/dev/null | while read -r line; do
+          cd go && grep -E '^replace .* => ' go.mod 2>/dev/null | while read -r line; do
             path=$(echo "$line" | sed -E 's/^replace .* => //' | tr -d '\r')
             # Convert relative paths to absolute
             if [ "${path#/}" = "$path" ]; then
