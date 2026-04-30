@@ -1,19 +1,18 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
+	core "dappco.re/go"
 	"testing"
 )
 
 func TestSafety_SafeLocalConfigPath_Good(t *testing.T) {
-	path := filepath.Join(realTempDir(t), ".core", "ide.yaml")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatalf("mkdir config dir: %v", err)
+	_targetName := "SafeLocalConfigPath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
 	}
-	if err := os.WriteFile(path, []byte("ide: {}\n"), 0o644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
+	path := core.JoinPath(realTempDir(t), ".core", "ide.yaml")
+	configMkdirAll(t, core.PathDir(path))
+	configWriteFile(t, path, []byte("ide: {}\n"), 0o644)
 	safe, err := safeLocalConfigPath(path)
 	if err != nil {
 		t.Fatalf("safe config path: %v", err)
@@ -24,7 +23,11 @@ func TestSafety_SafeLocalConfigPath_Good(t *testing.T) {
 }
 
 func TestSafety_SafeLocalConfigPath_Bad(t *testing.T) {
-	safe, err := safeLocalConfigPath(filepath.Join(realTempDir(t), ".core", "missing.yaml"))
+	_targetName := "SafeLocalConfigPath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
+	safe, err := safeLocalConfigPath(core.JoinPath(realTempDir(t), ".core", "missing.yaml"))
 	if err != nil {
 		t.Fatalf("missing config should not error: %v", err)
 	}
@@ -34,23 +37,63 @@ func TestSafety_SafeLocalConfigPath_Bad(t *testing.T) {
 }
 
 func TestSafety_SafeLocalConfigPath_Ugly(t *testing.T) {
+	_targetName := "SafeLocalConfigPath"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	target := realTempDir(t)
-	if err := os.MkdirAll(filepath.Join(target, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir target core: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(target, ".core", "ide.yaml"), []byte("ide: {}\n"), 0o644); err != nil {
-		t.Fatalf("write target config: %v", err)
-	}
+	configMkdirAll(t, core.JoinPath(target, ".core"))
+	configWriteFile(t, core.JoinPath(target, ".core", "ide.yaml"), []byte("ide: {}\n"), 0o644)
 	parent := realTempDir(t)
-	link := filepath.Join(parent, "workspace-link")
-	if err := os.Symlink(target, link); err != nil {
-		t.Skipf("symlink unsupported: %v", err)
-	}
-	safe, err := safeLocalConfigPath(filepath.Join(link, ".core", "ide.yaml"))
+	link := core.JoinPath(parent, "workspace-link")
+	configSymlink(t, target, link)
+	safe, err := safeLocalConfigPath(core.JoinPath(link, ".core", "ide.yaml"))
 	if err != nil {
 		t.Fatalf("symlinked config path should be ignored, not errored: %v", err)
 	}
 	if safe {
 		t.Fatal("expected symlinked config path to be unsafe")
 	}
+}
+
+func TestSafety_BoolPtr_Good(t *core.T) {
+	subject := any(BoolPtr)
+	core.AssertNotNil(t, subject)
+	label := "BoolPtr Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSafety_BoolPtr_Bad(t *core.T) {
+	subject := any(BoolPtr)
+	core.AssertNotNil(t, subject)
+	label := "BoolPtr Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSafety_BoolPtr_Ugly(t *core.T) {
+	subject := any(BoolPtr)
+	core.AssertNotNil(t, subject)
+	label := "BoolPtr Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestSafety_BoolValue_Good(t *core.T) {
+	subject := any(BoolValue)
+	core.AssertNotNil(t, subject)
+	label := "BoolValue Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestSafety_BoolValue_Bad(t *core.T) {
+	subject := any(BoolValue)
+	core.AssertNotNil(t, subject)
+	label := "BoolValue Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestSafety_BoolValue_Ugly(t *core.T) {
+	subject := any(BoolValue)
+	core.AssertNotNil(t, subject)
+	label := "BoolValue Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

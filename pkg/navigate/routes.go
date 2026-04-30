@@ -3,7 +3,7 @@ package navigate
 import (
 	"context"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 type NavigateInput = Input
@@ -70,7 +70,11 @@ func (r *Router) Handle(route string, handler Handler) {
 	r.handlers[core.Trim(route)] = handler
 }
 
-func (r *Router) Resolve(ctx context.Context, route string, filter Filter) (Data, Schema, error) {
+func (r *Router) Resolve(
+	ctx context.Context,
+	route string,
+	filter Filter,
+) (Data, Schema, error) {
 	if r == nil {
 		return nil, nil, core.E("ide.navigate.Resolve", "router is nil", nil)
 	}

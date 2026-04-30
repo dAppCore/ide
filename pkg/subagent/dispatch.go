@@ -4,11 +4,11 @@ import (
 	"context"
 	cryptoRand "crypto/rand"
 	"encoding/hex"
-	"os"
 	"sync"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
+	envpkg "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -20,13 +20,20 @@ var relayEnvMu sync.Mutex
 
 var agenticDispatchCall = dispatchViaAgentic
 
-func (s *Subsystem) handleDispatchGuided(ctx context.Context, _ *mcp.CallToolRequest, input DispatchGuidedInput) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
+func (s *Subsystem) handleDispatchGuided(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input DispatchGuidedInput,
+) (*mcp.CallToolResult, DispatchGuidedOutput, error) {
 	out, err := s.DispatchGuided(ctx, input)
 	return nil, out, err
 }
 
 // out, err := s.DispatchGuided(ctx, DispatchGuidedInput{Repo: "core/ide", Task: "Implement the missing feature"})
-func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInput) (DispatchGuidedOutput, error) {
+func (s *Subsystem) DispatchGuided(
+	ctx context.Context,
+	input DispatchGuidedInput,
+) (DispatchGuidedOutput, error) {
 	_ = ctx
 	if !config.BoolValue(s.cfg.Enabled, true) {
 		return DispatchGuidedOutput{Success: false, Reason: "subagent is disabled"}, nil
@@ -84,7 +91,9 @@ func (s *Subsystem) DispatchGuided(ctx context.Context, input DispatchGuidedInpu
 	return DispatchGuidedOutput{Success: dispatchResult.Success, Delivered: true, WorkspaceID: workspaceID, Agent: dispatchResult.Agent, Prompt: prompt}, nil
 }
 
-func newRandomID(prefix string) (string, error) {
+func newRandomID(
+	prefix string,
+) (string, error) {
 	var raw [8]byte
 	if _, err := cryptoRand.Read(raw[:]); err != nil {
 		return "", core.E("ide.subagent.id", "generate id", err)
@@ -92,7 +101,16 @@ func newRandomID(prefix string) (string, error) {
 	return core.Concat(prefix, "-", hex.EncodeToString(raw[:])), nil
 }
 
-func dispatchViaAgentic(ctx context.Context, input DispatchGuidedInput, agent, template, workspaceID, relayURL, relayToken, prompt string) (mcpagentic.DispatchOutput, error) {
+func dispatchViaAgentic(
+	ctx context.Context,
+	input DispatchGuidedInput,
+	agent,
+	template,
+	workspaceID,
+	relayURL,
+	relayToken,
+	prompt string,
+) (mcpagentic.DispatchOutput, error) {
 	service, err := coremcp.New(coremcp.Options{Unrestricted: true})
 	if err != nil {
 		return mcpagentic.DispatchOutput{}, core.E("ide.subagent.dispatch_guided", "create agentic mcp service", err)
@@ -141,22 +159,31 @@ func dispatchViaAgentic(ctx context.Context, input DispatchGuidedInput, agent, t
 func withDispatchEnv(values map[string]string) func() {
 	previous := make(map[string]*string, len(values))
 	for key, value := range values {
-		current, ok := os.LookupEnv(key)
+		current, ok := core.LookupEnv(key)
 		if ok {
 			currentValue := current
 			previous[key] = &currentValue
 		} else {
 			previous[key] = nil
 		}
-		_ = os.Setenv(key, value)
+		if result := envpkg.Setenv(key, value); !result.OK {
+			err, _ := result.Value.(error)
+			core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
+		}
 	}
 	return func() {
 		for key, value := range previous {
 			if value == nil {
-				_ = os.Unsetenv(key)
+				if result := envpkg.Unsetenv(key); !result.OK {
+					err, _ := result.Value.(error)
+					core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
+				}
 				continue
 			}
-			_ = os.Setenv(key, *value)
+			if result := envpkg.Setenv(key, *value); !result.OK {
+				err, _ := result.Value.(error)
+				core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+			}
 		}
 	}
 }

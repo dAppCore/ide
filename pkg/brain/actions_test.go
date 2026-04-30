@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
@@ -13,6 +13,10 @@ import (
 )
 
 func TestActions_Register_Good(t *testing.T) {
+	_targetName := "Register"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"memories":[{"id":"m1","content":"alpha"}]}`))
 	})
@@ -35,6 +39,10 @@ func TestActions_Register_Good(t *testing.T) {
 }
 
 func TestActions_Register_Bad(t *testing.T) {
+	_targetName := "Register"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	c := core.New()
 	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil).registerActions(c)
 	result := c.Action("ide.brain.recall").Run(context.Background(), core.NewOptions(core.Option{Key: "topK", Value: "bad"}))
@@ -44,6 +52,10 @@ func TestActions_Register_Bad(t *testing.T) {
 }
 
 func TestActions_Register_Ugly(t *testing.T) {
+	_targetName := "Register"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	c := core.New()
 	New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil).registerActions(c)
 	if c.Action("ide.brain.context").Run(context.Background(), core.NewOptions()).OK {

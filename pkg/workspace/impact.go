@@ -1,7 +1,7 @@
 package workspace
 
 import (
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreconfig "dappco.re/go/config"
 	coreio "dappco.re/go/io"
 )
@@ -9,7 +9,7 @@ import (
 type reposFile struct {
 	Repos []struct {
 		Name    string   `yaml:"name"`
-		Path    string   `yaml:"path"`
+		Path    string   `yaml:"path,omitempty"`
 		Depends []string `yaml:"depends"`
 	} `yaml:"repos"`
 }
@@ -62,8 +62,12 @@ func downstreamDependents(medium coreio.Medium, root string) []string {
 	if !medium.Exists(reposPath) {
 		return nil
 	}
-	data, err := coreconfig.Load(medium, reposPath)
-	if err != nil {
+	result := coreconfig.Load(workspaceConfigMedium(medium), reposPath)
+	if !result.OK {
+		return nil
+	}
+	data, ok := result.Value.(map[string]any)
+	if !ok {
 		return nil
 	}
 	var repos reposFile

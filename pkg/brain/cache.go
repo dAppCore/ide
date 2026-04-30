@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	storelib "dappco.re/go/store"
 )
 
@@ -42,7 +42,11 @@ func (c *Cache) Get(ctx context.Context, key string) (RecallOutput, bool) {
 	return output, true
 }
 
-func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error {
+func (c *Cache) Set(
+	ctx context.Context,
+	key string,
+	output RecallOutput,
+) error {
 	_ = ctx
 	if c == nil || c.store == nil || !c.enabled {
 		return nil
@@ -53,7 +57,9 @@ func (c *Cache) Set(ctx context.Context, key string, output RecallOutput) error 
 	return c.store.SetWithTTL(c.namespace, key, core.JSONMarshalString(output), c.ttl)
 }
 
-func (c *Cache) Clear(ctx context.Context) error {
+func (c *Cache) Clear(
+	ctx context.Context,
+) error {
 	_ = ctx
 	if c == nil || c.store == nil || !c.enabled {
 		return nil

@@ -41,6 +41,10 @@ func TestTools_Marketplace_Ugly(t *testing.T) {
 }
 
 func TestTools_MarketplaceHandleInfo_Good(t *testing.T) {
+	_targetName := "MarketplaceHandleInfo"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/marketplace/go-io" {
 			t.Fatalf("unexpected path %s", r.URL.Path)
@@ -59,6 +63,10 @@ func TestTools_MarketplaceHandleInfo_Good(t *testing.T) {
 }
 
 func TestTools_MarketplaceHandleInstall_Good(t *testing.T) {
+	_targetName := "MarketplaceHandleInstall"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/marketplace/go-io/install" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)

@@ -4,11 +4,9 @@ import (
 	"context"
 	goio "io"
 	"io/fs"
-	"os"
-	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Separator are canonical filesystem-safety primitives without Core equivalents.
 	"slices"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	"dappco.re/go/process"
 )
@@ -16,7 +14,14 @@ import (
 const maxScanDepth = 16
 const maxPreviewBytes = 4096
 
-func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, processService *process.Service, fallbackRoot string, ignores ...string) ([]Project, error) {
+func scanProjects(
+	ctx context.Context,
+	input ScanInput,
+	medium coreio.Medium,
+	processService *process.Service,
+	fallbackRoot string,
+	ignores ...string,
+) ([]Project, error) {
 	root := input.Root
 	if core.Trim(root) == "" {
 		root = fallbackRoot
@@ -62,7 +67,11 @@ func scanProjects(ctx context.Context, input ScanInput, medium coreio.Medium, pr
 	return projects, nil
 }
 
-func readCoreFiles(medium coreio.Medium, root string, ignores ...string) ([]File, FileCount, []string, error) {
+func readCoreFiles(
+	medium coreio.Medium,
+	root string,
+	ignores ...string,
+) ([]File, FileCount, []string, error) {
 	paths := []string{
 		core.JoinPath(root, "CLAUDE.md"),
 		core.JoinPath(root, "README.md"),
@@ -189,7 +198,11 @@ func appendWorkspaceFileWithIgnores(medium coreio.Medium, root, path string, ign
 	*sources = append(*sources, path)
 }
 
-func readLimitedContent(medium coreio.Medium, path string, maxBytes int64) (string, error) {
+func readLimitedContent(
+	medium coreio.Medium,
+	path string,
+	maxBytes int64,
+) (string, error) {
 	if medium == nil {
 		return "", core.E("ide.workspace.readLimitedContent", "medium is nil", nil)
 	}
@@ -272,22 +285,30 @@ type canonicalPath struct {
 // an existing host filesystem entry. Virtual io.Medium entries may not exist on
 // the host; callers should not reject those solely because host Lstat reports
 // fs.ErrNotExist.
-func canonicalExistingPath(path string) (canonicalPath, error) {
-	absolute, err := filepath.Abs(filepath.Clean(core.Trim(path)))
-	if err != nil {
+func canonicalExistingPath(
+	path string,
+) (canonicalPath, error) {
+	cleanPath := core.CleanPath(core.Trim(path), string(core.PathSeparator))
+	absoluteResult := core.PathAbs(cleanPath)
+	if !absoluteResult.OK {
+		err, _ := absoluteResult.Value.(error)
 		return canonicalPath{exists: true}, err
 	}
-	if _, err := os.Lstat(absolute); err != nil {
+	absolute := absoluteResult.Value.(string)
+	lstat := core.Lstat(absolute)
+	if !lstat.OK {
+		err, _ := lstat.Value.(error)
 		if core.Is(err, fs.ErrNotExist) {
 			return canonicalPath{}, err
 		}
 		return canonicalPath{exists: true}, err
 	}
-	resolved, err := filepath.EvalSymlinks(absolute)
-	if err != nil {
+	resolvedResult := core.PathEvalSymlinks(absolute)
+	if !resolvedResult.OK {
+		err, _ := resolvedResult.Value.(error)
 		return canonicalPath{exists: true}, err
 	}
-	return canonicalPath{path: filepath.Clean(resolved), exists: true}, nil
+	return canonicalPath{path: core.CleanPath(resolvedResult.Value.(string), string(core.PathSeparator)), exists: true}, nil
 }
 
 func canonicalPathHasRoot(root, path string) bool {
@@ -295,7 +316,7 @@ func canonicalPathHasRoot(root, path string) bool {
 		return true
 	}
 	prefix := root
-	separator := string(filepath.Separator)
+	separator := string(core.PathSeparator)
 	if !core.HasSuffix(prefix, separator) {
 		prefix += separator
 	}

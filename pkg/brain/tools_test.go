@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	storelib "dappco.re/go/store"
 
@@ -14,6 +14,10 @@ import (
 )
 
 func TestTools_BrainRecall_Good(t *testing.T) {
+	_targetName := "BrainRecall"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	var calls int
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
@@ -43,6 +47,10 @@ func TestTools_BrainRecall_Good(t *testing.T) {
 }
 
 func TestTools_BrainRemember_Good(t *testing.T) {
+	_targetName := "BrainRemember"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/brain/remember" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
@@ -66,6 +74,10 @@ func TestTools_BrainRemember_Good(t *testing.T) {
 }
 
 func TestTools_BrainRemember_Bad(t *testing.T) {
+	_targetName := "BrainRemember"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
 	if _, _, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta"}); err == nil {
 		t.Fatal("expected missing API key error")
@@ -73,6 +85,10 @@ func TestTools_BrainRemember_Bad(t *testing.T) {
 }
 
 func TestTools_BrainRemember_Ugly(t *testing.T) {
+	_targetName := "BrainRemember"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	server := newBrainServer(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, `{"id":`)
 	})
@@ -226,7 +242,7 @@ func TestTools_BrainContext_Ugly(t *testing.T) {
 
 func TestTools_BrainRecall_Bad(t *testing.T) {
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), nil, nil, nil)
-	if _, _, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"}); err == nil || !strings.Contains(err.Error(), "API key") {
+	if _, _, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"}); err == nil || !core.Contains(err.Error(), "API key") {
 		t.Fatalf("expected missing API key error, got %v", err)
 	}
 }

@@ -27,22 +27,38 @@ func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	}, s.handleScan)
 }
 
-func (s *Subsystem) handleStatus(ctx context.Context, _ *mcp.CallToolRequest, input StatusInput) (*mcp.CallToolResult, StatusOutput, error) {
+func (s *Subsystem) handleStatus(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input StatusInput,
+) (*mcp.CallToolResult, StatusOutput, error) {
 	out, err := s.status(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleConventions(ctx context.Context, _ *mcp.CallToolRequest, input ConventionsInput) (*mcp.CallToolResult, ConventionsOutput, error) {
+func (s *Subsystem) handleConventions(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ConventionsInput,
+) (*mcp.CallToolResult, ConventionsOutput, error) {
 	out, err := s.conventions(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleImpact(ctx context.Context, _ *mcp.CallToolRequest, input ImpactInput) (*mcp.CallToolResult, ImpactOutput, error) {
+func (s *Subsystem) handleImpact(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ImpactInput,
+) (*mcp.CallToolResult, ImpactOutput, error) {
 	out, err := s.impact(ctx, input)
 	return nil, out, err
 }
 
-func (s *Subsystem) handleScan(ctx context.Context, _ *mcp.CallToolRequest, input ScanInput) (*mcp.CallToolResult, ScanOutput, error) {
+func (s *Subsystem) handleScan(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input ScanInput,
+) (*mcp.CallToolResult, ScanOutput, error) {
 	out, err := s.scan(ctx, input)
 	return nil, out, err
 }

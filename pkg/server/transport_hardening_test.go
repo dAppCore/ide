@@ -6,11 +6,10 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 
 	"dappco.re/go/ide/pkg/config"
@@ -123,7 +122,7 @@ func TestTransport_HTTP_Ugly_OversizedBodyRejected(t *testing.T) {
 	errCh := runServerForTest(ctx, srv)
 	waitForHTTPStatus(t, "http://"+addr+"/health", "", http.StatusOK)
 
-	body := strings.Repeat("a", httpMaxBodyBytes+1)
+	body := repeatString("a", httpMaxBodyBytes+1)
 	response, _ := doHTTPForTest(t, http.MethodPost, "http://"+addr+"/v1/tools/brain_recall", "good-token", body)
 	if response.StatusCode != http.StatusRequestEntityTooLarge {
 		t.Fatalf("expected 413 for oversized tool body, got %d", response.StatusCode)
@@ -140,6 +139,7 @@ func newHTTPHardeningServer(addr string, token string) (*Server, error) {
 	cfg.Ide.Transport.Mode = "http"
 	cfg.Ide.Transport.HTTPAddr = addr
 	cfg.Ide.Transport.Token = token
+	cfg.Ide.Subagent.Enabled = config.BoolPtr(false)
 	return NewServer(Options{
 		Config:                    cfg,
 		Medium:                    coreio.NewMemoryMedium(),
@@ -187,7 +187,7 @@ func waitForHTTPStatus(t *testing.T, url string, token string, status int) {
 
 func doHTTPForTest(t *testing.T, method string, url string, token string, body string) (*http.Response, string) {
 	t.Helper()
-	request, err := http.NewRequestWithContext(context.Background(), method, url, strings.NewReader(body))
+	request, err := http.NewRequestWithContext(context.Background(), method, url, core.NewReader(body))
 	if err != nil {
 		t.Fatalf("build request: %v", err)
 	}
@@ -207,4 +207,12 @@ func doHTTPForTest(t *testing.T, method string, url string, token string, body s
 		t.Fatalf("read response body: %v", raw.Value)
 	}
 	return response, raw.Value.(string)
+}
+
+func repeatString(value string, count int) string {
+	out := core.NewBuilder()
+	for index := 0; index < count; index++ {
+		out.WriteString(value)
+	}
+	return out.String()
 }

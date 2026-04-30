@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -83,13 +83,13 @@ func newConclaveTestOptions(counter *int32) Options {
 		MCP:    true,
 		extraCoreOptions: []core.CoreOption{
 			core.WithName("conclave_identity", func(_ *core.Core) core.Result {
-				return core.Result{Value: &conclaveIdentity{ID: atomic.AddInt32(counter, 1)}, OK: true}
+				return core.Ok(&conclaveIdentity{ID: atomic.AddInt32(counter, 1)})
 			}),
 			core.WithName("conclave_ledger", func(_ *core.Core) core.Result {
-				return core.Result{Value: &conclaveLedger{}, OK: true}
+				return core.Ok(&conclaveLedger{})
 			}),
 			core.WithName("conclave_test", func(c *core.Core) core.Result {
-				return core.Result{Value: &conclaveProbeSubsystem{core: c}, OK: true}
+				return core.Ok(&conclaveProbeSubsystem{core: c})
 			}),
 		},
 	}

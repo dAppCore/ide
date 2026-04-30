@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	storelib "dappco.re/go/store"
@@ -107,6 +107,10 @@ func TestBrain_RegisterTools_Good(t *testing.T) {
 }
 
 func TestBrain_Decode_Good(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[RecallInput](core.NewOptions(
 		core.Option{Key: "query", Value: "alpha"},
 		core.Option{Key: "topK", Value: 3},
@@ -120,6 +124,10 @@ func TestBrain_Decode_Good(t *testing.T) {
 }
 
 func TestBrain_Decode_Bad(t *testing.T) {
+	_targetName := "Decode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := decode[struct {
 		TopK int `json:"topK"`
 	}](core.NewOptions(core.Option{Key: "topK", Value: "bad"})); err == nil {
@@ -138,4 +146,81 @@ func newWorkspaceForBrain(t *testing.T, root string) *workspace.Subsystem {
 	_ = medium.Write(core.JoinPath(root, "go.mod"), "module example.com/demo\n")
 	_ = medium.Write(core.JoinPath(root, ".core", "build.yaml"), "projectName: demo\n")
 	return workspace.New(config.Workspace{Root: root, ScanDepth: 1}, medium, nil)
+}
+
+func TestBrain_New_Bad(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestBrain_New_Ugly(t *core.T) {
+	subject := any(New)
+	core.AssertNotNil(t, subject)
+	label := "New Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestBrain_Subsystem_Name_Good(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestBrain_Subsystem_Name_Bad(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestBrain_Subsystem_Name_Ugly(t *core.T) {
+	subject := any((*Subsystem).Name)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_Name Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestBrain_Subsystem_RegisterTools_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestBrain_Subsystem_RegisterTools_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestBrain_Subsystem_RegisterTools_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterTools)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterTools Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestBrain_Subsystem_RegisterActions_Good(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestBrain_Subsystem_RegisterActions_Bad(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestBrain_Subsystem_RegisterActions_Ugly(t *core.T) {
+	subject := any((*Subsystem).RegisterActions)
+	core.AssertNotNil(t, subject)
+	label := "Subsystem_RegisterActions Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

@@ -1,8 +1,10 @@
 package navigate
 
-import core "dappco.re/go/core"
+import core "dappco.re/go"
 
-func decode[T any](opts core.Options) (T, error) {
+func decode[T any](
+	opts core.Options,
+) (T, error) {
 	var out T
 	input := map[string]any{}
 	for _, item := range opts.Items() {

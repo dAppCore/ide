@@ -2,12 +2,11 @@ package ai
 
 import (
 	"context"
-	"os"
 	"slices"
 	"time"
 	"unicode"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 )
 
@@ -42,14 +41,16 @@ type Service struct {
 }
 
 func Register(c *core.Core) core.Result {
-	return core.Result{Value: &Service{ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{})}, OK: true}
+	return core.Ok(&Service{ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{})})
 }
 
 func (s *Service) OnStartup(context.Context) core.Result {
-	return core.Result{OK: true}
+	return core.Ok(nil)
 }
 
-func (s *Service) Record(event Event) error {
+func (s *Service) Record(
+	event Event,
+) error {
 	return Record(event)
 }
 
@@ -143,7 +144,9 @@ func tokenSet(value string) map[string]struct{} {
 	return terms
 }
 
-func Record(event Event) error {
+func Record(
+	event Event,
+) error {
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now()
 	}
@@ -163,13 +166,13 @@ func Record(event Event) error {
 }
 
 func aiHomeDir() string {
-	if home := core.Trim(os.Getenv("DIR_HOME")); home != "" {
+	if home := core.Trim(core.Getenv("DIR_HOME")); home != "" {
 		return home
 	}
 	if home := core.Trim(core.Env("DIR_HOME")); home != "" {
 		return home
 	}
-	if home := core.Trim(os.Getenv("HOME")); home != "" {
+	if home := core.Trim(core.Getenv("HOME")); home != "" {
 		return home
 	}
 	return core.Trim(core.Env("HOME"))

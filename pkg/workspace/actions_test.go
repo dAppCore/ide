@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 
 	"dappco.re/go/ide/pkg/config"

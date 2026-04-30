@@ -1,11 +1,6 @@
 package config
 
-import (
-	"os"
-	"path/filepath" // AX-6-exception: Abs/Clean/EvalSymlinks/Dir are canonical filesystem-safety primitives without Core equivalents.
-
-	core "dappco.re/go/core"
-)
+import core "dappco.re/go"
 
 func BoolPtr(value bool) *bool {
 	return &value
@@ -29,35 +24,42 @@ func homeDir() string {
 	return "."
 }
 
-func safeLocalConfigPath(path string) (bool, error) {
-	absPath, err := filepath.Abs(filepath.Clean(core.Trim(path)))
-	if err != nil {
+func safeLocalConfigPath(
+	path string,
+) (bool, error) {
+	cleanPath := core.CleanPath(core.Trim(path), string(core.PathSeparator))
+	absResult := core.PathAbs(cleanPath)
+	if !absResult.OK {
+		err, _ := absResult.Value.(error)
 		return false, core.E("ide.config.Load", core.Concat("refuse config path: ", path), err)
 	}
-	if _, err := os.Lstat(absPath); err != nil {
-		if core.Is(err, os.ErrNotExist) {
+	absPath := absResult.Value.(string)
+	lstat := core.Lstat(absPath)
+	if !lstat.OK {
+		err, _ := lstat.Value.(error)
+		if core.IsNotExist(err) {
 			return true, nil
 		}
 		return false, core.E("ide.config.Load", core.Concat("refuse config path: ", absPath), err)
 	}
-	resolvedPath, err := filepath.EvalSymlinks(absPath)
-	if err != nil {
+	resolved := core.PathEvalSymlinks(absPath)
+	if !resolved.OK {
 		return false, nil
 	}
-	resolvedPath = filepath.Clean(resolvedPath)
+	resolvedPath := core.CleanPath(resolved.Value.(string), string(core.PathSeparator))
 	if resolvedPath != absPath {
 		return false, nil
 	}
-	for parent := filepath.Dir(absPath); parent != "." && parent != ""; parent = filepath.Dir(parent) {
-		resolvedParent, err := filepath.EvalSymlinks(parent)
-		if err != nil {
+	for parent := core.PathDir(absPath); parent != "." && parent != ""; parent = core.PathDir(parent) {
+		resolvedParentResult := core.PathEvalSymlinks(parent)
+		if !resolvedParentResult.OK {
 			return false, nil
 		}
-		resolvedParent = filepath.Clean(resolvedParent)
+		resolvedParent := core.CleanPath(resolvedParentResult.Value.(string), string(core.PathSeparator))
 		if resolvedParent != parent {
 			return false, nil
 		}
-		next := filepath.Dir(parent)
+		next := core.PathDir(parent)
 		if next == parent {
 			break
 		}

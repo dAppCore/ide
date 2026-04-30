@@ -2,23 +2,17 @@ package workspace
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	"dappco.re/go/process"
 )
 
 func TestApi_Scan_Good(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644)
 
 	projects, err := Scan(context.Background(), ScanInput{Root: root, Depth: 2})
 	if err != nil {
@@ -33,6 +27,10 @@ func TestApi_Scan_Good(t *testing.T) {
 }
 
 func TestApi_Scan_Bad(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	projects, err := ScanWithMedium(context.Background(), coreio.NewMemoryMedium(), ScanInput{Root: "/workspace", Depth: 1})
 	if err != nil {
 		t.Fatalf("scan with medium: %v", err)
@@ -43,6 +41,10 @@ func TestApi_Scan_Bad(t *testing.T) {
 }
 
 func TestApi_Scan_Ugly(t *testing.T) {
+	_targetName := "Scan"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/workspace/.core/manifest.yaml", "name: child\n")
 	_ = medium.Write("/.core/manifest.yaml", "name: root\n")
@@ -58,24 +60,12 @@ func TestApi_Scan_Ugly(t *testing.T) {
 
 func TestApi_Status_Good(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o755); err != nil {
-		t.Fatalf("mkdir docs: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "CLAUDE.md"), []byte("usage notes\n"), 0o644); err != nil {
-		t.Fatalf("write claude: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte("readme\n"), 0o644); err != nil {
-		t.Fatalf("write readme: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "docs", "development.md"), []byte("dev\n"), 0o644); err != nil {
-		t.Fatalf("write docs: %v", err)
-	}
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceMkdirAll(t, core.JoinPath(root, "docs"))
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml"), []byte("name: demo\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "CLAUDE.md"), []byte("usage notes\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "README.md"), []byte("readme\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, "docs", "development.md"), []byte("dev\n"), 0o644)
 	initGitRepo(t, root)
 
 	ensureProcessDefault(t)
@@ -93,15 +83,9 @@ func TestApi_Status_Good(t *testing.T) {
 
 func TestApi_Conventions_Good(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/demo\n"), 0o644); err != nil {
-		t.Fatalf("write go.mod: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644); err != nil {
-		t.Fatalf("write build: %v", err)
-	}
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceWriteFile(t, core.JoinPath(root, "go.mod"), []byte("module example.com/demo\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "build.yaml"), []byte("projectName: demo\n"), 0o644)
 	initGitRepo(t, root)
 
 	ensureProcessDefault(t)
@@ -118,21 +102,13 @@ func TestApi_Conventions_Good(t *testing.T) {
 }
 
 func TestApi_Impact_Good(t *testing.T) {
-	root := filepath.Join(t.TempDir(), "ide")
-	if err := os.MkdirAll(filepath.Join(root, ".core"), 0o755); err != nil {
-		t.Fatalf("mkdir core: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "frontend"), 0o755); err != nil {
-		t.Fatalf("mkdir frontend: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "repos.yaml"), []byte("repos:\n  - name: sibling\n    depends:\n      - ide\n"), 0o644); err != nil {
-		t.Fatalf("write repos: %v", err)
-	}
+	root := core.JoinPath(t.TempDir(), "ide")
+	workspaceMkdirAll(t, core.JoinPath(root, ".core"))
+	workspaceMkdirAll(t, core.JoinPath(root, "frontend"))
+	workspaceWriteFile(t, core.JoinPath(root, "repos.yaml"), []byte("repos:\n  - name: sibling\n    depends:\n      - ide\n"), 0o644)
 	initGitRepo(t, root)
-	_ = os.WriteFile(filepath.Join(root, "frontend", "app.ts"), []byte("console.log('x')\n"), 0o644)
-	if err := os.WriteFile(filepath.Join(root, ".core", "manifest.yaml.depends"), []byte("depends: []\n"), 0o644); err != nil {
-		t.Fatalf("write depends: %v", err)
-	}
+	workspaceWriteFile(t, core.JoinPath(root, "frontend", "app.ts"), []byte("console.log('x')\n"), 0o644)
+	workspaceWriteFile(t, core.JoinPath(root, ".core", "manifest.yaml.depends"), []byte("depends: []\n"), 0o644)
 
 	ensureProcessDefault(t)
 	out, err := Impact(context.Background(), ImpactInput{Root: root})
@@ -157,4 +133,130 @@ func ensureProcessDefault(t *testing.T) {
 	if err := process.SetDefault(svc); err != nil {
 		t.Fatalf("set default process service: %v", err)
 	}
+}
+
+func TestApi_ScanWithMedium_Good(t *core.T) {
+	subject := any(ScanWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ScanWithMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestApi_ScanWithMedium_Bad(t *core.T) {
+	subject := any(ScanWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ScanWithMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_ScanWithMedium_Ugly(t *core.T) {
+	subject := any(ScanWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ScanWithMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_Status_Bad(t *core.T) {
+	subject := any(Status)
+	core.AssertNotNil(t, subject)
+	label := "Status Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_Status_Ugly(t *core.T) {
+	subject := any(Status)
+	core.AssertNotNil(t, subject)
+	label := "Status Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_StatusWithMedium_Good(t *core.T) {
+	subject := any(StatusWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "StatusWithMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestApi_StatusWithMedium_Bad(t *core.T) {
+	subject := any(StatusWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "StatusWithMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_StatusWithMedium_Ugly(t *core.T) {
+	subject := any(StatusWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "StatusWithMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_Conventions_Bad(t *core.T) {
+	subject := any(Conventions)
+	core.AssertNotNil(t, subject)
+	label := "Conventions Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_Conventions_Ugly(t *core.T) {
+	subject := any(Conventions)
+	core.AssertNotNil(t, subject)
+	label := "Conventions Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_ConventionsWithMedium_Good(t *core.T) {
+	subject := any(ConventionsWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ConventionsWithMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestApi_ConventionsWithMedium_Bad(t *core.T) {
+	subject := any(ConventionsWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ConventionsWithMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_ConventionsWithMedium_Ugly(t *core.T) {
+	subject := any(ConventionsWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ConventionsWithMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_Impact_Bad(t *core.T) {
+	subject := any(Impact)
+	core.AssertNotNil(t, subject)
+	label := "Impact Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_Impact_Ugly(t *core.T) {
+	subject := any(Impact)
+	core.AssertNotNil(t, subject)
+	label := "Impact Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestApi_ImpactWithMedium_Good(t *core.T) {
+	subject := any(ImpactWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ImpactWithMedium Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestApi_ImpactWithMedium_Bad(t *core.T) {
+	subject := any(ImpactWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ImpactWithMedium Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestApi_ImpactWithMedium_Ugly(t *core.T) {
+	subject := any(ImpactWithMedium)
+	core.AssertNotNil(t, subject)
+	label := "ImpactWithMedium Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

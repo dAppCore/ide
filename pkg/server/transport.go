@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	api "dappco.re/go/api"
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 	"github.com/gin-gonic/gin"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,7 +36,11 @@ type RelayTransport struct {
 }
 
 // transport, err := SelectTransport(cfg, true, false)
-func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) (Transport, error) {
+func SelectTransport(
+	cfg config.IDEConfig,
+	mcpOnly bool,
+	preferConfigured bool,
+) (Transport, error) {
 	if mcpOnly {
 		return Transport{Mode: "stdio"}, nil
 	}
@@ -61,7 +64,10 @@ func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) 
 	return selectConfiguredTransport(cfg, false)
 }
 
-func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, error) {
+func selectConfiguredTransport(
+	cfg config.IDEConfig,
+	mcpOnly bool,
+) (Transport, error) {
 	if mcpOnly {
 		return Transport{Mode: "stdio"}, nil
 	}
@@ -83,7 +89,10 @@ func selectConfiguredTransport(cfg config.IDEConfig, mcpOnly bool) (Transport, e
 	}
 }
 
-func selectEnvironmentTransport() (Transport, error) {
+func selectEnvironmentTransport() (
+	Transport,
+	error,
+) {
 	if value := core.Trim(core.Env("MCP_HTTP_ADDR")); value != "" {
 		if err := validateTransportAddress("http", value); err != nil {
 			return Transport{}, err
@@ -125,7 +134,10 @@ func SelectRelayTransport(cfg config.IDEConfig, token string, handler http.Handl
 	}
 }
 
-func validateTransportAddress(mode, addr string) error {
+func validateTransportAddress(
+	mode,
+	addr string,
+) error {
 	addr = core.Trim(addr)
 	if addr == "" {
 		return nil
@@ -146,7 +158,9 @@ func validateTransportAddress(mode, addr string) error {
 	return nil
 }
 
-func validateRelayTransportAddress(addr string) error {
+func validateRelayTransportAddress(
+	addr string,
+) error {
 	if core.Trim(addr) == "" {
 		return nil
 	}
@@ -173,7 +187,12 @@ func isLoopbackHost(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-func serveHardenedHTTP(ctx context.Context, svc *coremcp.Service, addr string, token string) error {
+func serveHardenedHTTP(
+	ctx context.Context,
+	svc *coremcp.Service,
+	addr string,
+	token string,
+) error {
 	if svc == nil {
 		return core.E("ide.server.ServeHTTP", "mcp service is nil", nil)
 	}
@@ -207,7 +226,9 @@ func serveHardenedHTTP(ctx context.Context, svc *coremcp.Service, addr string, t
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = httpServer.Shutdown(shutdownCtx)
+		if err := httpServer.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
+			core.Warn("ide.server.ServeHTTP shutdown", "err", err)
+		}
 	}()
 	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return core.E("ide.server.ServeHTTP", "serve", err)
@@ -223,10 +244,8 @@ func hardenedHTTPHandler(svc *coremcp.Service, token string) http.Handler {
 		&sdkmcp.StreamableHTTPOptions{SessionTimeout: 30 * time.Minute},
 	)
 
-	toolBridge := api.NewToolBridge("/v1/tools")
-	coremcp.BridgeToAPI(svc, toolBridge)
 	toolEngine := gin.New()
-	toolBridge.RegisterRoutes(toolEngine.Group("/v1/tools"))
+	coremcp.BridgeToAPI(svc, toolEngine.Group("/v1/tools"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", bearerAuth(token, streamHandler))

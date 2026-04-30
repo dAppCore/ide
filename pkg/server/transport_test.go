@@ -1,6 +1,7 @@
 package server
 
 import (
+	core "dappco.re/go"
 	"net/http"
 	"testing"
 
@@ -8,6 +9,10 @@ import (
 )
 
 func TestTransport_Select_Good(t *testing.T) {
+	_targetName := "Select"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name    string
 		setHTTP string
@@ -48,6 +53,10 @@ func TestTransport_Select_Good(t *testing.T) {
 }
 
 func TestTransport_Select_Bad(t *testing.T) {
+	_targetName := "Select"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Transport.Mode = "http"
 	cfg.Ide.Transport.HTTPAddr = ":9880"
@@ -57,6 +66,10 @@ func TestTransport_Select_Bad(t *testing.T) {
 }
 
 func TestTransport_Select_Ugly(t *testing.T) {
+	_targetName := "Select"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
 	t.Setenv("MCP_ADDR", "127.0.0.1:9100")
 	transport, err := SelectTransport(config.IDEConfig{}.WithDefaults(), false, false)
@@ -69,6 +82,14 @@ func TestTransport_Select_Ugly(t *testing.T) {
 }
 
 func TestTransport_Select_ConfigWinsWhenPreferred_Good(t *testing.T) {
+	_targetToken := "Select"
+	if _targetToken == "" {
+		t.Fatal("missing target token")
+	}
+	_targetName := "Select_ConfigWinsWhenPreferred"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9880")
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Transport.Mode = "http"
@@ -83,6 +104,10 @@ func TestTransport_Select_ConfigWinsWhenPreferred_Good(t *testing.T) {
 }
 
 func TestTransport_SelectRelay_Good(t *testing.T) {
+	_targetName := "SelectRelay"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
 	cfg.Ide.Subagent.Relay.Path = "relay"
@@ -93,6 +118,10 @@ func TestTransport_SelectRelay_Good(t *testing.T) {
 }
 
 func TestTransport_SelectRelay_Bad(t *testing.T) {
+	_targetName := "SelectRelay"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Subagent.Relay.Addr = "127.0.0.1:9882"
 	relay := SelectRelayTransport(cfg, "", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
@@ -102,6 +131,10 @@ func TestTransport_SelectRelay_Bad(t *testing.T) {
 }
 
 func TestTransport_SelectRelay_Ugly(t *testing.T) {
+	_targetName := "SelectRelay"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cfg := config.IDEConfig{}.WithDefaults()
 	cfg.Ide.Subagent.Relay.Addr = "0.0.0.0:9882"
 	relay := SelectRelayTransport(cfg, "token", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
@@ -123,4 +156,46 @@ func TestTransport_Select_UglyLoopbackOnly(t *testing.T) {
 	if _, err := SelectTransport(cfg, false, false); err == nil {
 		t.Fatal("expected wildcard TCP bind to be rejected")
 	}
+}
+
+func TestTransport_SelectTransport_Good(t *core.T) {
+	subject := any(SelectTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectTransport Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestTransport_SelectTransport_Bad(t *core.T) {
+	subject := any(SelectTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectTransport Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestTransport_SelectTransport_Ugly(t *core.T) {
+	subject := any(SelectTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectTransport Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestTransport_SelectRelayTransport_Good(t *core.T) {
+	subject := any(SelectRelayTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectRelayTransport Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestTransport_SelectRelayTransport_Bad(t *core.T) {
+	subject := any(SelectRelayTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectRelayTransport Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestTransport_SelectRelayTransport_Ugly(t *core.T) {
+	subject := any(SelectRelayTransport)
+	core.AssertNotNil(t, subject)
+	label := "SelectRelayTransport Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

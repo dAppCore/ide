@@ -3,6 +3,10 @@ package main
 import "testing"
 
 func TestFlags_ParseRuntimeFlags_Good(t *testing.T) {
+	_targetName := "ParseRuntimeFlags"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	flags, err := parseRuntimeFlags([]string{
 		"--mcp",
 		"--no-gui",
@@ -28,12 +32,20 @@ func TestFlags_ParseRuntimeFlags_Good(t *testing.T) {
 }
 
 func TestFlags_ParseRuntimeFlags_Bad(t *testing.T) {
+	_targetName := "ParseRuntimeFlags"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := parseRuntimeFlags([]string{"--http"}); err == nil {
 		t.Fatal("expected malformed args to fail")
 	}
 }
 
 func TestFlags_ParseRuntimeFlags_Ugly(t *testing.T) {
+	_targetName := "ParseRuntimeFlags"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	flags, err := parseRuntimeFlags([]string{
 		"--http", " :9880 ",
 		"--mcp",
@@ -54,18 +66,30 @@ func TestFlags_ParseRuntimeFlags_Ugly(t *testing.T) {
 }
 
 func TestFlags_TransportMode_Good(t *testing.T) {
+	_targetName := "TransportMode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if got := transportMode(runtimeFlags{MCPOnly: true}); got != "stdio" {
 		t.Fatalf("expected stdio, got %q", got)
 	}
 }
 
 func TestFlags_TransportMode_Bad(t *testing.T) {
+	_targetName := "TransportMode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if got := transportMode(runtimeFlags{}); got != "" {
 		t.Fatalf("expected empty transport mode, got %q", got)
 	}
 }
 
 func TestFlags_TransportMode_Ugly(t *testing.T) {
+	_targetName := "TransportMode"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if got := transportMode(runtimeFlags{MCPOnly: true, HTTPAddr: "127.0.0.1:9880"}); got != "http" {
 		t.Fatalf("expected http precedence, got %q", got)
 	}

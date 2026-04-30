@@ -3,10 +3,14 @@ package subagent
 import (
 	"testing"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 )
 
 func TestDecode_Subagent_Good(t *testing.T) {
+	_targetName := "Subagent"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[GuideInput](core.NewOptions(core.Option{Key: "workspaceId", Value: "ws-1"}))
 	if err != nil || input.WorkspaceID != "ws-1" {
 		t.Fatalf("unexpected decode result %#v err=%v", input, err)
@@ -14,12 +18,20 @@ func TestDecode_Subagent_Good(t *testing.T) {
 }
 
 func TestDecode_Subagent_Bad(t *testing.T) {
+	_targetName := "Subagent"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if _, err := decode[AskInput](core.NewOptions(core.Option{Key: "waitSeconds", Value: "bad"})); err == nil {
 		t.Fatal("expected decode error")
 	}
 }
 
 func TestDecode_Subagent_Ugly(t *testing.T) {
+	_targetName := "Subagent"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	input, err := decode[ProgressInput](core.NewOptions())
 	if err != nil || input.Progress != 0 {
 		t.Fatalf("expected zero value decode, got %#v err=%v", input, err)

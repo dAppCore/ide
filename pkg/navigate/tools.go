@@ -14,7 +14,11 @@ func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	}, s.handle)
 }
 
-func (s *Subsystem) handle(ctx context.Context, _ *mcp.CallToolRequest, input Input) (*mcp.CallToolResult, Output, error) {
+func (s *Subsystem) handle(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input Input,
+) (*mcp.CallToolResult, Output, error) {
 	out, err := s.resolve(ctx, input)
 	return nil, out, err
 }

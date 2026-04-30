@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
 	"dappco.re/go/ws"
 	"github.com/gorilla/websocket"
@@ -19,7 +19,9 @@ var agenticWatchCall = func(context.Context, string, int, int) (mcpagentic.Watch
 	return mcpagentic.WatchOutput{}, nil
 }
 
-func normalizeWorkspaceID(value string) (string, error) {
+func normalizeWorkspaceID(
+	value string,
+) (string, error) {
 	workspaceID := core.Trim(value)
 	if len(workspaceID) > maxWorkspaceIDLength {
 		return "", core.E("ide.subagent.workspace", "workspaceId is too long", nil)
@@ -30,11 +32,17 @@ func normalizeWorkspaceID(value string) (string, error) {
 	return workspaceID, nil
 }
 
-func newWorkspaceID() (string, error) {
+func newWorkspaceID() (
+	string,
+	error,
+) {
 	return newRandomID("ws")
 }
 
-func newQuestionID() (string, error) {
+func newQuestionID() (
+	string,
+	error,
+) {
 	return newRandomID("q")
 }
 
@@ -70,7 +78,9 @@ func (s *Subsystem) relayAvailableForURL(relayURL string) bool {
 	return err == nil
 }
 
-func canonicalRelayURL(value string) (string, error) {
+func canonicalRelayURL(
+	value string,
+) (string, error) {
 	parsed, err := parseRelayURL(value)
 	if err != nil {
 		return "", err
@@ -84,12 +94,16 @@ func canonicalRelayURL(value string) (string, error) {
 	return parsed.String(), nil
 }
 
-func validateRelayURL(value string) error {
+func validateRelayURL(
+	value string,
+) error {
 	_, err := parseRelayURL(value)
 	return err
 }
 
-func parseRelayURL(value string) (*url.URL, error) {
+func parseRelayURL(
+	value string,
+) (*url.URL, error) {
 	raw := core.Trim(value)
 	if raw == "" {
 		return nil, core.E("ide.subagent.relay", "relay URL is required", nil)
@@ -147,7 +161,9 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 	events := []Event{}
 	for {
-		_ = conn.SetReadDeadline(deadline)
+		if err := conn.SetReadDeadline(deadline); err != nil {
+			return events, false, false, len(events) > 0
+		}
 		var message ws.Message
 		if err := conn.ReadJSON(&message); err != nil {
 			return events, false, false, len(events) > 0

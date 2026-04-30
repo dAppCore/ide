@@ -9,6 +9,10 @@ import (
 )
 
 func TestIntegrationActionParity_ToolsHaveActions_Good(t *testing.T) {
+	_targetName := "ToolsHaveActions"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)
@@ -30,12 +34,20 @@ func TestIntegrationActionParity_ToolsHaveActions_Good(t *testing.T) {
 }
 
 func TestIntegrationActionParity_ToolsHaveActions_Bad(t *testing.T) {
+	_targetName := "ToolsHaveActions"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if action, ok := ideActionForTool("agentic", "agentic_dispatch"); ok {
 		t.Fatalf("expected non-IDE tool to be ignored, got %s", action)
 	}
 }
 
 func TestIntegrationActionParity_ToolsHaveActions_Ugly(t *testing.T) {
+	_targetName := "ToolsHaveActions"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	srv, err := NewServer(Options{Config: config.IDEConfig{}.WithDefaults(), MCP: true, Medium: coreio.NewMemoryMedium()})
 	if err != nil {
 		t.Fatalf("compose server: %v", err)

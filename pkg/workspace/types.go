@@ -35,7 +35,7 @@ type FileCount struct {
 }
 
 type File struct {
-	Path     string `json:"path"`
+	Path     string `json:"path,omitempty"`
 	Size     int64  `json:"size"`
 	Modified string `json:"modified"`
 	Preview  string `json:"preview,omitempty"`
@@ -58,7 +58,7 @@ type GitChangeCounts struct {
 
 type GitChange struct {
 	Code string `json:"code"`
-	Path string `json:"path"`
+	Path string `json:"path,omitempty"`
 }
 
 type StatusOutput struct {

@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -34,7 +34,10 @@ func NewGUIShell() *GUIShell {
 	}
 }
 
-func (shell *GUIShell) Run(ctx context.Context, coreInstance *core.Core) error {
+func (shell *GUIShell) Run(
+	ctx context.Context,
+	coreInstance *core.Core,
+) error {
 	if shell == nil {
 		return core.E("ide.server.GUI", "gui shell is nil", nil)
 	}
@@ -67,7 +70,9 @@ func (shell *GUIShell) Run(ctx context.Context, coreInstance *core.Core) error {
 	return app.Run()
 }
 
-func (bridge *chatBridge) Tools(ctx context.Context) (any, error) {
+func (bridge *chatBridge) Tools(
+	ctx context.Context,
+) (any, error) {
 	_ = ctx
 	if bridge == nil || bridge.core == nil {
 		return nil, core.E("ide.server.GUI.Tools", "core is nil", nil)
@@ -79,7 +84,9 @@ func (bridge *chatBridge) Tools(ctx context.Context) (any, error) {
 	return result.Value, nil
 }
 
-func (bridge *chatBridge) ToolManifest(ctx context.Context) (string, error) {
+func (bridge *chatBridge) ToolManifest(
+	ctx context.Context,
+) (string, error) {
 	_ = ctx
 	if bridge == nil || bridge.core == nil {
 		return "", core.E("ide.server.GUI.ToolManifest", "core is nil", nil)
@@ -92,7 +99,10 @@ func (bridge *chatBridge) ToolManifest(ctx context.Context) (string, error) {
 	return text, nil
 }
 
-func (bridge *chatBridge) CallTool(ctx context.Context, input chatBridgeToolCall) (string, error) {
+func (bridge *chatBridge) CallTool(
+	ctx context.Context,
+	input chatBridgeToolCall,
+) (string, error) {
 	if bridge == nil || bridge.core == nil {
 		return "", core.E("ide.server.GUI.CallTool", "core is nil", nil)
 	}
@@ -107,7 +117,10 @@ func (bridge *chatBridge) CallTool(ctx context.Context, input chatBridgeToolCall
 	return text, nil
 }
 
-func resultError(scope string, value any) error {
+func resultError(
+	scope string,
+	value any,
+) error {
 	if err, ok := value.(error); ok {
 		return err
 	}

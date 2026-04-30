@@ -4,7 +4,7 @@ import (
 	goio "io"
 	"io/fs"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 )
 
@@ -16,7 +16,9 @@ type rootedMedium struct {
 
 var _ coreio.Medium = (*rootedMedium)(nil)
 
-func (m *rootedMedium) translate(path string) (string, error) {
+func (m *rootedMedium) translate(
+	path string,
+) (string, error) {
 	if m == nil || m.medium == nil || !m.bound {
 		return path, nil
 	}
@@ -42,7 +44,9 @@ func (m *rootedMedium) translate(path string) (string, error) {
 	return "", core.E("workspace.medium", core.Concat("path ", path, " is outside allowed workspace root ", root), nil)
 }
 
-func (m *rootedMedium) Read(path string) (string, error) {
+func (m *rootedMedium) Read(
+	path string,
+) (string, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return "", err
@@ -50,7 +54,10 @@ func (m *rootedMedium) Read(path string) (string, error) {
 	return m.medium.Read(translated)
 }
 
-func (m *rootedMedium) Write(path, content string) error {
+func (m *rootedMedium) Write(
+	path,
+	content string,
+) error {
 	translated, err := m.translate(path)
 	if err != nil {
 		return err
@@ -58,7 +65,11 @@ func (m *rootedMedium) Write(path, content string) error {
 	return m.medium.Write(translated, content)
 }
 
-func (m *rootedMedium) WriteMode(path, content string, mode fs.FileMode) error {
+func (m *rootedMedium) WriteMode(
+	path,
+	content string,
+	mode fs.FileMode,
+) error {
 	translated, err := m.translate(path)
 	if err != nil {
 		return err
@@ -66,7 +77,9 @@ func (m *rootedMedium) WriteMode(path, content string, mode fs.FileMode) error {
 	return m.medium.WriteMode(translated, content, mode)
 }
 
-func (m *rootedMedium) EnsureDir(path string) error {
+func (m *rootedMedium) EnsureDir(
+	path string,
+) error {
 	translated, err := m.translate(path)
 	if err != nil {
 		return err
@@ -82,7 +95,9 @@ func (m *rootedMedium) IsFile(path string) bool {
 	return m.medium.IsFile(translated)
 }
 
-func (m *rootedMedium) Delete(path string) error {
+func (m *rootedMedium) Delete(
+	path string,
+) error {
 	translated, err := m.translate(path)
 	if err != nil {
 		return err
@@ -90,7 +105,9 @@ func (m *rootedMedium) Delete(path string) error {
 	return m.medium.Delete(translated)
 }
 
-func (m *rootedMedium) DeleteAll(path string) error {
+func (m *rootedMedium) DeleteAll(
+	path string,
+) error {
 	translated, err := m.translate(path)
 	if err != nil {
 		return err
@@ -98,7 +115,10 @@ func (m *rootedMedium) DeleteAll(path string) error {
 	return m.medium.DeleteAll(translated)
 }
 
-func (m *rootedMedium) Rename(oldPath, newPath string) error {
+func (m *rootedMedium) Rename(
+	oldPath,
+	newPath string,
+) error {
 	translatedOld, err := m.translate(oldPath)
 	if err != nil {
 		return err
@@ -110,7 +130,9 @@ func (m *rootedMedium) Rename(oldPath, newPath string) error {
 	return m.medium.Rename(translatedOld, translatedNew)
 }
 
-func (m *rootedMedium) List(path string) ([]fs.DirEntry, error) {
+func (m *rootedMedium) List(
+	path string,
+) ([]fs.DirEntry, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -118,7 +140,9 @@ func (m *rootedMedium) List(path string) ([]fs.DirEntry, error) {
 	return m.medium.List(translated)
 }
 
-func (m *rootedMedium) Stat(path string) (fs.FileInfo, error) {
+func (m *rootedMedium) Stat(
+	path string,
+) (fs.FileInfo, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -126,7 +150,9 @@ func (m *rootedMedium) Stat(path string) (fs.FileInfo, error) {
 	return m.medium.Stat(translated)
 }
 
-func (m *rootedMedium) Open(path string) (fs.File, error) {
+func (m *rootedMedium) Open(
+	path string,
+) (fs.File, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -134,7 +160,9 @@ func (m *rootedMedium) Open(path string) (fs.File, error) {
 	return m.medium.Open(translated)
 }
 
-func (m *rootedMedium) Create(path string) (goio.WriteCloser, error) {
+func (m *rootedMedium) Create(
+	path string,
+) (goio.WriteCloser, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -142,7 +170,9 @@ func (m *rootedMedium) Create(path string) (goio.WriteCloser, error) {
 	return m.medium.Create(translated)
 }
 
-func (m *rootedMedium) Append(path string) (goio.WriteCloser, error) {
+func (m *rootedMedium) Append(
+	path string,
+) (goio.WriteCloser, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -150,7 +180,9 @@ func (m *rootedMedium) Append(path string) (goio.WriteCloser, error) {
 	return m.medium.Append(translated)
 }
 
-func (m *rootedMedium) ReadStream(path string) (goio.ReadCloser, error) {
+func (m *rootedMedium) ReadStream(
+	path string,
+) (goio.ReadCloser, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err
@@ -158,7 +190,9 @@ func (m *rootedMedium) ReadStream(path string) (goio.ReadCloser, error) {
 	return m.medium.ReadStream(translated)
 }
 
-func (m *rootedMedium) WriteStream(path string) (goio.WriteCloser, error) {
+func (m *rootedMedium) WriteStream(
+	path string,
+) (goio.WriteCloser, error) {
 	translated, err := m.translate(path)
 	if err != nil {
 		return nil, err

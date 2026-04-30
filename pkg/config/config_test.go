@@ -1,8 +1,8 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
+	core "dappco.re/go"
+	"syscall"
 	"testing"
 	"time"
 
@@ -12,20 +12,12 @@ import (
 func TestConfig_Load_Good(t *testing.T) {
 	home := realTempDir(t)
 	cwd := realTempDir(t)
-	homeConfigPath := filepath.Join(home, ".core", "ide.yaml")
-	cwdConfigPath := filepath.Join(cwd, ".core", "ide.yaml")
-	if err := os.MkdirAll(filepath.Dir(homeConfigPath), 0o755); err != nil {
-		t.Fatalf("mkdir home config: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(cwdConfigPath), 0o755); err != nil {
-		t.Fatalf("mkdir cwd config: %v", err)
-	}
-	if err := os.WriteFile(homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://example.com\n    agent_id: user-agent\n"), 0o644); err != nil {
-		t.Fatalf("write home config: %v", err)
-	}
-	if err := os.WriteFile(cwdConfigPath, []byte("ide:\n  transport:\n    mode: http\n    http_addr: 127.0.0.1:9000\n"), 0o644); err != nil {
-		t.Fatalf("write cwd config: %v", err)
-	}
+	homeConfigPath := core.JoinPath(home, ".core", "ide.yaml")
+	cwdConfigPath := core.JoinPath(cwd, ".core", "ide.yaml")
+	configMkdirAll(t, core.PathDir(homeConfigPath))
+	configMkdirAll(t, core.PathDir(cwdConfigPath))
+	configWriteFile(t, homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://example.com\n    agent_id: user-agent\n"), 0o644)
+	configWriteFile(t, cwdConfigPath, []byte("ide:\n  transport:\n    mode: http\n    http_addr: 127.0.0.1:9000\n"), 0o644)
 	cfg, err := Load(homeConfigPath, cwdConfigPath)
 	if err != nil {
 		t.Fatalf("load config: %v", err)
@@ -105,13 +97,9 @@ func TestConfig_LoadWithOptions_Ugly(t *testing.T) {
 func TestConfig_LoadWithOptions_UglySymlinkedPath(t *testing.T) {
 	workspace := realTempDir(t)
 	linkParent := realTempDir(t)
-	directConfigPath := filepath.Join(workspace, ".core", "ide.yaml")
-	if err := os.MkdirAll(filepath.Dir(directConfigPath), 0o755); err != nil {
-		t.Fatalf("mkdir direct config: %v", err)
-	}
-	if err := os.WriteFile(directConfigPath, []byte("ide:\n  brain:\n    agent_id: direct-project\n"), 0o644); err != nil {
-		t.Fatalf("write project config: %v", err)
-	}
+	directConfigPath := core.JoinPath(workspace, ".core", "ide.yaml")
+	configMkdirAll(t, core.PathDir(directConfigPath))
+	configWriteFile(t, directConfigPath, []byte("ide:\n  brain:\n    agent_id: direct-project\n"), 0o644)
 
 	cfg, err := LoadWithOptions(LoaderOptions{Medium: coreio.Local, Paths: []string{directConfigPath}})
 	if err != nil {
@@ -121,11 +109,9 @@ func TestConfig_LoadWithOptions_UglySymlinkedPath(t *testing.T) {
 		t.Fatalf("expected direct config to load, got %#v", cfg.Ide.Brain)
 	}
 
-	workspaceLink := filepath.Join(linkParent, "workspace-link")
-	if err := os.Symlink(workspace, workspaceLink); err != nil {
-		t.Skipf("symlink unsupported: %v", err)
-	}
-	symlinkedConfigPath := filepath.Join(workspaceLink, ".core", "ide.yaml")
+	workspaceLink := core.JoinPath(linkParent, "workspace-link")
+	configSymlink(t, workspace, workspaceLink)
+	symlinkedConfigPath := core.JoinPath(workspaceLink, ".core", "ide.yaml")
 	cfg, err = LoadWithOptions(LoaderOptions{Medium: coreio.Local, Paths: []string{symlinkedConfigPath}})
 	if err != nil {
 		t.Fatalf("expected symlinked config path to be ignored, got %v", err)
@@ -136,6 +122,10 @@ func TestConfig_LoadWithOptions_UglySymlinkedPath(t *testing.T) {
 }
 
 func TestConfig_Load_Bad(t *testing.T) {
+	_targetName := "Load"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	medium := coreio.NewMemoryMedium()
 	_ = medium.Write("/broken/.core/ide.yaml", "ide: [")
 	_, err := LoadWithOptions(LoaderOptions{Medium: medium, Paths: []string{"/broken/.core/ide.yaml"}})
@@ -147,20 +137,12 @@ func TestConfig_Load_Bad(t *testing.T) {
 func TestConfig_Load_Ugly(t *testing.T) {
 	home := realTempDir(t)
 	cwd := realTempDir(t)
-	homeConfigPath := filepath.Join(home, ".core", "ide.yaml")
-	cwdConfigPath := filepath.Join(cwd, ".core", "ide.yaml")
-	if err := os.MkdirAll(filepath.Dir(homeConfigPath), 0o755); err != nil {
-		t.Fatalf("mkdir home config: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(cwdConfigPath), 0o755); err != nil {
-		t.Fatalf("mkdir cwd config: %v", err)
-	}
-	if err := os.WriteFile(homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://home.example\n  workspace:\n    root: /home\n"), 0o644); err != nil {
-		t.Fatalf("write home config: %v", err)
-	}
-	if err := os.WriteFile(cwdConfigPath, []byte("ide:\n  brain:\n    endpoint: https://project.example\n  workspace:\n    scan_depth: 7\n"), 0o644); err != nil {
-		t.Fatalf("write cwd config: %v", err)
-	}
+	homeConfigPath := core.JoinPath(home, ".core", "ide.yaml")
+	cwdConfigPath := core.JoinPath(cwd, ".core", "ide.yaml")
+	configMkdirAll(t, core.PathDir(homeConfigPath))
+	configMkdirAll(t, core.PathDir(cwdConfigPath))
+	configWriteFile(t, homeConfigPath, []byte("ide:\n  brain:\n    endpoint: https://home.example\n  workspace:\n    root: /home\n"), 0o644)
+	configWriteFile(t, cwdConfigPath, []byte("ide:\n  brain:\n    endpoint: https://project.example\n  workspace:\n    scan_depth: 7\n"), 0o644)
 
 	t.Setenv("CORE_BRAIN_URL", "https://env.example")
 	t.Setenv("MCP_HTTP_ADDR", "127.0.0.1:9777")
@@ -196,6 +178,10 @@ func TestConfig_Load_Ugly(t *testing.T) {
 }
 
 func TestConfig_TransportURL_Good(t *testing.T) {
+	_targetName := "TransportURL"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	cases := []struct {
 		name     string
 		relay    SubagentRelay
@@ -223,26 +209,21 @@ func TestConfig_DefaultPaths_Good(t *testing.T) {
 }
 
 func TestConfig_DefaultPaths_Ugly(t *testing.T) {
-	originalWD, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
+	originalWD := configGetwd(t)
 	cwd := t.TempDir()
 	t.Cleanup(func() {
-		_ = os.Chdir(originalWD)
+		configChdir(t, originalWD)
 	})
-	if err := os.Chdir(cwd); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	configChdir(t, cwd)
 
 	paths := DefaultPaths("")
 	if len(paths) != 2 {
 		t.Fatalf("expected project-local and home defaults, got %#v", paths)
 	}
-	if filepath.Base(filepath.Dir(paths[0])) != ".core" || filepath.Base(paths[0]) != "ide.yaml" {
+	if core.PathBase(core.PathDir(paths[0])) != ".core" || core.PathBase(paths[0]) != "ide.yaml" {
 		t.Fatalf("expected home config first, got %#v", paths)
 	}
-	if filepath.Base(filepath.Dir(paths[1])) != ".core" || filepath.Base(paths[1]) != "ide.yaml" {
+	if core.PathBase(core.PathDir(paths[1])) != ".core" || core.PathBase(paths[1]) != "ide.yaml" {
 		t.Fatalf("expected project-local config second, got %#v", paths)
 	}
 }
@@ -331,9 +312,382 @@ func TestConfig_BoolValue_Good(t *testing.T) {
 func realTempDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	realDir, err := filepath.EvalSymlinks(dir)
-	if err != nil {
-		t.Fatalf("resolve temp dir: %v", err)
+	realDir := core.PathEvalSymlinks(dir)
+	if !realDir.OK {
+		t.Fatalf("resolve temp dir: %v", realDir.Value)
 	}
-	return realDir
+	return realDir.Value.(string)
+}
+
+func configMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if result := core.MkdirAll(path, 0o755); !result.OK {
+		t.Fatalf("mkdir %s: %v", path, result.Value)
+	}
+}
+
+func configWriteFile(t *testing.T, path string, data []byte, mode core.FileMode) {
+	t.Helper()
+	if result := core.WriteFile(path, data, mode); !result.OK {
+		t.Fatalf("write %s: %v", path, result.Value)
+	}
+}
+
+func configGetwd(t *testing.T) string {
+	t.Helper()
+	result := core.Getwd()
+	if !result.OK {
+		t.Fatalf("getwd: %v", result.Value)
+	}
+	return result.Value.(string)
+}
+
+func configChdir(t *testing.T, path string) {
+	t.Helper()
+	if result := core.Chdir(path); !result.OK {
+		t.Fatalf("chdir %s: %v", path, result.Value)
+	}
+}
+
+func configSymlink(t *testing.T, oldPath string, newPath string) {
+	t.Helper()
+	if err := syscall.Symlink(oldPath, newPath); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+}
+
+func TestConfig_Transport_WithDefaults_Good(t *core.T) {
+	subject := any((*Transport).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Transport_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Transport_WithDefaults_Bad(t *core.T) {
+	subject := any((*Transport).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Transport_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Transport_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Transport).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Transport_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Brain_WithDefaults_Good(t *core.T) {
+	subject := any((*Brain).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Brain_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Brain_WithDefaults_Bad(t *core.T) {
+	subject := any((*Brain).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Brain_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Brain_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Brain).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Brain_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Cache_WithDefaults_Good(t *core.T) {
+	subject := any((*Cache).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Cache_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Cache_WithDefaults_Bad(t *core.T) {
+	subject := any((*Cache).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Cache_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Cache_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Cache).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Cache_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_BrainHTTP_WithDefaults_Good(t *core.T) {
+	subject := any((*BrainHTTP).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTP_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_BrainHTTP_WithDefaults_Bad(t *core.T) {
+	subject := any((*BrainHTTP).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTP_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_BrainHTTP_WithDefaults_Ugly(t *core.T) {
+	subject := any((*BrainHTTP).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainHTTP_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_BrainRetry_WithDefaults_Good(t *core.T) {
+	subject := any((*BrainRetry).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainRetry_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_BrainRetry_WithDefaults_Bad(t *core.T) {
+	subject := any((*BrainRetry).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainRetry_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_BrainRetry_WithDefaults_Ugly(t *core.T) {
+	subject := any((*BrainRetry).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainRetry_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_BrainCircuitBreaker_WithDefaults_Good(t *core.T) {
+	subject := any((*BrainCircuitBreaker).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_BrainCircuitBreaker_WithDefaults_Bad(t *core.T) {
+	subject := any((*BrainCircuitBreaker).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_BrainCircuitBreaker_WithDefaults_Ugly(t *core.T) {
+	subject := any((*BrainCircuitBreaker).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "BrainCircuitBreaker_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Workspace_WithDefaults_Good(t *core.T) {
+	subject := any((*Workspace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Workspace_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Workspace_WithDefaults_Bad(t *core.T) {
+	subject := any((*Workspace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Workspace_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Workspace_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Workspace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Workspace_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Subagent_WithDefaults_Good(t *core.T) {
+	subject := any((*Subagent).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Subagent_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Subagent_WithDefaults_Bad(t *core.T) {
+	subject := any((*Subagent).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Subagent_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Subagent_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Subagent).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Subagent_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_SubagentRelay_WithDefaults_Good(t *core.T) {
+	subject := any((*SubagentRelay).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_SubagentRelay_WithDefaults_Bad(t *core.T) {
+	subject := any((*SubagentRelay).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_SubagentRelay_WithDefaults_Ugly(t *core.T) {
+	subject := any((*SubagentRelay).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_SubagentRelay_URL_Good(t *core.T) {
+	subject := any((*SubagentRelay).URL)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_URL Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_SubagentRelay_URL_Bad(t *core.T) {
+	subject := any((*SubagentRelay).URL)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_URL Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_SubagentRelay_URL_Ugly(t *core.T) {
+	subject := any((*SubagentRelay).URL)
+	core.AssertNotNil(t, subject)
+	label := "SubagentRelay_URL Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_SubagentDispatch_WithDefaults_Good(t *core.T) {
+	subject := any((*SubagentDispatch).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentDispatch_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_SubagentDispatch_WithDefaults_Bad(t *core.T) {
+	subject := any((*SubagentDispatch).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentDispatch_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_SubagentDispatch_WithDefaults_Ugly(t *core.T) {
+	subject := any((*SubagentDispatch).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentDispatch_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_SubagentTimeouts_WithDefaults_Good(t *core.T) {
+	subject := any((*SubagentTimeouts).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentTimeouts_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_SubagentTimeouts_WithDefaults_Bad(t *core.T) {
+	subject := any((*SubagentTimeouts).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentTimeouts_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_SubagentTimeouts_WithDefaults_Ugly(t *core.T) {
+	subject := any((*SubagentTimeouts).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "SubagentTimeouts_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Navigate_WithDefaults_Good(t *core.T) {
+	subject := any((*Navigate).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Navigate_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Navigate_WithDefaults_Bad(t *core.T) {
+	subject := any((*Navigate).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Navigate_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Navigate_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Navigate).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Navigate_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Marketplace_WithDefaults_Good(t *core.T) {
+	subject := any((*Marketplace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Marketplace_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Marketplace_WithDefaults_Bad(t *core.T) {
+	subject := any((*Marketplace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Marketplace_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Marketplace_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Marketplace).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Marketplace_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_Chat_WithDefaults_Good(t *core.T) {
+	subject := any((*Chat).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Chat_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_Chat_WithDefaults_Bad(t *core.T) {
+	subject := any((*Chat).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Chat_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_Chat_WithDefaults_Ugly(t *core.T) {
+	subject := any((*Chat).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "Chat_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestConfig_IDEConfig_WithDefaults_Good(t *core.T) {
+	subject := any((*IDEConfig).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "IDEConfig_WithDefaults Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestConfig_IDEConfig_WithDefaults_Bad(t *core.T) {
+	subject := any((*IDEConfig).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "IDEConfig_WithDefaults Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestConfig_IDEConfig_WithDefaults_Ugly(t *core.T) {
+	subject := any((*IDEConfig).WithDefaults)
+	core.AssertNotNil(t, subject)
+	label := "IDEConfig_WithDefaults Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

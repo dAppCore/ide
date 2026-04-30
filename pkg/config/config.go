@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 	"gopkg.in/yaml.v3"
 )
@@ -192,7 +192,7 @@ func (cfg Subagent) WithDefaults() Subagent {
 
 type SubagentRelay struct {
 	Addr string `yaml:"addr"`
-	Path string `yaml:"path"`
+	Path string `yaml:"path,omitempty"`
 }
 
 func (cfg SubagentRelay) WithDefaults() SubagentRelay {
@@ -337,11 +337,15 @@ type CLIOverrides struct {
 }
 
 // cfg, err := Load(DefaultPaths("")...)
-func Load(paths ...string) (IDEConfig, error) {
+func Load(
+	paths ...string,
+) (IDEConfig, error) {
 	return LoadWithOptions(LoaderOptions{Paths: paths})
 }
 
-func LoadWithOptions(options LoaderOptions) (IDEConfig, error) {
+func LoadWithOptions(
+	options LoaderOptions,
+) (IDEConfig, error) {
 	cfg := IDEConfig{}
 	medium := options.Medium
 	if medium == nil {

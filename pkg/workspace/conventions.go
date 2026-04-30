@@ -3,7 +3,7 @@ package workspace
 import (
 	"embed"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coreconfig "dappco.re/go/config"
 	coreio "dappco.re/go/io"
 )
@@ -43,8 +43,12 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		if writeErr := medium.Write(path, string(raw)); writeErr != nil {
 			continue
 		}
-		data, err := coreconfig.Load(medium, path)
-		if err != nil {
+		result := coreconfig.Load(workspaceConfigMedium(medium), path)
+		if !result.OK {
+			continue
+		}
+		data, ok := result.Value.(map[string]any)
+		if !ok {
 			continue
 		}
 		var pack conventionPack
@@ -93,8 +97,12 @@ func readBuildProjectName(medium coreio.Medium, root string) string {
 	if writeErr := mem.Write(path, content); writeErr != nil {
 		return ""
 	}
-	data, err := coreconfig.Load(mem, path)
-	if err != nil {
+	result := coreconfig.Load(workspaceConfigMedium(mem), path)
+	if !result.OK {
+		return ""
+	}
+	data, ok := result.Value.(map[string]any)
+	if !ok {
 		return ""
 	}
 	if value, ok := data["projectName"].(string); ok {

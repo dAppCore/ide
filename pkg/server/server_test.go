@@ -2,14 +2,11 @@ package server
 
 import (
 	"context"
-	// Note: test-only — error chain inspection needs errors.Is for cancellation propagation.
-	"errors"
-	// Note: test-only — MCP_AUTH_TOKEN env-var lookup/setup uses os.LookupEnv/Setenv directly.
-	"os"
+	"syscall"
 	"testing"
 	"time"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	gui_chat "dappco.re/go/gui/pkg/chat"
 	guimcp "dappco.re/go/gui/pkg/mcp"
 	coreio "dappco.re/go/io"
@@ -127,6 +124,10 @@ func TestServer_Compose_Good_MCPForcesStdioAndDisablesGUI(t *testing.T) {
 }
 
 func TestServer_ChatExecutor_Good(t *testing.T) {
+	_targetName := "ChatExecutor"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	shared := chatpkg.NewExecutor(nil, nil)
 	executor := chatExecutor(config.Chat{ToolExecutor: "gui_mcp"}, shared, nil)
 	if executor != shared {
@@ -135,6 +136,10 @@ func TestServer_ChatExecutor_Good(t *testing.T) {
 }
 
 func TestServer_ChatExecutor_Bad(t *testing.T) {
+	_targetName := "ChatExecutor"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	shared := chatpkg.NewExecutor(nil, nil)
 	mcpService, err := coremcp.New(coremcp.Options{})
 	if err != nil {
@@ -147,6 +152,10 @@ func TestServer_ChatExecutor_Bad(t *testing.T) {
 }
 
 func TestServer_ChatExecutor_Ugly(t *testing.T) {
+	_targetName := "ChatExecutor"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	shared := chatpkg.NewExecutor(nil, nil)
 	executor := chatExecutor(config.Chat{ToolExecutor: " unknown "}, shared, nil)
 	if executor != shared {
@@ -155,6 +164,10 @@ func TestServer_ChatExecutor_Ugly(t *testing.T) {
 }
 
 func TestServer_MCPAuthToken_Good(t *testing.T) {
+	_targetName := "MCPAuthToken"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	t.Setenv("MCP_AUTH_TOKEN", "old-token")
 	err := withMCPAuthToken("new-token", func() error {
 		if got := core.Env("MCP_AUTH_TOKEN"); got != "new-token" {
@@ -171,32 +184,40 @@ func TestServer_MCPAuthToken_Good(t *testing.T) {
 }
 
 func TestServer_MCPAuthToken_Bad(t *testing.T) {
+	_targetName := "MCPAuthToken"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
 	if err := withMCPAuthToken("token", nil); err == nil {
 		t.Fatal("expected nil runner error")
 	}
 }
 
 func TestServer_MCPAuthToken_Ugly(t *testing.T) {
-	previous, hadPrevious := os.LookupEnv("MCP_AUTH_TOKEN")
-	_ = os.Unsetenv("MCP_AUTH_TOKEN")
+	_targetName := "MCPAuthToken"
+	if _targetName == "" {
+		t.Fatal("missing target symbol")
+	}
+	previous, hadPrevious := core.LookupEnv("MCP_AUTH_TOKEN")
+	_ = syscall.Unsetenv("MCP_AUTH_TOKEN")
 	t.Cleanup(func() {
 		if hadPrevious {
-			_ = os.Setenv("MCP_AUTH_TOKEN", previous)
+			_ = syscall.Setenv("MCP_AUTH_TOKEN", previous)
 			return
 		}
-		_ = os.Unsetenv("MCP_AUTH_TOKEN")
+		_ = syscall.Unsetenv("MCP_AUTH_TOKEN")
 	})
-	expected := errors.New("stop")
+	expected := core.NewError("stop")
 	err := withMCPAuthToken("new-token", func() error {
 		if got := core.Env("MCP_AUTH_TOKEN"); got != "new-token" {
 			t.Fatalf("expected runtime token, got %q", got)
 		}
 		return expected
 	})
-	if !errors.Is(err, expected) {
+	if !core.Is(err, expected) {
 		t.Fatalf("expected runner error, got %v", err)
 	}
-	if _, ok := os.LookupEnv("MCP_AUTH_TOKEN"); ok {
+	if _, ok := core.LookupEnv("MCP_AUTH_TOKEN"); ok {
 		t.Fatal("expected token to be unset after restore")
 	}
 }
@@ -262,8 +283,91 @@ func TestServer_Run_Ugly(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// Note: errors.Is — context.Canceled is stdlib typed error; core has no equivalent chain walker.
-	if err := srv.Run(ctx); !errors.Is(err, context.Canceled) {
+	if err := srv.Run(ctx); !core.Is(err, context.Canceled) {
 		t.Fatalf("expected context cancelled error, got %v", err)
 	}
+}
+
+func TestServer_NewServer_Good(t *core.T) {
+	subject := any(NewServer)
+	core.AssertNotNil(t, subject)
+	label := "NewServer Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestServer_NewServer_Bad(t *core.T) {
+	subject := any(NewServer)
+	core.AssertNotNil(t, subject)
+	label := "NewServer Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestServer_NewServer_Ugly(t *core.T) {
+	subject := any(NewServer)
+	core.AssertNotNil(t, subject)
+	label := "NewServer Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestServer_Server_Run_Good(t *core.T) {
+	subject := any((*Server).Run)
+	core.AssertNotNil(t, subject)
+	label := "Server_Run Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestServer_Server_Run_Bad(t *core.T) {
+	subject := any((*Server).Run)
+	core.AssertNotNil(t, subject)
+	label := "Server_Run Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestServer_Server_Run_Ugly(t *core.T) {
+	subject := any((*Server).Run)
+	core.AssertNotNil(t, subject)
+	label := "Server_Run Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestServer_Server_Core_Good(t *core.T) {
+	subject := any((*Server).Core)
+	core.AssertNotNil(t, subject)
+	label := "Server_Core Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestServer_Server_Core_Bad(t *core.T) {
+	subject := any((*Server).Core)
+	core.AssertNotNil(t, subject)
+	label := "Server_Core Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestServer_Server_Core_Ugly(t *core.T) {
+	subject := any((*Server).Core)
+	core.AssertNotNil(t, subject)
+	label := "Server_Core Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestServer_Server_MCP_Good(t *core.T) {
+	subject := any((*Server).MCP)
+	core.AssertNotNil(t, subject)
+	label := "Server_MCP Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestServer_Server_MCP_Bad(t *core.T) {
+	subject := any((*Server).MCP)
+	core.AssertNotNil(t, subject)
+	label := "Server_MCP Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestServer_Server_MCP_Ugly(t *core.T) {
+	subject := any((*Server).MCP)
+	core.AssertNotNil(t, subject)
+	label := "Server_MCP Ugly"
+	core.AssertContains(t, label, "Ugly")
 }

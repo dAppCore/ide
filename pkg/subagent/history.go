@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strconv"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	storelib "dappco.re/go/store"
 )
 
@@ -126,14 +126,18 @@ func (h *historyStore) saveEvent(workspaceID string, event Event) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" || event.Cursor <= 0 {
 		return
 	}
-	_ = h.store.Set(historyEventsGroup(workspaceID), historyEventKey(event.Cursor), core.JSONMarshalString(event))
+	if err := h.store.Set(historyEventsGroup(workspaceID), historyEventKey(event.Cursor), core.JSONMarshalString(event)); err != nil {
+		core.Warn("ide.subagent.history save event", "workspace", workspaceID, "err", err)
+	}
 }
 
 func (h *historyStore) deleteEvent(workspaceID string, cursor int) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" || cursor <= 0 {
 		return
 	}
-	_ = h.store.Delete(historyEventsGroup(workspaceID), historyEventKey(cursor))
+	if err := h.store.Delete(historyEventsGroup(workspaceID), historyEventKey(cursor)); err != nil {
+		core.Warn("ide.subagent.history delete event", "workspace", workspaceID, "cursor", cursor, "err", err)
+	}
 }
 
 func (h *historyStore) saveWorkspace(workspaceID string, seq int, ref agenticWorkspace) {
@@ -141,15 +145,21 @@ func (h *historyStore) saveWorkspace(workspaceID string, seq int, ref agenticWor
 		return
 	}
 	record := historyWorkspaceRecord{EventSeq: seq, Agentic: ref}
-	_ = h.store.Set(historyWorkspaceGroup, workspaceID, core.JSONMarshalString(record))
+	if err := h.store.Set(historyWorkspaceGroup, workspaceID, core.JSONMarshalString(record)); err != nil {
+		core.Warn("ide.subagent.history save workspace", "workspace", workspaceID, "err", err)
+	}
 }
 
 func (h *historyStore) deleteWorkspace(workspaceID string) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" {
 		return
 	}
-	_ = h.store.DeleteGroup(historyEventsGroup(workspaceID))
-	_ = h.store.Delete(historyWorkspaceGroup, workspaceID)
+	if err := h.store.DeleteGroup(historyEventsGroup(workspaceID)); err != nil {
+		core.Warn("ide.subagent.history delete workspace events", "workspace", workspaceID, "err", err)
+	}
+	if err := h.store.Delete(historyWorkspaceGroup, workspaceID); err != nil {
+		core.Warn("ide.subagent.history delete workspace", "workspace", workspaceID, "err", err)
+	}
 }
 
 func historyEventsGroup(workspaceID string) string {

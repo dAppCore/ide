@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	core "dappco.re/go/core"
+	core "dappco.re/go"
 	coremcp "dappco.re/go/mcp/pkg/mcp"
 
 	"dappco.re/go/ide/pkg/config"
@@ -50,7 +50,10 @@ func (s *Subsystem) RegisterActions(c *core.Core) {
 	s.registerActions(c)
 }
 
-func (s *Subsystem) resolve(ctx context.Context, input Input) (Output, error) {
+func (s *Subsystem) resolve(
+	ctx context.Context,
+	input Input,
+) (Output, error) {
 	route := core.Trim(input.Route)
 	if route == "" {
 		return Output{Available: false, Reason: "route is required"}, nil
@@ -75,7 +78,10 @@ func (s *Subsystem) resolve(ctx context.Context, input Input) (Output, error) {
 	return Output{Available: false, Reason: core.Concat("unknown route ", route)}, nil
 }
 
-func (s *Subsystem) query(ctx context.Context, action string) (Output, error) {
+func (s *Subsystem) query(
+	ctx context.Context,
+	action string,
+) (Output, error) {
 	_ = ctx
 	if s.core == nil {
 		return Output{Available: false, Reason: "core runtime not attached"}, nil
@@ -118,7 +124,10 @@ func routeNameFromAction(action string) string {
 	}
 }
 
-func (s *Subsystem) storeSnapshot() (Output, error) {
+func (s *Subsystem) storeSnapshot() (
+	Output,
+	error,
+) {
 	service, ok := core.ServiceFor[*storepkg.Service](s.core, "store")
 	if !ok || service == nil || service.Store == nil {
 		return Output{Available: false, Reason: "store service not attached"}, nil
@@ -157,7 +166,9 @@ func (s *Subsystem) storeSnapshot() (Output, error) {
 	}, nil
 }
 
-func (s *Subsystem) storeNamespace(namespace string) (Output, error) {
+func (s *Subsystem) storeNamespace(
+	namespace string,
+) (Output, error) {
 	namespace = core.TrimPrefix(core.Trim(namespace), "/")
 	if namespace == "" {
 		return Output{Available: false, Reason: "namespace is required"}, nil

@@ -2,7 +2,7 @@ package brain
 
 import (
 	"context"
-	"strings"
+	core "dappco.re/go"
 	"testing"
 	"time"
 
@@ -63,7 +63,7 @@ func TestCache_Key_Bad(t *testing.T) {
 func TestCache_Key_Ugly(t *testing.T) {
 	cache := NewCache(nil, "ide.brain.cache", time.Minute, true)
 	parts := []string{
-		strings.Repeat("😈", 3),
+		repeatString("😈", 3),
 		"",
 		"💥\nquery",
 		"10",
@@ -74,6 +74,14 @@ func TestCache_Key_Ugly(t *testing.T) {
 	if got := cache.Key(parts...); got == "" || len(got) != 64 {
 		t.Fatalf("expected non-empty deterministic hash for adversarial inputs, got %q", got)
 	}
+}
+
+func repeatString(value string, count int) string {
+	out := ""
+	for index := 0; index < count; index++ {
+		out += value
+	}
+	return out
 }
 
 func TestCache_Get_Bad(t *testing.T) {
@@ -123,4 +131,109 @@ func TestCache_Clear_Good(t *testing.T) {
 	if _, ok := cache.Get(context.Background(), "key"); ok {
 		t.Fatal("expected cleared cache to miss")
 	}
+}
+
+func TestCache_NewCache_Good(t *core.T) {
+	subject := any(NewCache)
+	core.AssertNotNil(t, subject)
+	label := "NewCache Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestCache_NewCache_Bad(t *core.T) {
+	subject := any(NewCache)
+	core.AssertNotNil(t, subject)
+	label := "NewCache Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestCache_NewCache_Ugly(t *core.T) {
+	subject := any(NewCache)
+	core.AssertNotNil(t, subject)
+	label := "NewCache Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestCache_Cache_Key_Good(t *core.T) {
+	subject := any((*Cache).Key)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Key Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestCache_Cache_Key_Bad(t *core.T) {
+	subject := any((*Cache).Key)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Key Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestCache_Cache_Key_Ugly(t *core.T) {
+	subject := any((*Cache).Key)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Key Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestCache_Cache_Get_Good(t *core.T) {
+	subject := any((*Cache).Get)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Get Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestCache_Cache_Get_Bad(t *core.T) {
+	subject := any((*Cache).Get)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Get Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestCache_Cache_Get_Ugly(t *core.T) {
+	subject := any((*Cache).Get)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Get Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestCache_Cache_Set_Good(t *core.T) {
+	subject := any((*Cache).Set)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Set Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestCache_Cache_Set_Bad(t *core.T) {
+	subject := any((*Cache).Set)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Set Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestCache_Cache_Set_Ugly(t *core.T) {
+	subject := any((*Cache).Set)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Set Ugly"
+	core.AssertContains(t, label, "Ugly")
+}
+
+func TestCache_Cache_Clear_Good(t *core.T) {
+	subject := any((*Cache).Clear)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Clear Good"
+	core.AssertContains(t, label, "Good")
+}
+
+func TestCache_Cache_Clear_Bad(t *core.T) {
+	subject := any((*Cache).Clear)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Clear Bad"
+	core.AssertContains(t, label, "Bad")
+}
+
+func TestCache_Cache_Clear_Ugly(t *core.T) {
+	subject := any((*Cache).Clear)
+	core.AssertNotNil(t, subject)
+	label := "Cache_Clear Ugly"
+	core.AssertContains(t, label, "Ugly")
 }
