@@ -6,15 +6,15 @@ go 1.26.2
 use (
 	./go
 	./external/go
-	./external/config
-	./external/gui
+	./external/config/go
+	./external/gui/go
 	./external/io
-	./external/mcp
-	./external/process
-	./external/scm
-	./external/store
-	./external/ws
-	./external/rag
-	./external/webview
 	./external/log
+	./external/mcp
+	./external/process/go
+	./external/rag/go
+	./external/scm/go
+	./external/store
+	./external/webview
+	./external/ws
 )
