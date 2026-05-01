@@ -258,7 +258,9 @@ func (s *Server) Run(
 		return core.E("ide.server.Run", "service startup failed", nil)
 	}
 	defer func() {
-		_ = s.core.ServiceShutdown(context.Background())
+		if r := s.core.ServiceShutdown(context.Background()); !r.OK {
+			_ = r
+		}
 	}()
 
 	var relayServer *http.Server

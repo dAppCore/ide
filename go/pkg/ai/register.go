@@ -159,7 +159,7 @@ func Record(
 		return core.E("ide.ai.Record", "open metrics file", err)
 	}
 	defer func() {
-		_ = file.Close()
+		if cerr := file.Close(); cerr != nil { _ = cerr }
 	}()
 	if _, err := file.Write([]byte(core.Concat(core.JSONMarshalString(event), "\n"))); err != nil {
 		return core.E("ide.ai.Record", "write metrics file", err)

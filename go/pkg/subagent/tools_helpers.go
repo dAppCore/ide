@@ -151,7 +151,7 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 		return nil, false, false, false
 	}
 	defer func() {
-		_ = conn.Close()
+		if cerr := conn.Close(); cerr != nil { _ = cerr }
 	}()
 
 	for _, channel := range []string{statusChannel(workspaceID), progressChannel(workspaceID), questionChannel(workspaceID), answerChannel(workspaceID)} {

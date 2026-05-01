@@ -129,7 +129,7 @@ func (client *openBrainHTTPClient) doOnce(
 		})
 	}
 	defer func() {
-		_ = response.Body.Close()
+		if cerr := response.Body.Close(); cerr != nil { _ = cerr }
 	}()
 	raw, err := readOpenBrainBody(response.Body)
 	if err != nil {

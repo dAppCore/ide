@@ -149,7 +149,9 @@ func newConclaveToolHandler(name string, spawn func() (*runtimeParts, error)) co
 			return nil, core.E("ide.server.conclave", "conclave startup failed", nil)
 		}
 		defer func() {
-			_ = parts.core.ServiceShutdown(context.Background())
+			if r := parts.core.ServiceShutdown(context.Background()); !r.OK {
+				_ = r
+			}
 		}()
 
 		record, ok := toolRecordFor(parts.mcp, name)

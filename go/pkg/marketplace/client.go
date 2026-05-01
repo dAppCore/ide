@@ -177,7 +177,7 @@ func (c *Client) request(
 		return core.E("ide.marketplace.request", "request failed", err)
 	}
 	defer func() {
-		_ = response.Body.Close()
+		if cerr := response.Body.Close(); cerr != nil { _ = cerr }
 	}()
 	if response.StatusCode >= http.StatusBadRequest {
 		return core.E("ide.marketplace.request", core.Concat("upstream returned ", response.Status), nil)
