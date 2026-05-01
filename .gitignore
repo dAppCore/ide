@@ -16,3 +16,14 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exeide
 .core/
 .idea/
 ide
+.DS_Store
+.lintdeps/
+.scannerwork/
+node_modules/
+node_modules.bak/
+dist/
+__pycache__/
+*.pyc
+coverage/
+htmlcov/
+.coverage
