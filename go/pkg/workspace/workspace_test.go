@@ -370,8 +370,11 @@ func initGitRepo(t *testing.T, root string) {
 	run := func(args ...string) {
 		t.Helper()
 		cmd := command.Command(context.Background(), "git", args...).WithDir(root)
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", core.Join(" ", args...), err, out)
+		// Mantis #1215: CombinedOutput now returns core.Result (not (out,err)).
+		// Result.Value is []byte on success, the error is wrapped on Result.Error().
+		if r := cmd.CombinedOutput(); !r.OK {
+			out, _ := r.Value.([]byte)
+			t.Fatalf("git %v: %v\n%s", core.Join(" ", args...), r.Error(), out)
 		}
 	}
 	run("init")
