@@ -8,13 +8,13 @@ use (
 	./external/go
 	./external/config/go
 	./external/gui/go
-	./external/io
-	./external/log
-	./external/mcp
+	./external/io/go
+	./external/log/go
+	./external/mcp/go
 	./external/process/go
 	./external/rag/go
 	./external/scm/go
-	./external/store
-	./external/webview
-	./external/ws
+	./external/store/go
+	./external/webview/go
+	./external/ws/go
 )
