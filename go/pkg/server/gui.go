@@ -40,22 +40,30 @@ func (shell *GUIShell) Run(
 	if shell == nil {
 		return core.E("ide.server.GUI", "gui shell is nil", nil)
 	}
-	app := &application.App{}
-	w := app.Window.NewWithOptions(application.WebviewWindowOptions{
+	app := application.New(application.Options{
+		Name:        "core-ide",
+		Description: "Core IDE chat shell",
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		Assets: application.AlphaAssets,
+		Services: []application.Service{
+			application.NewService(&chatBridge{core: coreInstance}),
+		},
+	})
+	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:      shell.WindowName,
 		Title:     shell.Title,
-		URL:       shell.WindowURL,
 		Width:     1180,
 		Height:    780,
 		MinWidth:  720,
 		MinHeight: 520,
 	})
-	_ = w
 	go func() {
 		<-ctx.Done()
 		app.Quit()
 	}()
-	return nil
+	return app.Run()
 }
 
 func (bridge *chatBridge) Tools(
