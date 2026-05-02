@@ -17,8 +17,8 @@ func TestRoutes_Resolve_Good(t *testing.T) {
 	if !ok || storeService == nil {
 		t.Fatal("expected store service")
 	}
-	if err := storeService.Store.Set("demo", "key", "value"); err != nil {
-		t.Fatalf("store set: %v", err)
+	if setResult := storeService.Store.Set("demo", "key", "value"); !setResult.OK {
+		t.Fatalf("store set: %v", setResult)
 	}
 	subsystem := New(config.Navigate{}, c)
 	out, err := subsystem.resolve(context.Background(), Input{Route: "core://store"})

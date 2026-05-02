@@ -23,9 +23,9 @@ func TestLive_BrainRecall_Good_RealEndpoint(t *testing.T) {
 	if !ok {
 		t.Skip(reason)
 	}
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := brainpkg.New(brainConfig, coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	service, err := coremcp.New(coremcp.Options{WorkspaceRoot: t.TempDir(), Subsystems: []coremcp.Subsystem{subsystem}})
@@ -60,9 +60,9 @@ func TestLive_BrainRecall_Good_ActionFlow(t *testing.T) {
 	if !ok {
 		t.Skip(reason)
 	}
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := brainpkg.New(brainConfig, coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	coreInstance := core.New()

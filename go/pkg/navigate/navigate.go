@@ -132,14 +132,14 @@ func (s *Subsystem) storeSnapshot() (
 	if !ok || service == nil || service.Store == nil {
 		return Output{Available: false, Reason: "store service not attached"}, nil
 	}
-	namespaces, err := service.Store.Groups()
-	if err != nil {
-		return Output{Available: false, Reason: core.Concat("load namespaces: ", err.Error())}, nil
+	namespaces, result := service.Store.Groups()
+	if !result.OK {
+		return Output{Available: false, Reason: core.Concat("load namespaces: ", result.Error())}, nil
 	}
 	items := make([]map[string]any, 0, len(namespaces))
 	for _, namespace := range namespaces {
-		entries, entryErr := service.Store.GetAll(namespace)
-		if entryErr != nil {
+		entries, entryResult := service.Store.GetAll(namespace)
+		if !entryResult.OK {
 			continue
 		}
 		recentKeys := make([]string, 0, len(entries))
@@ -177,9 +177,9 @@ func (s *Subsystem) storeNamespace(
 	if !ok || service == nil || service.Store == nil {
 		return Output{Available: false, Reason: "store service not attached"}, nil
 	}
-	entries, err := service.Store.GetAll(namespace)
-	if err != nil {
-		return Output{Available: false, Reason: core.Concat("load namespace ", namespace, ": ", err.Error())}, nil
+	entries, result := service.Store.GetAll(namespace)
+	if !result.OK {
+		return Output{Available: false, Reason: core.Concat("load namespace ", namespace, ": ", result.Error())}, nil
 	}
 	keys := make([]string, 0, len(entries))
 	for key := range entries {

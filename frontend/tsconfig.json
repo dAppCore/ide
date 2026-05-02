@@ -21,10 +21,10 @@
         "bindings/*"
       ],
       "@core/gui-ui": [
-        "../../gui/ui/src/index.ts"
+        "../external/gui/ui/src/index.ts"
       ],
       "@core/gui-ui/*": [
-        "../../gui/ui/src/*"
+        "../external/gui/ui/src/*"
       ]
     }
   },

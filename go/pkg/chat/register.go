@@ -15,7 +15,7 @@ import (
 type ToolExecutor interface {
 	Manifest() []guimcp.ToolDescriptor
 	ManifestText() string
-	CallTool(ctx context.Context, name string, arguments map[string]any) (string, error)
+	CallTool(ctx context.Context, name string, arguments map[string]any) (string, interface{ Error() string })
 }
 
 type Executor struct {
@@ -62,7 +62,7 @@ func (e *Executor) CallTool(
 	ctx context.Context,
 	name string,
 	arguments map[string]any,
-) (string, error) {
+) (string, interface{ Error() string }) {
 	if e.gui != nil {
 		for _, descriptor := range e.gui.Manifest() {
 			if descriptor.Name == name {

@@ -47,9 +47,9 @@ func TestBrain_RegisterActions_Good(t *testing.T) {
 	defer server.Close()
 
 	root := t.TempDir()
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "cladius"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root), nil)
 	c := core.New()
@@ -85,9 +85,9 @@ func TestBrain_RegisterTools_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	svc, err := coremcp.New(coremcp.Options{})

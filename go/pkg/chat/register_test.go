@@ -24,7 +24,10 @@ type noopOutput struct{}
 
 func (s stubExecutor) Manifest() []guimcp.ToolDescriptor { return s.manifest }
 func (s stubExecutor) ManifestText() string              { return s.text }
-func (s stubExecutor) CallTool(context.Context, string, map[string]any) (string, error) {
+func (s stubExecutor) CallTool(context.Context, string, map[string]any) (string, interface{ Error() string }) {
+	if s.err == nil {
+		return s.output, nil
+	}
 	return s.output, s.err
 }
 

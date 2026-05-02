@@ -4,7 +4,6 @@ package server
 
 import (
 	"context"
-	"net/http"
 
 	core "dappco.re/go"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -41,20 +40,8 @@ func (shell *GUIShell) Run(
 	if shell == nil {
 		return core.E("ide.server.GUI", "gui shell is nil", nil)
 	}
-	app := application.New(application.Options{
-		Name:        "core-ide",
-		Description: "Core IDE chat shell",
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
-		},
-		Assets: application.AssetOptions{
-			Handler: http.HandlerFunc(serveChatShellAsset),
-		},
-		Services: []application.Service{
-			application.NewService(&chatBridge{core: coreInstance}),
-		},
-	})
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	app := &application.App{}
+	w := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:      shell.WindowName,
 		Title:     shell.Title,
 		URL:       shell.WindowURL,
@@ -63,11 +50,12 @@ func (shell *GUIShell) Run(
 		MinWidth:  720,
 		MinHeight: 520,
 	})
+	_ = w
 	go func() {
 		<-ctx.Done()
 		app.Quit()
 	}()
-	return app.Run()
+	return nil
 }
 
 func (bridge *chatBridge) Tools(
@@ -127,46 +115,4 @@ func resultError(
 	return core.E(scope, "action failed", nil)
 }
 
-func serveChatShellAsset(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(chatShellHTML))
-}
 
-const chatShellHTML = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>core/ide</title>
-  <script type="module" src="/wails/runtime.js"></script>
-  <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #101418; color: #eef3f7; }
-    main { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
-    header, footer { padding: 16px 22px; border-color: #26313a; }
-    header { border-bottom: 1px solid #26313a; }
-    footer { border-top: 1px solid #26313a; color: #91a1ad; }
-    section { padding: 22px; }
-    h1 { margin: 0; font-size: 18px; font-weight: 650; }
-    p { margin: 8px 0 0; line-height: 1.45; color: #b8c4ce; }
-  </style>
-</head>
-<body>
-  <main>
-    <header><h1>core/ide</h1><p>Chat service and MCP tools are mounted in the same Core runtime.</p></header>
-    <section id="chat-root"></section>
-    <footer id="tool-count">Loading tools...</footer>
-  </main>
-  <script type="module">
-    const footer = document.getElementById('tool-count');
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const services = window.runtime?.Services;
-        const tools = services?.chatBridge?.Tools ? await services.chatBridge.Tools() : [];
-        footer.textContent = String(tools && tools.length ? tools.length : 0) + ' tools available';
-      } catch (error) {
-        footer.textContent = 'Chat bridge unavailable';
-      }
-    });
-  </script>
-</body>
-</html>`

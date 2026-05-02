@@ -25,9 +25,9 @@ func TestTools_BrainRecall_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"})
@@ -59,9 +59,9 @@ func TestTools_BrainRemember_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta", Type: "note"})
@@ -94,9 +94,9 @@ func TestTools_BrainRemember_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleRemember(context.Background(), nil, RememberInput{Content: "beta"}); err == nil {
@@ -113,9 +113,9 @@ func TestTools_BrainForget_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleForget(context.Background(), nil, ForgetInput{ID: "memory-2"})
@@ -140,9 +140,9 @@ func TestTools_BrainForget_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleForget(context.Background(), nil, ForgetInput{ID: "memory-2"}); err == nil {
@@ -159,9 +159,9 @@ func TestTools_BrainList_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	_, out, err := subsystem.handleList(context.Background(), nil, ListInput{Project: "demo", Type: "note", AgentID: "agent-x", Limit: 99})
@@ -186,9 +186,9 @@ func TestTools_BrainList_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleList(context.Background(), nil, ListInput{}); err == nil {
@@ -203,9 +203,9 @@ func TestTools_BrainContext_Good(t *testing.T) {
 	defer server.Close()
 
 	root := t.TempDir()
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root), nil)
 	_, out, err := subsystem.handleContext(context.Background(), nil, ContextInput{Project: root})
@@ -230,9 +230,9 @@ func TestTools_BrainContext_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, _, err := subsystem.handleContext(context.Background(), nil, ContextInput{Project: "demo"}); err == nil {
@@ -255,14 +255,14 @@ func TestTools_BrainRecall_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	cfg := config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults()
 	cfg.Cache.Enabled = config.BoolPtr(false)
 	subsystem := New(cfg, coreio.NewMemoryMedium(), storeInstance, nil, nil)
-	_, _, err = subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"})
+	_, _, err := subsystem.handleRecall(context.Background(), nil, RecallInput{Query: "alpha"})
 	if err != nil {
 		t.Fatalf("first recall: %v", err)
 	}

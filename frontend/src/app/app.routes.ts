@@ -3,10 +3,10 @@
 import { Routes } from '@angular/router';
 import {
   ApplicationFrameComponent,
-  IdeComponent,
   ProviderHostComponent,
   SystemTrayFrameComponent,
 } from '@core/gui-ui';
+import { IdeComponent } from './pages/ide/ide.component';
 
 export const routes: Routes = [
   // System tray panel — standalone compact UI (380x480 frameless)

@@ -38,9 +38,9 @@ func TestDirect_Recall_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 
@@ -87,9 +87,9 @@ func TestDirect_Recall_UglyFilterCacheIsolation(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	input := RecallInput{Query: "alpha", Filter: RecallFilter{Org: "core", Type: "decision", MinConfidence: 0.75}}
@@ -120,12 +120,12 @@ func TestDirect_Recall_Bad(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
-	_, err = subsystem.recall(context.Background(), RecallInput{Query: "alpha"})
+	_, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"})
 	if err == nil || !core.Contains(err.Error(), "401") {
 		t.Fatalf("expected 401 error, got %v", err)
 	}
@@ -146,9 +146,9 @@ func TestDirect_Recall_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err == nil || !core.Contains(err.Error(), "decode response") {
@@ -180,9 +180,9 @@ func TestDirect_Remember_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.recall(context.Background(), RecallInput{Query: "alpha"}); err != nil {
@@ -205,9 +205,9 @@ func TestDirect_Remember_Good(t *testing.T) {
 }
 
 func TestDirect_Forget_Bad(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.forget(context.Background(), ForgetInput{}); err == nil {
@@ -224,9 +224,9 @@ func TestDirect_List_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	out, err := subsystem.list(context.Background(), ListInput{Org: "core", Project: "demo", Type: "note", AgentID: "agent-x", Limit: 99})
@@ -246,9 +246,9 @@ func TestDirect_Context_Good(t *testing.T) {
 	defer server.Close()
 
 	root := t.TempDir()
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, newWorkspaceForBrain(t, root), nil)
 	out, err := subsystem.context(context.Background(), ContextInput{Project: root})
@@ -315,9 +315,9 @@ func TestDirect_AgentID_Good(t *testing.T) {
 }
 
 func TestDirect_ApiCall_Bad(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.apiCall(context.Background(), http.MethodGet, "/v1/brain/list", nil); err == nil {
@@ -328,9 +328,9 @@ func TestDirect_ApiCall_Bad(t *testing.T) {
 }
 
 func TestDirect_KeyFingerprint_Ugly(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if got := subsystem.keyFingerprint(); got != "" {
@@ -339,9 +339,9 @@ func TestDirect_KeyFingerprint_Ugly(t *testing.T) {
 }
 
 func TestDirect_Context_Ugly(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	if _, err := subsystem.context(context.Background(), ContextInput{}); err == nil {
@@ -357,9 +357,9 @@ func TestDirect_Remember_Clear_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	out, err := subsystem.remember(context.Background(), RememberInput{Content: "beta"})
