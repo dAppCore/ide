@@ -21,8 +21,7 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
       <!-- Workspace identity -->
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true">
-          <!-- Vi avatar placeholder — will swap to <Vi> component when assets land in repo -->
-          <div class="vi-avatar-mini"></div>
+          <img class="vi-avatar-mini" src="/vi/vi-master.png" alt="Vi" />
         </div>
         <div class="brand-meta">
           <span class="brand-name">Lethean Desktop</span>
@@ -33,7 +32,7 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
       <!-- Vi presence card -->
       <div class="vi-presence">
         <div class="vi-presence-row">
-          <div class="vi-avatar"></div>
+          <img class="vi-avatar" src="/vi/vi-master.png" alt="Vi" />
           <div class="vi-presence-text">
             <span class="vi-status-dot" [class.connected]="vi().connected"></span>
             <span class="vi-status-line">
@@ -132,10 +131,9 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background:
-        radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--brand-300) 70%, transparent), transparent 50%),
-        var(--brand-600);
+      object-fit: cover;
       border: 1px solid color-mix(in oklch, var(--brand-400) 50%, transparent);
+      background: var(--brand-700);
     }
 
     .brand-meta {
@@ -180,11 +178,14 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
       height: 36px;
       border-radius: 50%;
       flex-shrink: 0;
-      background:
-        radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--brand-200) 80%, transparent), transparent 55%),
-        radial-gradient(circle at 65% 75%, color-mix(in oklch, var(--brand-700) 80%, transparent), transparent 50%),
-        var(--brand-600);
+      object-fit: cover;
+      background: var(--brand-700);
       border: 1px solid color-mix(in oklch, var(--brand-400) 60%, transparent);
+      transition: transform 200ms ease;
+    }
+
+    .vi-presence:hover .vi-avatar {
+      content: url('/vi/vi-peek-1.png');
     }
 
     .vi-presence-text {
