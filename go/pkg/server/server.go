@@ -20,6 +20,7 @@ import (
 	navigatepkg "dappco.re/go/ide/pkg/navigate"
 	storepkg "dappco.re/go/ide/pkg/store"
 	subagentpkg "dappco.re/go/ide/pkg/subagent"
+	vipkg "dappco.re/go/ide/pkg/vi"
 	workspacepkg "dappco.re/go/ide/pkg/workspace"
 )
 
@@ -130,6 +131,7 @@ func composeRuntimeMode(
 		core.WithName("marketplace", func(_ *core.Core) core.Result {
 			return core.Ok(marketplacepkg.New(cfg.Ide.Marketplace))
 		}),
+		core.WithService(vipkg.Register),
 	}
 	services = append(services, options.extraCoreOptions...)
 	services = append(services, core.WithName("mcp", registerMCP(options, mode)))

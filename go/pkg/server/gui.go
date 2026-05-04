@@ -6,6 +6,7 @@ import (
 	"context"
 
 	core "dappco.re/go"
+	vipkg "dappco.re/go/ide/pkg/vi"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -22,6 +23,14 @@ type chatBridge struct {
 type chatBridgeToolCall struct {
 	Name      string         `json:"name"`
 	Arguments map[string]any `json:"arguments,omitempty"`
+}
+
+// viBridge exposes the vi.Service to the Wails frontend. Methods here generate
+// TypeScript bindings the Angular Vi Control Panel calls — Status / Briefs /
+// Sites / Activity. Per the desktop convergence RFC §1.3, "expect data to come
+// from the Go side via Wails bindings."
+type viBridge struct {
+	core *core.Core
 }
 
 // NewGUIShell records the Wails window shape used by default GUI mode.
@@ -49,6 +58,7 @@ func (shell *GUIShell) Run(
 		Assets: application.AlphaAssets,
 		Services: []application.Service{
 			application.NewService(&chatBridge{core: coreInstance}),
+			application.NewService(&viBridge{core: coreInstance}),
 		},
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
@@ -113,6 +123,74 @@ func (bridge *chatBridge) CallTool(
 	return text, nil
 }
 
+// Status returns the live Vi presence state (connected, latency, watching, pending).
+//
+//	const status = await ViBridge.Status();
+func (bridge *viBridge) Status(
+	ctx context.Context,
+) (vipkg.ViStatus, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return vipkg.ViStatus{}, err
+	}
+	return svc.Status(), nil
+}
+
+// Briefs returns the current brief feed — what Vi has surfaced for attention.
+//
+//	const briefs = await ViBridge.Briefs();
+func (bridge *viBridge) Briefs(
+	ctx context.Context,
+) ([]vipkg.Brief, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Briefs(), nil
+}
+
+// Sites returns the watched-site list with status / uptime / response.
+//
+//	const sites = await ViBridge.Sites();
+func (bridge *viBridge) Sites(
+	ctx context.Context,
+) ([]vipkg.Site, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Sites(), nil
+}
+
+// Activity returns the activity feed — Vi's narration interleaved with the
+// operator's recent actions.
+//
+//	const activity = await ViBridge.Activity();
+func (bridge *viBridge) Activity(
+	ctx context.Context,
+) ([]vipkg.ActivityItem, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Activity(), nil
+}
+
+func (bridge *viBridge) service() (*vipkg.Service, error) {
+	if bridge == nil || bridge.core == nil {
+		return nil, core.E("ide.server.GUI.Vi", "core is nil", nil)
+	}
+	svc, ok := core.ServiceFor[*vipkg.Service](bridge.core, "vi")
+	if !ok || svc == nil {
+		return nil, core.E("ide.server.GUI.Vi", "vi service not registered", nil)
+	}
+	return svc, nil
+}
+
 func resultError(
 	scope string,
 	value any,
@@ -122,5 +200,3 @@ func resultError(
 	}
 	return core.E(scope, "action failed", nil)
 }
-
-
