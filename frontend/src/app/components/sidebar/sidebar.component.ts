@@ -1,6 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Site, SiteStatus, viFixtures } from '../../lib/vi.types';
+import { Component, Input, Output, EventEmitter, OnInit, PLATFORM_ID, Inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 
 /**
  * Sidebar — Vi Control Panel pattern (Lethean-3 native handoff).
@@ -35,12 +35,12 @@ import { Site, SiteStatus, viFixtures } from '../../lib/vi.types';
         <div class="vi-presence-row">
           <div class="vi-avatar"></div>
           <div class="vi-presence-text">
-            <span class="vi-status-dot" [class.connected]="vi.connected"></span>
+            <span class="vi-status-dot" [class.connected]="vi().connected"></span>
             <span class="vi-status-line">
-              {{ vi.connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi.latencyMs }}ms
+              {{ vi().connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi().latencyMs }}ms
             </span>
             <span class="vi-presence-sub">
-              Watching {{ vi.watching }} {{ vi.watching === 1 ? 'site' : 'sites' }}{{ vi.pending > 0 ? ' · ' + vi.pending + ' pending' : '' }}
+              Watching {{ vi().watching }} {{ vi().watching === 1 ? 'site' : 'sites' }}{{ vi().pending > 0 ? ' · ' + vi().pending + ' pending' : '' }}
             </span>
           </div>
         </div>
@@ -67,7 +67,7 @@ import { Site, SiteStatus, viFixtures } from '../../lib/vi.types';
       <!-- Group: Sites (status-dot per row, per Lethean-3 native handoff) -->
       <div class="nav-group">
         <div class="nav-group-title">Sites</div>
-        @for (site of sites; track site.domain) {
+        @for (site of sites(); track site.domain) {
           <button class="nav-row site-row" [class.active]="currentRoute === 'site:' + site.domain" (click)="routeChange.emit('site:' + site.domain)">
             <span class="status-dot" [attr.data-status]="site.status"></span>
             <span class="nav-label">{{ site.domain }}</span>
@@ -355,12 +355,29 @@ import { Site, SiteStatus, viFixtures } from '../../lib/vi.types';
     }
   `]
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   @Input() currentRoute = 'dashboard';
   @Output() routeChange = new EventEmitter<string>();
 
-  vi = viFixtures.status;
-  sites: Site[] = viFixtures.sites;
+  private isBrowser: boolean;
+  vi = signal<ViStatus>(emptyViStatus);
+  sites = signal<Site[]>([]);
+
+  constructor(@Inject(PLATFORM_ID) platformId: Object) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
+
+  ngOnInit() {
+    if (!this.isBrowser) return;
+    loadViData()
+      .then((snap) => {
+        this.vi.set(snap.status);
+        this.sites.set(snap.sites);
+      })
+      .catch((err) => {
+        console.warn('[vi] sidebar loadViData failed:', err);
+      });
+  }
 
   workspaceItems = [
     {

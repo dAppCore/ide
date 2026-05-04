@@ -1,7 +1,7 @@
 import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, computed } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
-import { Brief, Site, ActivityItem, viFixtures } from '../../lib/vi.types';
+import { Brief, Site, ActivityItem, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 
 /**
  * IDE main page — Vi Control Panel layout (Lethean-3 native handoff pattern).
@@ -52,7 +52,7 @@ import { Brief, Site, ActivityItem, viFixtures } from '../../lib/vi.types';
                   <span class="editorial subtitle">{{ briefSubtitle() }}</span>
                 </div>
                 <div class="brief-grid">
-                  @for (brief of briefs; track $index) {
+                  @for (brief of briefs(); track $index) {
                     <article class="brief-card" [attr.data-tone]="brief.tone" [class.done]="brief.done">
                       <span class="tone-strip"></span>
                       <div class="brief-body">
@@ -85,7 +85,7 @@ import { Brief, Site, ActivityItem, viFixtures } from '../../lib/vi.types';
               <section class="block">
                 <div class="block-header">
                   <h2 class="block-title">Sites</h2>
-                  <span class="editorial subtitle">{{ vi.watching }} watched · {{ greenCount() }} green</span>
+                  <span class="editorial subtitle">{{ vi().watching }} watched · {{ greenCount() }} green</span>
                 </div>
                 <div class="sites-table">
                   <div class="sites-row sites-head">
@@ -95,7 +95,7 @@ import { Brief, Site, ActivityItem, viFixtures } from '../../lib/vi.types';
                     <span>Response</span>
                     <span>Deploy</span>
                   </div>
-                  @for (site of sites; track site.domain) {
+                  @for (site of sites(); track site.domain) {
                     <div class="sites-row">
                       <span class="sites-domain">
                         <span class="status-dot" [attr.data-status]="site.status"></span>
@@ -122,7 +122,7 @@ import { Brief, Site, ActivityItem, viFixtures } from '../../lib/vi.types';
                   <span class="editorial subtitle">last few hours</span>
                 </div>
                 <div class="activity-list">
-                  @for (item of activity; track $index) {
+                  @for (item of activity(); track $index) {
                     <div class="activity-row" [attr.data-tone]="item.tone">
                       <span class="who-badge num">{{ item.who | uppercase }}</span>
                       <span class="activity-text">{{ item.text }}</span>
@@ -161,11 +161,11 @@ $ _</pre>
         <div class="status-bar num">
           <div class="status-left">
             <span class="status-item">
-              <span class="vi-status-dot" [class.connected]="vi.connected"></span>
-              {{ vi.connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi.latencyMs }}ms
+              <span class="vi-status-dot" [class.connected]="vi().connected"></span>
+              {{ vi().connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi().latencyMs }}ms
             </span>
             <span class="status-sep">·</span>
-            <span class="status-item">{{ vi.watching }} sites</span>
+            <span class="status-item">{{ vi().watching }} sites</span>
             <span class="status-sep">·</span>
             <span class="status-item">£0.00 / mo</span>
           </div>
@@ -675,10 +675,10 @@ export class IdeComponent implements OnInit, OnDestroy {
   currentRoute = signal('dashboard');
   currentTime = signal('');
 
-  vi = viFixtures.status;
-  briefs: Brief[] = viFixtures.briefs;
-  sites: Site[] = viFixtures.sites;
-  activity: ActivityItem[] = viFixtures.activity;
+  vi = signal<ViStatus>(emptyViStatus);
+  briefs = signal<Brief[]>([]);
+  sites = signal<Site[]>([]);
+  activity = signal<ActivityItem[]>([]);
 
   viewKind = computed(() => {
     const route = this.currentRoute();
@@ -687,11 +687,13 @@ export class IdeComponent implements OnInit, OnDestroy {
     return 'placeholder';
   });
 
-  greenCount = computed(() => this.sites.filter((s) => s.status === 'green').length);
+  greenCount = computed(() => this.sites().filter((s) => s.status === 'green').length);
 
   briefSubtitle = computed(() => {
-    const open = this.briefs.filter((b) => !b.done).length;
-    return open === 0 ? 'all caught up' : `${open} open · ${this.briefs.length - open} closed today`;
+    const all = this.briefs();
+    const open = all.filter((b) => !b.done).length;
+    if (all.length === 0) return 'loading…';
+    return open === 0 ? 'all caught up' : `${open} open · ${all.length - open} closed today`;
   });
 
   constructor(@Inject(PLATFORM_ID) platformId: Object) {
@@ -706,6 +708,19 @@ export class IdeComponent implements OnInit, OnDestroy {
         this.currentTime.set(time.data);
       });
     });
+
+    loadViData()
+      .then((snap) => {
+        this.vi.set(snap.status);
+        this.briefs.set(snap.briefs);
+        this.sites.set(snap.sites);
+        this.activity.set(snap.activity);
+      })
+      .catch((err) => {
+        // Bindings unavailable (e.g. running in browser without Wails host) —
+        // leave signals at their empty defaults so the surface still renders.
+        console.warn('[vi] loadViData failed:', err);
+      });
   }
 
   ngOnDestroy() {
