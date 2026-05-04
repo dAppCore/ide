@@ -1,23 +1,31 @@
 ---
 title: Core IDE — Lethean Desktop's IDE component
-description: The compile target for Lethean Desktop, the umbrella native product across Darwin / Linux / Windows / iOS / iPadOS. Wails 3 + Angular frontend with embedded MCP server, runtime-switchable display modes, Vi Control Panel shell.
+description: Wails 3 + Angular IDE binary with embedded MCP server. Runs as stdio MCP, HTTP MCP, or GUI shell. Compile target for Lethean Desktop.
 ---
 
 # Core IDE
 
-> **2026-05-04 — convergence pass.** This binary IS Lethean Desktop's IDE component. The canonical plan for what Lethean Desktop is, what it composes, how the Vi Control Panel wraps the IDE surface, and how the design system flows in lives in the plans tree at [`plans/project/lthn/desktop/RFC.md`](https://forge.lthn.sh/core/plans/src/branch/main/project/lthn/desktop/RFC.md). **If it isn't defined in the plans tree, it isn't real.**
->
-> Sections below describe an earlier two-mode (GUI + Forgejo poller) shape that has since been reshaped — see the README at the repo root for current running modes (stdio MCP / HTTP MCP / GUI shell). Both this page and `architecture.md` are scheduled for a rewrite; treat them as historical until refreshed.
+This binary is **Lethean Desktop's IDE component** — the compile target for the umbrella native product across Darwin / Linux / Windows / iOS / iPadOS. The plan that defines what Lethean Desktop is, how the Vi Control Panel wraps the IDE surface, and where the design system flows in lives in the canonical plans tree at [`plans/project/lthn/desktop/RFC.md`](https://forge.lthn.sh/core/plans/src/branch/main/project/lthn/desktop/RFC.md).
 
-Core IDE is a native desktop application — the compile target for **Lethean Desktop**.
+> **If a capability isn't defined in the plans tree, it isn't real.** This binary owns *composition* — which packages get pulled in, how they wire at boot, how Vi surfaces them — not the *implementation* of each capability.
 
-Earlier two-role description (preserved until rewrite, may be partially stale):
+## What it does
 
-1. **GUI mode** -- a Wails 3 desktop application with an Angular frontend, system tray panel, and an embedded MCP HTTP server that exposes webview automation tools (DOM inspection, JavaScript execution, screenshots, network monitoring, and more).
+`core-ide` exposes the Core IDE runtime as MCP tools, named Core actions, and a local chat shell. It composes workspace inspection, OpenBrain memory, subagent relay, navigation, package marketplace helpers, and chat into one process.
 
-2. **Headless mode** -- a daemon that polls Forgejo repositories for actionable signals (draft PRs, review state, fix commands) and dispatches work to AI agents via the Clotho spinner, with a minimal MCP HTTP interface for remote control.
+The Conclave layer wraps the MCP service so the same tool catalogue is reachable through three transports without surface drift.
 
-Both modes listen on `127.0.0.1:9877` and expose `/health`, `/mcp`, `/mcp/tools`, and `/mcp/call` endpoints.
+## Three running modes
+
+| Mode | Command | Use case |
+|------|---------|----------|
+| **stdio MCP** | `core-ide --mcp` | Editor clients — Claude Code, Cursor, Continue |
+| **HTTP MCP** | `core-ide --no-gui --http 127.0.0.1:9880 --token $TOK` | Local agents — JetBrains, remote agents, anything wanting MCP-over-HTTP |
+| **GUI shell** | `core-ide` (default) | Native desktop application, embedded Angular frontend |
+
+GUI mode mounts chat and MCP against the same in-process executor — tool results are identical across modes.
+
+Wildcard binds (`:9880`, `0.0.0.0:9880`) are rejected; HTTP transport requires an explicit loopback address and a bearer token.
 
 ## Quick start
 
@@ -25,79 +33,156 @@ Both modes listen on `127.0.0.1:9877` and expose `/health`, `/mcp`, `/mcp/tools`
 
 - Go 1.26+
 - Node.js 22+ and npm
-- Wails 3 CLI (`wails3`)
-- Access to the Go workspace at `~/Code/go.work` (the module uses `replace` directives for local siblings)
+- [Wails 3 CLI](https://v3alpha.wails.io/) (`wails3`) — currently tracking alpha.83
+- The dappcore Go workspace (the module consumes `dappco.re/go/*` packages via workspace mode)
 
 ### Development
 
 ```bash
 cd /path/to/core/ide
 
-# Install frontend dependencies and start dev mode (hot-reload)
+# Hot-reload GUI + Go rebuild
 wails3 dev
 
-# Or build a production binary
-core build          # uses .core/build.yaml
-wails3 build        # alternative, uses build/config.yml
+# Production build (preferred — uses .core/build.yaml)
+core build
+
+# Frontend-only
+cd frontend && npm install && npm run dev
 ```
 
-### Headless mode
+### Connect to an editor (stdio MCP)
+
+```json
+{
+  "mcpServers": {
+    "core-ide": {
+      "command": "core-ide",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+### Run as a local HTTP MCP server
 
 ```bash
-# Run as a headless daemon (no GUI required)
-./bin/core-ide --headless
-
-# Dry-run mode -- logs what would happen without side-effects
-./bin/core-ide --headless --dry-run
-
-# Specify which repos to poll (comma-separated)
-CORE_REPOS=host-uk/core,host-uk/core-php ./bin/core-ide --headless
+core-ide --no-gui --http 127.0.0.1:9880 --token $(uuidgen)
 ```
 
-A systemd unit is provided at `build/linux/core-ide.service` for running headless mode as a system service.
+The HTTP server requires both a loopback address and a bearer token; without them it refuses to start.
 
-## Package layout
+## Tool catalogue (19, MCP/action parity-tested)
 
-| Path | Purpose |
-|------|---------|
-| `main.go` | Entry point -- decides GUI or headless based on `--headless` flag / display availability |
-| `mcp_bridge.go` | `MCPBridge` -- Wails service that starts the MCP HTTP server, WebSocket hub, and webview tool dispatcher (GUI mode) |
-| `claude_bridge.go` | `ClaudeBridge` -- WebSocket relay between GUI clients and an upstream MCP core server |
-| `headless.go` | `startHeadless()` -- daemon with Forgejo poller, job handlers, agent dispatch, PID file, and health endpoint |
-| `headless_mcp.go` | `startHeadlessMCP()` -- minimal MCP HTTP server for headless mode (job status, dry-run toggle, manual poll trigger) |
-| `greetservice.go` | `GreetService` -- sample Wails-bound service |
-| `icons/` | Embedded PNG assets for system tray (macOS template icon, default icon) |
-| `frontend/` | Angular 20 application (standalone components, SCSS, Wails runtime bindings) |
-| `frontend/src/app/pages/tray/` | `TrayComponent` -- compact system tray panel (380x480 frameless window) |
-| `frontend/src/app/pages/ide/` | `IdeComponent` -- full IDE layout with sidebar, dashboard, file explorer, terminal placeholders |
-| `frontend/src/app/components/sidebar/` | `SidebarComponent` -- icon-based navigation rail |
-| `frontend/bindings/` | Auto-generated TypeScript bindings for Go services |
-| `build/` | Platform-specific build configuration (macOS plist, Windows NSIS/MSIX, Linux systemd/AppImage/nfpm) |
-| `.core/build.yaml` | `core build` configuration (Wails type, CGO enabled, cross-compilation targets) |
-| `build/config.yml` | Wails 3 project configuration (app metadata, dev mode settings, file associations) |
+Enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.sh/core/ide/src/branch/dev/go/pkg/server/integration_action_parity_test.go):
 
-## Dependencies
+| Group | Tools |
+|-------|-------|
+| Brain | `brain_recall`, `brain_remember`, `brain_forget`, `brain_list`, `brain_context` |
+| Workspace | `workspace_status`, `workspace_conventions`, `workspace_impact`, `workspace_scan` |
+| Subagent | `subagent_guide`, `subagent_ask`, `subagent_progress`, `subagent_watch`, `subagent_answer`, `subagent_dispatch_guided` |
+| Navigation | `core_navigate` |
+| Marketplace | `pkg_search`, `pkg_info`, `pkg_install` |
 
-### Go modules
+`subagent_watch` supports `cursor`, `limit`, `nextCursor`, and `hasMore` for paged event history.
 
-| Module | Role |
-|--------|------|
-| `forge.lthn.ai/core/go` | Core framework -- config, forge client, job runner, agent CI |
-| `forge.lthn.ai/core/go-process` | Daemon utilities (PID file, health check endpoint) |
-| `forge.lthn.ai/core/gui` | WebView service (`pkg/webview`) and WebSocket hub (`pkg/ws`) |
-| `github.com/wailsapp/wails/v3` | Native desktop application framework |
-| `github.com/gorilla/websocket` | WebSocket client for the Claude bridge |
+## Package layout (`go/pkg/`)
 
-All three `forge.lthn.ai` dependencies are resolved via `replace` directives pointing to sibling directories (`../go`, `../go-process`, `../gui`).
+| Package | Purpose |
+|---------|---------|
+| `pkg/ai/` | AI / agent integration (Claude / Codex dispatch surface) |
+| `pkg/brain/` | Persistent memory (OpenBrain integration) |
+| `pkg/chat/` | Local chat surface — mounts a `ToolExecutor` interface against the in-process MCP catalogue |
+| `pkg/config/` | Configuration management — XDG paths + `.core/` convention |
+| `pkg/marketplace/` | Package marketplace helpers (`pkg_search` / `pkg_info` / `pkg_install`) |
+| `pkg/navigate/` | Navigation between IDE surfaces (`core_navigate`) |
+| `pkg/server/` | HTTP / stdio / Wails server boot — composes the runtime, selects the transport, wires the Conclave layer |
+| `pkg/store/` | go-store backed persistence — workspace state, history, navigation breadcrumbs |
+| `pkg/subagent/` | Subagent relay (history, dispatch, paged event watch) |
+| `pkg/workspace/` | Workspace inspection + management |
 
-### Frontend
+The Go module root is `go/`. Module path: `dappco.re/go/ide`. From the repo root, `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to the root copies.
 
-| Package | Role |
-|---------|------|
-| `@angular/core` ^21 | Component framework |
-| `@wailsio/runtime` 3.0.0-alpha.72 | Go/JS bridge (events, method calls) |
-| `rxjs` ~7.8 | Reactive extensions |
+## Frontend layout
+
+Angular 20+ application embedded into the binary at compile time via `//go:embed`. Two pages:
+
+| Page | Component | Purpose |
+|------|-----------|---------|
+| `/ide` | `IdeComponent` (`frontend/src/app/pages/ide/`) | Main IDE layout — currently the canvas onto which the Lethean-3 Vi Control Panel chrome will be adopted (designed, not yet integrated — see RFC §9 status table) |
+| `/tray` | `TrayComponent` (`frontend/src/app/pages/tray/`) | System tray panel (compact, frameless) |
+
+Shared components live under `frontend/src/app/components/` (currently `sidebar/`).
+
+The frontend communicates with Go services through `@wailsio/runtime` — direct goroutine calls via auto-generated TypeScript bindings in `frontend/bindings/`, plus event subscriptions for streaming surfaces.
+
+## Configuration
+
+```yaml
+# .core/config.yaml
+gui:
+  enabled: true          # false = headless, MCP only
+mcp:
+  transport: stdio       # stdio | tcp | unix
+  tcp:
+    port: 9877
+brain:
+  api_url: http://localhost:8000
+  api_token: ""          # or CORE_API_TOKEN env var
+```
+
+CLI flags (`--mcp`, `--no-gui`, `--http`, `--token`, `--config`) override config values.
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CORE_API_URL` | `http://localhost:8000` | Laravel backend WebSocket URL |
+| `CORE_API_TOKEN` | (empty) | Bearer token for Laravel backend auth |
+| `MCP_ADDR` | (empty) | TCP address for MCP server (headless mode) |
+| `CORE_BRAIN_INTEGRATION` | (empty) | Set to `1` to enable build-tagged live OpenBrain test |
+| `CORE_BRAIN_KEY` | (empty) | API key for live OpenBrain test |
+
+## HTTP hardening
+
+The HTTP transport is built defensively from the ground up:
+
+- HTTP mode refuses to start without a bearer token.
+- REST and MCP-over-HTTP requests require `Authorization: Bearer <token>`; missing or wrong tokens return `401`.
+- Listeners must bind to `localhost` or a loopback IP. Wildcards and externally routable addresses are rejected at config-validation time.
+- Read-header / read / write / idle timeouts are bounded.
+- Headers capped at 1 MiB. Bodies capped at 10 MiB.
+- The relay listener is only enabled when a relay path, loopback bind, and bearer token are all configured.
+
+## Testing
+
+```sh
+# Local verification contract (per AGENTS.md)
+GOWORK=off go mod tidy
+GOWORK=off go vet ./...
+GOWORK=off go test -count=1 ./...
+gofmt -l .
+bash /Users/snider/Code/core/go/tests/cli/v090-upgrade/audit.sh .
+
+# End-to-end smoke
+tests/smoke/run-end-to-end.sh
+
+# Live OpenBrain (build-tagged, opt-in)
+CORE_BRAIN_INTEGRATION=1 CORE_BRAIN_KEY=$CORE_BRAIN_KEY \
+  go test -tags integration -run TestLive ./pkg/brain/...
+```
+
+The end-to-end smoke script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, calls `workspace_status` through the HTTP tool bridge, checks malformed tool input + schema validation failures, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.
+
+## Where the truth lives
+
+| Concern | Canonical home |
+|---------|----------------|
+| Lethean Desktop product framing + service composition + Vi Control Panel | [`plans/project/lthn/desktop/RFC.md`](https://forge.lthn.sh/core/plans/src/branch/main/project/lthn/desktop/RFC.md) |
+| Visual system + brand variants + native platform profiles | [`plans/ops/hostuk/website/_design/lethean-3/`](https://forge.lthn.sh/core/plans/src/branch/main/ops/hostuk/website/_design/lethean-3/) |
+| Native chrome rules (Wails Darwin / iOS / iPadOS) | [`plans/ops/hostuk/website/_design/lethean-3/design_handoff_native_profiles/README.md`](https://forge.lthn.sh/core/plans/src/branch/main/ops/hostuk/website/_design/lethean-3/design_handoff_native_profiles/README.md) |
+| Vi (Violet) mascot canon | [`plans/ops/hostuk/website/_design/lethean-3/uploads/mascot-raven.md`](https://forge.lthn.sh/core/plans/src/branch/main/ops/hostuk/website/_design/lethean-3/uploads/mascot-raven.md) |
 
 ## Licence
 
-EUPL-1.2. See the copyright notice in `build/config.yml` and `build/darwin/Info.plist`.
+EUPL-1.2. See `LICENCE` at the repo root.

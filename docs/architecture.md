@@ -1,268 +1,319 @@
 ---
 title: Architecture
-description: Internal architecture of Core IDE -- Go backend, Angular frontend, MCP bridge, runtime-switchable display modes, Vi Control Panel shell.
+description: Internal architecture of Core IDE — runtime composition, MCP server, transport selection, Conclave parity layer, frontend, hardening.
 ---
 
 # Architecture
 
-> **2026-05-04 — stale relative to current code.** This document describes an earlier two-mode (GUI + Forgejo poller / Headless daemon) shape with `MCPBridge` / `ClaudeBridge` / `GreetService` Wails service names, references the older `forge.lthn.ai/core/go` module path, and pins Wails 3.0.0-alpha.72. Current state per the README:
->
-> - Three running modes: **stdio MCP** (`--mcp`), **HTTP MCP** (`--no-gui --http`), **GUI shell** (default Wails 3 alpha.83). Forgejo-poller "headless mode" is not the current shape.
-> - Module path: `dappco.re/go/ide` (consumes `dappco.re/go/*` packages, not `forge.lthn.ai/core/*`).
-> - 19-tool MCP/action parity (per integration test), not 27.
-> - The binary IS Lethean Desktop — see canonical plan at `plans/project/lthn/desktop/RFC.md`.
->
-> Treat this document as historical context until a rewrite lands. The README + AGENTS.md + CLAUDE.md at the repo root are current.
+Core IDE is a single Go binary at `dappco.re/go/ide` that composes a Core ecosystem runtime, an embedded MCP server, an optional Wails GUI shell, and a transport layer that exposes everything through stdio MCP, HTTP MCP, or the GUI's in-process chat surface.
 
-Core IDE is a single binary that operates in two distinct modes, selected at startup.
+> **Identity:** This binary IS Lethean Desktop's IDE component. The plan that defines what Lethean Desktop is + how the Vi Control Panel chrome wraps the IDE surface lives at `plans/project/lthn/desktop/RFC.md`. Sections of the design (Vi Control Panel chrome, Lethean-3 token adoption) are designed but not yet integrated into the Angular frontend — the RFC §9 evolution-path table tracks what's shipped vs. planned.
 
-## Mode selection
+## 1. Entry point
 
-In `main.go`, the entry point inspects the command-line arguments and the display environment:
+`cmd/core-ide/main.go` parses CLI flags, loads config, applies CLI overrides, composes a server, and runs it under a context that traps `SIGINT` + `SIGTERM`.
 
 ```go
-if headless || !hasDisplay() {
-    startHeadless()
-    return
+func main() {
+    flags, err := parseRuntimeFlags(core.Args()[1:])
+    cfg, err := config.Load(config.DefaultPaths(flags.ConfigPath)...)
+    config.ApplyCLIOverrides(&cfg, config.CLIOverrides{
+        TransportMode: transportMode(flags),
+        HTTPAddr:      flags.HTTPAddr,
+        Token:         flags.Token,
+    })
+    if flags.NoGUI {
+        cfg.Ide.Chat.Enabled = config.BoolPtr(false)
+    }
+
+    srv, err := server.NewServer(server.Options{
+        Config:                    cfg,
+        GUI:                       !flags.NoGUI,
+        MCP:                       flags.MCPOnly,
+        PreferConfiguredTransport: flags.MCPOnly || flags.HTTPAddr != "",
+    })
+
+    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+    defer stop()
+    srv.Run(ctx)
 }
 ```
 
-`hasDisplay()` returns `true` on Windows unconditionally, and on Linux/macOS only when `DISPLAY` or `WAYLAND_DISPLAY` is set. This means the binary automatically falls back to headless mode on servers.
+### Flags
 
-## GUI mode
+| Flag | Type | Purpose |
+|------|------|---------|
+| `--mcp` | bool | Run the MCP server on stdio (no GUI, no HTTP) |
+| `--no-gui` | bool | Disable the GUI shell (keep MCP) |
+| `--http <addr>` | string | Run MCP on HTTP at the given loopback address |
+| `--token <token>` | string | Bearer token for HTTP transport |
+| `--config <path>` | string | Override the default config path |
 
-### Wails application
+`transportMode(flags)` derives the effective transport: `http` if `--http` is set, `stdio` if `--mcp` is set, else config default.
 
-The GUI is a Wails 3 application. The Angular frontend is embedded into the binary at compile time via `//go:embed`:
+## 2. Server composition
 
-```go
-//go:embed all:frontend/dist/wails-angular-template/browser
-var assets embed.FS
+`pkg/server/server.go` defines `Server` + `NewServer(Options)`. Composition flow:
+
+```
+NewServer(Options)
+  └─ composeRuntime(options)
+        ├─ build *core.Core with the canonical Service.Register() pattern
+        ├─ register MCP service (newMCPService)
+        ├─ register WebSocket hub (ws)
+        ├─ register process supervisor (process)
+        ├─ select transport (SelectTransport — stdio / http)
+        ├─ optionally enable relay listener
+        └─ optionally compose GUIShell
 ```
 
-Two Wails services are registered:
+`Options` shape (`pkg/server/options.go`):
 
-- `GreetService` -- a minimal service demonstrating Wails method bindings.
-- `MCPBridge` -- the main service that wires up the MCP HTTP server, WebSocket hub, and webview automation.
+```go
+type Options struct {
+    Config                    config.IDEConfig
+    GUI                       bool
+    Medium                    coreio.Medium  // pluggable storage backend
+    MCP                       bool           // stdio MCP only mode
+    PreferConfiguredTransport bool           // honour config-supplied transport
+    extraCoreOptions          []core.CoreOption
+}
+```
+
+`Options.Register()` returns a `func(*core.Core) core.Result` so the Server is itself a canonical Service that any container can register — same pattern as every other Core ecosystem package (per Mantis #1336).
+
+## 3. The Conclave parity layer
+
+`pkg/server/conclave.go` ensures the **same tool catalogue** is reachable through every transport. This is what makes "tool results match across stdio, HTTP, and GUI" a structural guarantee, not a hope.
+
+When the runtime is composed in non-conclave mode, the MCP service is wrapped:
+
+```go
+if !mode.conclave {
+    wrapConclaveTools(svc, groups, func() (*runtimeParts, error) {
+        return composeRuntimeMode(options, runtimeMode{conclave: true})
+    })
+}
+```
+
+The wrapper recomposes a parallel runtime in conclave mode for tool execution, so HTTP-driven tool calls produce the same result as stdio-driven calls and as in-process chat-driven calls. The 19-tool MCP/action parity is enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.sh/core/ide/src/branch/dev/go/pkg/server/integration_action_parity_test.go).
+
+## 4. MCP service composition
+
+`newMCPService(c)` builds a `coremcp.Service` from a list of subsystems. Subsystems contributing tools:
+
+- `pkg/brain/` → `brain_*` (5 tools)
+- `pkg/workspace/` → `workspace_*` (4 tools)
+- `pkg/subagent/` → `subagent_*` (6 tools)
+- `pkg/navigate/` → `core_navigate` (1 tool)
+- `pkg/marketplace/` → `pkg_*` (3 tools)
+
+Each subsystem implements the `mcp.Subsystem` interface from `core/mcp` and is registered via `core.WithService` or `core.WithName` factory functions.
+
+The `pkg/chat/` package is not an MCP subsystem itself — it's a `ToolExecutor` consumer that calls the same MCP catalogue from inside the GUI shell.
+
+## 5. Transport selection
+
+`pkg/server/transport.go` selects the active MCP transport from `Options` + config:
+
+```go
+func SelectTransport(cfg config.IDEConfig, mcpOnly bool, preferConfigured bool) (Transport, error) {
+    if mcpOnly {
+        return Transport{Mode: "stdio"}, nil
+    }
+    if preferConfigured {
+        return selectConfiguredTransport(cfg, false)
+    }
+    // ... GUI default
+}
+```
+
+Three transport modes:
+
+| Mode | Trigger | Surface |
+|------|---------|---------|
+| `stdio` | `--mcp` flag | stdin/stdout MCP framing |
+| `http` | `--http <addr>` flag (or `mcp.transport: tcp` in config) | HTTP server on loopback, bearer-token gated |
+| `unix` | `mcp.transport: unix` in config | Unix domain socket |
+
+### HTTP transport hardening
+
+Defined as constants in `pkg/server/transport.go`:
+
+```go
+const (
+    httpReadHeaderTimeout = 5 * time.Second
+    httpReadTimeout       = 10 * time.Second
+    httpWriteTimeout      = 10 * time.Second
+    httpIdleTimeout       = 60 * time.Second
+    httpMaxHeaderBytes    = 1 << 20    // 1 MiB
+    httpMaxBodyBytes      = 10 << 20   // 10 MiB
+)
+```
+
+Plus:
+
+- Wildcard binds (`:9880`, `0.0.0.0:9880`) rejected at config-validation time
+- HTTP server refuses to start without a bearer token
+- All `/mcp/*` and REST endpoints check `Authorization: Bearer <token>`; bad tokens return `401`
+- Relay listener is only enabled when path + loopback bind + bearer token are all configured
+
+## 6. GUI shell
+
+`pkg/server/gui.go` (when `Options.GUI = true`) composes a Wails 3 application + the Angular frontend embedded via `//go:embed`.
+
+### Wails service registration
+
+The Server itself is registered as a Wails service via the canonical `Service.Register()` pattern. The MCP service is reachable from inside the GUI through the same in-process executor as the chat surface — tool results are identical regardless of whether the call came from chat, stdio MCP, or HTTP MCP.
 
 ### System tray
 
-The application runs as a macOS "accessory" (no Dock icon) with a system tray icon. Clicking the tray icon reveals a 380x480 frameless window at `/tray` that shows quick stats, recent projects, and action buttons.
+Currently configured as a macOS "accessory" application (no Dock icon) with a system tray icon. On macOS, a template icon (`icons/apptray.png`) adapts to light/dark mode automatically.
 
-On macOS, a template icon (`icons/apptray.png`) is used so it adapts to light/dark mode automatically. On other platforms, the same icon is set as both light and dark variants.
+The tray panel is a 380x480 frameless window pointing at the Angular `/tray` route.
 
-### Angular frontend
+### Frontend pages
 
-The frontend is an Angular 20+ application using standalone components (no NgModules). It has two routes:
+Angular 20+ standalone components (no NgModules):
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/tray` | `TrayComponent` | Compact system tray panel -- status, quick actions, recent projects |
-| `/ide` | `IdeComponent` | Full IDE layout with sidebar navigation |
+| `/ide` | `IdeComponent` (`frontend/src/app/pages/ide/`) | Main IDE layout — currently a base layout that the Lethean-3 Vi Control Panel chrome will be adopted onto (designed, not yet integrated) |
+| `/tray` | `TrayComponent` (`frontend/src/app/pages/tray/`) | Compact tray panel |
 
-The root route (`/`) redirects to `/tray` because the tray panel is the default window.
+Shared components in `frontend/src/app/components/sidebar/` — sidebar component family.
 
-#### Wails runtime bridge
+### Wails runtime bridge
 
-Components communicate with the Go backend through the `@wailsio/runtime` package:
+Frontend ↔ Go via `@wailsio/runtime`:
 
-- **Events.On** -- subscribes to events emitted by Go (e.g. `time` events for the clock display).
-- **Events.Emit** -- sends events to Go (e.g. `action` events for quick actions like `new-project`, `run-dev`).
-- **Generated bindings** -- `frontend/bindings/` contains auto-generated TypeScript functions that call Go methods by ID (e.g. `GreetService.Greet`).
+- **Generated bindings** in `frontend/bindings/` — auto-generated TypeScript functions calling Go methods by ID (direct goroutine calls, not HTTP).
+- **Events.On** — subscribe to events emitted by Go.
+- **Events.Emit** — send events to Go.
 
-The `IdeComponent` lazily imports `@wailsio/runtime` to avoid SSR issues:
+Lazily imported to avoid SSR issues:
 
 ```typescript
 import('@wailsio/runtime').then(({ Events }) => {
-    this.timeEventCleanup = Events.On('time', (time: { data: string }) => {
-        this.currentTime.set(time.data);
-    });
+    // ...
 });
 ```
 
-### MCPBridge
+## 7. Persistence (`pkg/store/`)
 
-`MCPBridge` is the central orchestrator in GUI mode. It is registered as a Wails service and receives the `ServiceStartup` lifecycle callback once the application initialises.
+Backed by `dappco.re/go/store` — SQLite KV + DuckDB workspace buffer. Workspace state, navigation history, subagent event log all persist through this layer.
 
-#### Initialisation sequence
+Storage backend is pluggable via `coreio.Medium` injected on `Options` — Local, S3, Cube, in-memory all valid (per `dappco.re/go/io` Medium pattern). Default: Local Medium under XDG paths.
 
-1. Obtain the Wails `application.App` reference.
-2. Wire the `webview.Service` with the app so it can access windows.
-3. Set up a console message listener on all windows.
-4. Inject console capture JavaScript into existing windows (with a polling delay to wait for window creation).
-5. Start the HTTP server on `127.0.0.1:9877`.
+## 8. Configuration
 
-#### HTTP endpoints (GUI mode)
+Loaded via `pkg/config/Load(paths...)`. Defaults at XDG locations (`~/.config/core-ide/config.yaml` etc.). CLI flags applied as overrides via `config.ApplyCLIOverrides`.
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Returns `{"status":"ok","mcp":true,"webview":true}` |
-| `/mcp` | GET | Server metadata (name, version, capabilities, WebSocket URL) |
-| `/mcp/tools` | GET | Lists all 27 available webview tools |
-| `/mcp/call` | POST | Executes a tool -- accepts `{"tool":"...","params":{...}}` |
-| `/ws` | GET | WebSocket endpoint for GUI clients |
-
-#### Webview tools
-
-The MCP bridge exposes 27 tools for programmatic interaction with the application's webview windows. These are grouped by function:
-
-**Window management:**
-- `webview_list` -- enumerate all windows (name, title, URL)
-
-**JavaScript execution:**
-- `webview_eval` -- execute arbitrary JavaScript in a named window
-
-**Console and errors:**
-- `webview_console` -- retrieve captured console messages (filterable by level)
-- `webview_console_clear` -- clear the console buffer
-- `webview_errors` -- retrieve captured error messages
-
-**DOM interaction:**
-- `webview_click` -- click an element by CSS selector
-- `webview_type` -- type text into an element
-- `webview_query` -- query DOM elements by selector
-- `webview_hover` -- hover over an element
-- `webview_select` -- select an option in a dropdown
-- `webview_check` -- check/uncheck a checkbox or radio button
-- `webview_scroll` -- scroll to an element or position
-
-**DOM inspection:**
-- `webview_element_info` -- get detailed information about an element
-- `webview_computed_style` -- get computed CSS styles for an element
-- `webview_highlight` -- visually highlight an element with a coloured overlay
-- `webview_dom_tree` -- get the DOM tree structure (configurable depth)
-
-**Navigation:**
-- `webview_navigate` -- navigate to a URL (http/https only)
-- `webview_url` -- get the current page URL
-- `webview_title` -- get the current page title
-- `webview_source` -- get the full page HTML source
-
-**Capture:**
-- `webview_screenshot` -- capture the full page as a base64 PNG
-- `webview_screenshot_element` -- capture a specific element as a base64 PNG
-- `webview_pdf` -- export the page as a PDF (base64 data URI)
-- `webview_print` -- open the native print dialogue
-
-**Performance and network:**
-- `webview_performance` -- get performance timing metrics
-- `webview_resources` -- list loaded resources (scripts, stylesheets, images)
-- `webview_network` -- get logged network requests
-- `webview_network_clear` -- clear the network request log
-- `webview_network_inject` -- inject a network interceptor for detailed logging
-
-All tools accept parameters as JSON. Most require a `window` parameter (the window name, e.g. `"tray-panel"`) and a `selector` parameter (a CSS selector).
-
-### ClaudeBridge
-
-The `ClaudeBridge` is a WebSocket relay designed to forward messages between GUI WebSocket clients and an upstream MCP core server at `ws://localhost:9876/ws`. It maintains:
-
-- A persistent connection to the upstream server with automatic reconnection (5-second backoff).
-- A set of client connections (GUI browsers connecting via `/ws`).
-- A broadcast channel that fans out messages from the upstream server to all connected clients.
-- Message filtering -- only `claude_message` type messages from clients are forwarded upstream.
-
-The Claude bridge is currently disabled in the code (`b.claudeBridge.Start()` is commented out) because port 9876 does not host an MCP WebSocket server at present.
-
-## Headless mode
-
-### Overview
-
-Headless mode turns the binary into a CI/CD daemon. It polls Forgejo repositories for actionable events and dispatches work to AI agents.
-
-### Components
-
-```
-startHeadless()
-  |
-  +-- Journal (filesystem, ~/.core/journal/)
-  |
-  +-- Forge client (Forgejo API)
-  |
-  +-- Forgejo source (repo list from CORE_REPOS env or defaults)
-  |
-  +-- Job handlers (ordered, first-match-wins):
-  |     1. PublishDraftHandler
-  |     2. SendFixCommandHandler
-  |     3. DismissReviewsHandler
-  |     4. EnableAutoMergeHandler
-  |     5. TickParentHandler
-  |     6. DispatchHandler (agent dispatch via Clotho spinner)
-  |
-  +-- Poller (60-second interval)
-  |
-  +-- Daemon (PID file at ~/.core/core-ide.pid, health at 127.0.0.1:9878)
-  |
-  +-- Headless MCP server (127.0.0.1:9877)
+```yaml
+gui:
+  enabled: true
+mcp:
+  transport: stdio       # stdio | tcp | unix
+  tcp:
+    port: 9877
+brain:
+  api_url: http://localhost:8000
+  api_token: ""
+ide:
+  chat:
+    enabled: true        # forced false when --no-gui set
 ```
 
-### Job handler pipeline
+## 9. Lifecycle + signals
 
-The poller queries the Forgejo source for jobs, then passes each job through the handler list. The first handler that matches claims the job. The handlers are ordered so that lightweight operations (publishing drafts, dismissing stale reviews) run before the heavy-weight agent dispatch.
+`Server.Run(ctx)` blocks until the context is cancelled. The main entry point cancels the context on `SIGINT` or `SIGTERM`:
 
-The `DispatchHandler` uses the Clotho spinner to allocate work to configured AI agents. Agent targets and the Clotho configuration are loaded from the Core config system.
-
-### Journal
-
-The journal persists job state to `~/.core/journal/` on the filesystem. This prevents the same job from being processed twice across daemon restarts.
-
-### HTTP endpoints (headless mode)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Returns `{"status":"ok","mode":"headless","cycle":<n>}` |
-| `/mcp` | GET | Server metadata with `"mode":"headless"` |
-| `/mcp/tools` | GET | Lists 3 tools: `job_status`, `job_set_dry_run`, `job_run_once` |
-| `/mcp/call` | POST | Executes a headless tool |
-
-### Headless tools
-
-| Tool | Description |
-|------|-------------|
-| `job_status` | Returns current poll cycle count and dry-run state |
-| `job_set_dry_run` | Enable or disable dry-run mode at runtime (`{"enabled": true}`) |
-| `job_run_once` | Trigger a single poll-dispatch cycle immediately |
-
-### Health check
-
-The daemon exposes a separate health endpoint on port 9878 via the `go-process` package. This is distinct from the MCP health on port 9877 and is intended for process supervisors (systemd, launchd).
-
-## Port summary
-
-| Port | Service | Mode |
-|------|---------|------|
-| 9877 | MCP HTTP server (tools, WebSocket) | Both |
-| 9878 | Daemon health check | Headless only |
-| 9876 | Upstream MCP core (external, not started by this binary) | N/A |
-
-## Data flow diagrams
-
-### GUI mode
-
-```
-System Tray Click
-  --> Tray Panel Window (/tray)
-        --> Angular TrayComponent
-              --> Events.Emit('action', ...)
-                    --> Go event handler
-
-MCP Client (e.g. Claude Code)
-  --> POST /mcp/call {"tool":"webview_eval","params":{"window":"tray-panel","code":"..."}}
-        --> MCPBridge.handleMCPCall()
-              --> MCPBridge.executeWebviewTool()
-                    --> webview.Service.ExecJS()
-                          --> Wails webview
+```go
+ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+defer stop()
+srv.Run(ctx)
 ```
 
-### Headless mode
+Server shutdown drains:
+1. Stop accepting new transport connections
+2. Flush in-flight MCP calls (bounded by HTTP write timeout)
+3. Quit the Wails app (if GUI mode)
+4. Close store handles via `core.Result`-discipline `Close()` calls
+
+## 10. Data flow — tool call across modes
+
+The structural guarantee that `subagent_dispatch_guided` (or any tool) returns the same result via stdio, HTTP, and GUI:
 
 ```
-Poller (every 60s)
-  --> Forgejo Source (API query)
-        --> Job list
-              --> Handler pipeline
-                    --> PublishDraft / SendFix / DismissReviews / ...
-                    --> DispatchHandler
-                          --> Clotho Spinner
-                                --> Agent target
+─── stdio MCP ──────────────────────────┐
+                                        ↓
+─── HTTP MCP (bearer-gated) ──────→ Conclave wrapper
+                                        ↓
+─── GUI chat (chat.ToolExecutor) ──→ MCP service (newMCPService)
+                                        ↓
+                                    Subsystem dispatch
+                                    (brain / workspace / subagent /
+                                     navigate / marketplace)
+                                        ↓
+                                    Result — same shape across all transports
 ```
+
+The Conclave wrapper is what enforces this — without it, each transport would compose its own runtime with its own state.
+
+## 11. Cross-references
+
+| Concern | Where |
+|---------|-------|
+| Lethean Desktop product framing | `plans/project/lthn/desktop/RFC.md` |
+| Visual system + brand variants + native platform profiles | `plans/ops/hostuk/website/_design/lethean-3/` |
+| Vi Control Panel chrome adoption (planned) | RFC §9 evolution-path table — designed, not yet integrated |
+| `core/agent` (consumed for subagent dispatch) | `dappco.re/go/agent` |
+| `core/mcp` (MCP service framework) | `dappco.re/go/mcp` |
+| `core/gui` (Wails wrapper) | `dappco.re/go/gui` |
+| `core/store` (persistence) | `dappco.re/go/store` |
+| `core/io` (Medium pattern) | `dappco.re/go/io` |
+| Pre-AI prototyping repo (`forge.lthn.ai/Snider/desktop`) | NOT a source of truth — see "if not in plans, not real" rule |
+
+## 12. Port summary
+
+| Port | Service | Mode | Default |
+|------|---------|------|---------|
+| 9877 | MCP TCP transport | When `mcp.transport: tcp` configured | Yes |
+| 9880 | MCP HTTP transport | When `--http 127.0.0.1:9880` set | No (CLI-driven) |
+
+Both must bind to loopback. External / wildcard binds are rejected.
+
+## 13. Testing
+
+Local verification contract per [`AGENTS.md`](../AGENTS.md):
+
+```sh
+GOWORK=off go mod tidy
+GOWORK=off go vet ./...
+GOWORK=off go test -count=1 ./...
+gofmt -l .
+bash /Users/snider/Code/core/go/tests/cli/v090-upgrade/audit.sh .
+```
+
+Test discipline:
+- File-local — symbol exported in `foo.go` → tests in `foo_test.go` + runnable example in `foo_example_test.go`
+- Good / Bad / Ugly triplet per exported symbol
+- Examples print through `core.Println`, not `fmt.Println`
+- No AX7 catch-all test files, no versioned test files, no stdlib-shaped compatibility packages
+
+End-to-end smoke at `tests/smoke/run-end-to-end.sh` builds `/tmp/core-ide`, verifies the 19-tool catalogue across stdio + HTTP, exercises auth failures, confirms HTTP without token exits non-zero.
+
+## 14. Build pipeline state (2026-05-04)
+
+Per `plans/CLAUDE.md` §"Recent ide work":
+
+- Workspace mode (`go vet ./...`) — CLEAN
+- CI mode (`GOWORK=off go vet ./...`) — blocked on tag bumps for `dappco.re/go/store` (needs tag at SHA `d17ad7b` or later) and `dappco.re/go/gui` (needs tag at SHA `68f33e0` for wails3 alpha.83 `WebviewWindow` API parity)
+- Recent commits: `0fcd4c6` wails3 alpha.83 + dev-mode working window; `7e0a698` finish core.Result cascade (Mantis #1341); `709c1e0` result-discards 9→0 (Mantis #1336); `94ab118` ax7 triplets + Example* gaps for service.go (Mantis #1336); `dc2e554` add canonical Service for Core registration (Mantis #1336)
+
+## 15. Out of scope here
+
+- **Vi Control Panel chrome adoption in the Angular frontend** — designed per Lethean-3, not yet integrated. Tracked in the desktop RFC §9 evolution-path table as ⏳.
+- **Migration to CoreTS Web Components (Phase 4c)** — Angular continues until then.
+- **Native iOS / iPadOS shells** — separate App Store sprint per Apple distribution pipeline at `RFC.xcode-pipeline.md` in the desktop plan.
+- **Capability implementations** (blockchain, mining, encryption, filesystem) — composed from canonical specs in `plans/`, not implemented here.
