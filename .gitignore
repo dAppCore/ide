@@ -4,7 +4,7 @@ bin
 frontend/dist
 frontend/node_modules
 build/linux/appimage/build
-build/windows/nsis/MicrosoftEdgeWebview2Setup.exeide
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 !build/
 !build/ios/
 !build/ios/*_test.go
@@ -15,7 +15,6 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exeide
 !build/ios/scripts/deps/*_example_test.go
 .core/
 .idea/
-ide
 .DS_Store
 .lintdeps/
 .scannerwork/
