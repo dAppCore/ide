@@ -1,11 +1,17 @@
 ---
-title: Core IDE
-description: A native desktop development environment and headless CI job runner built with Wails 3 and Angular, providing MCP-driven webview automation and Forgejo-integrated agent dispatch.
+title: Core IDE — Lethean Desktop's IDE component
+description: The compile target for Lethean Desktop, the umbrella native product across Darwin / Linux / Windows / iOS / iPadOS. Wails 3 + Angular frontend with embedded MCP server, runtime-switchable display modes, Vi Control Panel shell.
 ---
 
 # Core IDE
 
-Core IDE is a native desktop application that serves two roles:
+> **2026-05-04 — convergence pass.** This binary IS Lethean Desktop's IDE component. The canonical plan for what Lethean Desktop is, what it composes, how the Vi Control Panel wraps the IDE surface, and how the design system flows in lives in the plans tree at [`plans/project/lthn/desktop/RFC.md`](https://forge.lthn.sh/core/plans/src/branch/main/project/lthn/desktop/RFC.md). **If it isn't defined in the plans tree, it isn't real.**
+>
+> Sections below describe an earlier two-mode (GUI + Forgejo poller) shape that has since been reshaped — see the README at the repo root for current running modes (stdio MCP / HTTP MCP / GUI shell). Both this page and `architecture.md` are scheduled for a rewrite; treat them as historical until refreshed.
+
+Core IDE is a native desktop application — the compile target for **Lethean Desktop**.
+
+Earlier two-role description (preserved until rewrite, may be partially stale):
 
 1. **GUI mode** -- a Wails 3 desktop application with an Angular frontend, system tray panel, and an embedded MCP HTTP server that exposes webview automation tools (DOM inspection, JavaScript execution, screenshots, network monitoring, and more).
 

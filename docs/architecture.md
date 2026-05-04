@@ -1,9 +1,18 @@
 ---
 title: Architecture
-description: Internal architecture of Core IDE -- Go backend, Angular frontend, MCP bridge, headless job runner, and data flow between components.
+description: Internal architecture of Core IDE -- Go backend, Angular frontend, MCP bridge, runtime-switchable display modes, Vi Control Panel shell.
 ---
 
 # Architecture
+
+> **2026-05-04 — stale relative to current code.** This document describes an earlier two-mode (GUI + Forgejo poller / Headless daemon) shape with `MCPBridge` / `ClaudeBridge` / `GreetService` Wails service names, references the older `forge.lthn.ai/core/go` module path, and pins Wails 3.0.0-alpha.72. Current state per the README:
+>
+> - Three running modes: **stdio MCP** (`--mcp`), **HTTP MCP** (`--no-gui --http`), **GUI shell** (default Wails 3 alpha.83). Forgejo-poller "headless mode" is not the current shape.
+> - Module path: `dappco.re/go/ide` (consumes `dappco.re/go/*` packages, not `forge.lthn.ai/core/*`).
+> - 19-tool MCP/action parity (per integration test), not 27.
+> - The binary IS Lethean Desktop — see canonical plan at `plans/project/lthn/desktop/RFC.md`.
+>
+> Treat this document as historical context until a rewrite lands. The README + AGENTS.md + CLAUDE.md at the repo root are current.
 
 Core IDE is a single binary that operates in two distinct modes, selected at startup.
 
