@@ -140,6 +140,10 @@ import './elements/pages/lethean-lthn-landing-page';
 import './elements/pages/lethean-product-hosting-page';
 import './elements/pages/lethean-product-link-page';
 import './elements/pages/lethean-product-analytics-page';
+import './elements/pages/lethean-product-notify-page';
+import './elements/pages/lethean-product-social-page';
+import './elements/pages/lethean-product-trust-page';
+import './elements/pages/lethean-product-mail-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

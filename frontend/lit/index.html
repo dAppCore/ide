@@ -117,6 +117,10 @@
         <lethean-nav-item icon="server" label="Product · Hosting" data-page="product-hosting"></lethean-nav-item>
         <lethean-nav-item icon="link" label="Product · Link" data-page="product-link"></lethean-nav-item>
         <lethean-nav-item icon="chart-line" label="Product · Analytics" data-page="product-analytics"></lethean-nav-item>
+        <lethean-nav-item icon="bell" label="Product · Notify" data-page="product-notify"></lethean-nav-item>
+        <lethean-nav-item icon="calendar-days" label="Product · Social" data-page="product-social"></lethean-nav-item>
+        <lethean-nav-item icon="shield-check" label="Product · Trust" data-page="product-trust"></lethean-nav-item>
+        <lethean-nav-item icon="envelope" label="Product · Mail" data-page="product-mail"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -382,6 +386,10 @@
       'product-hosting': 'Product — Hosting',
       'product-link': 'Product — Host Link',
       'product-analytics': 'Product — Host Analytics',
+      'product-notify': 'Product — Host Notify',
+      'product-social': 'Product — Host Social',
+      'product-trust': 'Product — Host Trust',
+      'product-mail': 'Product — Host Mail',
     };
 
     function showPage(page) {
@@ -457,6 +465,14 @@
         el = document.createElement('lethean-product-link-page');
       } else if (page === 'product-analytics') {
         el = document.createElement('lethean-product-analytics-page');
+      } else if (page === 'product-notify') {
+        el = document.createElement('lethean-product-notify-page');
+      } else if (page === 'product-social') {
+        el = document.createElement('lethean-product-social-page');
+      } else if (page === 'product-trust') {
+        el = document.createElement('lethean-product-trust-page');
+      } else if (page === 'product-mail') {
+        el = document.createElement('lethean-product-mail-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
