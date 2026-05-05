@@ -101,6 +101,7 @@ import './elements/showcase/lethean-android-splash';
 import './elements/showcase/lethean-icon-showcase';
 import './elements/pages/lethean-splash-page';
 import './elements/pages/lethean-pricing-page';
+import './elements/pages/lethean-mobile-checkout-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

@@ -94,6 +94,7 @@
         <lethean-nav-item icon="wand-magic-sparkles" label="Ask Vi" k="⌘ K" data-page="askvi"></lethean-nav-item>
         <lethean-nav-item icon="mobile-screen" label="Splash" k="G S" data-page="splash"></lethean-nav-item>
         <lethean-nav-item icon="tags" label="Pricing" k="G $" data-page="pricing"></lethean-nav-item>
+        <lethean-nav-item icon="basket-shopping" label="Mobile checkout" k="G #" data-page="mobile-checkout"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -336,6 +337,7 @@
       askvi: 'Ask Vi',
       splash: 'Splash screens · app icons',
       pricing: 'Pricing',
+      'mobile-checkout': 'Mobile checkout',
     };
 
     function showPage(page) {
@@ -362,6 +364,8 @@
         el = document.createElement('lethean-splash-page');
       } else if (page === 'pricing') {
         el = document.createElement('lethean-pricing-page');
+      } else if (page === 'mobile-checkout') {
+        el = document.createElement('lethean-mobile-checkout-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
