@@ -55,6 +55,8 @@ import './elements/marketing/lethean-mkt-hero';
 import './elements/marketing/lethean-mkt-section';
 import './elements/marketing/lethean-mkt-cta';
 import './elements/marketing/lethean-mkt-nav';
+import './elements/marketing/lethean-mkt-products-mega';
+import './elements/marketing/lethean-mkt-solutions-mega';
 import './elements/marketing/lethean-mkt-footer';
 import './elements/marketing/lethean-products-grid';
 
@@ -85,6 +87,7 @@ import './elements/pages/lethean-today-page';
 import './elements/pages/lethean-stub-page';
 import './elements/pages/lethean-library-page';
 import './elements/pages/lethean-animation-page';
+import './elements/pages/lethean-marketing-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
