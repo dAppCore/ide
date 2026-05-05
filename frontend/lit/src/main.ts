@@ -50,6 +50,9 @@ import './elements/vi/lethean-prov-timeline';
 import './elements/vi/lethean-checklist-item';
 import './elements/vi/lethean-first-win';
 import './elements/vi/lethean-onboarding-chat';
+import './elements/vi/lethean-ask-vi';
+import './elements/vi/lethean-ask-vi-composer';
+import './elements/vi/lethean-ask-vi-answer';
 
 // Marketing primitives
 import './elements/marketing/lethean-mkt-hero';
@@ -90,6 +93,7 @@ import './elements/pages/lethean-library-page';
 import './elements/pages/lethean-animation-page';
 import './elements/pages/lethean-marketing-page';
 import './elements/pages/lethean-onboarding-page';
+import './elements/pages/lethean-ask-vi-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

@@ -91,6 +91,7 @@
         <lethean-nav-item icon="film" label="Animation" k="G N" data-page="animation"></lethean-nav-item>
         <lethean-nav-item icon="bullhorn" label="Marketing" k="G M" data-page="marketing"></lethean-nav-item>
         <lethean-nav-item icon="comments" label="Onboarding" k="G O" data-page="onboarding"></lethean-nav-item>
+        <lethean-nav-item icon="wand-magic-sparkles" label="Ask Vi" k="⌘ K" data-page="askvi"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -330,6 +331,7 @@
       animation: 'Animation engine',
       marketing: 'Marketing nav demo',
       onboarding: 'Onboarding chat',
+      askvi: 'Ask Vi',
     };
 
     function showPage(page) {
@@ -350,6 +352,8 @@
         el = document.createElement('lethean-marketing-page');
       } else if (page === 'onboarding') {
         el = document.createElement('lethean-onboarding-page');
+      } else if (page === 'askvi') {
+        el = document.createElement('lethean-ask-vi-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
