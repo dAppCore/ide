@@ -1,4 +1,4 @@
-import { LitElement, html, svg } from 'lit';
+import { LitElement, css, html, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 const CHEVRON_DOWN = svg`
@@ -18,6 +18,19 @@ type SidebarLayout = 'default' | 'vi-spine';
 
 @customElement('lethean-sidebar')
 export class LetheanSidebar extends LitElement {
+  static styles = css`
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    aside {
+      flex: 1;
+      min-height: 0;
+    }
+  `;
+
   @property() workspace = '';
   @property() plan = '';
   @property({ attribute: 'workspace-initials' }) workspaceInitials = '';
