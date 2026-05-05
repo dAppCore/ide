@@ -114,6 +114,9 @@
         <lethean-nav-item icon="microchip" label="Landing · Lethean" data-page="landing-lethean"></lethean-nav-item>
         <lethean-nav-item icon="palette" label="Landing · OFM" data-page="landing-ofm"></lethean-nav-item>
         <lethean-nav-item icon="terminal" label="Landing · lthn.ai" data-page="landing-lthn"></lethean-nav-item>
+        <lethean-nav-item icon="server" label="Product · Hosting" data-page="product-hosting"></lethean-nav-item>
+        <lethean-nav-item icon="link" label="Product · Link" data-page="product-link"></lethean-nav-item>
+        <lethean-nav-item icon="chart-line" label="Product · Analytics" data-page="product-analytics"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -376,6 +379,9 @@
       'landing-lethean': 'Landing — lthn.ai',
       'landing-ofm': 'Landing — ofm.app',
       'landing-lthn': 'Landing — lthn.ai (technical)',
+      'product-hosting': 'Product — Hosting',
+      'product-link': 'Product — Host Link',
+      'product-analytics': 'Product — Host Analytics',
     };
 
     function showPage(page) {
@@ -445,6 +451,12 @@
         el.brand = 'ofm';
       } else if (page === 'landing-lthn') {
         el = document.createElement('lethean-lthn-landing-page');
+      } else if (page === 'product-hosting') {
+        el = document.createElement('lethean-product-hosting-page');
+      } else if (page === 'product-link') {
+        el = document.createElement('lethean-product-link-page');
+      } else if (page === 'product-analytics') {
+        el = document.createElement('lethean-product-analytics-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
