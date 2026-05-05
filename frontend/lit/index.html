@@ -104,6 +104,7 @@
         <lethean-nav-item icon="magnifying-glass" label="Help search" data-page="help-search"></lethean-nav-item>
         <lethean-nav-item icon="newspaper" label="Blog" data-page="blog"></lethean-nav-item>
         <lethean-nav-item icon="code-branch" label="Changelog" data-page="changelog"></lethean-nav-item>
+        <lethean-nav-item icon="envelope" label="Emails" data-page="emails"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -356,6 +357,7 @@
       'help-search': 'Help search',
       blog: 'Blog',
       changelog: 'Changelog',
+      emails: 'Transactional emails',
     };
 
     function showPage(page) {
@@ -402,6 +404,8 @@
         el = document.createElement('lethean-blog-page');
       } else if (page === 'changelog') {
         el = document.createElement('lethean-changelog-page');
+      } else if (page === 'emails') {
+        el = document.createElement('lethean-emails-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
