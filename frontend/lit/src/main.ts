@@ -34,6 +34,16 @@ import './elements/forms/lethean-select';
 import './elements/forms/lethean-radio-group';
 import './elements/forms/lethean-number-stepper';
 import './elements/forms/lethean-color-picker';
+import './elements/forms/lethean-tweaks-panel';
+import './elements/forms/lethean-tweak-section';
+import './elements/forms/lethean-tweak-slider';
+import './elements/forms/lethean-tweak-toggle';
+import './elements/forms/lethean-tweak-radio';
+import './elements/forms/lethean-tweak-select';
+import './elements/forms/lethean-tweak-text';
+import './elements/forms/lethean-tweak-number';
+import './elements/forms/lethean-tweak-color';
+import './elements/forms/lethean-tweak-button';
 
 // Feedback
 import './elements/feedback/lethean-dialog';
@@ -102,6 +112,7 @@ import './elements/showcase/lethean-icon-showcase';
 import './elements/pages/lethean-splash-page';
 import './elements/pages/lethean-pricing-page';
 import './elements/pages/lethean-mobile-checkout-page';
+import './elements/pages/lethean-tweaks-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
