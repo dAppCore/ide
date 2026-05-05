@@ -113,6 +113,7 @@
         <lethean-nav-item icon="house-flag" label="Landing · Host UK" data-page="landing-hostuk"></lethean-nav-item>
         <lethean-nav-item icon="microchip" label="Landing · Lethean" data-page="landing-lethean"></lethean-nav-item>
         <lethean-nav-item icon="palette" label="Landing · OFM" data-page="landing-ofm"></lethean-nav-item>
+        <lethean-nav-item icon="terminal" label="Landing · lthn.ai" data-page="landing-lthn"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -374,6 +375,7 @@
       'landing-hostuk': 'Landing — host.uk.com',
       'landing-lethean': 'Landing — lthn.ai',
       'landing-ofm': 'Landing — ofm.app',
+      'landing-lthn': 'Landing — lthn.ai (technical)',
     };
 
     function showPage(page) {
@@ -441,6 +443,8 @@
       } else if (page === 'landing-ofm') {
         el = document.createElement('lethean-host-landing-page');
         el.brand = 'ofm';
+      } else if (page === 'landing-lthn') {
+        el = document.createElement('lethean-lthn-landing-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
