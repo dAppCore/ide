@@ -99,6 +99,11 @@
         <lethean-nav-item icon="wave-pulse" label="Status page" k="G !" data-page="status-page"></lethean-nav-item>
         <lethean-nav-item icon="circle-exclamation" label="Error states" k="G ?" data-page="error-states"></lethean-nav-item>
         <lethean-nav-item icon="rocket" label="Provisioning" k="G *" data-page="provisioning"></lethean-nav-item>
+        <lethean-nav-item icon="circle-question" label="Help home" data-page="help"></lethean-nav-item>
+        <lethean-nav-item icon="book-open" label="Help article" data-page="help-article"></lethean-nav-item>
+        <lethean-nav-item icon="magnifying-glass" label="Help search" data-page="help-search"></lethean-nav-item>
+        <lethean-nav-item icon="newspaper" label="Blog" data-page="blog"></lethean-nav-item>
+        <lethean-nav-item icon="code-branch" label="Changelog" data-page="changelog"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -346,6 +351,11 @@
       'status-page': 'Status page',
       'error-states': 'Error states',
       provisioning: 'Provisioning',
+      help: 'Help centre',
+      'help-article': 'Help article',
+      'help-search': 'Help search',
+      blog: 'Blog',
+      changelog: 'Changelog',
     };
 
     function showPage(page) {
@@ -382,6 +392,16 @@
         el = document.createElement('lethean-error-states-page');
       } else if (page === 'provisioning') {
         el = document.createElement('lethean-provisioning-page');
+      } else if (page === 'help') {
+        el = document.createElement('lethean-help-page');
+      } else if (page === 'help-article') {
+        el = document.createElement('lethean-help-article-page');
+      } else if (page === 'help-search') {
+        el = document.createElement('lethean-help-search-page');
+      } else if (page === 'blog') {
+        el = document.createElement('lethean-blog-page');
+      } else if (page === 'changelog') {
+        el = document.createElement('lethean-changelog-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
