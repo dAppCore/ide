@@ -43,7 +43,7 @@ export class LetheanSidebar extends LitElement {
       >
         ${isViSpine ? this.renderViPresence() : this.renderWorkspaceSwitcher()}
 
-        <div style="flex: 1; overflow: auto; padding: ${isViSpine ? '4px 0 14px' : '8px 4px'};">
+        <div style="flex: 1; min-height: 0; overflow: hidden auto; padding: ${isViSpine ? '4px 0 14px' : '8px 4px'};">
           <slot></slot>
         </div>
 
