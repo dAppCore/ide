@@ -130,6 +130,7 @@ import './elements/pages/lethean-emails-page';
 import './elements/pages/lethean-cart-page';
 import './elements/pages/lethean-checkout-page';
 import './elements/pages/lethean-confirm-page';
+import './elements/pages/lethean-dashboard-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

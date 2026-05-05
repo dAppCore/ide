@@ -108,6 +108,7 @@
         <lethean-nav-item icon="cart-shopping" label="Cart" data-page="cart"></lethean-nav-item>
         <lethean-nav-item icon="credit-card" label="Checkout" data-page="checkout"></lethean-nav-item>
         <lethean-nav-item icon="circle-check" label="Confirm" data-page="confirm"></lethean-nav-item>
+        <lethean-nav-item icon="gauge" label="Dashboard" data-page="dashboard"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -364,6 +365,7 @@
       cart: 'Cart',
       checkout: 'Checkout',
       confirm: 'Confirmation',
+      dashboard: 'Account dashboard',
     };
 
     function showPage(page) {
@@ -418,6 +420,8 @@
         el = document.createElement('lethean-checkout-page');
       } else if (page === 'confirm') {
         el = document.createElement('lethean-confirm-page');
+      } else if (page === 'dashboard') {
+        el = document.createElement('lethean-dashboard-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
