@@ -98,6 +98,7 @@
         <lethean-nav-item icon="sliders" label="Tweaks panel" k="G ~" data-page="tweaks"></lethean-nav-item>
         <lethean-nav-item icon="wave-pulse" label="Status page" k="G !" data-page="status-page"></lethean-nav-item>
         <lethean-nav-item icon="circle-exclamation" label="Error states" k="G ?" data-page="error-states"></lethean-nav-item>
+        <lethean-nav-item icon="rocket" label="Provisioning" k="G *" data-page="provisioning"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -344,6 +345,7 @@
       tweaks: 'Tweaks panel',
       'status-page': 'Status page',
       'error-states': 'Error states',
+      provisioning: 'Provisioning',
     };
 
     function showPage(page) {
@@ -378,6 +380,8 @@
         el = document.createElement('lethean-status-page');
       } else if (page === 'error-states') {
         el = document.createElement('lethean-error-states-page');
+      } else if (page === 'provisioning') {
+        el = document.createElement('lethean-provisioning-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];

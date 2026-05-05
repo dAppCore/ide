@@ -60,6 +60,7 @@ import './elements/vi/lethean-prov-timeline';
 import './elements/vi/lethean-checklist-item';
 import './elements/vi/lethean-first-win';
 import './elements/vi/lethean-onboarding-chat';
+import './elements/vi/lethean-provisioning-scene';
 import './elements/vi/lethean-ask-vi';
 import './elements/vi/lethean-ask-vi-composer';
 import './elements/vi/lethean-ask-vi-answer';
@@ -116,6 +117,7 @@ import './elements/pages/lethean-mobile-checkout-page';
 import './elements/pages/lethean-tweaks-page';
 import './elements/pages/lethean-status-page';
 import './elements/pages/lethean-error-states-page';
+import './elements/pages/lethean-provisioning-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
