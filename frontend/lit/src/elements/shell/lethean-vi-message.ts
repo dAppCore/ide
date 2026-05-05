@@ -1,6 +1,8 @@
 import { LitElement, html, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
+import '../atoms/lethean-vi';
+
 const FEATHER = svg`
   <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
     <path d="M11 2 C 7 2 4 5 4 9 L 4 13 L 11 6 Z M 4 13 L 8 9 M 6 11 L 9 11 M 5 12 L 7 12"
@@ -9,37 +11,53 @@ const FEATHER = svg`
 `;
 
 type Who = 'vi' | 'you';
+type Size = 'compact' | 'chat';
 
 @customElement('lethean-vi-message')
 export class LetheanViMessage extends LitElement {
   @property() who: Who = 'vi';
   @property() initials = 'SM';
+  /**
+   * `compact` (default) — 24px avatar with feather glyph; for the shell
+   * Vi-panel side-feed.
+   * `chat`             — 30px avatar with the Vi mascot; for onboarding
+   * + ask-vi conversational surfaces (matches onboarding.jsx > ChatVi).
+   */
+  @property() size: Size = 'compact';
 
   render() {
     const isVi = this.who === 'vi';
+    const isChat = this.size === 'chat';
+    const avatarSize = isChat ? 30 : 24;
+    const avatarRadius = isChat ? 8 : 6;
+    const bubblePad = isChat ? '14px 16px' : '10px 12px';
+    const bubbleRadius = isChat ? 12 : 10;
+    const fontSize = isChat ? 14 : 13;
+    const lineHeight = isChat ? 1.55 : 1.5;
+    const maxBubble = isChat ? '100%' : '82%';
     return html`
       <div
         style="
           display: flex;
-          gap: 10px;
+          gap: 12px;
           flex-direction: ${isVi ? 'row' : 'row-reverse'};
         "
       >
-        ${isVi ? this.renderViAvatar() : this.renderYouAvatar()}
+        ${isVi ? this.renderViAvatar(avatarSize, avatarRadius, isChat) : this.renderYouAvatar(avatarSize, avatarRadius)}
         <div
           style="
-            max-width: 82%;
+            ${isVi ? `flex: 1; max-width: ${maxBubble};` : `max-width: 80%;`}
             background: ${isVi
               ? 'var(--ink-2)'
               : 'color-mix(in oklch, var(--brand-500) 14%, var(--ink-2))'};
             border: 1px solid ${isVi
               ? 'var(--line-1)'
               : 'color-mix(in oklch, var(--brand-500) 25%, var(--line-2))'};
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 13px;
-            color: var(--fg-1);
-            line-height: 1.5;
+            border-radius: ${bubbleRadius}px;
+            padding: ${bubblePad};
+            font-size: ${fontSize}px;
+            color: ${isVi ? 'var(--fg-1)' : 'var(--fg-0)'};
+            line-height: ${lineHeight};
           "
         >
           <slot></slot>
@@ -48,32 +66,36 @@ export class LetheanViMessage extends LitElement {
     `;
   }
 
-  private renderViAvatar() {
+  private renderViAvatar(size: number, radius: number, useMascot: boolean) {
     return html`
       <div
         style="
-          width: 24px; height: 24px; border-radius: 6px;
+          width: ${size}px; height: ${size}px; border-radius: ${radius}px;
           background: color-mix(in oklch, var(--brand-500) 22%, var(--ink-3));
           border: 1px solid color-mix(in oklch, var(--brand-500) 35%, var(--line-2));
           flex-shrink: 0;
           display: grid; place-items: center;
           color: var(--brand-200);
+          overflow: hidden;
         "
       >
-        ${FEATHER}
+        ${useMascot
+          ? html`<lethean-vi pose="master" size=${String(size + 6)} style="margin-top: 4px;"></lethean-vi>`
+          : FEATHER}
       </div>
     `;
   }
 
-  private renderYouAvatar() {
+  private renderYouAvatar(size: number, radius: number) {
+    const fontSize = size >= 30 ? 11 : 9.5;
     return html`
       <div
         style="
-          width: 24px; height: 24px; border-radius: 6px;
+          width: ${size}px; height: ${size}px; border-radius: ${radius}px;
           background: var(--ink-3);
           border: 1px solid var(--line-2);
           display: grid; place-items: center;
-          font-size: 9.5px; font-weight: 600;
+          font-size: ${fontSize}px; font-weight: 600;
           color: var(--fg-2);
           flex-shrink: 0;
         "

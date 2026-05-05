@@ -90,6 +90,7 @@
         <lethean-nav-item icon="cubes" label="Library" k="G C" data-page="library"></lethean-nav-item>
         <lethean-nav-item icon="film" label="Animation" k="G N" data-page="animation"></lethean-nav-item>
         <lethean-nav-item icon="bullhorn" label="Marketing" k="G M" data-page="marketing"></lethean-nav-item>
+        <lethean-nav-item icon="comments" label="Onboarding" k="G O" data-page="onboarding"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -328,6 +329,7 @@
       library: 'Component library',
       animation: 'Animation engine',
       marketing: 'Marketing nav demo',
+      onboarding: 'Onboarding chat',
     };
 
     function showPage(page) {
@@ -346,6 +348,8 @@
         el = document.createElement('lethean-animation-page');
       } else if (page === 'marketing') {
         el = document.createElement('lethean-marketing-page');
+      } else if (page === 'onboarding') {
+        el = document.createElement('lethean-onboarding-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
