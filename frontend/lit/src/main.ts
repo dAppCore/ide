@@ -135,6 +135,7 @@ import './elements/showcase/lethean-dc-section';
 import './elements/showcase/lethean-dc-artboard-frame';
 import './elements/showcase/lethean-dc-post-it';
 import './elements/pages/lethean-design-canvas-page';
+import './elements/pages/lethean-host-landing-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
