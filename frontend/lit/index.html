@@ -92,6 +92,7 @@
         <lethean-nav-item icon="bullhorn" label="Marketing" k="G M" data-page="marketing"></lethean-nav-item>
         <lethean-nav-item icon="comments" label="Onboarding" k="G O" data-page="onboarding"></lethean-nav-item>
         <lethean-nav-item icon="wand-magic-sparkles" label="Ask Vi" k="⌘ K" data-page="askvi"></lethean-nav-item>
+        <lethean-nav-item icon="mobile-screen" label="Splash" k="G S" data-page="splash"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -332,6 +333,7 @@
       marketing: 'Marketing nav demo',
       onboarding: 'Onboarding chat',
       askvi: 'Ask Vi',
+      splash: 'Splash screens · app icons',
     };
 
     function showPage(page) {
@@ -354,6 +356,8 @@
         el = document.createElement('lethean-onboarding-page');
       } else if (page === 'askvi') {
         el = document.createElement('lethean-ask-vi-page');
+      } else if (page === 'splash') {
+        el = document.createElement('lethean-splash-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];

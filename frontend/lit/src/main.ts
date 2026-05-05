@@ -94,6 +94,11 @@ import './elements/pages/lethean-animation-page';
 import './elements/pages/lethean-marketing-page';
 import './elements/pages/lethean-onboarding-page';
 import './elements/pages/lethean-ask-vi-page';
+import './elements/showcase/lethean-app-icon-eye';
+import './elements/showcase/lethean-ios-splash';
+import './elements/showcase/lethean-android-splash';
+import './elements/showcase/lethean-icon-showcase';
+import './elements/pages/lethean-splash-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
