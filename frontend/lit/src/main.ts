@@ -85,6 +85,7 @@ import './elements/commerce/lethean-plan-card';
 
 // More feedback
 import './elements/feedback/lethean-error-page';
+import './elements/feedback/lethean-error-card';
 import './elements/feedback/lethean-uptime-strip';
 
 // Animation engine (Stage / Sprite / Easing — ported from
@@ -113,6 +114,8 @@ import './elements/pages/lethean-splash-page';
 import './elements/pages/lethean-pricing-page';
 import './elements/pages/lethean-mobile-checkout-page';
 import './elements/pages/lethean-tweaks-page';
+import './elements/pages/lethean-status-page';
+import './elements/pages/lethean-error-states-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

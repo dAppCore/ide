@@ -96,6 +96,8 @@
         <lethean-nav-item icon="tags" label="Pricing" k="G $" data-page="pricing"></lethean-nav-item>
         <lethean-nav-item icon="basket-shopping" label="Mobile checkout" k="G #" data-page="mobile-checkout"></lethean-nav-item>
         <lethean-nav-item icon="sliders" label="Tweaks panel" k="G ~" data-page="tweaks"></lethean-nav-item>
+        <lethean-nav-item icon="wave-pulse" label="Status page" k="G !" data-page="status-page"></lethean-nav-item>
+        <lethean-nav-item icon="circle-exclamation" label="Error states" k="G ?" data-page="error-states"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -340,6 +342,8 @@
       pricing: 'Pricing',
       'mobile-checkout': 'Mobile checkout',
       tweaks: 'Tweaks panel',
+      'status-page': 'Status page',
+      'error-states': 'Error states',
     };
 
     function showPage(page) {
@@ -370,6 +374,10 @@
         el = document.createElement('lethean-mobile-checkout-page');
       } else if (page === 'tweaks') {
         el = document.createElement('lethean-tweaks-page');
+      } else if (page === 'status-page') {
+        el = document.createElement('lethean-status-page');
+      } else if (page === 'error-states') {
+        el = document.createElement('lethean-error-states-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
