@@ -122,6 +122,7 @@
         <lethean-nav-item icon="shield-check" label="Product · Trust" data-page="product-trust"></lethean-nav-item>
         <lethean-nav-item icon="envelope" label="Product · Mail" data-page="product-mail"></lethean-nav-item>
         <lethean-nav-item icon="house" label="Control panel" data-page="control-panel"></lethean-nav-item>
+        <lethean-nav-item icon="display" label="Native shells" data-page="native-shells"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -392,6 +393,7 @@
       'product-trust': 'Product — Host Trust',
       'product-mail': 'Product — Host Mail',
       'control-panel': 'Control panel — host.uk.com',
+      'native-shells': 'Native shells — desktop / iOS / web',
     };
 
     function showPage(page) {
@@ -477,6 +479,8 @@
         el = document.createElement('lethean-product-mail-page');
       } else if (page === 'control-panel') {
         el = document.createElement('lethean-control-panel-page');
+      } else if (page === 'native-shells') {
+        el = document.createElement('lethean-native-shells-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];

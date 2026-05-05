@@ -145,6 +145,7 @@ import './elements/pages/lethean-product-social-page';
 import './elements/pages/lethean-product-trust-page';
 import './elements/pages/lethean-product-mail-page';
 import './elements/pages/lethean-control-panel-page';
+import './elements/pages/lethean-native-shells-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
