@@ -88,6 +88,7 @@
 
       <lethean-nav-group label="Build">
         <lethean-nav-item icon="cubes" label="Library" k="G C" data-page="library"></lethean-nav-item>
+        <lethean-nav-item icon="film" label="Animation" k="G N" data-page="animation"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -324,6 +325,7 @@
       billing: 'Billing',
       team: 'Team',
       library: 'Component library',
+      animation: 'Animation engine',
     };
 
     function showPage(page) {
@@ -338,6 +340,8 @@
         el = document.createElement('lethean-account-page');
       } else if (page === 'library') {
         el = document.createElement('lethean-library-page');
+      } else if (page === 'animation') {
+        el = document.createElement('lethean-animation-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];

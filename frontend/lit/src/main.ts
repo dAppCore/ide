@@ -70,11 +70,21 @@ import './elements/commerce/lethean-email-template';
 import './elements/feedback/lethean-error-page';
 import './elements/feedback/lethean-uptime-strip';
 
+// Animation engine (Stage / Sprite / Easing — ported from
+// design/lethean-3/animations.jsx). Stage transitively imports the
+// playback bar; sprites are imported by the demo page.
+import './elements/animation/lethean-stage';
+import './elements/animation/lethean-sprite';
+import './elements/animation/lethean-text-sprite';
+import './elements/animation/lethean-image-sprite';
+import './elements/animation/lethean-rect-sprite';
+
 // Pages — content that mounts inside the shell
 import './elements/pages/lethean-account-page';
 import './elements/pages/lethean-today-page';
 import './elements/pages/lethean-stub-page';
 import './elements/pages/lethean-library-page';
+import './elements/pages/lethean-animation-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';
