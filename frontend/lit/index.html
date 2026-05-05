@@ -123,6 +123,7 @@
         <lethean-nav-item icon="envelope" label="Product · Mail" data-page="product-mail"></lethean-nav-item>
         <lethean-nav-item icon="house" label="Control panel" data-page="control-panel"></lethean-nav-item>
         <lethean-nav-item icon="display" label="Native shells" data-page="native-shells"></lethean-nav-item>
+        <lethean-nav-item icon="layer-group" label="Native profiles" data-page="native-profiles"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -394,6 +395,7 @@
       'product-mail': 'Product — Host Mail',
       'control-panel': 'Control panel — host.uk.com',
       'native-shells': 'Native shells — desktop / iOS / web',
+      'native-profiles': 'Native profiles — design canon',
     };
 
     function showPage(page) {
@@ -481,6 +483,8 @@
         el = document.createElement('lethean-control-panel-page');
       } else if (page === 'native-shells') {
         el = document.createElement('lethean-native-shells-page');
+      } else if (page === 'native-profiles') {
+        el = document.createElement('lethean-native-profiles-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
