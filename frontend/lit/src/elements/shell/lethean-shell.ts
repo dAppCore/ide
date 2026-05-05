@@ -50,7 +50,7 @@ export class LetheanShell extends LitElement {
               display: flex;
               flex-direction: column;
               background: var(--ink-1);
-              overflow: hidden;
+              overflow: hidden auto;
               min-width: 0;
             "
           >
