@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en" data-brand="lethean">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>core/ide — Lethean-3 Lit shell</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/lethean-3/tokens.css">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100vh;
+      width: 100vw;
+      background: #1a1620;
+      color: var(--fg-1, #e5e5ee);
+      font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro", "Inter", sans-serif);
+      overflow: hidden;
+    }
+    body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    lethean-shell {
+      width: 100%;
+      height: 100%;
+      max-width: 1600px;
+      max-height: 1000px;
+    }
+
+    /* Responsive — same rules as a webapp; each Wails window is its own document */
+    @media (max-width: 1024px) {
+      lethean-vi-panel { display: none !important; }
+      .sites-row { grid-template-columns: 1.4fr 80px 80px 90px !important; }
+      .sites-row > div:nth-child(2) { display: none; } /* hide STACK column */
+      .sites-row > div:nth-child(6) { display: none; } /* hide WARN column */
+    }
+    @media (max-width: 768px) {
+      body { padding: 0; }
+      lethean-shell { border-radius: 0; max-width: none; max-height: none; }
+      .sites-row { grid-template-columns: 1fr 70px 70px !important; }
+      .sites-row > div:nth-child(5) { display: none; } /* hide DEPLOY column */
+    }
+  </style>
+</head>
+<body>
+  <lethean-shell brand="lethean" platform="darwin">
+    <lethean-titlebar
+      slot="titlebar"
+      user="Sam Mooney"
+      brand-label="Lethean"
+      title="Control Panel"
+    >
+      <lethean-mac-segmented
+        slot="segmented"
+        id="page-segmented"
+      ></lethean-mac-segmented>
+      <lethean-mac-tool-button slot="tools" icon="magnifying-glass" hint="Search (⌘F)"></lethean-mac-tool-button>
+      <lethean-mac-tool-button slot="tools" icon="arrow-rotate-right" hint="Refresh"></lethean-mac-tool-button>
+      <lethean-mac-tool-button slot="tools" icon="bell" hint="Notifications"></lethean-mac-tool-button>
+    </lethean-titlebar>
+
+    <lethean-sidebar
+      slot="sidebar"
+      layout="vi-spine"
+      vi-status="always on"
+      vi-status-line="Watching 3 sites · all green · 1 thing waits on you"
+    >
+      <lethean-nav-group label="Workspace">
+        <lethean-nav-item icon="house" label="Today" k="G T" data-page="today" active></lethean-nav-item>
+        <lethean-nav-item icon="globe" label="Sites" count="3" data-page="sites"></lethean-nav-item>
+        <lethean-nav-item icon="at" label="Domains" count="4" data-page="domains"></lethean-nav-item>
+        <lethean-nav-item icon="envelope" label="Mailboxes" count="5" data-page="mail"></lethean-nav-item>
+      </lethean-nav-group>
+
+      <lethean-nav-group label="Sites">
+        <lethean-nav-item dot-color="var(--success-400)" label="hookway.co.uk" data-page="sites"></lethean-nav-item>
+        <lethean-nav-item dot-color="var(--warning-400)" label="lethean.host" data-page="sites"></lethean-nav-item>
+        <lethean-nav-item dot-color="var(--success-400)" label="ofm-staging" data-page="sites"></lethean-nav-item>
+      </lethean-nav-group>
+
+      <lethean-nav-group label="Vi">
+        <lethean-nav-item icon="sparkles" label="Agent activity" k="G A" data-page="activity"></lethean-nav-item>
+        <lethean-nav-item icon="shield-halved" label="Policies" k="G P" data-page="policies"></lethean-nav-item>
+        <lethean-nav-item icon="scroll" label="Audit log" k="G L" data-page="audit"></lethean-nav-item>
+      </lethean-nav-group>
+
+      <lethean-nav-group label="Build">
+        <lethean-nav-item icon="cubes" label="Library" k="G C" data-page="library"></lethean-nav-item>
+      </lethean-nav-group>
+
+      <lethean-nav-group label="Account">
+        <lethean-nav-item icon="user" label="Account" k="," data-page="account"></lethean-nav-item>
+        <lethean-nav-item icon="receipt" label="Billing" k="G B" data-page="billing"></lethean-nav-item>
+        <lethean-nav-item icon="users" label="Team" k="G T" data-page="team"></lethean-nav-item>
+      </lethean-nav-group>
+    </lethean-sidebar>
+
+    <div id="page-host" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+      <lethean-today-page></lethean-today-page>
+    </div>
+
+    <lethean-statusbar
+      slot="statusbar"
+      vi-status="connected"
+      latency="12ms"
+      sites-watched="3 sites watched"
+      cost-line="£14.40 used this month"
+      version="0.42.7"
+      runtime="WebView2 · 124.0"
+    ></lethean-statusbar>
+  </lethean-shell>
+
+  <lethean-vi-overlay id="vi-overlay" query="renew lethean.host">
+    <lethean-vi-message who="vi">
+      <p style="margin: 0;">
+        <span style="font-family: var(--font-mono); color: var(--fg-0);">lethean.host</span>
+        renews on
+        <span style="color: var(--fg-0); font-weight: 500;">10 October</span>
+        — that's 6 days. Auto-renew is off.
+      </p>
+      <p style="margin: 8px 0 0;">
+        Renewing for 12 months at today's price is
+        <span style="font-family: var(--font-mono); color: var(--fg-0);">£18.40</span>.
+        I'll charge the Mastercard ending
+        <span style="font-family: var(--font-mono);">·· 4421</span>.
+        Confirm and I'll do it now.
+      </p>
+    </lethean-vi-message>
+
+    <div style="background: var(--ink-2); border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden;">
+      <div style="padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;">
+        <div>
+          <div style="font-size: 11px; color: var(--brand-300); font-family: var(--font-mono); letter-spacing: 0.06em; margin-bottom: 4px;">RENEWAL · 12 MONTHS</div>
+          <div style="font-size: 18px; color: var(--fg-0); letter-spacing: -0.02em; font-family: var(--font-mono); font-weight: 500;">lethean.host</div>
+          <div style="font-size: 12px; color: var(--fg-3); margin-top: 4px;">Expires 10 Oct 2025 → <span style="color: var(--fg-1);">10 Oct 2026</span></div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 24px; color: var(--fg-0); letter-spacing: -0.02em; font-family: var(--font-mono);">£18.40</div>
+          <div style="font-size: 11px; color: var(--fg-4); margin-top: 2px;">inc. VAT</div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid var(--line-1); background: var(--ink-1); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 12px; color: var(--fg-3);">Mastercard ·· 4421</div>
+        <div style="display: flex; gap: 8px;">
+          <button style="background: transparent; border: 1px solid var(--line-2); color: var(--fg-1); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer;">Set auto-renew</button>
+          <button style="background: var(--brand-500); border: 1px solid var(--brand-400); color: var(--fg-0); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer;">Confirm &amp; renew</button>
+        </div>
+      </div>
+    </div>
+  </lethean-vi-overlay>
+
+  <script type="module" src="/src/main.ts"></script>
+  <script>
+    // Wait for custom elements to upgrade
+    Promise.all([
+      customElements.whenDefined('lethean-mac-segmented'),
+      customElements.whenDefined('lethean-nav-item'),
+      customElements.whenDefined('lethean-titlebar'),
+      customElements.whenDefined('lethean-vi-overlay'),
+    ]).then(() => {
+      // Wire the Today / Sites / Activity segmented control to the active page
+      const seg = document.getElementById('page-segmented');
+      if (seg) {
+        seg.items = ['Today', 'Sites', 'Activity'];
+        seg.value = 'Today';
+        seg.addEventListener('lethean-segmented-select', (e) => {
+          const map = { Today: 'today', Sites: 'sites', Activity: 'activity' };
+          showPage(map[e.detail.value] || 'today');
+        });
+      }
+
+      // Wire sidebar navigation — clicks on nav items swap the page
+      document.querySelectorAll('lethean-nav-item').forEach((it) => {
+        it.addEventListener('lethean-nav-select', () => {
+          const page = it.dataset.page;
+          if (page) showPage(page);
+        });
+      });
+
+      // Wire ⌘K + Ask Vi pill to open overlay
+      const overlay = document.getElementById('vi-overlay');
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          if (overlay) overlay.open = true;
+        }
+      });
+      document.addEventListener('lethean-ask-vi', () => {
+        if (overlay) overlay.open = true;
+      });
+    });
+
+    // Stub-page configs — eyebrow / page title / teaser personality / fixture bullets
+    const STUBS = {
+      sites: {
+        eyebrow: 'WORKSPACE · SITES',
+        pageTitle: 'Three sites, all green.',
+        subtitle: 'Your hosted properties. Vi watches all of them — pings, certs, deploys, traffic.',
+        teaserHeading: 'Vi · always on',
+        teaserBody: 'I run the SSL renewals, scale workers under load, and tell you when something needs you. The detail of each site lives one click away — pick from the list below.',
+        primaryAction: 'Add a site',
+        secondaryAction: 'Bulk import',
+        bullets: [
+          { icon: 'globe', text: 'hookway.co.uk · Host UK · Mail · Analytics', meta: '99.998% · 114ms' },
+          { icon: 'globe', text: 'lethean.host · Lethean Core · Forge', meta: 'Renewal in 6d' },
+          { icon: 'globe', text: 'ofm-staging.host.uk.com · OFM Studio · staging', meta: '99.87% · 92ms' },
+        ],
+      },
+      domains: {
+        eyebrow: 'WORKSPACE · DOMAINS',
+        pageTitle: 'Four domains, one renewing.',
+        subtitle: 'Registrations, transfers, and renewals — Vi tracks them all and pings before things expire.',
+        teaserHeading: 'lethean.host renews 10 Oct',
+        teaserBody: 'Auto-renew is currently off. £18.40 for 12 months. I won’t act unless you tell me — open the Today brief if you want to flip it on.',
+        primaryAction: 'Register domain',
+        secondaryAction: 'Transfer in',
+        bullets: [
+          { icon: 'at', text: 'hookway.co.uk', meta: 'auto-renew · 14 Aug 2026' },
+          { icon: 'at', text: 'lethean.host', meta: 'manual · 10 Oct 2025' },
+          { icon: 'at', text: 'ofm-staging.host.uk.com', meta: 'subdomain · auto' },
+          { icon: 'at', text: 'sam.cooks', meta: 'auto-renew · 22 Jan 2026' },
+        ],
+      },
+      mail: {
+        eyebrow: 'WORKSPACE · MAILBOXES',
+        pageTitle: 'Twelve mailboxes, deliverable.',
+        subtitle: 'DKIM, SPF, DMARC pass on every domain. Vi rewrites the records the way the receiving servers actually want them.',
+        teaserHeading: 'No bounces in the last 7 days',
+        teaserBody: 'I check the DNS daily and tell you if a record drifts. If you’re moving from Gmail or Outlook, I can do the migration without you copying a single message.',
+        primaryAction: 'Add a mailbox',
+        secondaryAction: 'Import from Gmail',
+        bullets: [
+          { icon: 'envelope', text: 'sam@hookway.co.uk', meta: '4 GB / 50 GB' },
+          { icon: 'envelope', text: 'orders@hookway.co.uk', meta: '12 GB / 50 GB' },
+          { icon: 'envelope', text: 'hello@lethean.host', meta: '1 GB / 50 GB' },
+          { icon: 'envelope', text: 'sam.cooks aliases (9)', meta: 'forward only' },
+        ],
+      },
+      activity: {
+        eyebrow: 'VI · AGENT ACTIVITY',
+        pageTitle: 'Vi has been busy.',
+        subtitle: 'Every action Vi takes lands here, with the why and the rollback. Filter by site, by day, by tone.',
+        teaserHeading: '17 actions in the last 24h · 3 saved you a call',
+        teaserBody: 'I scaled hookway.co.uk, renewed three certs, drafted a renewal reminder for lethean.host (waiting on you), and sent the paid invoice acknowledgment for INV-2025-0094. The full audit chain is one click away.',
+        primaryAction: 'Filter & export',
+        secondaryAction: 'Subscribe to digest',
+        bullets: [
+          { icon: 'wave-pulse', text: 'Renewed SSL on hookway.co.uk · valid through 02 Jan 2026', meta: '09:08' },
+          { icon: 'clock', text: 'Drafted renewal reminder for lethean.host · waiting on you', meta: '06:42' },
+          { icon: 'wave-pulse', text: 'Scaled hookway.co.uk worker pool 2→4 · traffic spike', meta: '03:11' },
+        ],
+      },
+      policies: {
+        eyebrow: 'VI · POLICIES',
+        pageTitle: 'Vi knows what to ask first.',
+        subtitle: 'Per-site, per-action, per-money-amount — every limit Vi will hit before doing it on your behalf.',
+        teaserHeading: 'Default policy: ask above £25, log everything below',
+        teaserBody: 'Up to £25 of compute / cert / domain spend per day, Vi acts and reports. Above that, she drafts and waits. You can tighten or loosen per site, per category, per quiet hours.',
+        primaryAction: 'Edit defaults',
+        secondaryAction: 'Per-site overrides',
+        bullets: [
+          { icon: 'shield-halved', text: 'Daily soft-spend limit', meta: '£25' },
+          { icon: 'clock', text: 'Quiet hours (no calls / pings)', meta: '22:00 → 07:00' },
+          { icon: 'circle-check', text: 'Auto-act allowed: SSL renewal, scale-up, backup', meta: '3 categories' },
+          { icon: 'circle-exclamation', text: 'Always ask: domain renewal, plan change, refund', meta: '3 categories' },
+        ],
+      },
+      audit: {
+        eyebrow: 'VI · AUDIT LOG',
+        pageTitle: 'Every move, written down.',
+        subtitle: 'Tamper-evident chain of every Vi action. Hash-linked, exportable, GDPR-clean.',
+        teaserHeading: '184 entries this week · chain verified',
+        teaserBody: 'Each entry has a hash linking to the previous; tampering breaks the chain. You can export the last N entries as a sealed file for your accountant, your auditor, or your peace of mind.',
+        primaryAction: 'Verify chain',
+        secondaryAction: 'Export sealed',
+        bullets: [
+          { icon: 'scroll', text: 'sha256:7c2a… · SSL renewal · hookway.co.uk', meta: '09:08' },
+          { icon: 'scroll', text: 'sha256:8e91… · worker pool scale 2→4', meta: '03:11' },
+          { icon: 'scroll', text: 'sha256:1b4d… · invoice INV-2025-0094 sent', meta: 'Yesterday 09:00' },
+        ],
+      },
+      billing: {
+        eyebrow: 'YOU · BILLING',
+        pageTitle: '£14.40 used this month.',
+        subtitle: 'Plan, invoices, payment methods, GDPR data export. Everything Vi spent on your behalf rolls up here.',
+        teaserHeading: 'Standard · annual · renews 14 Mar 2027',
+        teaserBody: 'You’re on the Standard annual plan at £144/year. Auto-pay is set up against the Visa ending 4242. Three invoices waiting on download — we keep them as long as you need them.',
+        primaryAction: 'View invoices',
+        secondaryAction: 'Change plan',
+        bullets: [
+          { icon: 'receipt', text: 'INV-2025-0094 · March', meta: '£12.00 · paid' },
+          { icon: 'receipt', text: 'INV-2025-0072 · February', meta: '£12.00 · paid' },
+          { icon: 'receipt', text: 'INV-2025-0049 · January', meta: '£12.00 · paid' },
+        ],
+      },
+      team: {
+        eyebrow: 'YOU · TEAM',
+        pageTitle: 'Just you. Add people anytime.',
+        subtitle: 'Up to 5 seats on Standard. Roles, per-site permissions, audit-log scoped per member.',
+        teaserHeading: 'Vi runs the team rota too',
+        teaserBody: 'When you add a teammate, Vi tells them what she’s already done and what’s waiting. Hand-off should be a paragraph, not a meeting.',
+        primaryAction: 'Invite a teammate',
+        secondaryAction: 'Manage roles',
+        bullets: [
+          { icon: 'user', text: 'Sam Mooney · you', meta: 'owner' },
+          { icon: 'user-plus', text: 'Slot 2 · empty', meta: 'invite' },
+          { icon: 'user-plus', text: 'Slot 3 · empty', meta: 'invite' },
+          { icon: 'user-plus', text: 'Slots 4 / 5 · empty', meta: '+ £2/seat above 5' },
+        ],
+      },
+    };
+
+    const TITLES = {
+      today: 'Control Panel',
+      account: 'Account',
+      sites: 'Sites',
+      domains: 'Domains',
+      mail: 'Mailboxes',
+      activity: 'Agent activity',
+      policies: 'Policies',
+      audit: 'Audit log',
+      billing: 'Billing',
+      team: 'Team',
+      library: 'Component library',
+    };
+
+    function showPage(page) {
+      const host = document.getElementById('page-host');
+      if (!host) return;
+      host.innerHTML = '';
+
+      let el;
+      if (page === 'today') {
+        el = document.createElement('lethean-today-page');
+      } else if (page === 'account') {
+        el = document.createElement('lethean-account-page');
+      } else if (page === 'library') {
+        el = document.createElement('lethean-library-page');
+      } else if (STUBS[page]) {
+        el = document.createElement('lethean-stub-page');
+        const cfg = STUBS[page];
+        el.eyebrow = cfg.eyebrow;
+        el.pageTitle = cfg.pageTitle;
+        el.subtitle = cfg.subtitle;
+        el.teaserHeading = cfg.teaserHeading;
+        el.teaserBody = cfg.teaserBody;
+        el.primaryAction = cfg.primaryAction || '';
+        el.secondaryAction = cfg.secondaryAction || '';
+        el.bullets = cfg.bullets || [];
+      } else {
+        el = document.createElement('lethean-today-page');
+        page = 'today';
+      }
+      host.appendChild(el);
+
+      // Sync titlebar title
+      const tb = document.querySelector('lethean-titlebar');
+      if (tb) tb.title = TITLES[page] || page.charAt(0).toUpperCase() + page.slice(1);
+
+      // Sync sidebar active state
+      document.querySelectorAll('lethean-nav-item').forEach((it) => {
+        it.active = it.dataset.page === page;
+      });
+
+      // Sync segmented — set to current page if top-3, clear otherwise
+      const seg = document.getElementById('page-segmented');
+      if (seg) {
+        const segMap = { today: 'Today', sites: 'Sites', activity: 'Activity' };
+        seg.value = segMap[page] || '';
+      }
+    }
+  </script>
+</body>
+</html>
