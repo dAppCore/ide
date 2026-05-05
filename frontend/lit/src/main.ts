@@ -84,6 +84,7 @@ import './elements/commerce/lethean-payment-method-card';
 import './elements/commerce/lethean-email-template';
 import './elements/commerce/lethean-plan-card';
 import './elements/commerce/lethean-email-frame';
+import './elements/commerce/lethean-order-topbar';
 
 // More feedback
 import './elements/feedback/lethean-error-page';
@@ -126,6 +127,9 @@ import './elements/pages/lethean-help-search-page';
 import './elements/pages/lethean-blog-page';
 import './elements/pages/lethean-changelog-page';
 import './elements/pages/lethean-emails-page';
+import './elements/pages/lethean-cart-page';
+import './elements/pages/lethean-checkout-page';
+import './elements/pages/lethean-confirm-page';
 
 // Legacy monolith — kept for parity, will be removed once tabbed/multi-page demo lands
 import './elements/lethean-desktop';

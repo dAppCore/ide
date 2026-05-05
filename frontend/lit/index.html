@@ -105,6 +105,9 @@
         <lethean-nav-item icon="newspaper" label="Blog" data-page="blog"></lethean-nav-item>
         <lethean-nav-item icon="code-branch" label="Changelog" data-page="changelog"></lethean-nav-item>
         <lethean-nav-item icon="envelope" label="Emails" data-page="emails"></lethean-nav-item>
+        <lethean-nav-item icon="cart-shopping" label="Cart" data-page="cart"></lethean-nav-item>
+        <lethean-nav-item icon="credit-card" label="Checkout" data-page="checkout"></lethean-nav-item>
+        <lethean-nav-item icon="circle-check" label="Confirm" data-page="confirm"></lethean-nav-item>
       </lethean-nav-group>
 
       <lethean-nav-group label="Account">
@@ -358,6 +361,9 @@
       blog: 'Blog',
       changelog: 'Changelog',
       emails: 'Transactional emails',
+      cart: 'Cart',
+      checkout: 'Checkout',
+      confirm: 'Confirmation',
     };
 
     function showPage(page) {
@@ -406,6 +412,12 @@
         el = document.createElement('lethean-changelog-page');
       } else if (page === 'emails') {
         el = document.createElement('lethean-emails-page');
+      } else if (page === 'cart') {
+        el = document.createElement('lethean-cart-page');
+      } else if (page === 'checkout') {
+        el = document.createElement('lethean-checkout-page');
+      } else if (page === 'confirm') {
+        el = document.createElement('lethean-confirm-page');
       } else if (STUBS[page]) {
         el = document.createElement('lethean-stub-page');
         const cfg = STUBS[page];
