@@ -117,7 +117,7 @@ func cacheGetCollection(collection string) (lastScan time.Time, items []json.Raw
 		return time.Time{}, nil, false
 	}
 
-	rows, err := db.Query(`SELECT CAST(data AS VARCHAR) FROM cache_kv WHERE collection = ? ORDER BY refreshed_at DESC`, collection)
+	rows, err := db.Query(`SELECT data FROM cache_kv WHERE collection = ? ORDER BY refreshed_at DESC`, collection)
 	if err != nil {
 		return ls, nil, false
 	}
@@ -125,11 +125,17 @@ func cacheGetCollection(collection string) (lastScan time.Time, items []json.Raw
 
 	out := make([]json.RawMessage, 0, 64)
 	for rows.Next() {
-		var raw string
-		if err := rows.Scan(&raw); err != nil {
+		// DuckDB's JSON column scans as map[string]any; round-trip via
+		// json.Marshal back into raw bytes.
+		var v any
+		if err := rows.Scan(&v); err != nil {
 			continue
 		}
-		out = append(out, json.RawMessage(raw))
+		blob, err := json.Marshal(v)
+		if err != nil {
+			continue
+		}
+		out = append(out, json.RawMessage(blob))
 	}
 	return ls, out, true
 }
@@ -298,8 +304,8 @@ func (b *MCPBridge) toolCacheStatus(_ context.Context, _ map[string]any) map[str
 	}
 }
 
-// toolCacheDebug — temp diagnostic. Returns raw cacheAge + first row's
-// scan result for the requested collection.
+// toolCacheDebug — diagnostic. Returns raw row counts + last-scan
+// timestamp for a collection. Useful when cache misses look wrong.
 func (b *MCPBridge) toolCacheDebug(_ context.Context, params map[string]any) map[string]any {
 	collection := paramString(params, "collection", "memory")
 	db, err := openCacheDB()
@@ -312,46 +318,15 @@ func (b *MCPBridge) toolCacheDebug(_ context.Context, params map[string]any) map
 	_ = db.QueryRow(`SELECT count(*) FROM cache_kv`).Scan(&totalKv)
 	var matchKv int
 	_ = db.QueryRow(`SELECT count(*) FROM cache_kv WHERE collection = ?`, collection).Scan(&matchKv)
-	var matchKvLiteral int
-	_ = db.QueryRow(`SELECT count(*) FROM cache_kv WHERE collection = '` + collection + `'`).Scan(&matchKvLiteral)
-	var distinctCollections []string
-	rows, _ := db.Query(`SELECT DISTINCT collection FROM cache_kv`)
-	if rows != nil {
-		for rows.Next() {
-			var c string
-			if err := rows.Scan(&c); err == nil {
-				distinctCollections = append(distinctCollections, c)
-			}
-		}
-		_ = rows.Close()
-	}
-	// Try the actual cacheGetCollection query to see if ORDER BY breaks
-	var dataRows int
-	var firstDataErr string
-	dataR, err := db.Query(`SELECT data FROM cache_kv WHERE collection = ? ORDER BY refreshed_at DESC`, collection)
-	if err != nil {
-		firstDataErr = err.Error()
-	} else {
-		for dataR.Next() {
-			var s string
-			if err := dataR.Scan(&s); err != nil {
-				firstDataErr = err.Error()
-				break
-			}
-			dataRows++
-		}
-		_ = dataR.Close()
-	}
+	var rawLsStr string
+	_ = db.QueryRow(`SELECT last_full_scan FROM cache_meta WHERE collection = ?`, collection).Scan(&rawLsStr)
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"collection":            collection,
-			"total_kv_rows":         totalKv,
-			"match_kv_param":        matchKv,
-			"match_kv_literal":      matchKvLiteral,
-			"distinct_collections":  distinctCollections,
-			"data_rows_via_orderby": dataRows,
-			"data_err":              firstDataErr,
+			"collection":     collection,
+			"total_kv_rows":  totalKv,
+			"match_kv_param": matchKv,
+			"last_scan":      rawLsStr,
 		},
 	}
 }

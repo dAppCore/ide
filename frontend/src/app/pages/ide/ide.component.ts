@@ -1406,7 +1406,14 @@ $ _</pre>
             @case ('memory') {
               <section class="block mem-block">
                 <div class="block-header mem-header">
-                  <h2 class="block-title">Memory</h2>
+                  <h2 class="block-title">
+                    Memory
+                    @if (memoryCacheHit()) {
+                      <span class="cache-pill" [class.cache-stale]="memoryCacheAge() > 600" (click)="loadMemoryEntries(true)" title="Click to force re-scan">● cached {{ formatCacheAge(memoryCacheAge()) }}</span>
+                    } @else if (memoryEntries().length > 0) {
+                      <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+                    }
+                  </h2>
                   <span class="editorial subtitle">Auto-memory at <code>{{ memoryDir() || '~/.claude/projects/.../memory/' }}</code> · {{ memoryEntries().length }} entries.</span>
                 </div>
                 @if (memoryRecent().length > 0) {
@@ -3708,6 +3715,12 @@ $ _</pre>
     .i18n-viewer-path { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-left: auto; }
     .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
 
+    /* Cache freshness pill — shared across cache-aware panels */
+    .cache-pill { display: inline-block; margin-left: 12px; font-size: 10px; font-weight: normal; padding: 2px 8px; border-radius: 4px; background: var(--ink-2); color: var(--brand-200); font-family: var(--font-mono); cursor: pointer; vertical-align: middle; letter-spacing: 0.04em; }
+    .cache-pill.cache-fresh { color: #34d399; background: color-mix(in oklch, #34d399 12%, var(--ink-2)); cursor: default; }
+    .cache-pill.cache-stale { color: #fbbf24; background: color-mix(in oklch, #fbbf24 12%, var(--ink-2)); }
+    .cache-pill:hover:not(.cache-fresh) { background: color-mix(in oklch, var(--brand-200) 16%, var(--ink-2)); }
+
     /* Cache panel */
     .ch-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .ch-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
@@ -4931,6 +4944,8 @@ export class IdeComponent implements OnInit, OnDestroy {
   memorySearchHits = signal<{ filename: string; path: string; line: number; match: string; memory_name?: string; memory_type?: string }[]>([]);
   memorySearchActive = signal(false);
   memorySearchLoading = signal(false);
+  memoryCacheHit = signal(false);
+  memoryCacheAge = signal(0);
   // Last 7 days of memories — quick-access strip at the top of /memory.
   memoryRecent = computed(() => {
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -5883,18 +5898,27 @@ export class IdeComponent implements OnInit, OnDestroy {
   }
 
   // Memory panel
-  async loadMemoryEntries() {
+  async loadMemoryEntries(force: boolean = false) {
     this.memoryLoading.set(true);
     try {
-      const res = await this.bridgeCall('memory_list', { sort: this.memorySort() });
+      const res = await this.bridgeCall('memory_list', { sort: this.memorySort(), force });
       if (res.ok) {
         this.memoryEntries.set(res.value?.memories || []);
         this.memoryTypeCounts.set(res.value?.type_counts || {});
         this.memoryDir.set(res.value?.dir || '');
+        this.memoryCacheHit.set(!!res.value?.cache_hit);
+        this.memoryCacheAge.set(res.value?.cache_age_s || 0);
       }
     } finally {
       this.memoryLoading.set(false);
     }
+  }
+
+  // Generic helper for the cache-freshness pill rendered on cache-aware panels.
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   async openMemoryEntry(path: string, line: number = 1) {
