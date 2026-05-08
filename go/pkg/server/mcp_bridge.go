@@ -598,6 +598,10 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "php_run":
 		return b.toolPHPRun(ctx, params)
 
+	// Memory panel — browse ~/.claude/memory/ frontmatter.
+	case "memory_list":
+		return b.toolMemoryList(ctx, params)
+
 	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
 	case "stream_status":
 		return b.toolStreamStatus(ctx, params)
