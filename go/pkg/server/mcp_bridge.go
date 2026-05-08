@@ -592,6 +592,12 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "session_search":
 		return b.toolSessionSearch(ctx, params)
 
+	// PHP scripts panel — composer.json scripts + canonical artisan commands.
+	case "php_scripts":
+		return b.toolPHPScripts(ctx, params)
+	case "php_run":
+		return b.toolPHPRun(ctx, params)
+
 	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
 	case "stream_status":
 		return b.toolStreamStatus(ctx, params)

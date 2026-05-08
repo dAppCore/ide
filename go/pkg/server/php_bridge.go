@@ -4,6 +4,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -131,6 +132,157 @@ func (b *MCPBridge) toolPHPProject(_ context.Context, params map[string]any) map
 			"has_package_lock": hasPackageLock,
 		},
 	}
+}
+
+type phpScriptEntry struct {
+	Name        string   `json:"name"`
+	Command     string   `json:"command"` // first concrete shell line for display
+	Lines       int      `json:"lines"`   // how many composite lines the script has
+	Source      string   `json:"source"`  // "composer" | "artisan-canonical"
+	ArtisanArgs []string `json:"artisan_args,omitempty"`
+}
+
+// canonical artisan commands surfaced for every Laravel project so users
+// don't have to scan composer.json to find them. Drop the most common
+// dev-time and ops-time entries; user can always run anything via the
+// terminal directly.
+var canonicalArtisan = []phpScriptEntry{
+	{Name: "serve", Command: "php artisan serve", Source: "artisan-canonical", ArtisanArgs: []string{"serve"}},
+	{Name: "tinker", Command: "php artisan tinker", Source: "artisan-canonical", ArtisanArgs: []string{"tinker"}},
+	{Name: "migrate", Command: "php artisan migrate", Source: "artisan-canonical", ArtisanArgs: []string{"migrate"}},
+	{Name: "migrate:fresh", Command: "php artisan migrate:fresh --seed", Source: "artisan-canonical", ArtisanArgs: []string{"migrate:fresh", "--seed"}},
+	{Name: "route:list", Command: "php artisan route:list", Source: "artisan-canonical", ArtisanArgs: []string{"route:list"}},
+	{Name: "cache:clear", Command: "php artisan cache:clear", Source: "artisan-canonical", ArtisanArgs: []string{"cache:clear"}},
+	{Name: "config:cache", Command: "php artisan config:cache", Source: "artisan-canonical", ArtisanArgs: []string{"config:cache"}},
+	{Name: "queue:work", Command: "php artisan queue:work", Source: "artisan-canonical", ArtisanArgs: []string{"queue:work"}},
+	{Name: "pail", Command: "php artisan pail", Source: "artisan-canonical", ArtisanArgs: []string{"pail"}},
+	{Name: "horizon", Command: "php artisan horizon", Source: "artisan-canonical", ArtisanArgs: []string{"horizon"}},
+}
+
+// toolPHPScripts reads composer.json's scripts section + emits canonical
+// artisan commands. Symmetric to ts_detect's scripts arrays — gives the UI
+// a clickable grid of "things you can run in this Laravel project".
+func (b *MCPBridge) toolPHPScripts(_ context.Context, params map[string]any) map[string]any {
+	path := strings.TrimSpace(paramString(params, "path", ""))
+	if path == "" {
+		return map[string]any{"ok": false, "error": "path required"}
+	}
+	composerPath := filepath.Join(path, "composer.json")
+	composerScripts := []phpScriptEntry{}
+	if data, err := os.ReadFile(composerPath); err == nil {
+		var manifest struct {
+			Scripts json.RawMessage `json:"scripts"`
+		}
+		if err := json.Unmarshal(data, &manifest); err == nil && len(manifest.Scripts) > 0 {
+			var parsed map[string]json.RawMessage
+			if err := json.Unmarshal(manifest.Scripts, &parsed); err == nil {
+				names := make([]string, 0, len(parsed))
+				for n := range parsed {
+					names = append(names, n)
+				}
+				sort.Strings(names)
+				for _, name := range names {
+					raw := parsed[name]
+					entry := phpScriptEntry{Name: name, Source: "composer"}
+					// scripts can be either a string or a string[]
+					var asString string
+					if err := json.Unmarshal(raw, &asString); err == nil {
+						entry.Command = asString
+						entry.Lines = 1
+					} else {
+						var asArray []string
+						if err := json.Unmarshal(raw, &asArray); err == nil {
+							entry.Lines = len(asArray)
+							for _, line := range asArray {
+								// pick the first concrete shell line for display;
+								// Composer pseudo-directives (Composer\\Config::...) skipped
+								if strings.Contains(line, "::") {
+									continue
+								}
+								entry.Command = line
+								break
+							}
+							if entry.Command == "" && len(asArray) > 0 {
+								entry.Command = asArray[0]
+							}
+						}
+					}
+					if entry.Command == "" {
+						continue
+					}
+					composerScripts = append(composerScripts, entry)
+				}
+			}
+		}
+	}
+
+	hasArtisan := fileExists(filepath.Join(path, "artisan"))
+	canonical := []phpScriptEntry{}
+	if hasArtisan {
+		canonical = append(canonical, canonicalArtisan...)
+	}
+
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"path":             path,
+			"composer_scripts": composerScripts,
+			"artisan_scripts":  canonical,
+			"has_artisan":      hasArtisan,
+			"has_composer":     fileExists(composerPath),
+		},
+	}
+}
+
+// toolPHPRun spawns a composer or artisan invocation via process_start in
+// the project's cwd. mode = "composer" (composer run-script <name>) or
+// "artisan" (php artisan <args...>) or "raw" (sh -c "<command>").
+func (b *MCPBridge) toolPHPRun(ctx context.Context, params map[string]any) map[string]any {
+	path := strings.TrimSpace(paramString(params, "path", ""))
+	mode := strings.ToLower(strings.TrimSpace(paramString(params, "mode", "")))
+	if path == "" || mode == "" {
+		return map[string]any{"ok": false, "error": "path and mode required"}
+	}
+
+	var spawnParams map[string]any
+	switch mode {
+	case "composer":
+		name := strings.TrimSpace(paramString(params, "name", ""))
+		if name == "" {
+			return map[string]any{"ok": false, "error": "name required for composer mode"}
+		}
+		spawnParams = map[string]any{
+			"command": "composer",
+			"args":    []string{"run-script", name},
+			"dir":     path,
+		}
+	case "artisan":
+		args := stringSliceParam(params, "args")
+		if len(args) == 0 {
+			return map[string]any{"ok": false, "error": "args required for artisan mode"}
+		}
+		spawnParams = map[string]any{
+			"command": "php",
+			"args":    append([]string{"artisan"}, args...),
+			"dir":     path,
+		}
+	case "raw":
+		cmd := strings.TrimSpace(paramString(params, "command", ""))
+		if cmd == "" {
+			return map[string]any{"ok": false, "error": "command required for raw mode"}
+		}
+		spawnParams = map[string]any{
+			"command": "sh",
+			"args":    []string{"-c", cmd},
+			"dir":     path,
+		}
+	default:
+		return map[string]any{"ok": false, "error": "unknown mode " + mode}
+	}
+
+	// Hand off to the existing process_start path so the spawn shows up
+	// on /process automatically.
+	return b.toolProcessStart(ctx, spawnParams)
 }
 
 func fileExists(path string) bool {

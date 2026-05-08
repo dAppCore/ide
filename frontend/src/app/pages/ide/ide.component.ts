@@ -561,15 +561,34 @@ $ _</pre>
                           <span class="php-state" [class.ok]="sel.has_package_lock">package-lock {{ sel.has_package_lock ? '✓' : '—' }}</span>
                         </div>
 
-                        <h4>Artisan</h4>
-                        <div class="php-actions">
-                          <button class="btn btn-ghost btn-sm" (click)="openPHPArtisan(sel.path, '--version')">version</button>
-                          <button class="btn btn-ghost btn-sm" (click)="openPHPArtisan(sel.path, 'list')">list</button>
-                          <button class="btn btn-ghost btn-sm" (click)="openPHPArtisan(sel.path, 'route:list')">route:list</button>
-                          <button class="btn btn-ghost btn-sm" (click)="openPHPArtisan(sel.path, 'config:show')">config:show</button>
-                          <button class="btn btn-ghost btn-sm" (click)="openPHPArtisan(sel.path, 'migrate:status')">migrate:status</button>
-                        </div>
-                        <div class="php-hint">Output streams to the Process panel.</div>
+                        @if (phpScripts(); as scr) {
+                          @if (scr.composer_scripts.length > 0) {
+                            <h4>composer scripts <span class="php-grid-meta">({{ scr.composer_scripts.length }})</span></h4>
+                            <div class="php-script-grid">
+                              @for (s of scr.composer_scripts; track s.name) {
+                                <button class="php-script-card" (click)="runPHPScript(sel.path, 'composer', {name: s.name})" [title]="s.command">
+                                  <span class="php-script-name">{{ s.name }}</span>
+                                  @if (s.lines > 1) { <span class="php-script-lines">+{{ s.lines - 1 }}</span> }
+                                  <span class="php-script-cmd">{{ s.command }}</span>
+                                </button>
+                              }
+                            </div>
+                          }
+                          @if (scr.artisan_scripts.length > 0) {
+                            <h4>artisan <span class="php-grid-meta">({{ scr.artisan_scripts.length }} canonical)</span></h4>
+                            <div class="php-script-grid">
+                              @for (s of scr.artisan_scripts; track s.name) {
+                                <button class="php-script-card" (click)="runPHPScript(sel.path, 'artisan', {args: s.artisan_args})" [title]="s.command">
+                                  <span class="php-script-name">{{ s.name }}</span>
+                                  <span class="php-script-cmd">{{ s.command }}</span>
+                                </button>
+                              }
+                            </div>
+                          }
+                          <div class="php-hint">Click any script — runs in <code>{{ sel.path }}</code> and auto-jumps to /process.</div>
+                        } @else if (phpScriptsLoading()) {
+                          <div class="php-hint">Loading scripts…</div>
+                        }
                       </div>
                     } @else if (!phpLoading()) {
                       <div class="php-empty-pane">No project selected.</div>
@@ -1395,7 +1414,8 @@ $ _</pre>
                         </div>
                         <div class="sess-events-list">
                           @for (e of sel.event_tail; track $index) {
-                            <div class="sess-event" [class.sess-event-error]="!e.success && e.type === 'tool_use'">
+                            @let evPath = sessionEventPath(e);
+                            <div class="sess-event" [class.sess-event-error]="!e.success && e.type === 'tool_use'" [class.sess-event-jumpable]="evPath !== null" (click)="evPath ? openSessionEventFile(e) : null" [title]="evPath ? 'Open ' + evPath + ' in editor' : ''">
                               <span class="sess-event-time">{{ e.timestamp.slice(11, 19) }}</span>
                               <span class="sess-event-type">{{ e.type }}</span>
                               @if (e.tool) { <span class="sess-event-tool">{{ e.tool }}</span> }
@@ -3062,6 +3082,15 @@ $ _</pre>
     .ts-empty, .ts-empty-pane { color: var(--fg-3); font-style: italic; font-size: 12px; padding: 8px; }
     .ts-empty-pane { padding: 30px; text-align: center; }
 
+    /* PHP scripts grid (symmetric to TS scripts) */
+    .php-script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 6px 0 14px; }
+    .php-script-card { background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; padding: 8px 10px; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; flex-direction: column; gap: 3px; position: relative; }
+    .php-script-card:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-2)); }
+    .php-script-name { font-size: 12px; font-weight: 600; color: var(--fg-1); font-family: var(--font-mono); }
+    .php-script-lines { position: absolute; top: 6px; right: 8px; font-size: 9px; color: var(--brand-200); font-family: var(--font-mono); }
+    .php-script-cmd { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .php-grid-meta { color: var(--fg-3); font-weight: normal; font-size: 11px; }
+
     /* PHP panel */
     .php-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .php-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
@@ -3375,6 +3404,9 @@ $ _</pre>
     .sess-events-section { margin-bottom: 18px; }
     .sess-events-list { background: var(--ink-2); border-radius: 6px; padding: 8px; max-height: 400px; overflow-y: auto; font-family: var(--font-mono); font-size: 10px; }
     .sess-event { display: grid; grid-template-columns: 60px 80px 100px 60px 1fr; gap: 6px; padding: 3px 6px; border-bottom: 1px solid var(--line-1); align-items: center; }
+    .sess-event-jumpable { cursor: pointer; }
+    .sess-event-jumpable:hover { background: color-mix(in oklch, var(--brand-200) 10%, transparent); }
+    .sess-event-jumpable .sess-event-input { color: var(--brand-200); }
     .sess-event-error { background: color-mix(in oklch, #fbbf24 8%, transparent); }
     .sess-event-time { color: var(--fg-3); }
     .sess-event-type { color: var(--brand-200); }
@@ -4151,6 +4183,8 @@ export class IdeComponent implements OnInit, OnDestroy {
 
   // PHP panel — IDE surface over core/php
   phpProjects = signal<{ path: string; name: string; app_name: string; app_url: string; package_mgr: string; frankenphp: boolean }[]>([]);
+  phpScripts = signal<{ composer_scripts: { name: string; command: string; lines: number; source: string }[]; artisan_scripts: { name: string; command: string; source: string; artisan_args: string[] }[]; has_artisan: boolean; has_composer: boolean } | null>(null);
+  phpScriptsLoading = signal(false);
   phpSelected = signal<any | null>(null);
   phpLoading = signal(false);
   phpError = signal<string | null>(null);
@@ -4637,8 +4671,29 @@ export class IdeComponent implements OnInit, OnDestroy {
     const res = await this.bridgeCall('php_project', { path });
     if (res.ok) {
       this.phpSelected.set(res.value);
+      void this.loadPHPScripts(path);
     } else {
       this.phpError.set(res.error || 'php_project failed');
+    }
+  }
+
+  async loadPHPScripts(path: string) {
+    this.phpScriptsLoading.set(true);
+    this.phpScripts.set(null);
+    try {
+      const res = await this.bridgeCall('php_scripts', { path });
+      if (res.ok) this.phpScripts.set(res.value);
+    } finally {
+      this.phpScriptsLoading.set(false);
+    }
+  }
+
+  async runPHPScript(path: string, mode: 'composer' | 'artisan' | 'raw', extra: { name?: string; args?: string[]; command?: string }) {
+    const params: Record<string, unknown> = { path, mode, ...extra };
+    const res = await this.bridgeCall('php_run', params);
+    if (res.ok) {
+      this.currentRoute.set('process');
+      void this.refreshProcesses();
     }
   }
 
@@ -5160,6 +5215,24 @@ export class IdeComponent implements OnInit, OnDestroy {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
+  }
+
+  // Pull a clickable file path out of an event's input string. Read /
+  // Edit / Write tools store the path as a leading absolute path
+  // (sometimes with a trailing " (edit)" or " (123 bytes)" suffix).
+  // Bash inputs are full command strings — skip those.
+  sessionEventPath(e: { tool?: string; input?: string }): string | null {
+    if (!e?.tool || !e?.input) return null;
+    const tool = e.tool;
+    if (tool !== 'Read' && tool !== 'Edit' && tool !== 'Write') return null;
+    const m = e.input.match(/^(\/[^\s]+)/);
+    return m ? m[1] : null;
+  }
+
+  async openSessionEventFile(e: { tool?: string; input?: string }) {
+    const path = this.sessionEventPath(e);
+    if (!path) return;
+    await this.openSearchResult({ path, line: 1 });
   }
 
   // Process panel — go-process surface
