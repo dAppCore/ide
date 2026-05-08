@@ -1289,11 +1289,26 @@ $ _</pre>
                       <div class="stream-empty">No frames captured for this channel yet.</div>
                     } @else {
                       <div class="stream-frame-list">
-                        @for (f of streamFrames(); track $index) {
-                          <div class="stream-frame">
-                            <span class="stream-frame-time">{{ f.timestamp.slice(11, 19) }}</span>
-                            <span class="stream-frame-bytes">{{ f.frame_bytes }}B</span>
-                            <span class="stream-frame-text">{{ f.frame_text }}</span>
+                        @for (f of streamFrames(); track $index; let i = $index) {
+                          @let parsed = parseStreamFrame(f);
+                          @let raw = streamFrameRawMode().has(i);
+                          <div class="stream-frame" [class.stream-frame-json]="parsed.isJson">
+                            <div class="stream-frame-head">
+                              <span class="stream-frame-time">{{ f.timestamp.slice(11, 19) }}</span>
+                              <span class="stream-frame-bytes">{{ f.frame_bytes }}B</span>
+                              @if (parsed.isJson) {
+                                <span class="stream-frame-tag">json</span>
+                                <button class="stream-frame-toggle" (click)="toggleStreamFrameRaw(i)">{{ raw ? 'pretty' : 'raw' }}</button>
+                              }
+                              @if (parsed.clickablePath; as p) {
+                                <button class="stream-frame-jump" (click)="openStreamFramePath(p)" [title]="'Open ' + p">↗ {{ p.split('/').slice(-2).join('/') }}</button>
+                              }
+                            </div>
+                            @if (parsed.isJson && !raw) {
+                              <pre class="stream-frame-pretty">{{ parsed.pretty }}</pre>
+                            } @else {
+                              <span class="stream-frame-text">{{ parsed.raw }}</span>
+                            }
                           </div>
                         }
                       </div>
@@ -3356,10 +3371,18 @@ $ _</pre>
     .stream-empty { padding: 18px; font-size: 12px; color: var(--fg-3); font-style: italic; text-align: center; }
     .stream-frames { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
     .stream-frame-list { flex: 1; overflow-y: auto; padding: 0 18px; font-family: var(--font-mono); font-size: 11px; }
-    .stream-frame { display: grid; grid-template-columns: 70px 50px 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line-1); align-items: center; }
-    .stream-frame-time { color: var(--fg-3); }
-    .stream-frame-bytes { color: var(--brand-200); text-align: right; }
-    .stream-frame-text { color: var(--fg-2); white-space: pre-wrap; word-break: break-all; }
+    .stream-frame { padding: 6px 0; border-bottom: 1px solid var(--line-1); display: flex; flex-direction: column; gap: 4px; }
+    .stream-frame-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .stream-frame-time { color: var(--fg-3); font-size: 11px; min-width: 60px; }
+    .stream-frame-bytes { color: var(--brand-200); font-size: 11px; min-width: 40px; text-align: right; }
+    .stream-frame-tag { background: color-mix(in oklch, var(--brand-200) 16%, var(--ink-1)); color: var(--brand-200); font-size: 9px; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stream-frame-toggle { background: var(--ink-1); border: 1px solid var(--line-1); color: var(--fg-3); font-size: 9px; padding: 1px 6px; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); }
+    .stream-frame-toggle:hover { color: var(--fg-1); border-color: var(--brand-200); }
+    .stream-frame-jump { background: transparent; border: 1px solid var(--brand-200); color: var(--brand-200); font-size: 10px; padding: 1px 6px; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); margin-left: auto; }
+    .stream-frame-jump:hover { background: color-mix(in oklch, var(--brand-200) 14%, transparent); }
+    .stream-frame-text { color: var(--fg-2); white-space: pre-wrap; word-break: break-all; font-size: 11px; }
+    .stream-frame-pretty { color: var(--fg-2); white-space: pre; overflow-x: auto; font-size: 10px; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; margin: 0; line-height: 1.4; }
+    .stream-frame-json .stream-frame-time { color: var(--brand-200); }
     .stream-publish { padding: 14px 18px; border-top: 1px solid var(--line-1); flex-shrink: 0; }
     .stream-publish-row { display: flex; gap: 8px; align-items: center; }
     .stream-mode-select { width: 110px; flex-shrink: 0; }
@@ -5145,6 +5168,46 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (channel) params['channel'] = channel;
     const res = await this.bridgeCall('stream_recent', params);
     if (res.ok) this.streamFrames.set((res.value?.frames || []).slice().reverse());
+  }
+
+  // Frame parsing: try to JSON-parse; if it works, pretty-print + extract a
+  // clickable path if one exists. Falls back to raw text. Cached on the frame
+  // itself to avoid re-parsing on every render tick.
+  parseStreamFrame(frame: { frame_text: string }): { isJson: boolean; pretty?: string; raw: string; clickablePath?: string } {
+    const raw = frame.frame_text;
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      return { isJson: false, raw };
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      let clickablePath: string | undefined;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const candidate = parsed['path'] || parsed['file'] || parsed['file_path'];
+        if (typeof candidate === 'string' && candidate.startsWith('/')) {
+          clickablePath = candidate;
+        }
+      }
+      return {
+        isJson: true,
+        pretty: JSON.stringify(parsed, null, 2),
+        raw,
+        clickablePath,
+      };
+    } catch {
+      return { isJson: false, raw };
+    }
+  }
+
+  streamFrameRawMode = signal<Set<number>>(new Set());
+  toggleStreamFrameRaw(idx: number) {
+    const s = new Set(this.streamFrameRawMode());
+    if (s.has(idx)) s.delete(idx); else s.add(idx);
+    this.streamFrameRawMode.set(s);
+  }
+
+  async openStreamFramePath(path: string) {
+    await this.openSearchResult({ path, line: 1 });
   }
 
   async publishStreamFrame() {
