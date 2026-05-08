@@ -1238,6 +1238,20 @@ $ _</pre>
                   <h2 class="block-title">Memory</h2>
                   <span class="editorial subtitle">Auto-memory at <code>{{ memoryDir() || '~/.claude/projects/.../memory/' }}</code> · {{ memoryEntries().length }} entries.</span>
                 </div>
+                @if (memoryRecent().length > 0) {
+                  <div class="mem-recent-strip">
+                    <div class="mem-recent-label">recent · last 7 days</div>
+                    <div class="mem-recent-row">
+                      @for (m of memoryRecent(); track m.path) {
+                        <button class="mem-recent-pill" (click)="openMemoryEntry(m.path)" [title]="m.name + ' · ' + (m.description || '')">
+                          <span class="mem-recent-type" [attr.data-type]="m.type || 'untyped'">{{ m.type || '?' }}</span>
+                          <span class="mem-recent-name">{{ m.name.slice(0, 50) }}</span>
+                          <span class="mem-recent-when">{{ formatRelative(m.modified) }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
                 <div class="mem-toolbar">
                   <input class="input mem-filter" placeholder="search name / description / filename…" [value]="memoryFilter()" (input)="memoryFilter.set($any($event.target).value)" />
                   <div class="mem-type-pills">
@@ -3470,6 +3484,19 @@ $ _</pre>
     .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
 
     /* Memory panel */
+    .mem-recent-strip { padding: 10px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
+    .mem-recent-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 6px; }
+    .mem-recent-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .mem-recent-pill { background: var(--ink-1); border: 1px solid var(--line-1); padding: 5px 10px; border-radius: 4px; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .mem-recent-pill:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-1)); }
+    .mem-recent-type { font-size: 9px; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--ink-2); color: var(--fg-3); }
+    .mem-recent-type[data-type="project"] { background: color-mix(in oklch, #34d399 18%, var(--ink-2)); color: #34d399; }
+    .mem-recent-type[data-type="feedback"] { background: color-mix(in oklch, #fbbf24 18%, var(--ink-2)); color: #fbbf24; }
+    .mem-recent-type[data-type="reference"] { background: color-mix(in oklch, #93c5fd 18%, var(--ink-2)); color: #93c5fd; }
+    .mem-recent-type[data-type="user"] { background: color-mix(in oklch, #c4b5fd 18%, var(--ink-2)); color: #c4b5fd; }
+    .mem-recent-type[data-type="design"] { background: color-mix(in oklch, #fb7185 18%, var(--ink-2)); color: #fb7185; }
+    .mem-recent-name { font-size: 11px; color: var(--fg-1); }
+    .mem-recent-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
     .mem-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .mem-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
     .mem-header code { font-size: 10px; }
@@ -4464,6 +4491,30 @@ export class IdeComponent implements OnInit, OnDestroy {
   memoryFilter = signal('');
   memoryTypeFilter = signal<string | null>(null);
   memorySort = signal<'modified' | 'name' | 'type'>('modified');
+  // Last 7 days of memories — quick-access strip at the top of /memory.
+  memoryRecent = computed(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return this.memoryEntries()
+      .filter(m => {
+        if (!m.modified) return false;
+        const t = Date.parse(m.modified);
+        return !isNaN(t) && t >= cutoff;
+      })
+      .slice(0, 30); // already sorted by modified desc when sort=modified
+  });
+
+  formatRelative(iso: string | undefined): string {
+    if (!iso) return '';
+    const t = Date.parse(iso);
+    if (isNaN(t)) return '';
+    const delta = (Date.now() - t) / 1000;
+    if (delta < 60) return 'just now';
+    if (delta < 3600) return `${Math.floor(delta / 60)}m ago`;
+    if (delta < 86400) return `${Math.floor(delta / 3600)}h ago`;
+    if (delta < 604800) return `${Math.floor(delta / 86400)}d ago`;
+    return iso.slice(0, 10);
+  }
+
   memoryVisible = computed(() => {
     const f = this.memoryFilter().trim().toLowerCase();
     const t = this.memoryTypeFilter();
