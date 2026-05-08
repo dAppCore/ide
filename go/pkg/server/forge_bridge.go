@@ -164,36 +164,95 @@ func (b *MCPBridge) toolForgeStatus(ctx context.Context, _ map[string]any) map[s
 
 // toolForgeOrgs lists orgs the authenticated user belongs to. Snider's
 // account spans `core` (homelab canon), `lthn` (network), `agent` etc.
-func (b *MCPBridge) toolForgeOrgs(ctx context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolForgeOrgs(ctx context.Context, params map[string]any) map[string]any {
 	f, ok := b.forgeService()
 	if !ok {
 		return errResp("forge client not configured")
 	}
+	force := paramBool(params, "force", false)
+	const collection = "forge_orgs"
+	const ttl = 5 * time.Minute
+
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			out := make([]map[string]any, 0, len(raws))
+			for _, r := range raws {
+				var entry map[string]any
+				if err := json.Unmarshal(r, &entry); err == nil {
+					out = append(out, entry)
+				}
+			}
+			return map[string]any{"ok": true, "value": map[string]any{
+				"orgs":        out,
+				"count":       len(out),
+				"cache_hit":   true,
+				"cache_age_s": int(cacheAge(collection).Seconds()),
+			}}
+		}
+	}
+
 	orgs, err := f.Orgs.ListOrgs(ctx)
 	if err != nil {
 		return map[string]any{"ok": false, "error": err.Error()}
 	}
 	out := make([]map[string]any, 0, len(orgs))
+	cacheItems := make([]cacheItem, 0, len(orgs))
 	for _, o := range orgs {
-		out = append(out, map[string]any{
+		entry := map[string]any{
 			"name":        o.Name,
 			"full_name":   o.FullName,
 			"description": o.Description,
 			"website":     o.Website,
 			"avatar":      o.AvatarURL,
-		})
+		}
+		out = append(out, entry)
+		cacheItems = append(cacheItems, cacheItem{Key: o.Name, Data: entry})
 	}
-	return map[string]any{"ok": true, "value": map[string]any{"orgs": out, "count": len(out)}}
+	_ = cacheSetCollection(collection, cacheItems)
+	return map[string]any{"ok": true, "value": map[string]any{
+		"orgs":        out,
+		"count":       len(out),
+		"cache_hit":   false,
+		"cache_age_s": 0,
+	}}
 }
 
 // toolForgeRepos lists repos for an org (or the authenticated user when
 // org is empty). Returns name/full_name/description/private/fork/stars.
+// Cached per-org (collection key includes org).
 func (b *MCPBridge) toolForgeRepos(ctx context.Context, params map[string]any) map[string]any {
 	f, ok := b.forgeService()
 	if !ok {
 		return errResp("forge client not configured")
 	}
 	org := paramString(params, "org", "")
+	force := paramBool(params, "force", false)
+	collection := "forge_repos:" + org
+	if org == "" {
+		collection = "forge_repos:_user"
+	}
+	const ttl = 5 * time.Minute
+
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			out := make([]map[string]any, 0, len(raws))
+			for _, r := range raws {
+				var entry map[string]any
+				if err := json.Unmarshal(r, &entry); err == nil {
+					out = append(out, entry)
+				}
+			}
+			return map[string]any{"ok": true, "value": map[string]any{
+				"repos":       out,
+				"count":       len(out),
+				"cache_hit":   true,
+				"cache_age_s": int(cacheAge(collection).Seconds()),
+			}}
+		}
+	}
+
 	var repos []forgeRepo
 	if org == "" {
 		raw, err := f.Repos.ListUserRepos(ctx)
@@ -213,8 +272,9 @@ func (b *MCPBridge) toolForgeRepos(ctx context.Context, params map[string]any) m
 		}
 	}
 	out := make([]map[string]any, 0, len(repos))
+	cacheItems := make([]cacheItem, 0, len(repos))
 	for _, r := range repos {
-		out = append(out, map[string]any{
+		entry := map[string]any{
 			"name":        r.Name,
 			"full_name":   r.FullName,
 			"description": r.Description,
@@ -223,9 +283,17 @@ func (b *MCPBridge) toolForgeRepos(ctx context.Context, params map[string]any) m
 			"stars":       r.Stars,
 			"updated_at":  r.UpdatedAt,
 			"html_url":    r.HTMLURL,
-		})
+		}
+		out = append(out, entry)
+		cacheItems = append(cacheItems, cacheItem{Key: r.Name, Data: entry})
 	}
-	return map[string]any{"ok": true, "value": map[string]any{"repos": out, "count": len(out)}}
+	_ = cacheSetCollection(collection, cacheItems)
+	return map[string]any{"ok": true, "value": map[string]any{
+		"repos":       out,
+		"count":       len(out),
+		"cache_hit":   false,
+		"cache_age_s": 0,
+	}}
 }
 
 // toolForgeIssues lists issues for a given owner/repo. State filter
