@@ -1476,10 +1476,18 @@ $ _</pre>
                           Recent events
                           @if (sel.tail_offset > 0) { <span class="sess-tail-note">(showing last {{ sel.event_tail.length }} of {{ sel.total_events }})</span> }
                           <button class="btn btn-ghost btn-sm sess-live-toggle" [class.sess-live-active]="sessionLiveActive()" (click)="toggleSessionLive()" [title]="sessionLiveActive() ? 'Stop live polling' : 'Start polling for new events every 3s'">
-                            @if (sessionLiveActive()) { <span>● live</span> } @else { <span>○ live</span> }
+                            @if (sessionLiveActive()) {
+                              <span class="sess-live-pulse" [attr.data-tick]="sessionLiveHeartbeat() % 2"></span>
+                              <span>live</span>
+                            } @else {
+                              <span>○ live</span>
+                            }
                           </button>
                           @if (sessionLiveEvents().length > 0) {
                             <span class="sess-live-count">+{{ sessionLiveEvents().length }} new</span>
+                          }
+                          @if (sessionLiveDropped() > 0) {
+                            <span class="sess-live-dropped" [title]="'Older events dropped to keep buffer at ' + 500">−{{ sessionLiveDropped() }} dropped</span>
                           }
                         </div>
                         <div class="sess-events-list">
@@ -3532,6 +3540,10 @@ $ _</pre>
     .sess-live-count { font-size: 10px; color: #34d399; font-family: var(--font-mono); margin-left: 6px; }
     .sess-live-divider { padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #34d399; background: color-mix(in oklch, #34d399 8%, transparent); border-top: 1px solid color-mix(in oklch, #34d399 30%, transparent); border-bottom: 1px solid color-mix(in oklch, #34d399 30%, transparent); }
     .sess-event-live { background: color-mix(in oklch, #34d399 4%, transparent); border-left: 2px solid #34d399; }
+    .sess-live-pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #34d399; margin-right: 4px; transition: opacity 0.4s ease, transform 0.4s ease; }
+    .sess-live-pulse[data-tick="0"] { opacity: 1; transform: scale(1); }
+    .sess-live-pulse[data-tick="1"] { opacity: 0.4; transform: scale(0.7); }
+    .sess-live-dropped { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-left: 4px; opacity: 0.7; }
     .sess-event-time { color: var(--fg-3); }
     .sess-event-type { color: var(--brand-200); }
     .sess-event-tool { color: var(--fg-2); }
@@ -4420,7 +4432,11 @@ export class IdeComponent implements OnInit, OnDestroy {
   sessionLiveActive = signal(false);
   sessionLiveOffset = signal(0);
   sessionLiveEvents = signal<{ timestamp: string; type?: string; role?: string; tool?: string; input?: string }[]>([]);
+  sessionLiveDropped = signal(0);
+  sessionLiveHeartbeat = signal(0);
+  sessionLiveLastPoll = signal<string | null>(null);
   private sessionLiveTimer: ReturnType<typeof setInterval> | null = null;
+  private static readonly SESSION_LIVE_CAP = 500;
   sessionLoading = signal(false);
   sessionInspectLoading = signal(false);
   sessionFilter = signal('');
@@ -5401,6 +5417,9 @@ export class IdeComponent implements OnInit, OnDestroy {
   async inspectSession(path: string) {
     this.stopSessionLive();
     this.sessionLiveEvents.set([]);
+    this.sessionLiveDropped.set(0);
+    this.sessionLiveHeartbeat.set(0);
+    this.sessionLiveLastPoll.set(null);
     this.sessionInspectLoading.set(true);
     try {
       const res = await this.bridgeCall('session_inspect', { path, limit: 200 });
@@ -5451,13 +5470,41 @@ export class IdeComponent implements OnInit, OnDestroy {
       limit: 200,
     });
     if (!res.ok) return;
+    // Heartbeat ticks on every successful poll so the UI shows pulse
+    // even when no events arrive. Wraps at 1000 for stable comparison.
+    this.sessionLiveHeartbeat.update(n => (n + 1) % 1000);
+    this.sessionLiveLastPoll.set(new Date().toISOString());
     const events = (res.value?.events || []).filter((e: { timestamp?: string }) => !!e.timestamp);
     if (events.length > 0) {
-      this.sessionLiveEvents.set([...this.sessionLiveEvents(), ...events]);
+      const wasAtBottom = this.isLiveTailAtBottom();
+      let combined = [...this.sessionLiveEvents(), ...events];
+      // Cap the buffer; track drops for the UI indicator.
+      const cap = IdeComponent.SESSION_LIVE_CAP;
+      if (combined.length > cap) {
+        const drop = combined.length - cap;
+        this.sessionLiveDropped.update(n => n + drop);
+        combined = combined.slice(drop);
+      }
+      this.sessionLiveEvents.set(combined);
+      if (wasAtBottom) {
+        // Defer to next tick so the DOM has rendered the new events.
+        setTimeout(() => this.scrollLiveTailToBottom(), 0);
+      }
     }
     if (typeof res.value?.next_offset === 'number') {
       this.sessionLiveOffset.set(res.value.next_offset);
     }
+  }
+
+  private isLiveTailAtBottom(): boolean {
+    const list = document.querySelector('.sess-events-list') as HTMLElement | null;
+    if (!list) return true;
+    return list.scrollTop + list.clientHeight >= list.scrollHeight - 40;
+  }
+
+  private scrollLiveTailToBottom() {
+    const list = document.querySelector('.sess-events-list') as HTMLElement | null;
+    if (list) list.scrollTop = list.scrollHeight;
   }
 
   formatSessionSize(b: number): string {
