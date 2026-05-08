@@ -4,7 +4,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -145,6 +147,155 @@ func (b *MCPBridge) toolMemoryList(_ context.Context, params map[string]any) map
 			"type_counts": typeCounts,
 		},
 	}
+}
+
+type memorySearchHit struct {
+	Filename    string `json:"filename"`
+	Path        string `json:"path"`
+	Line        int    `json:"line"`
+	Match       string `json:"match"`
+	MemoryName  string `json:"memory_name,omitempty"`
+	MemoryType  string `json:"memory_type,omitempty"`
+}
+
+// toolMemorySearch shells out to ripgrep across the memory directory and
+// returns matched lines with filename + line + context. Falls back to a
+// pure-Go scan if rg isn't on PATH (rg is in the /updates catalogue, but
+// can be missing on a fresh machine).
+func (b *MCPBridge) toolMemorySearch(_ context.Context, params map[string]any) map[string]any {
+	query := strings.TrimSpace(paramString(params, "query", ""))
+	if query == "" {
+		return map[string]any{"ok": false, "error": "query required"}
+	}
+	dir := strings.TrimSpace(paramString(params, "dir", ""))
+	if dir == "" {
+		dir = claudeMemoryDir()
+	}
+	if dir == "" {
+		return map[string]any{"ok": false, "error": "memory directory not configured"}
+	}
+	limit := paramInt(params, "limit", 200)
+	if limit <= 0 || limit > 5000 {
+		limit = 200
+	}
+
+	hits := runRipgrepJSON(query, dir, limit)
+	if hits == nil {
+		hits = goGrep(query, dir, limit)
+	}
+
+	// Per-hit, enrich with memory name/type from frontmatter (cheap — head read).
+	frontmatterCache := make(map[string]memoryEntry)
+	for i, h := range hits {
+		entry, ok := frontmatterCache[h.Path]
+		if !ok {
+			entry = memoryEntry{Filename: h.Filename, Path: h.Path}
+			parseMemoryFrontmatter(readFileHead(h.Path, 4096), &entry)
+			frontmatterCache[h.Path] = entry
+		}
+		hits[i].MemoryName = entry.Name
+		hits[i].MemoryType = entry.Type
+	}
+
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"hits":  hits,
+			"count": len(hits),
+			"query": query,
+			"dir":   dir,
+		},
+	}
+}
+
+// runRipgrepJSON invokes `rg --json` and parses match events. Returns nil
+// when rg isn't on PATH (signals fallback). Empty result with rg present
+// returns []memorySearchHit{}.
+func runRipgrepJSON(query, dir string, limit int) []memorySearchHit {
+	if _, err := exec.LookPath("rg"); err != nil {
+		return nil
+	}
+	cmd := exec.Command("rg", "--json", "--smart-case", "--max-count", "10", "--no-heading", "--", query, dir)
+	out, err := cmd.Output()
+	if err != nil {
+		// rg exits non-zero when there are no matches; surface as empty
+		// rather than fall back to the slower path.
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			return []memorySearchHit{}
+		}
+		return nil
+	}
+	hits := make([]memorySearchHit, 0, 32)
+	for _, line := range strings.Split(string(out), "\n") {
+		if line == "" {
+			continue
+		}
+		var event struct {
+			Type string `json:"type"`
+			Data struct {
+				Path struct {
+					Text string `json:"text"`
+				} `json:"path"`
+				Lines struct {
+					Text string `json:"text"`
+				} `json:"lines"`
+				LineNumber int `json:"line_number"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			continue
+		}
+		if event.Type != "match" {
+			continue
+		}
+		hits = append(hits, memorySearchHit{
+			Filename: filepath.Base(event.Data.Path.Text),
+			Path:     event.Data.Path.Text,
+			Line:     event.Data.LineNumber,
+			Match:    truncateForUI(strings.TrimRight(event.Data.Lines.Text, "\n"), 200),
+		})
+		if len(hits) >= limit {
+			break
+		}
+	}
+	return hits
+}
+
+// goGrep is a minimal pure-Go fallback when rg isn't installed. Walks
+// the dir, reads each .md, scans for case-insensitive substring matches.
+// Slower than rg but always works.
+func goGrep(query, dir string, limit int) []memorySearchHit {
+	q := strings.ToLower(query)
+	hits := make([]memorySearchHit, 0, 32)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return hits
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		full := filepath.Join(dir, e.Name())
+		data, err := os.ReadFile(full)
+		if err != nil {
+			continue
+		}
+		for i, line := range strings.Split(string(data), "\n") {
+			if !strings.Contains(strings.ToLower(line), q) {
+				continue
+			}
+			hits = append(hits, memorySearchHit{
+				Filename: e.Name(),
+				Path:     full,
+				Line:     i + 1,
+				Match:    truncateForUI(line, 200),
+			})
+			if len(hits) >= limit {
+				return hits
+			}
+		}
+	}
+	return hits
 }
 
 func readFileHead(path string, n int) string {

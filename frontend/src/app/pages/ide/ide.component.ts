@@ -1253,7 +1253,10 @@ $ _</pre>
                   </div>
                 }
                 <div class="mem-toolbar">
-                  <input class="input mem-filter" placeholder="search name / description / filename…" [value]="memoryFilter()" (input)="memoryFilter.set($any($event.target).value)" />
+                  <input class="input mem-filter" placeholder="filter (frontmatter) — Enter for full-text…" [value]="memoryFilter()" (input)="memoryFilter.set($any($event.target).value)" (keyup.enter)="runMemorySearch(memoryFilter())" />
+                  @if (memorySearchActive()) {
+                    <button class="btn btn-ghost btn-sm" (click)="exitMemorySearch()" title="Back to filter mode">× exit search</button>
+                  }
                   <div class="mem-type-pills">
                     <button class="mem-type-pill" [class.active]="memoryTypeFilter() === null" (click)="memoryTypeFilter.set(null)">all <span class="mem-type-count">{{ memoryEntries().length }}</span></button>
                     @for (t of memoryTypeEntries(); track t.type) {
@@ -1269,7 +1272,25 @@ $ _</pre>
                   </select>
                 </div>
                 <div class="mem-body">
-                  @if (memoryLoading() && memoryEntries().length === 0) {
+                  @if (memorySearchActive()) {
+                    @if (memorySearchLoading()) {
+                      <div class="mem-empty">Searching memory contents…</div>
+                    } @else {
+                      <div class="mem-list-summary">{{ memorySearchHits().length }} content matches for "{{ memoryFilter() }}"</div>
+                      @for (h of memorySearchHits(); track $index) {
+                        <button class="mem-search-hit" (click)="openMemoryEntry(h.path, h.line)" [title]="h.path + ':' + h.line">
+                          <div class="mem-search-head">
+                            @if (h.memory_type) {
+                              <span class="mem-row-type" [attr.data-type]="h.memory_type">{{ h.memory_type }}</span>
+                            }
+                            <span class="mem-search-name">{{ h.memory_name || h.filename }}</span>
+                            <span class="mem-search-line"><code>:{{ h.line }}</code></span>
+                          </div>
+                          <pre class="mem-search-match">{{ h.match }}</pre>
+                        </button>
+                      }
+                    }
+                  } @else if (memoryLoading() && memoryEntries().length === 0) {
                     <div class="mem-empty">Loading memories…</div>
                   } @else {
                     <div class="mem-list-summary">{{ memoryVisible().length }} matching</div>
@@ -3524,6 +3545,13 @@ $ _</pre>
     .mem-row-desc { font-size: 11px; color: var(--fg-2); margin-top: 4px; line-height: 1.4; }
     .mem-row-meta { font-size: 10px; color: var(--fg-3); margin-top: 4px; display: flex; gap: 6px; }
     .mem-row-meta code { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+    .mem-search-hit { width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; margin-bottom: 6px; cursor: pointer; text-align: left; font: inherit; color: var(--fg-2); }
+    .mem-search-hit:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 4%, var(--ink-2)); }
+    .mem-search-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .mem-search-name { font-size: 12px; font-weight: 600; color: var(--fg-1); }
+    .mem-search-line { color: var(--fg-3); }
+    .mem-search-line code { font-family: var(--font-mono); font-size: 11px; }
+    .mem-search-match { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); margin: 0; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
 
     /* Stream panel */
     .stream-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -4491,6 +4519,9 @@ export class IdeComponent implements OnInit, OnDestroy {
   memoryFilter = signal('');
   memoryTypeFilter = signal<string | null>(null);
   memorySort = signal<'modified' | 'name' | 'type'>('modified');
+  memorySearchHits = signal<{ filename: string; path: string; line: number; match: string; memory_name?: string; memory_type?: string }[]>([]);
+  memorySearchActive = signal(false);
+  memorySearchLoading = signal(false);
   // Last 7 days of memories — quick-access strip at the top of /memory.
   memoryRecent = computed(() => {
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -5419,8 +5450,30 @@ export class IdeComponent implements OnInit, OnDestroy {
     }
   }
 
-  async openMemoryEntry(path: string) {
-    await this.openSearchResult({ path, line: 1 });
+  async openMemoryEntry(path: string, line: number = 1) {
+    await this.openSearchResult({ path, line });
+  }
+
+  async runMemorySearch(query: string) {
+    const q = query.trim();
+    if (q.length < 2) {
+      this.memorySearchHits.set([]);
+      this.memorySearchActive.set(false);
+      return;
+    }
+    this.memorySearchLoading.set(true);
+    this.memorySearchActive.set(true);
+    try {
+      const res = await this.bridgeCall('memory_search', { query: q });
+      if (res.ok) this.memorySearchHits.set(res.value?.hits || []);
+    } finally {
+      this.memorySearchLoading.set(false);
+    }
+  }
+
+  exitMemorySearch() {
+    this.memorySearchActive.set(false);
+    this.memorySearchHits.set([]);
   }
 
   memoryTypeEntries(): { type: string; count: number }[] {

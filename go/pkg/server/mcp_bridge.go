@@ -605,6 +605,8 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	// Memory panel — browse ~/.claude/memory/ frontmatter.
 	case "memory_list":
 		return b.toolMemoryList(ctx, params)
+	case "memory_search":
+		return b.toolMemorySearch(ctx, params)
 
 	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
 	case "stream_status":
