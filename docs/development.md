@@ -120,32 +120,80 @@ cd frontend && npm run test
 
 ### End-to-end UI tests (Playwright)
 
-Playwright drives the production-built frontend in headless Chromium against a static server, with the live MCP bridge running in parallel. Tests that don't need the bridge always run; bridge-dependent tests auto-skip when `127.0.0.1:9877` isn't reachable.
+Two complementary suites:
+
+#### Suite 1 — Chromium against static-served `dist/`
+
+Playwright drives a clean Chromium against the production-built bundle on `:4200`. Bridge calls to `127.0.0.1:9877` flow cross-origin (CORS allowed). Tests that don't need the bridge always run; bridge-dependent tests auto-skip when the binary isn't running.
+
+Use this for CI and pure-frontend assertions.
 
 ```sh
 # 1. Build the frontend bundle (Playwright serves dist/)
 cd frontend && npm run build:dev
 
-# 2. Start the binary so bridge tests can run (in another terminal)
+# 2. Optional — start the binary so bridge tests can run
 cd ../go && go build -o /tmp/core-ide ./cmd/core-ide
 env -u FORGE_TOKEN /tmp/core-ide &
 
 # 3. Run the suite
-cd ../frontend && npm run test:e2e          # headless
-npm run test:e2e:ui                          # interactive runner
-npm run test:e2e:build                       # rebuild dist before serving
+cd ../frontend
+npm run test:e2e          # headless
+npm run test:e2e:ui       # Playwright interactive UI mode
+npm run test:e2e:build    # rebuild dist before serving
 ```
 
-Layout:
+Files:
 
 | File | Purpose |
 |------|---------|
-| `frontend/playwright.config.ts` | Playwright config — webServer spins up `serve -s dist` on :4200 |
+| `frontend/playwright.config.ts` | webServer spins up `serve -s dist` on :4200 |
 | `frontend/tests/e2e/_helpers.ts` | `bridgeTest` fixture (auto-skip when bridge down), `callBridge()`, sidebar helpers |
 | `frontend/tests/e2e/sidebar.spec.ts` | Pure-frontend tests (sidebar render + routing + ⌘1-9 shortcuts) |
 | `frontend/tests/e2e/bridge.spec.ts` | Bridge-driven tests (memory list, cache pill, mantis tickets) |
 
 The bridge has `Access-Control-Allow-Origin: *` so cross-origin fetches from `127.0.0.1:4200` to `127.0.0.1:9877` work without proxying. `@wailsio/runtime` 404s on `/wails/runtime` outside Wails — affected calls are lazy + `.then()`'d so the page still renders.
+
+#### Suite 2 — LIVE Wails window via MCP bridge
+
+The harder problem: Playwright's CDP / patched-WebKit protocols don't speak to the actual Wails WebView (macOS WKWebView, Windows WebView2, Linux WebKitGTK). But the IDE's MCP bridge already exposes `webview_eval` / `webview_console` / `webview_dom_tree` / etc. so we drive the live window through those.
+
+**This catches what Suite 1 can't:** `@wailsio/runtime` actually resolves, native menus + system tray are real, the real WebView2/WebKit rendering quirks fire, window state persistence is exercised. Same Playwright runner for assertions; the "page" is the live Wails window itself.
+
+```sh
+# Binary must be running before this — the suite drives its window.
+env -u FORGE_TOKEN /tmp/core-ide &
+cd frontend && npm run test:wails
+```
+
+Files:
+
+| File | Purpose |
+|------|---------|
+| `frontend/playwright.wails.config.ts` | No webServer — binary must already be running |
+| `frontend/tests/wails/wails-driver.ts` | `Window` + `Locator` API mirroring Playwright's, transported via `webview_*` MCP tools |
+| `frontend/tests/wails/live-window.spec.ts` | Live-window sanity (title / DOM query / evaluate), sidebar + routing, bridge-driven panels, console + DOM diagnostics |
+
+Driver primitives:
+
+```ts
+const win = new Window('core-ide-chat');           // window name from gui.Bootstrap
+await win.title();                                  // → "Lethean Desktop"
+await win.evaluate<{n:number}>(`return {n: 42};`);
+await win.locator('.nav-row').filter({hasText: 'Memory'}).click();
+await win.keyDown('5', { meta: true });             // ⌘5 → Sessions
+const logs = await win.console({pattern: 'error', limit: 10});
+```
+
+The `Locator` API supports `count() / isVisible() / textContent() / click() / filter({hasText}) / getAttribute() / waitForVisible() / waitForAttached()` — the subset of Playwright's locator API we actually use in tests. Add more as needed.
+
+Limitations vs. native Playwright:
+
+- No CDP-level access (network mocking, cookies API, PDF, video). The bridge can be extended for any of these if needed.
+- 5-second timeout on `webview_eval` evaluations (set by the bridge, not the driver). Whole-page DOM trees blow this on macOS; scope to a selector with `domTree({selector: '.nav-row'})`.
+- One window at a time per test; serialised via `workers: 1` in config.
+
+Both suites share the same MCP bridge, so test fixtures (cache state, stream frames, mantis credentials) are arranged identically through `callBridge()` from either driver.
 
 ### Test-file conventions
 

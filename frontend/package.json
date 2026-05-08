@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:build": "BUILD_BEFORE_SERVE=1 playwright test",
+    "test:wails": "playwright test --config=playwright.wails.config.ts",
     "serve:ssr:wails-angular-template": "node dist/wails-angular-template/server/server.mjs"
   },
   "prettier": {
