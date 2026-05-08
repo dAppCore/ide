@@ -52,6 +52,7 @@ require (
 	dappco.re/go/log v0.9.0 // indirect
 	dappco.re/go/orm v0.0.0
 	dappco.re/go/php v0.0.0
+	dappco.re/go/session v0.0.0
 	dappco.re/go/tenant v0.0.0
 	dappco.re/go/update v0.0.0
 	dario.cat/mergo v1.0.2 // indirect
@@ -170,3 +171,5 @@ replace dappco.re/go/devops => ../../go-devops/go
 replace dappco.re/go/php => ../../php/go
 
 replace dappco.re/go/update => ../../go-update/go
+
+replace dappco.re/go/session => ../../go-session/go

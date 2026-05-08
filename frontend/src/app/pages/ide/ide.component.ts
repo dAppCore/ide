@@ -1213,6 +1213,119 @@ $ _</pre>
                 </div>
               </section>
             }
+            @case ('sessions') {
+              <section class="block sess-block">
+                <div class="block-header sess-header">
+                  <h2 class="block-title">Sessions</h2>
+                  <span class="editorial subtitle">Claude Code transcript inspector · {{ sessionProjects().length }} projects.</span>
+                </div>
+                <div class="sess-toolbar">
+                  <input class="input sess-filter" placeholder="filter projects…" [value]="sessionFilter()" (input)="sessionFilter.set($any($event.target).value)" />
+                  <button class="btn btn-ghost btn-sm" (click)="loadSessionProjects()" [disabled]="sessionLoading()">↻ refresh</button>
+                </div>
+                <div class="sess-body">
+                  <aside class="sess-projects">
+                    <div class="sess-list-title">Projects ({{ sessionVisible().length }})</div>
+                    @for (p of sessionVisible(); track p.name) {
+                      <button class="sess-project-row" [class.active]="sessionSelectedProject() === p.path" (click)="selectSessionProject(p.path)">
+                        <div class="sess-project-name" [title]="p.display_path">{{ p.display_path }}</div>
+                        <div class="sess-project-meta">
+                          <span>{{ p.session_count }} sess</span>
+                          @if (p.latest_at) { <span>· {{ p.latest_at.slice(0, 10) }}</span> }
+                        </div>
+                      </button>
+                    }
+                  </aside>
+                  <aside class="sess-list">
+                    <div class="sess-list-title">
+                      Sessions
+                      @if (sessionLoading()) { <span class="sess-spin">…</span> }
+                    </div>
+                    @if (!sessionSelectedProject()) {
+                      <div class="sess-empty">Pick a project to list its sessions.</div>
+                    } @else if (sessions().length === 0 && !sessionLoading()) {
+                      <div class="sess-empty">No sessions in this project.</div>
+                    } @else {
+                      @for (s of sessions(); track s.id) {
+                        <button class="sess-row" [class.active]="sessionSelected()?.path === s.path" (click)="inspectSession(s.path)">
+                          <div class="sess-row-id"><code>{{ s.id.slice(0, 8) }}</code></div>
+                          <div class="sess-row-meta">
+                            @if (s.start_time) { <span>{{ s.start_time.slice(5, 19).replace('T', ' ') }}</span> }
+                            <span class="sess-row-size">{{ formatSessionSize(s.size_bytes) }}</span>
+                          </div>
+                        </button>
+                      }
+                    }
+                  </aside>
+                  <main class="sess-detail">
+                    @if (!sessionSelected() && !sessionInspectLoading()) {
+                      <div class="sess-empty">Pick a session to inspect.</div>
+                    }
+                    @if (sessionInspectLoading()) {
+                      <div class="sess-empty">Parsing transcript…</div>
+                    }
+                    @if (sessionSelected(); as sel) {
+                      <div class="sess-detail-head">
+                        <div class="sess-detail-title">
+                          <code>{{ sel.id }}</code>
+                        </div>
+                        <div class="sess-detail-sub">
+                          {{ sel.start.slice(0, 19).replace('T', ' ') }} → {{ sel.end.slice(0, 19).replace('T', ' ') }}
+                          · {{ sel.total_events }} events · duration {{ formatSessionDuration(sel.analytics?.duration_seconds || 0) }}
+                          · {{ ((sel.analytics?.success_rate || 0) * 100).toFixed(1) }}% success
+                        </div>
+                      </div>
+                      <div class="sess-stats-grid">
+                        <div class="sess-stat">
+                          <div class="sess-stat-label">events</div>
+                          <div class="sess-stat-value">{{ sel.analytics?.event_count }}</div>
+                        </div>
+                        <div class="sess-stat">
+                          <div class="sess-stat-label">active time</div>
+                          <div class="sess-stat-value">{{ formatSessionDuration(sel.analytics?.active_seconds || 0) }}</div>
+                        </div>
+                        <div class="sess-stat">
+                          <div class="sess-stat-label">in tokens</div>
+                          <div class="sess-stat-value">{{ sel.analytics?.estimated_input_tokens?.toLocaleString() }}</div>
+                        </div>
+                        <div class="sess-stat">
+                          <div class="sess-stat-label">out tokens</div>
+                          <div class="sess-stat-value">{{ sel.analytics?.estimated_output_tokens?.toLocaleString() }}</div>
+                        </div>
+                      </div>
+                      <div class="sess-tools-section">
+                        <div class="sess-section-title">Tool counts</div>
+                        <div class="sess-tools-grid">
+                          @for (t of sessionToolEntries(sel.analytics?.tool_counts); track t.name) {
+                            <div class="sess-tool-pill" [title]="(sel.analytics?.avg_latency_ms?.[t.name] || 0) + 'ms avg'">
+                              <span class="sess-tool-name">{{ t.name }}</span>
+                              <span class="sess-tool-count">{{ t.count }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <div class="sess-events-section">
+                        <div class="sess-section-title">
+                          Recent events
+                          @if (sel.tail_offset > 0) { <span class="sess-tail-note">(showing last {{ sel.event_tail.length }} of {{ sel.total_events }})</span> }
+                        </div>
+                        <div class="sess-events-list">
+                          @for (e of sel.event_tail; track $index) {
+                            <div class="sess-event" [class.sess-event-error]="!e.success && e.type === 'tool_use'">
+                              <span class="sess-event-time">{{ e.timestamp.slice(11, 19) }}</span>
+                              <span class="sess-event-type">{{ e.type }}</span>
+                              @if (e.tool) { <span class="sess-event-tool">{{ e.tool }}</span> }
+                              @if (e.duration_ms > 0) { <span class="sess-event-dur">{{ e.duration_ms }}ms</span> }
+                              <span class="sess-event-input">{{ e.input }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </main>
+                </div>
+              </section>
+            }
             @case ('process') {
               <section class="block proc-block">
                 <div class="block-header proc-header">
@@ -3109,6 +3222,51 @@ $ _</pre>
     .i18n-viewer-path { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-left: auto; }
     .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
 
+    /* Sessions panel */
+    .sess-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sess-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .sess-toolbar { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; align-items: center; }
+    .sess-filter { flex: 1; max-width: 320px; }
+    .sess-body { display: grid; grid-template-columns: 240px 280px 1fr; gap: 0; flex: 1; min-height: 0; overflow: hidden; }
+    .sess-projects, .sess-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-list-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); padding: 0 14px 8px; }
+    .sess-spin { color: var(--brand-200); }
+    .sess-empty { padding: 18px; font-size: 12px; color: var(--fg-3); font-style: italic; text-align: center; }
+    .sess-project-row, .sess-row { width: 100%; padding: 8px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: block; }
+    .sess-project-row:hover, .sess-row:hover { background: var(--ink-2); }
+    .sess-project-row.active, .sess-row.active { background: var(--ink-2); border-left-color: var(--brand-200); color: var(--fg-1); }
+    .sess-project-name { font-size: 12px; font-weight: 500; word-break: break-all; }
+    .sess-project-meta { font-size: 10px; color: var(--fg-3); margin-top: 2px; display: flex; gap: 6px; }
+    .sess-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; }
+    .sess-row-id code { font-size: 11px; color: var(--brand-200); }
+    .sess-row-meta { font-size: 10px; color: var(--fg-3); display: flex; flex-direction: column; }
+    .sess-row-size { color: var(--fg-2); font-family: var(--font-mono); }
+    .sess-detail { overflow-y: auto; padding: 18px; }
+    .sess-detail-head { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line-1); }
+    .sess-detail-title { font-size: 13px; }
+    .sess-detail-title code { font-family: var(--font-mono); color: var(--brand-200); }
+    .sess-detail-sub { font-size: 11px; color: var(--fg-3); margin-top: 4px; }
+    .sess-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .sess-stat { background: var(--ink-2); padding: 10px 12px; border-radius: 6px; }
+    .sess-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); }
+    .sess-stat-value { font-size: 18px; font-weight: 500; color: var(--fg-1); margin-top: 4px; font-family: var(--font-mono); }
+    .sess-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 8px; }
+    .sess-tail-note { text-transform: none; letter-spacing: 0; font-style: italic; color: var(--fg-3); }
+    .sess-tools-section { margin-bottom: 18px; }
+    .sess-tools-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sess-tool-pill { display: inline-flex; gap: 6px; align-items: center; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 4px; padding: 3px 8px; font-size: 11px; }
+    .sess-tool-name { color: var(--fg-2); font-family: var(--font-mono); }
+    .sess-tool-count { color: var(--brand-200); font-weight: 500; font-family: var(--font-mono); }
+    .sess-events-section { margin-bottom: 18px; }
+    .sess-events-list { background: var(--ink-2); border-radius: 6px; padding: 8px; max-height: 400px; overflow-y: auto; font-family: var(--font-mono); font-size: 10px; }
+    .sess-event { display: grid; grid-template-columns: 60px 80px 100px 60px 1fr; gap: 6px; padding: 3px 6px; border-bottom: 1px solid var(--line-1); align-items: center; }
+    .sess-event-error { background: color-mix(in oklch, #fbbf24 8%, transparent); }
+    .sess-event-time { color: var(--fg-3); }
+    .sess-event-type { color: var(--brand-200); }
+    .sess-event-tool { color: var(--fg-2); }
+    .sess-event-dur { color: var(--fg-3); text-align: right; }
+    .sess-event-input { color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     /* Updates panel */
     .self-upd-card { padding: 14px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
     .self-upd-card--update { background: color-mix(in oklch, #fbbf24 8%, var(--ink-2)); border-bottom-color: color-mix(in oklch, #fbbf24 30%, var(--line-1)); }
@@ -3770,6 +3928,7 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (route === 'lint') return 'lint';
     if (route === 'process') return 'process';
     if (route === 'updates') return 'updates';
+    if (route === 'sessions') return 'sessions';
     if (route === 'locales') return 'locales';
     if (route === 'data') return 'data';
     if (route === 'store') return 'store';
@@ -3948,6 +4107,23 @@ export class IdeComponent implements OnInit, OnDestroy {
   selfUpdate = signal<{ current_version: string; repo_url: string; channel: string; platform: string; configured: boolean; checked: boolean; owner?: string; repo?: string; latest_version?: string; release_url?: string; update_available?: boolean; error?: string } | null>(null);
   selfUpdateLoading = signal(false);
   selfUpdateApplying = signal(false);
+
+  // Sessions panel — wraps dappco.re/go/session for Claude Code transcript inspection
+  sessionProjects = signal<{ name: string; display_path: string; path: string; session_count: number; latest_at?: string }[]>([]);
+  sessionSelectedProject = signal<string | null>(null);
+  sessions = signal<{ id: string; path: string; start_time?: string; end_time?: string; event_count: number; size_bytes: number }[]>([]);
+  sessionSelected = signal<any | null>(null);
+  sessionLoading = signal(false);
+  sessionInspectLoading = signal(false);
+  sessionFilter = signal('');
+  sessionVisible = computed(() => {
+    const f = this.sessionFilter().trim().toLowerCase();
+    if (!f) return this.sessionProjects();
+    return this.sessionProjects().filter(p =>
+      p.display_path.toLowerCase().includes(f) ||
+      p.name.toLowerCase().includes(f),
+    );
+  });
 
   // Process panel — IDE surface over core/go-process Service + daemon registry
   procManaged = signal<{ id: string; command: string; args: string[]; dir: string; status: string; started_at: string; exit_code: number; duration_ms: number; pid: number }[]>([]);
@@ -4235,6 +4411,9 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (route === 'updates' && this.updatesTools().length === 0) {
       void this.loadUpdates();
       void this.loadSelfUpdate();
+    }
+    if (route === 'sessions' && this.sessionProjects().length === 0) {
+      void this.loadSessionProjects();
     }
     if (route === 'process') {
       void this.refreshProcesses();
@@ -4753,6 +4932,64 @@ export class IdeComponent implements OnInit, OnDestroy {
     } finally {
       this.selfUpdateApplying.set(false);
     }
+  }
+
+  // Sessions panel — Claude Code transcript inspector
+  async loadSessionProjects() {
+    this.sessionLoading.set(true);
+    try {
+      const res = await this.bridgeCall('session_projects_list', {});
+      if (res.ok) this.sessionProjects.set(res.value?.projects || []);
+    } finally {
+      this.sessionLoading.set(false);
+    }
+  }
+
+  async selectSessionProject(projectPath: string) {
+    this.sessionSelectedProject.set(projectPath);
+    this.sessions.set([]);
+    this.sessionSelected.set(null);
+    this.sessionLoading.set(true);
+    try {
+      const res = await this.bridgeCall('session_list', { project_dir: projectPath });
+      if (res.ok) this.sessions.set(res.value?.sessions || []);
+    } finally {
+      this.sessionLoading.set(false);
+    }
+  }
+
+  async inspectSession(path: string) {
+    this.sessionInspectLoading.set(true);
+    try {
+      const res = await this.bridgeCall('session_inspect', { path, limit: 200 });
+      if (res.ok) this.sessionSelected.set(res.value);
+    } finally {
+      this.sessionInspectLoading.set(false);
+    }
+  }
+
+  formatSessionSize(b: number): string {
+    if (b < 1024) return `${b}B`;
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)}k`;
+    if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)}M`;
+    return `${(b / (1024 * 1024 * 1024)).toFixed(2)}G`;
+  }
+
+  formatSessionDuration(seconds: number): string {
+    if (!seconds) return '0s';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}h${m}m`;
+    if (m > 0) return `${m}m${s}s`;
+    return `${s}s`;
+  }
+
+  sessionToolEntries(counts: Record<string, number> | undefined): { name: string; count: number }[] {
+    if (!counts) return [];
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   }
 
   // Process panel — go-process surface

@@ -581,6 +581,16 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 		return b.toolSelfUpdateStatus(ctx, params)
 	case "selfupdate_apply":
 		return b.toolSelfUpdateApply(ctx, params)
+
+	// Sessions panel — wraps dappco.re/go/session for Claude Code transcripts.
+	case "session_projects_list":
+		return b.toolSessionProjectsList(ctx, params)
+	case "session_list":
+		return b.toolSessionList(ctx, params)
+	case "session_inspect":
+		return b.toolSessionInspect(ctx, params)
+	case "session_search":
+		return b.toolSessionSearch(ctx, params)
 	default:
 		return map[string]any{
 			"error": "not_implemented",

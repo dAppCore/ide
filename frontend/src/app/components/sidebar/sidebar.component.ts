@@ -515,6 +515,11 @@ export class SidebarComponent implements OnInit {
       iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9c-2.4 0-4.6-.9-6.3-2.4"/><path d="M3 12a9 9 0 0 1 9-9c2.4 0 4.6.9 6.3 2.4"/><path d="M21 3v6h-6M3 21v-6h6"/></svg>',
     },
     {
+      id: 'sessions',
+      label: 'Sessions',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6"/><path d="M12 22v-2"/><path d="M5 12H3"/><path d="M21 12h-2"/><path d="M7.05 7.05L5.64 5.64"/><path d="M16.95 16.95L18.36 18.36"/><circle cx="12" cy="12" r="4"/></svg>',
+    },
+    {
       id: 'lint',
       label: 'Lint',
       iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
