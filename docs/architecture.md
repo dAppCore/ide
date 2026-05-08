@@ -100,7 +100,7 @@ The wrapper recomposes a parallel runtime in conclave mode for tool execution, s
 
 ## 4. MCP service composition
 
-`newMCPService(c)` builds a `coremcp.Service` from a list of subsystems. Subsystems contributing tools:
+`newMCPService(c)` builds a `coremcp.Service` from a list of subsystems. Subsystems contributing the editor-facing core (parity-tested across stdio / HTTP / GUI):
 
 - `pkg/brain/` → `brain_*` (5 tools)
 - `pkg/workspace/` → `workspace_*` (4 tools)
@@ -111,6 +111,23 @@ The wrapper recomposes a parallel runtime in conclave mode for tool execution, s
 Each subsystem implements the `mcp.Subsystem` interface from `core/mcp` and is registered via `core.WithService` or `core.WithName` factory functions.
 
 The `pkg/chat/` package is not an MCP subsystem itself — it's a `ToolExecutor` consumer that calls the same MCP catalogue from inside the GUI shell.
+
+### Orchestration-cockpit bridges (`pkg/server/*_bridge.go`)
+
+Beyond the editor-facing core, `pkg/server/` exposes 80+ additional MCP tools wrapping canonical `core/*` packages and filesystem surfaces. These power the Developer-group panels (sessions, memory, tickets, forge, ts, php, etc.).
+
+The bridges share one HTTP entry point at `:9877/mcp/call` (handled by `MCPBridge.handleCall`) and dispatch through a single switch in `mcp_bridge.go::dispatchTool()`. Each panel area lives in its own `<area>_bridge.go` file. Convention:
+
+- Tool names: `<area>_<verb>` (e.g. `memory_list`, `forge_repos`, `session_inspect`)
+- Handlers: `func (b *MCPBridge) tool<Area><Verb>(ctx, params) map[string]any`
+- Per-area Service registration (where needed) lives in `<area>_init.go`
+
+Cross-cutting infrastructure:
+
+- **Auto-publish to Stream Hub** — `publishBridgeEvent()` after every dispatch publishes a JSON frame to `bridge.<tool>` + a wildcard `bridge` channel on the in-process Stream Hub. `/stream` becomes a live activity feed of every IDE action.
+- **App-state cache** — heavy scanners route through `pkg/server/cache_bridge.go` which writes to `~/.core/ide-cache.db` (DuckDB). See [cache-architecture.md](cache-architecture.md).
+
+See [panels.md](panels.md) for the full panel inventory and bridge mapping.
 
 ## 5. Transport selection
 
@@ -204,6 +221,12 @@ import('@wailsio/runtime').then(({ Events }) => {
 Backed by `dappco.re/go/store` — SQLite KV + DuckDB workspace buffer. Workspace state, navigation history, subagent event log all persist through this layer.
 
 Storage backend is pluggable via `coreio.Medium` injected on `Options` — Local, S3, Cube, in-memory all valid (per `dappco.re/go/io` Medium pattern). Default: Local Medium under XDG paths.
+
+### App-state cache (`~/.core/ide-cache.db`)
+
+Separate from `pkg/store/`, the orchestration-cockpit bridges share a DuckDB-backed cache that turns scanning panels into single-SELECT reads. Generic kv schema, per-collection TTLs, write-through on miss. Real-world wins: `ts_detect` 770→43ms (~18×), `forge_repos:core` 410→43ms (~10×).
+
+See [cache-architecture.md](cache-architecture.md) for the schema, driver gotchas (DuckDB v1.8.5 TIMESTAMP/JSON quirks), and the cache-aware bridge pattern.
 
 ## 8. Configuration
 

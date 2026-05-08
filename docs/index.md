@@ -72,9 +72,9 @@ core-ide --no-gui --http 127.0.0.1:9880 --token $(uuidgen)
 
 The HTTP server requires both a loopback address and a bearer token; without them it refuses to start.
 
-## Tool catalogue (19, MCP/action parity-tested)
+## Tool catalogue
 
-Enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.sh/core/ide/src/branch/dev/go/pkg/server/integration_action_parity_test.go):
+The 19-tool MCP-action parity-tested core (Brain / Workspace / Subagent / Navigation / Marketplace) remains the editor-facing contract:
 
 | Group | Tools |
 |-------|-------|
@@ -84,7 +84,13 @@ Enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.
 | Navigation | `core_navigate` |
 | Marketplace | `pkg_search`, `pkg_info`, `pkg_install` |
 
-`subagent_watch` supports `cursor`, `limit`, `nextCursor`, and `hasMore` for paged event history.
+Parity enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.sh/core/ide/src/branch/dev/go/pkg/server/integration_action_parity_test.go). `subagent_watch` supports `cursor`, `limit`, `nextCursor`, and `hasMore` for paged event history.
+
+### Orchestration cockpit bridges
+
+Beyond the editor-facing core, the binary now exposes 80+ additional MCP bridge tools that compose the canonical `core/*` packages into a Developer-group panel surface (filesystem inspection, ticket browsers, transcript inspectors, container/process supervision, application-state cache, etc.).
+
+See **[panels.md](panels.md)** for the full panel inventory and **[cache-architecture.md](cache-architecture.md)** for the DuckDB-backed app-state cache that ties them together (`ts_detect 770→43ms`, `forge_repos 410→43ms`).
 
 ## Package layout (`go/pkg/`)
 
@@ -96,25 +102,34 @@ Enforced by [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.
 | `pkg/config/` | Configuration management — XDG paths + `.core/` convention |
 | `pkg/marketplace/` | Package marketplace helpers (`pkg_search` / `pkg_info` / `pkg_install`) |
 | `pkg/navigate/` | Navigation between IDE surfaces (`core_navigate`) |
-| `pkg/server/` | HTTP / stdio / Wails server boot — composes the runtime, selects the transport, wires the Conclave layer |
+| `pkg/server/` | HTTP / stdio / Wails server boot + the orchestration-cockpit bridge layer (`*_bridge.go` files — one per panel area) |
 | `pkg/store/` | go-store backed persistence — workspace state, history, navigation breadcrumbs |
 | `pkg/subagent/` | Subagent relay (history, dispatch, paged event watch) |
 | `pkg/workspace/` | Workspace inspection + management |
 
 The Go module root is `go/`. Module path: `dappco.re/go/ide`. From the repo root, `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to the root copies.
 
+`pkg/server/` has grown a set of `<area>_bridge.go` files (one per Developer panel) — see **[panels.md](panels.md)** for the full list and the bridge-naming convention.
+
 ## Frontend layout
 
-Angular 20+ application embedded into the binary at compile time via `//go:embed`. Two pages:
+Angular 20+ application embedded into the binary at compile time via `//go:embed`. Two top-level pages:
 
 | Page | Component | Purpose |
 |------|-----------|---------|
-| `/ide` | `IdeComponent` (`frontend/src/app/pages/ide/`) | Main IDE layout — currently the canvas onto which the Lethean-3 Vi Control Panel chrome will be adopted (designed, not yet integrated — see RFC §9 status table) |
+| `/ide` | `IdeComponent` (`frontend/src/app/pages/ide/`) | Main IDE layout — orchestration-cockpit shell with sidebar + panel switcher (see [panels.md](panels.md)). The Lethean-3 Vi Control Panel chrome adoption is tracked in the desktop RFC §9. |
 | `/tray` | `TrayComponent` (`frontend/src/app/pages/tray/`) | System tray panel (compact, frameless) |
 
-Shared components live under `frontend/src/app/components/` (currently `sidebar/`).
+`IdeComponent` is a single big Angular component with one `@case` per Developer-group route — file explorer, Monaco editor, source control, sessions, memory, tickets, etc. Each panel reaches Go through a corresponding `<area>_bridge.go` file.
 
-The frontend communicates with Go services through `@wailsio/runtime` — direct goroutine calls via auto-generated TypeScript bindings in `frontend/bindings/`, plus event subscriptions for streaming surfaces.
+Shared components live under `frontend/src/app/components/` (sidebar with grouped routes, plus the inline Lit Vi-panel primitives).
+
+The frontend communicates with Go services through:
+
+- `bridgeCall(tool, params)` — POST to `http://127.0.0.1:9877/mcp/call` (the in-process MCP HTTP bridge) for the orchestration-cockpit tools.
+- `@wailsio/runtime` — direct goroutine calls via auto-generated TypeScript bindings in `frontend/bindings/`, plus event subscriptions for streaming surfaces (Vi presence, time tick).
+
+UI state (open tabs, current route, workspace root, chat panel visibility) persists to `~/.core/config.yaml` so the IDE re-opens to the exact panel + files the user left.
 
 ## Configuration
 
@@ -173,6 +188,15 @@ CORE_BRAIN_INTEGRATION=1 CORE_BRAIN_KEY=$CORE_BRAIN_KEY \
 ```
 
 The end-to-end smoke script builds `/tmp/core-ide`, verifies stdio MCP exposes 19 tools, verifies HTTP bearer auth exposes the same 19 tools, calls `workspace_status` through the HTTP tool bridge, checks malformed tool input + schema validation failures, checks unauthenticated HTTP returns `401`, and confirms HTTP mode without a token exits with status `1`.
+
+## More documentation
+
+| Topic | Doc |
+|-------|-----|
+| Internal runtime + transport selection + Conclave parity layer | [architecture.md](architecture.md) |
+| Build, test, contribute, hot-reload | [development.md](development.md) |
+| Every Developer-group panel + cross-surface drill-down + bridge naming | [panels.md](panels.md) |
+| DuckDB-backed app-state cache + driver gotchas + cache pill UX | [cache-architecture.md](cache-architecture.md) |
 
 ## Where the truth lives
 
