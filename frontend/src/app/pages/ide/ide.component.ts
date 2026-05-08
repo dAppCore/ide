@@ -729,6 +729,7 @@ $ _</pre>
                       <div class="frg-tabs">
                         <button class="frg-tab" [class.active]="forgeTab() === 'issues'" (click)="forgeTab.set('issues')">Issues <span class="frg-tab-count">{{ forgeIssues().length }}</span></button>
                         <button class="frg-tab" [class.active]="forgeTab() === 'pulls'" (click)="forgeTab.set('pulls')">PRs <span class="frg-tab-count">{{ forgePulls().length }}</span></button>
+                        <button class="frg-tab" [class.active]="forgeTab() === 'releases'" (click)="forgeTab.set('releases'); loadForgeReleases()">Releases <span class="frg-tab-count">{{ forgeReleases().length }}</span></button>
                       </div>
 
                       @if (forgeTab() === 'issues') {
@@ -765,6 +766,34 @@ $ _</pre>
                                   <td><code>{{ p.head }}→{{ p.base }}</code></td>
                                   <td><code>{{ p.author }}</code></td>
                                   <td><code>{{ p.updated_at | slice:0:10 }}</code></td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        }
+                      } @else if (forgeTab() === 'releases') {
+                        @if (forgeReleasesLoading()) {
+                          <div class="frg-empty-pane">Loading releases…</div>
+                        } @else if (forgeReleases().length === 0) {
+                          <div class="frg-empty-pane">No releases or tags for this repo.</div>
+                        } @else {
+                          <table class="frg-table">
+                            <thead><tr><th>kind</th><th>tag</th><th>title</th><th>published</th><th>archive</th></tr></thead>
+                            <tbody>
+                              @for (r of forgeReleases(); track r.name) {
+                                <tr>
+                                  <td>
+                                    <span class="frg-state {{ r.kind }}">{{ r.kind }}</span>
+                                    @if (r.prerelease) { <span class="frg-draft">pre</span> }
+                                    @if (r.draft) { <span class="frg-draft">draft</span> }
+                                  </td>
+                                  <td><a [href]="r.html_url" target="_blank"><code>{{ r.name }}</code></a></td>
+                                  <td class="frg-title">{{ r.title }}</td>
+                                  <td><code>{{ r.published_at | slice:0:10 }}</code></td>
+                                  <td>
+                                    @if (r.tarball_url) { <a class="frg-archive-link" [href]="r.tarball_url" target="_blank">tar.gz</a> }
+                                    @if (r.zipball_url) { · <a class="frg-archive-link" [href]="r.zipball_url" target="_blank">zip</a> }
+                                  </td>
                                 </tr>
                               }
                             </tbody>
@@ -4638,7 +4667,21 @@ export class IdeComponent implements OnInit, OnDestroy {
   forgeNotifications = signal<{ id: number; unread: boolean; pinned: boolean; updated_at: string; title: string; type: string; url: string; state: string; repo: string }[]>([]);
   forgeError = signal<string | null>(null);
   forgeLoading = signal(false);
-  forgeTab = signal<'issues' | 'pulls' | 'notifications'>('issues');
+  forgeTab = signal<'issues' | 'pulls' | 'notifications' | 'releases'>('issues');
+  forgeReleases = signal<{ kind: string; name: string; title: string; published_at: string; html_url: string; tarball_url?: string; zipball_url?: string; target?: string; draft?: boolean; prerelease?: boolean; author?: string }[]>([]);
+  forgeReleasesLoading = signal(false);
+  async loadForgeReleases() {
+    const owner = this.forgeSelectedOrg();
+    const repo = this.forgeSelectedRepo();
+    if (!owner || !repo) return;
+    this.forgeReleasesLoading.set(true);
+    try {
+      const res = await this.bridgeCall('forge_releases', { owner, repo, limit: 30 });
+      if (res.ok) this.forgeReleases.set(res.value?.releases || []);
+    } finally {
+      this.forgeReleasesLoading.set(false);
+    }
+  }
 
   // Tenant panel — IDE surface over core/go-tenant
   tenantStatus = signal<{ registered: boolean; online: boolean; api_url: string; api_token_set: boolean; hint: string } | null>(null);

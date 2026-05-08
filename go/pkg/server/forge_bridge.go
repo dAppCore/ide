@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -294,6 +295,134 @@ func (b *MCPBridge) toolForgePulls(ctx context.Context, params map[string]any) m
 		})
 	}
 	return map[string]any{"ok": true, "value": map[string]any{"pulls": out, "count": len(out)}}
+}
+
+// toolForgeReleases lists recent releases AND tags for a single owner/repo.
+// Forge.lthn.sh repos commonly use tags without an explicit GitHub-style
+// "release" — so we surface both, merged + sorted by recency. Calls the
+// API directly (go-forge's Releases service exists but no TagService yet).
+func (b *MCPBridge) toolForgeReleases(ctx context.Context, params map[string]any) map[string]any {
+	owner := strings.TrimSpace(paramString(params, "owner", ""))
+	repo := strings.TrimSpace(paramString(params, "repo", ""))
+	if owner == "" || repo == "" {
+		return map[string]any{"ok": false, "error": "owner and repo required"}
+	}
+	limit := paramInt(params, "limit", 20)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	out := make([]map[string]any, 0, limit)
+
+	// Try Releases first (explicit releases trump tags when present)
+	if f, ok := b.forgeService(); ok {
+		page, err := f.Releases.ListReleasesPage(ctx, owner, repo, forge.ListOptions{Page: 1, PageSize: limit})
+		if err == nil {
+			for _, r := range page.Items {
+				out = append(out, map[string]any{
+					"kind":         "release",
+					"name":         r.TagName,
+					"title":        r.Title,
+					"target":       r.Target,
+					"draft":        r.IsDraft,
+					"prerelease":   r.IsPrerelease,
+					"published_at": r.PublishedAt.UTC().Format(time.RFC3339),
+					"html_url":     r.HTMLURL,
+					"tarball_url":  r.TarURL,
+					"author":       userLogin(r.Author),
+				})
+			}
+		}
+	}
+
+	// Always merge in tags too — Forge repos often only have tags.
+	tagURL := strings.TrimSuffix(forgeBaseURL(), "/") + "/api/v1/repos/" + owner + "/" + repo + "/tags?limit=" + fmt.Sprintf("%d", limit)
+	if tagBody := forgeAuthedGET(tagURL); tagBody != nil {
+		var tags []struct {
+			Name        string `json:"name"`
+			Message     string `json:"message"`
+			ID          string `json:"id"`
+			ZipballURL  string `json:"zipball_url"`
+			TarballURL  string `json:"tarball_url"`
+			Commit      struct {
+				URL     string `json:"url"`
+				SHA     string `json:"sha"`
+				Created string `json:"created"`
+			} `json:"commit"`
+		}
+		if err := json.Unmarshal(tagBody, &tags); err == nil {
+			seen := map[string]bool{}
+			for _, e := range out {
+				seen[asString(e["name"])] = true
+			}
+			for _, t := range tags {
+				if seen[t.Name] {
+					continue
+				}
+				out = append(out, map[string]any{
+					"kind":         "tag",
+					"name":         t.Name,
+					"title":        t.Message,
+					"target":       t.Commit.SHA,
+					"published_at": t.Commit.Created,
+					"tarball_url":  t.TarballURL,
+					"zipball_url":  t.ZipballURL,
+					"html_url":     "https://forge.lthn.sh/" + owner + "/" + repo + "/src/tag/" + t.Name,
+				})
+			}
+		}
+	}
+
+	// Sort by published_at desc; cap to limit
+	sort.Slice(out, func(i, j int) bool {
+		return asString(out[i]["published_at"]) > asString(out[j]["published_at"])
+	})
+	if len(out) > limit {
+		out = out[:limit]
+	}
+
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"releases": out,
+			"count":    len(out),
+			"owner":    owner,
+			"repo":     repo,
+		},
+	}
+}
+
+func forgeBaseURL() string {
+	if v := strings.TrimSpace(os.Getenv("FORGE_URL")); v != "" {
+		return v
+	}
+	return "https://forge.lthn.sh"
+}
+
+func forgeAuthedGET(url string) []byte {
+	tok := readForgeToken()
+	if tok == "" {
+		return nil
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Authorization", "token "+tok)
+	req.Header.Set("Accept", "application/json")
+	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	if err != nil {
+		return nil
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 400 {
+		return nil
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+	return body
 }
 
 // toolForgeNotifications lists the authenticated user's pending forge
