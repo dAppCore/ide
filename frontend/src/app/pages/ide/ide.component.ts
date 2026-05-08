@@ -1427,6 +1427,7 @@ $ _</pre>
                     Active
                     @if (sessionActive().length > 0) { <span class="sess-tab-count">{{ sessionActive().length }}</span> }
                   </button>
+                  <button class="sess-tab" [class.active]="sessionTab() === 'search'" (click)="sessionTab.set('search')">Search</button>
                 </div>
                 @if (sessionTab() === 'browse') {
                 <div class="sess-toolbar">
@@ -1445,8 +1446,40 @@ $ _</pre>
                   <button class="btn btn-ghost btn-sm" (click)="loadActiveSessions()" [disabled]="sessionActiveLoading()">↻ refresh</button>
                 </div>
                 }
-                <div class="sess-body" [class.sess-active-mode]="sessionTab() === 'active'">
-                  @if (sessionTab() === 'active') {
+                @if (sessionTab() === 'search') {
+                <div class="sess-toolbar">
+                  <input class="input sess-filter" placeholder="search across sessions… (Enter)" [value]="sessionSearchQuery()" (input)="sessionSearchQuery.set($any($event.target).value)" (keyup.enter)="runSessionSearch()" />
+                  <select class="input sess-filter" style="flex: 0 0 160px" [value]="sessionSearchScope()" (change)="sessionSearchScope.set($any($event.target).value)">
+                    <option value="current">current project</option>
+                    <option value="all">all projects</option>
+                  </select>
+                  <button class="btn btn-primary btn-sm" (click)="runSessionSearch()" [disabled]="sessionSearchLoading()">
+                    @if (sessionSearchLoading()) { <span>searching…</span> } @else { <span>Search</span> }
+                  </button>
+                </div>
+                }
+                <div class="sess-body" [class.sess-active-mode]="sessionTab() === 'active' || sessionTab() === 'search'">
+                  @if (sessionTab() === 'search') {
+                    <aside class="sess-search-list">
+                      <div class="sess-list-title">
+                        Cross-session hits
+                        @if (sessionSearchLoading()) { <span class="sess-spin">…</span> }
+                      </div>
+                      @if (sessionSearchHits().length === 0 && !sessionSearchLoading()) {
+                        <div class="sess-empty">Type a query above and press Enter.</div>
+                      }
+                      @for (h of sessionSearchHits(); track $index) {
+                        <button class="sess-search-hit" (click)="openSessionSearchHit(h)" [title]="'Open session ' + h.session_id">
+                          <div class="sess-search-head">
+                            <code class="sess-active-id">{{ h.session_id.slice(0, 8) }}</code>
+                            <span class="sess-search-when">{{ h.timestamp.slice(0, 19).replace('T', ' ') }}</span>
+                            @if (h.tool) { <span class="sess-search-tool">{{ h.tool }}</span> }
+                          </div>
+                          <pre class="sess-search-match">{{ h.match }}</pre>
+                        </button>
+                      }
+                    </aside>
+                  } @else if (sessionTab() === 'active') {
                     <aside class="sess-active-list">
                       <div class="sess-list-title">
                         Active sessions ({{ sessionActive().length }})
@@ -3609,6 +3642,13 @@ $ _</pre>
     .sess-active-fresh { color: #34d399; font-weight: 500; }
     .sess-active-proj { font-size: 11px; color: var(--fg-1); margin-top: 4px; word-break: break-all; }
     .sess-active-meta { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-top: 2px; }
+    .sess-search-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-search-hit { width: calc(100% - 20px); margin: 4px 10px; padding: 8px 12px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; cursor: pointer; font: inherit; color: var(--fg-2); text-align: left; display: flex; flex-direction: column; gap: 6px; }
+    .sess-search-hit:hover { border-color: var(--brand-200); }
+    .sess-search-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sess-search-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .sess-search-tool { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: color-mix(in oklch, var(--brand-200) 16%, var(--ink-1)); color: var(--brand-200); text-transform: uppercase; letter-spacing: 0.04em; }
+    .sess-search-match { font-family: var(--font-mono); font-size: 10px; color: var(--fg-2); margin: 0; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
 
     .sess-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sess-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
@@ -4583,7 +4623,11 @@ export class IdeComponent implements OnInit, OnDestroy {
   sessionLoading = signal(false);
   sessionInspectLoading = signal(false);
   sessionFilter = signal('');
-  sessionTab = signal<'browse' | 'active'>('browse');
+  sessionTab = signal<'browse' | 'active' | 'search'>('browse');
+  sessionSearchQuery = signal('');
+  sessionSearchHits = signal<{ session_id: string; timestamp: string; tool: string; match: string }[]>([]);
+  sessionSearchLoading = signal(false);
+  sessionSearchScope = signal<'current' | 'all'>('current');
   sessionActive = signal<{ id: string; path: string; project: string; project_path: string; size_bytes: number; modified: string; age_seconds: number }[]>([]);
   sessionActiveLoading = signal(false);
   sessionActiveSinceMinutes = signal(60);
@@ -5590,6 +5634,66 @@ export class IdeComponent implements OnInit, OnDestroy {
       }
     } finally {
       this.sessionInspectLoading.set(false);
+    }
+  }
+
+  async runSessionSearch() {
+    const q = this.sessionSearchQuery().trim();
+    if (q.length < 2) {
+      this.sessionSearchHits.set([]);
+      return;
+    }
+    // Resolve project_dir: 'current' uses the currently-selected project on
+    // Browse tab, falling back to the largest active. 'all' iterates every
+    // project_dir from the projects list and merges hits.
+    let projects: string[] = [];
+    if (this.sessionSearchScope() === 'all') {
+      projects = this.sessionProjects().map(p => p.path);
+    } else {
+      const current = this.sessionSelectedProject();
+      if (current) {
+        projects = [current];
+      } else if (this.sessionProjects().length > 0) {
+        projects = [this.sessionProjects()[0].path];
+      }
+    }
+    if (projects.length === 0) return;
+    this.sessionSearchLoading.set(true);
+    try {
+      const allHits: { session_id: string; timestamp: string; tool: string; match: string }[] = [];
+      for (const project_dir of projects) {
+        const res = await this.bridgeCall('session_search', { project_dir, query: q });
+        if (res.ok && res.value?.hits) {
+          allHits.push(...res.value.hits);
+        }
+      }
+      allHits.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+      this.sessionSearchHits.set(allHits);
+    } finally {
+      this.sessionSearchLoading.set(false);
+    }
+  }
+
+  async openSessionSearchHit(hit: { session_id: string }) {
+    // Find the session in any project's session list. If we haven't loaded
+    // sessions for the matching project yet, scan all projects.
+    const direct = this.sessions().find(s => s.id === hit.session_id);
+    if (direct) {
+      this.sessionTab.set('browse');
+      void this.inspectSession(direct.path);
+      return;
+    }
+    // Look across all projects for the matching session id.
+    for (const proj of this.sessionProjects()) {
+      const res = await this.bridgeCall('session_list', { project_dir: proj.path });
+      if (!res.ok) continue;
+      const match = (res.value?.sessions || []).find((s: { id: string }) => s.id === hit.session_id);
+      if (match) {
+        this.sessionTab.set('browse');
+        await this.selectSessionProject(proj.path);
+        void this.inspectSession(match.path);
+        return;
+      }
     }
   }
 
