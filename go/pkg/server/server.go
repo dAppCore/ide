@@ -31,6 +31,7 @@ type Server struct {
 	transport Transport
 	relay     RelayTransport
 	gui       *GUIShell
+	terminal  *TerminalServer
 	authToken string
 }
 
@@ -41,6 +42,7 @@ type runtimeParts struct {
 	transport Transport
 	relay     RelayTransport
 	gui       *GUIShell
+	terminal  *TerminalServer
 	authToken string
 }
 
@@ -59,6 +61,7 @@ func NewServer(
 		transport: parts.transport,
 		relay:     parts.relay,
 		gui:       parts.gui,
+		terminal:  parts.terminal,
 		authToken: parts.authToken,
 	}, nil
 }
@@ -99,6 +102,10 @@ func composeRuntimeMode(
 	var guiShell *GUIShell
 	if enableGUI {
 		guiShell = NewGUIShell()
+		guiShell.Frontend = options.Frontend
+		// options.WailsApp is opaque (any) — gui.go does the wails type
+		// assertion. We just hand the reference through.
+		guiShell.SetWailsApp(options.WailsApp)
 	}
 
 	services := []core.CoreOption{
@@ -132,7 +139,12 @@ func composeRuntimeMode(
 			return core.Ok(marketplacepkg.New(cfg.Ide.Marketplace))
 		}),
 		core.WithService(vipkg.Register),
+		core.WithName("mcp_bridge", RegisterMCPBridge(MCPBridgeOptions{})),
 	}
+	// gui.Bootstrap(app) is built by the cmd entrypoint — it carries window /
+	// display / webview / etc. with the wails app reference attached. Library
+	// code here treats it as opaque CoreOptions.
+	services = append(services, options.GUIServices...)
 	services = append(services, options.extraCoreOptions...)
 	services = append(services, core.WithName("mcp", registerMCP(options, mode)))
 	if enableGUI {
@@ -183,6 +195,20 @@ func composeRuntimeMode(
 	navigateService.RegisterActions(c)
 	marketplaceService.RegisterActions(c)
 
+	// Register orm.Service + mount an in-memory Memium for the IDE's
+	// own data. v1 demo: a single `note` table backed by Memium so the
+	// /data panel has something concrete to query. Real consumers will
+	// mount a duckdb/postgres/borg medium under "default" instead.
+	if result := registerOrmService(c); !result.OK {
+		core.Print(core.Stderr(), "ide.server.Compose: orm registration warning: %v\n", result.Value)
+	}
+	// Register tenant.Service for the /tenant panel. Operates in offline
+	// mode (cache-only, no client) when no tenant.api_url + api_token are
+	// configured — UI surfaces the status honestly.
+	if result := registerTenantService(c); !result.OK {
+		core.Print(core.Stderr(), "ide.server.Compose: tenant registration warning: %v\n", result.Value)
+	}
+
 	mcpService, ok := core.ServiceFor[*coremcp.Service](c, "mcp")
 	if !ok {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
@@ -225,6 +251,11 @@ func composeRuntimeMode(
 	if enableGUI && (transport.Mode == "" || transport.Mode == "stdio") && !options.PreferConfiguredTransport {
 		transport = Transport{Mode: "gui"}
 	}
+	var term *TerminalServer
+	if enableGUI {
+		term = NewTerminalServer()
+	}
+
 	return &runtimeParts{
 		core:      c,
 		mcp:       mcpService,
@@ -232,6 +263,7 @@ func composeRuntimeMode(
 		transport: transport,
 		relay:     SelectRelayTransport(cfg, authToken, hub.Handler()),
 		gui:       guiShell,
+		terminal:  term,
 		authToken: authToken,
 	}, nil
 }
@@ -264,6 +296,18 @@ func (s *Server) Run(
 			_ = r
 		}
 	}()
+
+	// Embedded SSH server — exposes the user's shell on 127.0.0.1:9876.
+	// Runs only in GUI mode; MCP/HTTP transports skip it. Lifetime is
+	// scoped to the server.Run call so it goes down on Ctrl+C / quit.
+	if s.terminal != nil {
+		if err := s.terminal.Start(); err != nil {
+			core.Print(core.Stderr(), "ide.server.Run: terminal SSH start failed: %v\n", err)
+		} else {
+			core.Print(core.Stderr(), "ide.server.Run: terminal SSH listening on %s\n", s.terminal.Addr)
+		}
+		defer func() { _ = s.terminal.Stop() }()
+	}
 
 	var relayServer *http.Server
 	if s.relay.Enabled {

@@ -49,9 +49,11 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
         </button>
       </div>
 
-      <!-- Group: Workspace -->
+      <!-- Group: Developer — full feature set, will gate behind a dev-mode
+           setting once onboarding flow lands. Today everyone sees everything;
+           later this group hides for non-dev personas. -->
       <div class="nav-group">
-        <div class="nav-group-title">Workspace</div>
+        <div class="nav-group-title">Developer</div>
         @for (item of workspaceItems; track item.id) {
           <button
             class="nav-row"
@@ -62,6 +64,40 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
           </button>
         }
       </div>
+
+      <!-- Group: Plugins — installed marketplace modules that declare a Menu
+           extend the IDE frame here. Click navigates to plugin:<code>; sub-pages
+           render as nested rows when the plugin row is active. -->
+      @if (pluginMenus.length > 0) {
+        <div class="nav-group">
+          <div class="nav-group-title">Plugins</div>
+          @for (p of pluginMenus; track p.code) {
+            @if (p.menu) {
+              <button
+                class="nav-row"
+                [class.active]="isPluginActive(p.code)"
+                (click)="routeChange.emit(pluginRouteId(p.code))">
+                @if (p.menu.icon_svg) {
+                  <span class="nav-icon" [innerHTML]="p.menu.icon_svg"></span>
+                } @else {
+                  <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></span>
+                }
+                <span class="nav-label">{{ p.menu.label }}</span>
+              </button>
+              @if (isPluginActive(p.code) && p.menu.subpages?.length) {
+                @for (s of p.menu.subpages; track s.path) {
+                  <button
+                    class="nav-row nav-subpage"
+                    [class.active]="currentRoute === pluginRouteId(p.code, s.path)"
+                    (click)="routeChange.emit(pluginRouteId(p.code, s.path))">
+                    <span class="nav-label">— {{ s.label }}</span>
+                  </button>
+                }
+              }
+            }
+          }
+        </div>
+      }
 
       <!-- Group: Sites (status-dot per row, per Lethean-3 native handoff) -->
       <div class="nav-group">
@@ -273,6 +309,13 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
       padding: 0 8px 6px;
     }
 
+    .nav-subpage {
+      padding-left: 28px !important;
+      font-size: 12px !important;
+      color: var(--fg-3) !important;
+    }
+    .nav-subpage.active { color: var(--brand-200) !important; background: color-mix(in oklch, var(--brand-500) 10%, transparent) !important; }
+
     .nav-row {
       display: flex;
       align-items: center;
@@ -358,6 +401,7 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 })
 export class SidebarComponent implements OnInit {
   @Input() currentRoute = 'dashboard';
+  @Input() pluginMenus: { code: string; name: string; menu?: { label: string; icon_svg?: string; subpages?: { label: string; path: string }[] } }[] = [];
   @Output() routeChange = new EventEmitter<string>();
 
   private isBrowser: boolean;
@@ -378,6 +422,15 @@ export class SidebarComponent implements OnInit {
       .catch((err) => {
         console.warn('[vi] sidebar loadViData failed:', err);
       });
+  }
+
+  pluginRouteId(code: string, sub?: string): string {
+    return sub ? `plugin:${code}:${sub}` : `plugin:${code}`;
+  }
+
+  isPluginActive(code: string): boolean {
+    const r = this.currentRoute || '';
+    return r === `plugin:${code}` || r.startsWith(`plugin:${code}:`);
   }
 
   workspaceItems = [
@@ -405,6 +458,81 @@ export class SidebarComponent implements OnInit {
       id: 'terminal',
       label: 'Terminal',
       iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+    },
+    {
+      id: 'marketplace',
+      label: 'Marketplace',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18l-1.5 9a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7L3 9z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>',
+    },
+    {
+      id: 'forge',
+      label: 'Forge',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 8l-7 4-7-4"/><path d="M5 16l7 4 7-4"/><path d="M5 8v8M19 8v8M12 4v4"/></svg>',
+    },
+    {
+      id: 'tenant',
+      label: 'Tenant',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+    },
+    {
+      id: 'store',
+      label: 'Store',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="13" width="18" height="6" rx="1"/><line x1="7" y1="6" x2="7.01" y2="6"/><line x1="7" y1="16" x2="7.01" y2="16"/></svg>',
+    },
+    {
+      id: 'data',
+      label: 'Data',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>',
+    },
+    {
+      id: 'locales',
+      label: 'Locales',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    },
+    {
+      id: 'process',
+      label: 'Processes',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    },
+    {
+      id: 'ts',
+      label: 'TypeScript',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 13h2v6m-2-3h2"/><path d="M13 13h4v2h-2c-1 0-2 0-2 1.5S14 18 15 18h2v-1"/></svg>',
+    },
+    {
+      id: 'php',
+      label: 'PHP',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6"/><path d="M7 10v4M9 10v4M9 12h2v-1.5"/><path d="M13 10v4M15 14v-4h1.5l1 1.5-1 1.5H15"/></svg>',
+    },
+    {
+      id: 'devops',
+      label: 'DevOps',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+    },
+    {
+      id: 'updates',
+      label: 'Updates',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9c-2.4 0-4.6-.9-6.3-2.4"/><path d="M3 12a9 9 0 0 1 9-9c2.4 0 4.6.9 6.3 2.4"/><path d="M21 3v6h-6M3 21v-6h6"/></svg>',
+    },
+    {
+      id: 'lint',
+      label: 'Lint',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    },
+    {
+      id: 'containers',
+      label: 'Containers',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="2" y1="11" x2="22" y2="11"/></svg>',
+    },
+    {
+      id: 'build',
+      label: 'Build',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    },
+    {
+      id: 'repos',
+      label: 'Repos',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M14 5v6h6"/><circle cx="9" cy="15" r="1.4"/></svg>',
     },
   ];
 

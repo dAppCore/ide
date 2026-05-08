@@ -6,6 +6,8 @@ import (
 	"syscall"
 
 	core "dappco.re/go"
+	gui "dappco.re/go/gui"
+	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"dappco.re/go/ide/pkg/config"
 	"dappco.re/go/ide/pkg/server"
@@ -40,11 +42,31 @@ func main() {
 		cfg.Ide.Chat.Enabled = config.BoolPtr(false)
 	}
 
+	// cmd/core-ide is the single boundary in core/ide that imports wails.
+	// We construct the application here, then hand the reference + the
+	// canonical core/gui service registration plan through to NewServer.
+	// pkg/server stays wails-free at the public surface (gui.go does the
+	// lone internal type assertion via shell.SetWailsApp).
+	var app *application.App
+	var guiServices []core.CoreOption
+	if !flags.NoGUI {
+		// core.Env("DIR_CONFIG") is set to the native config dir per OS by
+		// core's runtime info layer (macOS: ~/Library/Application Support).
+		// window.Service's StateManager + LayoutManager pick that up
+		// automatically — window position/size + named layouts persist to
+		// $DIR_CONFIG/Core/{window_state.json,layouts.json}.
+		app = newWailsApp(FrontendFS())
+		guiServices = gui.Bootstrap(app)
+	}
+
 	srv, err := server.NewServer(server.Options{
 		Config:                    cfg,
 		GUI:                       !flags.NoGUI,
 		MCP:                       flags.MCPOnly,
 		PreferConfiguredTransport: flags.MCPOnly || flags.HTTPAddr != "",
+		Frontend:                  FrontendFS(),
+		WailsApp:                  app,
+		GUIServices:               guiServices,
 	})
 	if err != nil {
 		core.Error("ide.main", "compose", err)

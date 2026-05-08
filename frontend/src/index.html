@@ -6,6 +6,73 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="/assets/wails.png"/>
+  <!--
+    MCP bridge JS shim — forwards console + errors to the local MCP HTTP server
+    on :9877 so Cladius can read them via webview_console / webview_errors
+    tools. Universal pattern (no CDP needed, works on macOS WebKit, Windows
+    WebView2, Linux WebKitGTK). Inline so it runs before any framework code.
+  -->
+  <script>
+    (function () {
+      var BRIDGE = 'http://127.0.0.1:9877';
+      var post = function (path, payload) {
+        try {
+          fetch(BRIDGE + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(function () {});
+        } catch (e) { /* bridge unreachable — silent */ }
+      };
+      var fmt = function (args) {
+        return Array.prototype.map.call(args, function (a) {
+          if (a === null || a === undefined) return String(a);
+          if (typeof a === 'string') return a;
+          if (a instanceof Error) {
+            return (a.name || 'Error') + ': ' + (a.message || '(no message)') +
+              (a.stack ? '\n' + a.stack : '');
+          }
+          // Capture Error-shaped objects (have stack/message) even when not Error instances.
+          if (typeof a === 'object' && (a.stack || a.message)) {
+            return (a.name || 'object') + ': ' + (a.message || '') +
+              (a.stack ? '\n' + a.stack : '');
+          }
+          try { return JSON.stringify(a); } catch (e) { return String(a); }
+        }).join(' ');
+      };
+      ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
+        var orig = console[level].bind(console);
+        console[level] = function () {
+          orig.apply(console, arguments);
+          post('/internal/console', {
+            level: level,
+            message: fmt(arguments),
+            source: 'console',
+            at: new Date().toISOString(),
+          });
+        };
+      });
+      window.addEventListener('error', function (e) {
+        post('/internal/error', {
+          message: e.message || 'unknown error',
+          source: e.filename || '',
+          line: e.lineno || 0,
+          col: e.colno || 0,
+          stack: (e.error && e.error.stack) || '',
+          at: new Date().toISOString(),
+        });
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var reason = e.reason;
+        post('/internal/error', {
+          message: 'unhandled promise rejection: ' + (reason && reason.message ? reason.message : String(reason)),
+          stack: (reason && reason.stack) || '',
+          at: new Date().toISOString(),
+        });
+      });
+    })();
+  </script>
 </head>
 <body class="surface">
   <app-root></app-root>

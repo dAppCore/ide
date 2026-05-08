@@ -11,6 +11,8 @@ require (
 	dappco.re/go/scm v0.10.0
 	dappco.re/go/store v0.9.0
 	dappco.re/go/ws v0.5.0
+	github.com/charmbracelet/ssh v0.0.0-20250826160808-ebfa259c7309
+	github.com/creack/pty v1.1.24
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/modelcontextprotocol/go-sdk v1.5.0
@@ -21,8 +23,12 @@ require (
 require (
 	dappco.re/go/rag v0.10.0 // indirect
 	dappco.re/go/webview v0.9.0 // indirect
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/charmbracelet/x/conpty v0.1.0 // indirect
+	github.com/charmbracelet/x/errors v0.0.0-20240508181413-e8d8b6e2de86 // indirect
+	github.com/charmbracelet/x/termios v0.1.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728 // indirect
 	github.com/mailru/easyjson v0.9.2 // indirect
@@ -32,13 +38,22 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	go.opentelemetry.io/otel/metric v1.42.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.42.0 // indirect
+	go.opentelemetry.io/otel/trace v1.42.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect
 	google.golang.org/grpc v1.79.2 // indirect
 )
 
 require (
 	dappco.re/go v0.9.0
+	dappco.re/go/devops v0.0.0
+	dappco.re/go/forge v0.0.0
 	dappco.re/go/log v0.9.0 // indirect
+	dappco.re/go/orm v0.0.0
+	dappco.re/go/php v0.0.0
+	dappco.re/go/tenant v0.0.0
+	dappco.re/go/update v0.0.0
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.0 // indirect
@@ -143,3 +158,15 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.47.0 // indirect
 )
+
+replace dappco.re/go/orm => ../../orm/go
+
+replace dappco.re/go/tenant => ../../go-tenant/go
+
+replace dappco.re/go/forge => ../../go-forge/go
+
+replace dappco.re/go/devops => ../../go-devops/go
+
+replace dappco.re/go/php => ../../php/go
+
+replace dappco.re/go/update => ../../go-update/go

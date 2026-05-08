@@ -9,22 +9,24 @@ import {
 import { IdeComponent } from './pages/ide/ide.component';
 
 export const routes: Routes = [
+  // Land on the IDE shell at boot. The gui-ui ApplicationFrame still needs
+  // /api/v1/{i18n,providers} + /events backends — wire those before flipping
+  // the default back to ApplicationFrameComponent.
+  { path: '', redirectTo: '/ide', pathMatch: 'full' },
+
   // System tray panel — standalone compact UI (380x480 frameless)
   { path: 'tray', component: SystemTrayFrameComponent },
 
   // Full IDE layout with sidebar, dashboard, explorer, and terminal panes
   { path: 'ide', component: IdeComponent },
 
-  // Main application frame with HLCRF layout
+  // Main application frame with HLCRF layout — kept for /:provider routes.
   {
     path: '',
     component: ApplicationFrameComponent,
     children: [
       // Dynamic provider rendering via route parameter
       { path: ':provider', component: ProviderHostComponent },
-
-      // Default to process provider (first registered)
-      { path: '', redirectTo: 'process', pathMatch: 'full' },
     ],
   },
 ];

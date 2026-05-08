@@ -30,6 +30,7 @@ tasks:
       - exclude: node_modules/**/*
     generates:
       - dist/**/*
+      - ../go/cmd/core-ide/dist/**/*
     deps:
       - task: install:frontend:deps
       - task: generate:bindings
@@ -38,6 +39,12 @@ tasks:
             ref: .BUILD_FLAGS
     cmds:
       - npm run {{.BUILD_COMMAND}} -q
+      # Mirror the dist into the Go module so //go:embed all:dist (in
+      # cmd/core-ide/embed.go) picks it up. Embed paths can't reach above
+      # go.mod, so we copy instead of symlink for cross-platform safety.
+      - rm -rf ../go/cmd/core-ide/dist
+      - mkdir -p ../go/cmd/core-ide/dist
+      - cp -R dist/. ../go/cmd/core-ide/dist/
     env:
       PRODUCTION: '{{if eq .DEV "true"}}false{{else}}true{{end}}'
     vars:

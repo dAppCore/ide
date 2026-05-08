@@ -7,11 +7,15 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+type emptyInput struct{}
+
 func (s *Subsystem) registerTools(svc *coremcp.Service) {
 	server := svc.Server()
 	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_search", Description: "Search the marketplace for packages."}, s.handleSearch)
 	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_info", Description: "Load package details from the marketplace."}, s.handleInfo)
 	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_install", Description: "Install a package from the marketplace."}, s.handleInstall)
+	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_installed", Description: "List installed marketplace packages."}, s.handleInstalled)
+	coremcp.AddToolRecorded(svc, server, "pkg", &mcp.Tool{Name: "pkg_remove", Description: "Remove an installed marketplace package."}, s.handleRemove)
 }
 
 func (s *Subsystem) handleSearch(
@@ -38,5 +42,23 @@ func (s *Subsystem) handleInstall(
 	input InstallInput,
 ) (*mcp.CallToolResult, InstallOutput, error) {
 	out, err := s.install(ctx, input)
+	return nil, out, err
+}
+
+func (s *Subsystem) handleInstalled(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	_ emptyInput,
+) (*mcp.CallToolResult, InstalledOutput, error) {
+	out, err := s.installed(ctx)
+	return nil, out, err
+}
+
+func (s *Subsystem) handleRemove(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input RemoveInput,
+) (*mcp.CallToolResult, RemoveOutput, error) {
+	out, err := s.remove(ctx, input)
 	return nil, out, err
 }

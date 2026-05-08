@@ -285,9 +285,9 @@ type Marketplace struct {
 }
 
 func (cfg Marketplace) WithDefaults() Marketplace {
-	if cfg.Endpoint == "" {
-		cfg.Endpoint = "https://api.lthn.sh"
-	}
+	// Endpoint left empty by default — the IDE serves a built-in fixture
+	// catalogue when no remote marketplace is configured. Users opt into a
+	// real feed by setting cfg.Endpoint (e.g. via config.yaml override).
 	if cfg.APIPath == "" {
 		cfg.APIPath = "/v1/marketplace"
 	}
