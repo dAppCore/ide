@@ -392,7 +392,14 @@ $ _</pre>
             @case ('ts') {
               <section class="block ts-block">
                 <div class="block-header ts-header">
-                  <h2 class="block-title">TypeScript</h2>
+                  <h2 class="block-title">
+                    TypeScript
+                    @if (tsCacheHit()) {
+                      <span class="cache-pill" [class.cache-stale]="tsCacheAge() > 600" (click)="loadTSProjects(true)" title="Click to force re-scan">● cached {{ formatCacheAge(tsCacheAge()) }}</span>
+                    } @else if (tsProjects().length > 0) {
+                      <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+                    }
+                  </h2>
                   <span class="editorial subtitle">TS / Deno / JS project discovery · 115 projects across the canon. Click a script → output streams in /process.</span>
                 </div>
                 <div class="ts-toolbar">
@@ -493,7 +500,14 @@ $ _</pre>
             @case ('php') {
               <section class="block php-block">
                 <div class="block-header php-header">
-                  <h2 class="block-title">PHP</h2>
+                  <h2 class="block-title">
+                    PHP
+                    @if (phpCacheHit()) {
+                      <span class="cache-pill" [class.cache-stale]="phpCacheAge() > 600" (click)="loadPHPProjects(true)" title="Click to force re-scan">● cached {{ formatCacheAge(phpCacheAge()) }}</span>
+                    } @else if (phpProjects().length > 0) {
+                      <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+                    }
+                  </h2>
                   <span class="editorial subtitle">Laravel project discovery + tooling · Surface over <code>core/php</code>.</span>
                 </div>
                 @if (phpError(); as err) {
@@ -5409,12 +5423,16 @@ export class IdeComponent implements OnInit, OnDestroy {
   }
 
   // TS panel — TypeScript / Deno surface
-  async loadTSProjects() {
+  tsCacheHit = signal(false);
+  tsCacheAge = signal(0);
+  async loadTSProjects(force: boolean = false) {
     this.tsLoading.set(true);
     try {
-      const res = await this.bridgeCall('ts_detect', {});
+      const res = await this.bridgeCall('ts_detect', { force });
       if (res.ok) {
         this.tsProjects.set(res.value?.projects || []);
+        this.tsCacheHit.set(!!res.value?.cache_hit);
+        this.tsCacheAge.set(res.value?.cache_age_s || 0);
         if ((res.value?.projects || []).length > 0 && !this.tsSelected()) {
           this.tsSelected.set(res.value.projects[0]);
         }
@@ -5440,15 +5458,19 @@ export class IdeComponent implements OnInit, OnDestroy {
     }
   }
 
+  phpCacheHit = signal(false);
+  phpCacheAge = signal(0);
   // PHP panel — core/php surface
-  async loadPHPProjects() {
+  async loadPHPProjects(force: boolean = false) {
     this.phpLoading.set(true);
     this.phpError.set(null);
     try {
-      const res = await this.bridgeCall('php_detect', {});
+      const res = await this.bridgeCall('php_detect', { force });
       if (res.ok) {
         const projects = res.value?.projects || [];
         this.phpProjects.set(projects);
+        this.phpCacheHit.set(!!res.value?.cache_hit);
+        this.phpCacheAge.set(res.value?.cache_age_s || 0);
         if (projects.length > 0 && !this.phpSelected()) {
           await this.selectPHPProject(projects[0].path);
         }
