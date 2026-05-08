@@ -591,6 +591,16 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 		return b.toolSessionInspect(ctx, params)
 	case "session_search":
 		return b.toolSessionSearch(ctx, params)
+
+	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
+	case "stream_status":
+		return b.toolStreamStatus(ctx, params)
+	case "stream_channels":
+		return b.toolStreamChannels(ctx, params)
+	case "stream_recent":
+		return b.toolStreamRecent(ctx, params)
+	case "stream_publish":
+		return b.toolStreamPublish(ctx, params)
 	default:
 		return map[string]any{
 			"error": "not_implemented",

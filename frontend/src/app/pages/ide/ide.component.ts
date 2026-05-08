@@ -1213,6 +1213,90 @@ $ _</pre>
                 </div>
               </section>
             }
+            @case ('stream') {
+              <section class="block stream-block">
+                <div class="block-header stream-header">
+                  <h2 class="block-title">Stream</h2>
+                  <span class="editorial subtitle">go-stream Hub inspector · in-process pub/sub.</span>
+                </div>
+                @if (streamStatus(); as st) {
+                  <div class="stream-status-grid">
+                    <div class="stream-stat">
+                      <div class="stream-stat-label">running</div>
+                      <div class="stream-stat-value" [class.stream-ok]="st.running" [class.stream-warn]="!st.running">
+                        {{ st.running ? '✓ yes' : '· starting' }}
+                      </div>
+                    </div>
+                    <div class="stream-stat">
+                      <div class="stream-stat-label">peers</div>
+                      <div class="stream-stat-value">{{ st.peer_count }}</div>
+                    </div>
+                    <div class="stream-stat">
+                      <div class="stream-stat-label">channels</div>
+                      <div class="stream-stat-value">{{ st.channel_count }}</div>
+                    </div>
+                    <div class="stream-stat">
+                      <div class="stream-stat-label">heartbeat</div>
+                      <div class="stream-stat-value">{{ st.config.heartbeat_ms / 1000 }}s</div>
+                    </div>
+                  </div>
+                }
+                <div class="stream-body">
+                  <aside class="stream-channels">
+                    <div class="stream-list-title">Channels ({{ streamChannels().length }})</div>
+                    <button class="stream-channel-row" [class.active]="streamSelectedChannel() === null" (click)="loadStreamFrames(null)">
+                      <span class="stream-channel-name"><em>(broadcast)</em></span>
+                      <span class="stream-channel-meta">{{ streamBroadcastBufCount() }} fr</span>
+                    </button>
+                    @for (c of streamChannels(); track c.name) {
+                      <button class="stream-channel-row" [class.active]="streamSelectedChannel() === c.name" (click)="loadStreamFrames(c.name)">
+                        <span class="stream-channel-name">{{ c.name }}</span>
+                        <span class="stream-channel-meta">
+                          <span title="subscribers">{{ c.subscriber_count }} sub</span>
+                          <span title="recent frames">· {{ c.recent_frames }} fr</span>
+                        </span>
+                      </button>
+                    }
+                    @if (streamChannels().length === 0) {
+                      <div class="stream-empty">No channels yet — publish below to seed.</div>
+                    }
+                  </aside>
+                  <main class="stream-frames">
+                    <div class="stream-list-title">
+                      Frames {{ streamSelectedChannel() ? '· ' + streamSelectedChannel() : '· (broadcast)' }}
+                      <button class="btn btn-ghost btn-sm stream-refresh" (click)="loadStream()" [disabled]="streamLoading()">↻</button>
+                    </div>
+                    @if (streamFrames().length === 0) {
+                      <div class="stream-empty">No frames captured for this channel yet.</div>
+                    } @else {
+                      <div class="stream-frame-list">
+                        @for (f of streamFrames(); track $index) {
+                          <div class="stream-frame">
+                            <span class="stream-frame-time">{{ f.timestamp.slice(11, 19) }}</span>
+                            <span class="stream-frame-bytes">{{ f.frame_bytes }}B</span>
+                            <span class="stream-frame-text">{{ f.frame_text }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </main>
+                </div>
+                <div class="stream-publish">
+                  <div class="stream-list-title">Publish test frame</div>
+                  <div class="stream-publish-row">
+                    <select class="input stream-mode-select" [value]="streamPublishMode()" (change)="streamPublishMode.set($any($event.target).value)">
+                      <option value="publish">publish</option>
+                      <option value="broadcast">broadcast</option>
+                    </select>
+                    @if (streamPublishMode() === 'publish') {
+                      <input class="input stream-channel-input" placeholder="channel name" [value]="streamPublishChannel()" (input)="streamPublishChannel.set($any($event.target).value)" />
+                    }
+                    <input class="input stream-frame-input" placeholder="frame body (text or json)" [value]="streamPublishBody()" (input)="streamPublishBody.set($any($event.target).value)" (keyup.enter)="publishStreamFrame()" />
+                    <button class="btn btn-primary btn-sm" (click)="publishStreamFrame()">Publish</button>
+                  </div>
+                </div>
+              </section>
+            }
             @case ('sessions') {
               <section class="block sess-block">
                 <div class="block-header sess-header">
@@ -3222,6 +3306,37 @@ $ _</pre>
     .i18n-viewer-path { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-left: auto; }
     .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
 
+    /* Stream panel */
+    .stream-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .stream-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-stat { background: var(--ink-2); padding: 10px 12px; border-radius: 6px; }
+    .stream-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); }
+    .stream-stat-value { font-size: 18px; font-weight: 500; color: var(--fg-1); margin-top: 4px; font-family: var(--font-mono); }
+    .stream-ok { color: #34d399; }
+    .stream-warn { color: #fbbf24; }
+    .stream-body { display: grid; grid-template-columns: 240px 1fr; gap: 0; flex: 1; min-height: 0; overflow: hidden; }
+    .stream-channels { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .stream-list-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); padding: 0 14px 8px; display: flex; justify-content: space-between; align-items: center; }
+    .stream-refresh { padding: 2px 6px; font-size: 11px; }
+    .stream-channel-row { width: 100%; padding: 8px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; justify-content: space-between; align-items: center; }
+    .stream-channel-row:hover { background: var(--ink-2); }
+    .stream-channel-row.active { background: var(--ink-2); border-left-color: var(--brand-200); color: var(--fg-1); }
+    .stream-channel-name { font-size: 12px; font-weight: 500; font-family: var(--font-mono); }
+    .stream-channel-meta { font-size: 10px; color: var(--fg-3); display: flex; gap: 4px; }
+    .stream-empty { padding: 18px; font-size: 12px; color: var(--fg-3); font-style: italic; text-align: center; }
+    .stream-frames { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .stream-frame-list { flex: 1; overflow-y: auto; padding: 0 18px; font-family: var(--font-mono); font-size: 11px; }
+    .stream-frame { display: grid; grid-template-columns: 70px 50px 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line-1); align-items: center; }
+    .stream-frame-time { color: var(--fg-3); }
+    .stream-frame-bytes { color: var(--brand-200); text-align: right; }
+    .stream-frame-text { color: var(--fg-2); white-space: pre-wrap; word-break: break-all; }
+    .stream-publish { padding: 14px 18px; border-top: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-publish-row { display: flex; gap: 8px; align-items: center; }
+    .stream-mode-select { width: 110px; flex-shrink: 0; }
+    .stream-channel-input { width: 160px; flex-shrink: 0; }
+    .stream-frame-input { flex: 1; }
+
     /* Sessions panel */
     .sess-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sess-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
@@ -3929,6 +4044,7 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (route === 'process') return 'process';
     if (route === 'updates') return 'updates';
     if (route === 'sessions') return 'sessions';
+    if (route === 'stream') return 'stream';
     if (route === 'locales') return 'locales';
     if (route === 'data') return 'data';
     if (route === 'store') return 'store';
@@ -4107,6 +4223,17 @@ export class IdeComponent implements OnInit, OnDestroy {
   selfUpdate = signal<{ current_version: string; repo_url: string; channel: string; platform: string; configured: boolean; checked: boolean; owner?: string; repo?: string; latest_version?: string; release_url?: string; update_available?: boolean; error?: string } | null>(null);
   selfUpdateLoading = signal(false);
   selfUpdateApplying = signal(false);
+
+  // Stream panel — wraps dappco.re/go/stream Hub
+  streamStatus = signal<{ running: boolean; peer_count: number; channel_count: number; subscriber_counts: Record<string, number>; config: { heartbeat_ms: number; pong_timeout_ms: number; write_timeout_ms: number } } | null>(null);
+  streamChannels = signal<{ name: string; subscriber_count: number; recent_frames: number }[]>([]);
+  streamBroadcastBufCount = signal(0);
+  streamSelectedChannel = signal<string | null>(null);
+  streamFrames = signal<{ channel?: string; timestamp: string; frame_text: string; frame_bytes: number }[]>([]);
+  streamPublishChannel = signal('');
+  streamPublishBody = signal('');
+  streamPublishMode = signal<'publish' | 'broadcast'>('publish');
+  streamLoading = signal(false);
 
   // Sessions panel — wraps dappco.re/go/session for Claude Code transcript inspection
   sessionProjects = signal<{ name: string; display_path: string; path: string; session_count: number; latest_at?: string }[]>([]);
@@ -4414,6 +4541,9 @@ export class IdeComponent implements OnInit, OnDestroy {
     }
     if (route === 'sessions' && this.sessionProjects().length === 0) {
       void this.loadSessionProjects();
+    }
+    if (route === 'stream') {
+      void this.loadStream();
     }
     if (route === 'process') {
       void this.refreshProcesses();
@@ -4931,6 +5061,46 @@ export class IdeComponent implements OnInit, OnDestroy {
       }
     } finally {
       this.selfUpdateApplying.set(false);
+    }
+  }
+
+  // Stream panel
+  async loadStream() {
+    this.streamLoading.set(true);
+    try {
+      const status = await this.bridgeCall('stream_status', {});
+      if (status.ok) this.streamStatus.set(status.value);
+      const channels = await this.bridgeCall('stream_channels', {});
+      if (channels.ok) {
+        this.streamChannels.set(channels.value?.channels || []);
+        this.streamBroadcastBufCount.set(channels.value?.broadcast_buf || 0);
+      }
+      const sel = this.streamSelectedChannel();
+      if (sel !== null) {
+        await this.loadStreamFrames(sel);
+      }
+    } finally {
+      this.streamLoading.set(false);
+    }
+  }
+
+  async loadStreamFrames(channel: string | null) {
+    this.streamSelectedChannel.set(channel);
+    const params: Record<string, string> = {};
+    if (channel) params['channel'] = channel;
+    const res = await this.bridgeCall('stream_recent', params);
+    if (res.ok) this.streamFrames.set((res.value?.frames || []).slice().reverse());
+  }
+
+  async publishStreamFrame() {
+    const mode = this.streamPublishMode();
+    const channel = this.streamPublishChannel().trim();
+    const frame = this.streamPublishBody();
+    if (mode === 'publish' && !channel) return;
+    const res = await this.bridgeCall('stream_publish', { mode, channel, frame });
+    if (res.ok) {
+      this.streamPublishBody.set('');
+      await this.loadStream();
     }
   }
 
