@@ -591,6 +591,8 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 		return b.toolSessionInspect(ctx, params)
 	case "session_search":
 		return b.toolSessionSearch(ctx, params)
+	case "session_tail":
+		return b.toolSessionTail(ctx, params)
 
 	// PHP scripts panel — composer.json scripts + canonical artisan commands.
 	case "php_scripts":

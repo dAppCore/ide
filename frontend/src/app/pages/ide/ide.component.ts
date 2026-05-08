@@ -1475,6 +1475,12 @@ $ _</pre>
                         <div class="sess-section-title">
                           Recent events
                           @if (sel.tail_offset > 0) { <span class="sess-tail-note">(showing last {{ sel.event_tail.length }} of {{ sel.total_events }})</span> }
+                          <button class="btn btn-ghost btn-sm sess-live-toggle" [class.sess-live-active]="sessionLiveActive()" (click)="toggleSessionLive()" [title]="sessionLiveActive() ? 'Stop live polling' : 'Start polling for new events every 3s'">
+                            @if (sessionLiveActive()) { <span>● live</span> } @else { <span>○ live</span> }
+                          </button>
+                          @if (sessionLiveEvents().length > 0) {
+                            <span class="sess-live-count">+{{ sessionLiveEvents().length }} new</span>
+                          }
                         </div>
                         <div class="sess-events-list">
                           @for (e of sel.event_tail; track $index) {
@@ -1486,6 +1492,18 @@ $ _</pre>
                               @if (e.duration_ms > 0) { <span class="sess-event-dur">{{ e.duration_ms }}ms</span> }
                               <span class="sess-event-input">{{ e.input }}</span>
                             </div>
+                          }
+                          @if (sessionLiveEvents().length > 0) {
+                            <div class="sess-live-divider">live tail · {{ sessionLiveEvents().length }} events since toggle</div>
+                            @for (e of sessionLiveEvents(); track $index) {
+                              <div class="sess-event sess-event-live">
+                                <span class="sess-event-time">{{ e.timestamp.slice(11, 19) }}</span>
+                                <span class="sess-event-type">{{ e.type || (e.role || '') }}</span>
+                                @if (e.tool) { <span class="sess-event-tool">{{ e.tool }}</span> } @else { <span class="sess-event-tool"></span> }
+                                <span class="sess-event-dur"></span>
+                                <span class="sess-event-input">{{ e.input }}</span>
+                              </div>
+                            }
                           }
                         </div>
                       </div>
@@ -3509,6 +3527,11 @@ $ _</pre>
     .sess-event-jumpable:hover { background: color-mix(in oklch, var(--brand-200) 10%, transparent); }
     .sess-event-jumpable .sess-event-input { color: var(--brand-200); }
     .sess-event-error { background: color-mix(in oklch, #fbbf24 8%, transparent); }
+    .sess-live-toggle { margin-left: auto; padding: 2px 8px; font-size: 10px; }
+    .sess-live-active { background: color-mix(in oklch, #34d399 22%, var(--ink-1)); color: #34d399; border-color: #34d399; }
+    .sess-live-count { font-size: 10px; color: #34d399; font-family: var(--font-mono); margin-left: 6px; }
+    .sess-live-divider { padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #34d399; background: color-mix(in oklch, #34d399 8%, transparent); border-top: 1px solid color-mix(in oklch, #34d399 30%, transparent); border-bottom: 1px solid color-mix(in oklch, #34d399 30%, transparent); }
+    .sess-event-live { background: color-mix(in oklch, #34d399 4%, transparent); border-left: 2px solid #34d399; }
     .sess-event-time { color: var(--fg-3); }
     .sess-event-type { color: var(--brand-200); }
     .sess-event-tool { color: var(--fg-2); }
@@ -4394,6 +4417,10 @@ export class IdeComponent implements OnInit, OnDestroy {
   sessionSelectedProject = signal<string | null>(null);
   sessions = signal<{ id: string; path: string; start_time?: string; end_time?: string; event_count: number; size_bytes: number }[]>([]);
   sessionSelected = signal<any | null>(null);
+  sessionLiveActive = signal(false);
+  sessionLiveOffset = signal(0);
+  sessionLiveEvents = signal<{ timestamp: string; type?: string; role?: string; tool?: string; input?: string }[]>([]);
+  private sessionLiveTimer: ReturnType<typeof setInterval> | null = null;
   sessionLoading = signal(false);
   sessionInspectLoading = signal(false);
   sessionFilter = signal('');
@@ -5372,12 +5399,64 @@ export class IdeComponent implements OnInit, OnDestroy {
   }
 
   async inspectSession(path: string) {
+    this.stopSessionLive();
+    this.sessionLiveEvents.set([]);
     this.sessionInspectLoading.set(true);
     try {
       const res = await this.bridgeCall('session_inspect', { path, limit: 200 });
-      if (res.ok) this.sessionSelected.set(res.value);
+      if (res.ok) {
+        this.sessionSelected.set(res.value);
+        // Seed offset from the file size we know about so live-tail picks
+        // up only NEW events from this point forward.
+        const size = (this.sessions().find(s => s.path === path)?.size_bytes) || 0;
+        this.sessionLiveOffset.set(size);
+      }
     } finally {
       this.sessionInspectLoading.set(false);
+    }
+  }
+
+  toggleSessionLive() {
+    if (this.sessionLiveActive()) {
+      this.stopSessionLive();
+    } else {
+      this.startSessionLive();
+    }
+  }
+
+  startSessionLive() {
+    const sel = this.sessionSelected();
+    if (!sel?.path) return;
+    this.sessionLiveActive.set(true);
+    void this.pollSessionLive();
+    this.sessionLiveTimer = setInterval(() => {
+      void this.pollSessionLive();
+    }, 3000);
+  }
+
+  stopSessionLive() {
+    if (this.sessionLiveTimer) {
+      clearInterval(this.sessionLiveTimer);
+      this.sessionLiveTimer = null;
+    }
+    this.sessionLiveActive.set(false);
+  }
+
+  async pollSessionLive() {
+    const sel = this.sessionSelected();
+    if (!sel?.path) return;
+    const res = await this.bridgeCall('session_tail', {
+      path: sel.path,
+      since_offset: this.sessionLiveOffset(),
+      limit: 200,
+    });
+    if (!res.ok) return;
+    const events = (res.value?.events || []).filter((e: { timestamp?: string }) => !!e.timestamp);
+    if (events.length > 0) {
+      this.sessionLiveEvents.set([...this.sessionLiveEvents(), ...events]);
+    }
+    if (typeof res.value?.next_offset === 'number') {
+      this.sessionLiveOffset.set(res.value.next_offset);
     }
   }
 

@@ -3,7 +3,10 @@
 package server
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -263,6 +266,151 @@ func (b *MCPBridge) toolSessionSearch(_ context.Context, params map[string]any) 
 			"query": query,
 		},
 	}
+}
+
+// session_tail — incremental read of a JSONL transcript past a given byte
+// offset. Lets the frontend live-tail an active session without re-parsing
+// the whole file every poll. Doesn't reuse go-session's ParseTranscript
+// (which buffers the whole file); does a minimal per-line decode for just
+// the fields the panel needs.
+func (b *MCPBridge) toolSessionTail(_ context.Context, params map[string]any) map[string]any {
+	path := strings.TrimSpace(paramString(params, "path", ""))
+	if path == "" {
+		return map[string]any{"ok": false, "error": "path required"}
+	}
+	sinceOffset := int64(paramInt(params, "since_offset", 0))
+	limit := paramInt(params, "limit", 200)
+	if limit <= 0 || limit > 5000 {
+		limit = 200
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	totalSize := info.Size()
+	// File got smaller (truncated/rotated) → read from the start.
+	if sinceOffset > totalSize {
+		sinceOffset = 0
+	}
+	if sinceOffset == totalSize {
+		return map[string]any{
+			"ok": true,
+			"value": map[string]any{
+				"events":      []map[string]any{},
+				"next_offset": totalSize,
+				"size":        totalSize,
+			},
+		}
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	defer func() { _ = f.Close() }()
+	if _, err := f.Seek(sinceOffset, io.SeekStart); err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	scanner := bufio.NewScanner(f)
+	// JSONL lines can be megabytes (big tool outputs). Bump the limit.
+	scanner.Buffer(make([]byte, 64*1024), 8*1024*1024)
+
+	events := make([]map[string]any, 0, 32)
+	bytesRead := int64(0)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		bytesRead += int64(len(line)) + 1 // +1 for newline
+		if len(line) == 0 {
+			continue
+		}
+		ev := decodeTailLine(line)
+		if ev != nil {
+			events = append(events, ev)
+		}
+		if len(events) >= limit {
+			break
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		// Don't fail the call — surface what we got plus the err.
+		return map[string]any{
+			"ok": true,
+			"value": map[string]any{
+				"events":      events,
+				"next_offset": sinceOffset + bytesRead,
+				"size":        totalSize,
+				"warning":     err.Error(),
+			},
+		}
+	}
+
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"events":      events,
+			"next_offset": sinceOffset + bytesRead,
+			"size":        totalSize,
+			"event_count": len(events),
+		},
+	}
+}
+
+// decodeTailLine returns a minimal event map from a single JSONL line, or
+// nil if the line can't be decoded or has no useful content.
+func decodeTailLine(line []byte) map[string]any {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(line, &raw); err != nil {
+		return nil
+	}
+	out := map[string]any{}
+	if v, ok := raw["timestamp"]; ok {
+		var s string
+		if err := json.Unmarshal(v, &s); err == nil {
+			out["timestamp"] = s
+		}
+	}
+	if v, ok := raw["type"]; ok {
+		var s string
+		if err := json.Unmarshal(v, &s); err == nil {
+			out["type"] = s
+		}
+	}
+	// Try to extract a tool name + a short input summary from the message
+	// content. Schema: message.content[0].name (for tool_use) or
+	// message.content[0].text (for text blocks).
+	if v, ok := raw["message"]; ok {
+		var msg struct {
+			Role    string `json:"role"`
+			Content []struct {
+				Type  string          `json:"type"`
+				Name  string          `json:"name"`
+				Text  string          `json:"text"`
+				Input json.RawMessage `json:"input"`
+			} `json:"content"`
+		}
+		if err := json.Unmarshal(v, &msg); err == nil {
+			out["role"] = msg.Role
+			if len(msg.Content) > 0 {
+				c := msg.Content[0]
+				if c.Name != "" {
+					out["tool"] = c.Name
+				}
+				if c.Type != "" {
+					out["block_type"] = c.Type
+				}
+				if c.Text != "" {
+					out["input"] = truncateForUI(c.Text, 200)
+				} else if len(c.Input) > 0 {
+					out["input"] = truncateForUI(string(c.Input), 200)
+				}
+			}
+		}
+	}
+	if _, ok := out["timestamp"]; !ok {
+		return nil
+	}
+	return out
 }
 
 func truncateForUI(s string, n int) string {
