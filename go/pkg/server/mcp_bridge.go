@@ -608,6 +608,12 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "memory_search":
 		return b.toolMemorySearch(ctx, params)
 
+	// Mantis ticket browser — read-only over tasks.lthn.sh REST API.
+	case "mantis_list":
+		return b.toolMantisList(ctx, params)
+	case "mantis_view":
+		return b.toolMantisView(ctx, params)
+
 	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
 	case "stream_status":
 		return b.toolStreamStatus(ctx, params)
