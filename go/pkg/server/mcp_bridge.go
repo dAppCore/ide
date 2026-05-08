@@ -687,6 +687,15 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "memory_search":
 		return b.toolMemorySearch(ctx, params)
 
+	// App-state cache (DuckDB-backed). Snider's "load up state from a
+	// duckdb file so we don't scan every time" architectural shift.
+	case "cache_status":
+		return b.toolCacheStatus(ctx, params)
+	case "cache_clear":
+		return b.toolCacheClear(ctx, params)
+	case "cache_debug":
+		return b.toolCacheDebug(ctx, params)
+
 	// Mantis ticket browser — read-only over tasks.lthn.sh REST API.
 	case "mantis_list":
 		return b.toolMantisList(ctx, params)
@@ -2123,6 +2132,16 @@ func paramInt(params map[string]any, key string, fallback int) int {
 		return int(v)
 	case float64:
 		return int(v)
+	}
+	return fallback
+}
+
+func paramBool(params map[string]any, key string, fallback bool) bool {
+	switch v := params[key].(type) {
+	case bool:
+		return v
+	case string:
+		return v == "true" || v == "1"
 	}
 	return fallback
 }

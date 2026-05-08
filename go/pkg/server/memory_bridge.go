@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // memory_* bridge tools — surfaces Cladius's auto-memory directory as a
@@ -72,8 +73,10 @@ type memoryEntry struct {
 }
 
 // toolMemoryList walks the memory dir, parses each .md's frontmatter, and
-// returns a list of entries. Cheap — only reads the first ~30 lines per file
-// to extract YAML frontmatter, no full parse.
+// returns a list of entries. v2 cache-backed: serves from DuckDB cache
+// when fresh (TTL 5 min), otherwise rescans + writes-through. force=true
+// param bypasses the cache. Snider's "load up application state from a
+// duckdb file" architectural shift.
 func (b *MCPBridge) toolMemoryList(_ context.Context, params map[string]any) map[string]any {
 	dir := strings.TrimSpace(paramString(params, "dir", ""))
 	if dir == "" {
@@ -82,6 +85,19 @@ func (b *MCPBridge) toolMemoryList(_ context.Context, params map[string]any) map
 	if dir == "" {
 		return map[string]any{"ok": false, "error": "memory directory not configured"}
 	}
+	force := paramBool(params, "force", false)
+	const collection = "memory"
+	const ttl = 5 * time.Minute
+
+	// Cache-hit fast path. Filter/sort still happen on the cached payload
+	// so the caller can change sort=name without forcing a rescan.
+	if !force && cacheAge(collection) < ttl {
+		_, raws, ok := cacheGetCollection(collection)
+		if ok && len(raws) > 0 {
+			return memoryListFromCache(raws, dir, params, true)
+		}
+	}
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return map[string]any{"ok": false, "error": err.Error()}
@@ -128,6 +144,13 @@ func (b *MCPBridge) toolMemoryList(_ context.Context, params map[string]any) map
 		sort.Slice(out, func(i, j int) bool { return out[i].Modified > out[j].Modified })
 	}
 
+	// Persist to cache before returning so subsequent calls hit the fast path.
+	cacheItems := make([]cacheItem, 0, len(out))
+	for _, m := range out {
+		cacheItems = append(cacheItems, cacheItem{Key: m.Filename, Data: m})
+	}
+	_ = cacheSetCollection(collection, cacheItems)
+
 	// Type counts for filter pills
 	typeCounts := make(map[string]int)
 	for _, m := range out {
@@ -145,6 +168,54 @@ func (b *MCPBridge) toolMemoryList(_ context.Context, params map[string]any) map
 			"count":       len(out),
 			"dir":         dir,
 			"type_counts": typeCounts,
+			"cache_hit":   false,
+			"cache_age_s": 0,
+		},
+	}
+}
+
+// memoryListFromCache hydrates memoryEntries from cached JSON blobs and
+// applies the sort param. The dir + filter/search are caller-side so
+// the cache is collection-wide regardless of which dir was passed.
+func memoryListFromCache(raws []json.RawMessage, dir string, params map[string]any, isHit bool) map[string]any {
+	out := make([]memoryEntry, 0, len(raws))
+	for _, r := range raws {
+		var m memoryEntry
+		if err := json.Unmarshal(r, &m); err == nil {
+			out = append(out, m)
+		}
+	}
+	sortBy := strings.ToLower(strings.TrimSpace(paramString(params, "sort", "modified")))
+	switch sortBy {
+	case "name":
+		sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	case "type":
+		sort.Slice(out, func(i, j int) bool {
+			if out[i].Type == out[j].Type {
+				return out[i].Name < out[j].Name
+			}
+			return out[i].Type < out[j].Type
+		})
+	default:
+		sort.Slice(out, func(i, j int) bool { return out[i].Modified > out[j].Modified })
+	}
+	typeCounts := make(map[string]int)
+	for _, m := range out {
+		t := m.Type
+		if t == "" {
+			t = "untyped"
+		}
+		typeCounts[t]++
+	}
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"memories":    out,
+			"count":       len(out),
+			"dir":         dir,
+			"type_counts": typeCounts,
+			"cache_hit":   isHit,
+			"cache_age_s": int(cacheAge("memory").Seconds()),
 		},
 	}
 }
