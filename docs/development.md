@@ -118,6 +118,35 @@ CORE_BRAIN_INTEGRATION=1 CORE_BRAIN_KEY=$CORE_BRAIN_KEY \
 cd frontend && npm run test
 ```
 
+### End-to-end UI tests (Playwright)
+
+Playwright drives the production-built frontend in headless Chromium against a static server, with the live MCP bridge running in parallel. Tests that don't need the bridge always run; bridge-dependent tests auto-skip when `127.0.0.1:9877` isn't reachable.
+
+```sh
+# 1. Build the frontend bundle (Playwright serves dist/)
+cd frontend && npm run build:dev
+
+# 2. Start the binary so bridge tests can run (in another terminal)
+cd ../go && go build -o /tmp/core-ide ./cmd/core-ide
+env -u FORGE_TOKEN /tmp/core-ide &
+
+# 3. Run the suite
+cd ../frontend && npm run test:e2e          # headless
+npm run test:e2e:ui                          # interactive runner
+npm run test:e2e:build                       # rebuild dist before serving
+```
+
+Layout:
+
+| File | Purpose |
+|------|---------|
+| `frontend/playwright.config.ts` | Playwright config — webServer spins up `serve -s dist` on :4200 |
+| `frontend/tests/e2e/_helpers.ts` | `bridgeTest` fixture (auto-skip when bridge down), `callBridge()`, sidebar helpers |
+| `frontend/tests/e2e/sidebar.spec.ts` | Pure-frontend tests (sidebar render + routing + ⌘1-9 shortcuts) |
+| `frontend/tests/e2e/bridge.spec.ts` | Bridge-driven tests (memory list, cache pill, mantis tickets) |
+
+The bridge has `Access-Control-Allow-Origin: *` so cross-origin fetches from `127.0.0.1:4200` to `127.0.0.1:9877` work without proxying. `@wailsio/runtime` 404s on `/wails/runtime` outside Wails — affected calls are lazy + `.then()`'d so the page still renders.
+
 ### Test-file conventions
 
 Per [`AGENTS.md`](../AGENTS.md):

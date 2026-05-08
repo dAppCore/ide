@@ -26,3 +26,7 @@ __pycache__/
 coverage/
 htmlcov/
 .coverage
+# Playwright artefacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/
