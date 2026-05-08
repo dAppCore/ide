@@ -245,8 +245,87 @@ func (b *MCPBridge) handleCall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	start := time.Now()
 	resp := b.dispatchTool(r.Context(), req.Tool, req.Params)
+	publishBridgeEvent(req.Tool, req.Params, resp, time.Since(start))
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// Tools whose own implementation publishes / reads from the Stream Hub
+// — auto-publishing them would cause feedback loops or pointless noise.
+var bridgeAutoPublishSkip = map[string]bool{
+	"stream_status":         true,
+	"stream_channels":       true,
+	"stream_recent":         true,
+	"stream_publish":        true,
+	"webview_console":       true,
+	"webview_errors":        true,
+	"webview_eval":          true,
+	"webview_screenshot":    true,
+	"webview_dom_tree":      true,
+}
+
+// publishBridgeEvent fires a JSON frame onto bridge.<tool> and a wildcard
+// "bridge" channel so /stream becomes a live activity feed of every IDE
+// action. Errors are best-effort (Hub may not be initialised yet).
+func publishBridgeEvent(tool string, params map[string]any, resp map[string]any, elapsed time.Duration) {
+	if bridgeAutoPublishSkip[tool] {
+		return
+	}
+	defer func() { _ = recover() }() // ensure dispatch never fails on publish
+	hub := streamHub
+	if hub == nil {
+		// Lazy-init only when something else has touched the Hub. Avoid
+		// spawning the goroutine on first dispatch — let the user open
+		// /stream first.
+		return
+	}
+	ok := false
+	if v, has := resp["ok"]; has {
+		if b, isBool := v.(bool); isBool {
+			ok = b
+		}
+	}
+	frame := map[string]any{
+		"tool":        tool,
+		"ok":          ok,
+		"duration_ms": elapsed.Milliseconds(),
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"params":      sanitiseParams(params),
+	}
+	if !ok {
+		if errStr, has := resp["error"]; has {
+			frame["error"] = truncateForUI(asString(errStr), 160)
+		}
+	}
+	encoded, err := json.Marshal(frame)
+	if err != nil {
+		return
+	}
+	_ = hub.Publish("bridge."+tool, encoded)
+	_ = hub.Publish("bridge", encoded)
+}
+
+// sanitiseParams returns a shallow copy with string values truncated and
+// known token-shaped keys redacted. Keeps the panel readable + safe.
+func sanitiseParams(p map[string]any) map[string]any {
+	if p == nil {
+		return nil
+	}
+	out := make(map[string]any, len(p))
+	for k, v := range p {
+		if strings.Contains(strings.ToLower(k), "token") || strings.Contains(strings.ToLower(k), "secret") {
+			out[k] = "<redacted>"
+			continue
+		}
+		switch s := v.(type) {
+		case string:
+			out[k] = truncateForUI(s, 80)
+		default:
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // dispatchTool routes a tool call to the right Core query/action. Implemented
