@@ -1267,6 +1267,21 @@ $ _</pre>
                   <h2 class="block-title">Tickets</h2>
                   <span class="editorial subtitle">tasks.lthn.sh · {{ mantisIssues().length }} issues loaded.</span>
                 </div>
+                @if (mantisRecent().length > 0) {
+                  <div class="mn-recent-strip">
+                    <div class="mn-recent-label">recent · last 7 days</div>
+                    <div class="mn-recent-row">
+                      @for (i of mantisRecent(); track i.id) {
+                        <button class="mn-recent-pill" (click)="openMantisIssue(i.id)" [title]="'#' + i.id + ': ' + i.summary">
+                          <span class="mn-status" [attr.data-status]="i.status">{{ i.status }}</span>
+                          <code class="mn-id">#{{ i.id }}</code>
+                          <span class="mn-recent-summary">{{ i.summary.slice(0, 50) }}</span>
+                          <span class="mn-recent-when">{{ formatRelative(i.updated) }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
                 <div class="mn-toolbar">
                   <div class="mn-status-pills">
                     <button class="mn-status-pill" [class.active]="mantisStatusFilter() === ''" (click)="mantisStatusFilter.set('')">all <span class="mn-pill-count">{{ mantisIssues().length }}</span></button>
@@ -3698,6 +3713,13 @@ $ _</pre>
     .mn-note-head { display: flex; gap: 8px; font-size: 10px; color: var(--fg-3); margin-bottom: 4px; }
     .mn-note-author { color: var(--fg-2); }
     .mn-note-when { font-family: var(--font-mono); margin-left: auto; }
+    .mn-recent-strip { padding: 10px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
+    .mn-recent-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 6px; }
+    .mn-recent-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .mn-recent-pill { background: var(--ink-1); border: 1px solid var(--line-1); padding: 5px 10px; border-radius: 4px; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .mn-recent-pill:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-1)); }
+    .mn-recent-summary { font-size: 11px; color: var(--fg-1); }
+    .mn-recent-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
 
     /* Memory panel */
     .mem-recent-strip { padding: 10px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
@@ -4739,6 +4761,17 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (!f) return this.mantisIssues();
     return this.mantisIssues().filter(i => i.status.toLowerCase() === f);
   });
+  mantisRecent = computed(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return this.mantisIssues()
+      .filter(i => {
+        if (!i.updated) return false;
+        const t = Date.parse(i.updated);
+        return !isNaN(t) && t >= cutoff;
+      })
+      .slice(0, 20);
+  });
+
   mantisStatuses = computed(() => {
     const counts: Record<string, number> = {};
     for (const i of this.mantisIssues()) counts[i.status] = (counts[i.status] || 0) + 1;
