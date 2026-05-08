@@ -268,6 +268,80 @@ func (b *MCPBridge) toolSessionSearch(_ context.Context, params map[string]any) 
 	}
 }
 
+type sessionActiveEntry struct {
+	ID          string `json:"id"`
+	Path        string `json:"path"`
+	Project     string `json:"project"`      // encoded cwd
+	ProjectPath string `json:"project_path"` // best-effort decoded
+	SizeBytes   int64  `json:"size_bytes"`
+	Modified    string `json:"modified"`
+	AgeSeconds  int64  `json:"age_seconds"`
+}
+
+// session_active_list walks every ~/.claude/projects/*/*.jsonl, filters by
+// modification time within the last `since_minutes` window (default 60),
+// returns sorted-by-recency. The "what's running where right now" view.
+func (b *MCPBridge) toolSessionActiveList(_ context.Context, params map[string]any) map[string]any {
+	root := claudeProjectsRoot()
+	if root == "" {
+		return map[string]any{"ok": false, "error": "could not resolve ~/.claude/projects"}
+	}
+	since := paramInt(params, "since_minutes", 60)
+	if since <= 0 {
+		since = 60
+	}
+	cutoff := time.Now().Add(-time.Duration(since) * time.Minute)
+
+	projects, err := os.ReadDir(root)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	out := make([]sessionActiveEntry, 0)
+	now := time.Now()
+	for _, p := range projects {
+		if !p.IsDir() {
+			continue
+		}
+		dir := filepath.Join(root, p.Name())
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
+				continue
+			}
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
+			if info.ModTime().Before(cutoff) {
+				continue
+			}
+			id := strings.TrimSuffix(e.Name(), ".jsonl")
+			out = append(out, sessionActiveEntry{
+				ID:          id,
+				Path:        filepath.Join(dir, e.Name()),
+				Project:     p.Name(),
+				ProjectPath: decodeProjectName(p.Name()),
+				SizeBytes:   info.Size(),
+				Modified:    info.ModTime().UTC().Format(time.RFC3339),
+				AgeSeconds:  int64(now.Sub(info.ModTime()).Seconds()),
+			})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].AgeSeconds < out[j].AgeSeconds })
+	return map[string]any{
+		"ok": true,
+		"value": map[string]any{
+			"active":        out,
+			"count":         len(out),
+			"since_minutes": since,
+			"root":          root,
+		},
+	}
+}
+
 // session_tail — incremental read of a JSONL transcript past a given byte
 // offset. Lets the frontend live-tail an active session without re-parsing
 // the whole file every poll. Doesn't reuse go-session's ParseTranscript

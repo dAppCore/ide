@@ -1386,11 +1386,54 @@ $ _</pre>
                   <h2 class="block-title">Sessions</h2>
                   <span class="editorial subtitle">Claude Code transcript inspector · {{ sessionProjects().length }} projects.</span>
                 </div>
+                <div class="sess-tabs">
+                  <button class="sess-tab" [class.active]="sessionTab() === 'browse'" (click)="sessionTab.set('browse')">Browse</button>
+                  <button class="sess-tab" [class.active]="sessionTab() === 'active'" (click)="sessionTab.set('active'); loadActiveSessions()">
+                    Active
+                    @if (sessionActive().length > 0) { <span class="sess-tab-count">{{ sessionActive().length }}</span> }
+                  </button>
+                </div>
+                @if (sessionTab() === 'browse') {
                 <div class="sess-toolbar">
                   <input class="input sess-filter" placeholder="filter projects…" [value]="sessionFilter()" (input)="sessionFilter.set($any($event.target).value)" />
                   <button class="btn btn-ghost btn-sm" (click)="loadSessionProjects()" [disabled]="sessionLoading()">↻ refresh</button>
                 </div>
-                <div class="sess-body">
+                }
+                @if (sessionTab() === 'active') {
+                <div class="sess-toolbar">
+                  <select class="input sess-filter" [value]="sessionActiveSinceMinutes()" (change)="sessionActiveSinceMinutes.set(+$any($event.target).value); loadActiveSessions()">
+                    <option [value]="15">last 15 min</option>
+                    <option [value]="60">last hour</option>
+                    <option [value]="240">last 4 hours</option>
+                    <option [value]="1440">last 24 hours</option>
+                  </select>
+                  <button class="btn btn-ghost btn-sm" (click)="loadActiveSessions()" [disabled]="sessionActiveLoading()">↻ refresh</button>
+                </div>
+                }
+                <div class="sess-body" [class.sess-active-mode]="sessionTab() === 'active'">
+                  @if (sessionTab() === 'active') {
+                    <aside class="sess-active-list">
+                      <div class="sess-list-title">
+                        Active sessions ({{ sessionActive().length }})
+                        @if (sessionActiveLoading()) { <span class="sess-spin">…</span> }
+                      </div>
+                      @if (sessionActive().length === 0 && !sessionActiveLoading()) {
+                        <div class="sess-empty">No sessions modified in the last {{ sessionActiveSinceMinutes() }}min.</div>
+                      }
+                      @for (a of sessionActive(); track a.path) {
+                        <button class="sess-active-row" [class.active]="sessionSelected()?.path === a.path" (click)="openActiveSession(a)">
+                          <div class="sess-active-head">
+                            <code class="sess-active-id">{{ a.id.slice(0, 8) }}</code>
+                            <span class="sess-active-age" [class.sess-active-fresh]="a.age_seconds < 60">{{ formatAge(a.age_seconds) }} ago</span>
+                          </div>
+                          <div class="sess-active-proj">{{ a.project_path }}</div>
+                          <div class="sess-active-meta">
+                            {{ a.size_bytes > 1024*1024 ? (a.size_bytes / 1048576 | number:'1.0-1') + 'M' : (a.size_bytes / 1024 | number:'1.0-0') + 'k' }}
+                          </div>
+                        </button>
+                      }
+                    </aside>
+                  } @else {
                   <aside class="sess-projects">
                     <div class="sess-list-title">Projects ({{ sessionVisible().length }})</div>
                     @for (p of sessionVisible(); track p.name) {
@@ -1424,6 +1467,7 @@ $ _</pre>
                       }
                     }
                   </aside>
+                  }
                   <main class="sess-detail">
                     @if (!sessionSelected() && !sessionInspectLoading()) {
                       <div class="sess-empty">Pick a session to inspect.</div>
@@ -3494,6 +3538,23 @@ $ _</pre>
     .stream-frame-input { flex: 1; }
 
     /* Sessions panel */
+    .sess-tabs { display: flex; gap: 0; padding: 0 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .sess-tab { padding: 8px 14px; background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--fg-2); font: inherit; font-size: 12px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+    .sess-tab:hover { color: var(--fg-1); }
+    .sess-tab.active { color: var(--fg-1); border-bottom-color: var(--brand-200); }
+    .sess-tab-count { font-family: var(--font-mono); font-size: 10px; color: var(--brand-200); background: var(--ink-2); padding: 1px 6px; border-radius: 3px; }
+    .sess-active-mode { grid-template-columns: 320px 1fr !important; }
+    .sess-active-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-active-row { width: 100%; padding: 10px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: block; }
+    .sess-active-row:hover { background: var(--ink-2); }
+    .sess-active-row.active { background: var(--ink-2); border-left-color: var(--brand-200); }
+    .sess-active-head { display: flex; justify-content: space-between; align-items: center; }
+    .sess-active-id { font-family: var(--font-mono); font-size: 11px; color: var(--brand-200); }
+    .sess-active-age { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .sess-active-fresh { color: #34d399; font-weight: 500; }
+    .sess-active-proj { font-size: 11px; color: var(--fg-1); margin-top: 4px; word-break: break-all; }
+    .sess-active-meta { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-top: 2px; }
+
     .sess-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sess-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
     .sess-toolbar { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; align-items: center; }
@@ -4440,6 +4501,10 @@ export class IdeComponent implements OnInit, OnDestroy {
   sessionLoading = signal(false);
   sessionInspectLoading = signal(false);
   sessionFilter = signal('');
+  sessionTab = signal<'browse' | 'active'>('browse');
+  sessionActive = signal<{ id: string; path: string; project: string; project_path: string; size_bytes: number; modified: string; age_seconds: number }[]>([]);
+  sessionActiveLoading = signal(false);
+  sessionActiveSinceMinutes = signal(60);
   sessionVisible = computed(() => {
     const f = this.sessionFilter().trim().toLowerCase();
     if (!f) return this.sessionProjects();
@@ -4738,6 +4803,9 @@ export class IdeComponent implements OnInit, OnDestroy {
     }
     if (route === 'sessions' && this.sessionProjects().length === 0) {
       void this.loadSessionProjects();
+    }
+    if (route === 'sessions' && this.sessionTab() === 'active' && this.sessionActive().length === 0) {
+      void this.loadActiveSessions();
     }
     if (route === 'stream') {
       void this.loadStream();
@@ -5388,6 +5456,43 @@ export class IdeComponent implements OnInit, OnDestroy {
       this.streamPublishBody.set('');
       await this.loadStream();
     }
+  }
+
+  async loadActiveSessions() {
+    this.sessionActiveLoading.set(true);
+    try {
+      const res = await this.bridgeCall('session_active_list', { since_minutes: this.sessionActiveSinceMinutes() });
+      if (res.ok) this.sessionActive.set(res.value?.active || []);
+    } finally {
+      this.sessionActiveLoading.set(false);
+    }
+  }
+
+  async openActiveSession(entry: { path: string; id: string }) {
+    // Inspect uses the file size from sessions(); for active mode we don't
+    // have that, so seed manually.
+    this.stopSessionLive();
+    this.sessionLiveEvents.set([]);
+    this.sessionLiveDropped.set(0);
+    this.sessionLiveHeartbeat.set(0);
+    this.sessionInspectLoading.set(true);
+    try {
+      const res = await this.bridgeCall('session_inspect', { path: entry.path, limit: 200 });
+      if (res.ok) {
+        this.sessionSelected.set(res.value);
+        // Use the most recent active list size as the offset baseline.
+        const active = this.sessionActive().find(a => a.path === entry.path);
+        this.sessionLiveOffset.set(active?.size_bytes || 0);
+      }
+    } finally {
+      this.sessionInspectLoading.set(false);
+    }
+  }
+
+  formatAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m${seconds % 60}s`;
+    return `${Math.floor(seconds / 3600)}h${Math.floor((seconds % 3600) / 60)}m`;
   }
 
   // Sessions panel — Claude Code transcript inspector
