@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	core "dappco.re/go"
 	"dappco.re/go/php/pkg/php"
@@ -41,51 +42,79 @@ func (b *MCPBridge) toolPHPDetect(_ context.Context, params map[string]any) map[
 	if maxDepth <= 0 {
 		maxDepth = 3
 	}
+	force := paramBool(params, "force", false)
+	const collection = "php_projects"
+	const ttl = 10 * time.Minute
 
-	out := []map[string]any{}
-	for _, root := range roots {
-		_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if !d.IsDir() {
-				return nil
-			}
-			rel, _ := filepath.Rel(root, path)
-			depth := strings.Count(rel, string(os.PathSeparator))
-			name := d.Name()
-			if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "external" {
+	scan := func() ([]phpProjectLite, error) {
+		out := []phpProjectLite{}
+		for _, root := range roots {
+			_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return nil
+				}
+				if !d.IsDir() {
+					return nil
+				}
+				rel, _ := filepath.Rel(root, path)
+				depth := strings.Count(rel, string(os.PathSeparator))
+				name := d.Name()
+				if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "external" {
+					return filepath.SkipDir
+				}
+				if depth > maxDepth {
+					return filepath.SkipDir
+				}
+				if !php.IsLaravelProject(path) {
+					return nil
+				}
+				out = append(out, phpProjectLite{
+					Path:       path,
+					Name:       filepath.Base(path),
+					AppName:    php.GetLaravelAppName(path),
+					AppURL:     php.GetLaravelAppURL(path),
+					PackageMgr: php.DetectPackageManager(path),
+					FrankenPHP: php.IsFrankenPHPProject(path),
+				})
 				return filepath.SkipDir
-			}
-			if depth > maxDepth {
-				return filepath.SkipDir
-			}
-			if !php.IsLaravelProject(path) {
-				return nil
-			}
-			out = append(out, map[string]any{
-				"path":           path,
-				"name":           filepath.Base(path),
-				"app_name":       php.GetLaravelAppName(path),
-				"app_url":        php.GetLaravelAppURL(path),
-				"package_mgr":    php.DetectPackageManager(path),
-				"frankenphp":     php.IsFrankenPHPProject(path),
 			})
-			// Don't recurse into a Laravel project's sub-dirs.
-			return filepath.SkipDir
-		})
+		}
+		return out, nil
+	}
+
+	raws, hit, err := cacheGetOrScan(collection, ttl, force, func(p phpProjectLite) string { return p.Path }, scan)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	out := make([]phpProjectLite, 0, len(raws))
+	for _, r := range raws {
+		var p phpProjectLite
+		if err := json.Unmarshal(r, &p); err == nil {
+			out = append(out, p)
+		}
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return out[i]["path"].(string) < out[j]["path"].(string)
+		return out[i].Path < out[j].Path
 	})
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"roots":    roots,
-			"projects": out,
-			"count":    len(out),
+			"roots":       roots,
+			"projects":    out,
+			"count":       len(out),
+			"cache_hit":   hit,
+			"cache_age_s": int(cacheAge(collection).Seconds()),
 		},
 	}
+}
+
+type phpProjectLite struct {
+	Path       string `json:"path"`
+	Name       string `json:"name"`
+	AppName    string `json:"app_name"`
+	AppURL     string `json:"app_url"`
+	PackageMgr string `json:"package_mgr"`
+	FrankenPHP bool   `json:"frankenphp"`
 }
 
 // toolPHPProject returns rich detail for one project — services + raw

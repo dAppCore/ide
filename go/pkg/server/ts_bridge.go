@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	core "dappco.re/go"
 )
@@ -65,43 +66,61 @@ func (b *MCPBridge) toolTSDetect(_ context.Context, params map[string]any) map[s
 	if maxDepth <= 0 {
 		maxDepth = 3
 	}
+	force := paramBool(params, "force", false)
+	const collection = "ts_projects"
+	const ttl = 10 * time.Minute // longer TTL — TS projects don't appear/vanish often
 
-	var projects []tsProject
-	for _, root := range roots {
-		_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if !d.IsDir() {
-				return nil
-			}
-			rel, _ := filepath.Rel(root, path)
-			depth := strings.Count(rel, string(os.PathSeparator))
-			name := d.Name()
-			if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "dist" || name == ".next" || name == ".turbo" {
+	scan := func() ([]tsProject, error) {
+		var projects []tsProject
+		for _, root := range roots {
+			_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return nil
+				}
+				if !d.IsDir() {
+					return nil
+				}
+				rel, _ := filepath.Rel(root, path)
+				depth := strings.Count(rel, string(os.PathSeparator))
+				name := d.Name()
+				if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "dist" || name == ".next" || name == ".turbo" {
+					return filepath.SkipDir
+				}
+				if depth > maxDepth {
+					return filepath.SkipDir
+				}
+
+				pkgPath := filepath.Join(path, "package.json")
+				denoPath := filepath.Join(path, "deno.json")
+				hasPkg := fileExists(pkgPath)
+				hasDeno := fileExists(denoPath)
+				if !hasPkg && !hasDeno {
+					return nil
+				}
+
+				proj := buildTSProject(path, hasPkg, hasDeno)
+				if proj == nil {
+					return nil
+				}
+				projects = append(projects, *proj)
+				// Don't recurse into the project's sub-dirs — keeps monorepo
+				// children visible only when the parent declares workspaces.
 				return filepath.SkipDir
-			}
-			if depth > maxDepth {
-				return filepath.SkipDir
-			}
+			})
+		}
+		return projects, nil
+	}
 
-			pkgPath := filepath.Join(path, "package.json")
-			denoPath := filepath.Join(path, "deno.json")
-			hasPkg := fileExists(pkgPath)
-			hasDeno := fileExists(denoPath)
-			if !hasPkg && !hasDeno {
-				return nil
-			}
-
-			proj := buildTSProject(path, hasPkg, hasDeno)
-			if proj == nil {
-				return nil
-			}
-			projects = append(projects, *proj)
-			// Don't recurse into the project's sub-dirs — keeps monorepo
-			// children visible only when the parent declares workspaces.
-			return filepath.SkipDir
-		})
+	raws, hit, err := cacheGetOrScan(collection, ttl, force, func(p tsProject) string { return p.Path }, scan)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	projects := make([]tsProject, 0, len(raws))
+	for _, r := range raws {
+		var p tsProject
+		if err := json.Unmarshal(r, &p); err == nil {
+			projects = append(projects, p)
+		}
 	}
 	sort.Slice(projects, func(i, j int) bool {
 		return projects[i].Path < projects[j].Path
@@ -109,9 +128,11 @@ func (b *MCPBridge) toolTSDetect(_ context.Context, params map[string]any) map[s
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"roots":    roots,
-			"projects": projects,
-			"count":    len(projects),
+			"roots":       roots,
+			"projects":    projects,
+			"count":       len(projects),
+			"cache_hit":   hit,
+			"cache_age_s": int(cacheAge(collection).Seconds()),
 		},
 	}
 }

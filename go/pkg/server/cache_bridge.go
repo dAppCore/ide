@@ -198,6 +198,37 @@ type cacheItem struct {
 	Data any
 }
 
+// CacheScan wraps the standard cache-or-scan dance. Bridges call this
+// with a TTL, an extractKey func, and a scan func that returns []any.
+//
+// On hit: returns cached []json.RawMessage (caller decodes) + true.
+// On miss: runs scan, persists results, returns []json.RawMessage of
+// the same items + false.
+func cacheGetOrScan[T any](collection string, ttl time.Duration, force bool, extractKey func(T) string, scan func() ([]T, error)) ([]json.RawMessage, bool, error) {
+	if !force && cacheAge(collection) < ttl {
+		_, raws, ok := cacheGetCollection(collection)
+		if ok && len(raws) > 0 {
+			return raws, true, nil
+		}
+	}
+	items, err := scan()
+	if err != nil {
+		return nil, false, err
+	}
+	cacheItems := make([]cacheItem, 0, len(items))
+	encoded := make([]json.RawMessage, 0, len(items))
+	for _, it := range items {
+		blob, mErr := json.Marshal(it)
+		if mErr != nil {
+			continue
+		}
+		cacheItems = append(cacheItems, cacheItem{Key: extractKey(it), Data: it})
+		encoded = append(encoded, json.RawMessage(blob))
+	}
+	_ = cacheSetCollection(collection, cacheItems)
+	return encoded, false, nil
+}
+
 // cacheAge returns the time elapsed since the collection's last full scan.
 // Returns a very large duration when the collection is uncached so callers
 // treat it as "definitely stale".

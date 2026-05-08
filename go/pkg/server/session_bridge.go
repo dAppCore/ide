@@ -44,49 +44,70 @@ type sessionProjectEntry struct {
 
 // session_projects_list — enumerates every ~/.claude/projects/<dir>/
 // with at least one .jsonl, plus session count + last modified.
-func (b *MCPBridge) toolSessionProjectsList(_ context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolSessionProjectsList(_ context.Context, params map[string]any) map[string]any {
 	root := claudeProjectsRoot()
 	if root == "" {
 		return map[string]any{"ok": false, "error": "could not resolve ~/.claude/projects"}
 	}
-	entries, err := os.ReadDir(root)
+	force := paramBool(params, "force", false)
+	const collection = "session_projects"
+	const ttl = 2 * time.Minute
+
+	scan := func() ([]sessionProjectEntry, error) {
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]sessionProjectEntry, 0, len(entries))
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			dir := filepath.Join(root, e.Name())
+			matches, _ := filepath.Glob(filepath.Join(dir, "*.jsonl"))
+			if len(matches) == 0 {
+				continue
+			}
+			var latest time.Time
+			for _, m := range matches {
+				if info, err := os.Stat(m); err == nil && info.ModTime().After(latest) {
+					latest = info.ModTime()
+				}
+			}
+			ent := sessionProjectEntry{
+				Name:         e.Name(),
+				DisplayPath:  decodeProjectName(e.Name()),
+				Path:         dir,
+				SessionCount: len(matches),
+			}
+			if !latest.IsZero() {
+				ent.LatestAt = latest.UTC().Format(time.RFC3339)
+			}
+			out = append(out, ent)
+		}
+		return out, nil
+	}
+
+	raws, hit, err := cacheGetOrScan(collection, ttl, force, func(p sessionProjectEntry) string { return p.Name }, scan)
 	if err != nil {
 		return map[string]any{"ok": false, "error": err.Error()}
 	}
-	out := make([]sessionProjectEntry, 0, len(entries))
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
+	out := make([]sessionProjectEntry, 0, len(raws))
+	for _, r := range raws {
+		var p sessionProjectEntry
+		if err := json.Unmarshal(r, &p); err == nil {
+			out = append(out, p)
 		}
-		dir := filepath.Join(root, e.Name())
-		matches, _ := filepath.Glob(filepath.Join(dir, "*.jsonl"))
-		if len(matches) == 0 {
-			continue
-		}
-		var latest time.Time
-		for _, m := range matches {
-			if info, err := os.Stat(m); err == nil && info.ModTime().After(latest) {
-				latest = info.ModTime()
-			}
-		}
-		ent := sessionProjectEntry{
-			Name:         e.Name(),
-			DisplayPath:  decodeProjectName(e.Name()),
-			Path:         dir,
-			SessionCount: len(matches),
-		}
-		if !latest.IsZero() {
-			ent.LatestAt = latest.UTC().Format(time.RFC3339)
-		}
-		out = append(out, ent)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].LatestAt > out[j].LatestAt })
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"projects": out,
-			"count":    len(out),
-			"root":     root,
+			"projects":    out,
+			"count":       len(out),
+			"root":        root,
+			"cache_hit":   hit,
+			"cache_age_s": int(cacheAge(collection).Seconds()),
 		},
 	}
 }
