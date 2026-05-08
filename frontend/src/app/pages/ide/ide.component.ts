@@ -1291,7 +1291,13 @@ $ _</pre>
                       </div>
                       @if (sel.description) {
                         <div class="mn-section-title">Description</div>
-                        <pre class="mn-description">{{ sel.description }}</pre>
+                        <pre class="mn-description">@for (seg of mantisSegments(sel.description); track $index) {
+                          @if (seg.kind === 'path') {
+                            <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="'Open ' + seg.value">{{ seg.value }}</a>
+                          } @else {
+                            <span>{{ seg.value }}</span>
+                          }
+                        }</pre>
                       }
                       @if (sel.notes && sel.notes.length > 0) {
                         <div class="mn-section-title">Notes ({{ sel.notes.length }})</div>
@@ -1301,7 +1307,13 @@ $ _</pre>
                               <span class="mn-note-author">{{ n.reporter }}</span>
                               <span class="mn-note-when">{{ n.created_at?.slice(0, 19).replace('T', ' ') }}</span>
                             </div>
-                            <pre class="mn-note-text">{{ n.text }}</pre>
+                            <pre class="mn-note-text">@for (seg of mantisSegments(n.text); track $index) {
+                              @if (seg.kind === 'path') {
+                                <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="'Open ' + seg.value">{{ seg.value }}</a>
+                              } @else {
+                                <span>{{ seg.value }}</span>
+                              }
+                            }</pre>
                           </div>
                         }
                       }
@@ -3651,6 +3663,8 @@ $ _</pre>
     .mn-detail-meta code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); padding: 0 4px; background: var(--ink-2); border-radius: 3px; }
     .mn-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 14px 0 6px; }
     .mn-description, .mn-note-text { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); white-space: pre-wrap; word-break: break-word; padding: 10px 12px; background: var(--ink-2); border-radius: 6px; margin: 0; line-height: 1.5; }
+    .mn-path-link { color: var(--brand-200); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--brand-200) 40%, transparent); }
+    .mn-path-link:hover { background: color-mix(in oklch, var(--brand-200) 14%, transparent); text-decoration-color: var(--brand-200); }
     .mn-note { margin-bottom: 10px; }
     .mn-note-head { display: flex; gap: 8px; font-size: 10px; color: var(--fg-3); margin-bottom: 4px; }
     .mn-note-author { color: var(--fg-2); }
@@ -4696,6 +4710,36 @@ export class IdeComponent implements OnInit, OnDestroy {
     } finally {
       this.mantisLoading.set(false);
     }
+  }
+
+  // Detect file paths in Mantis text. Match absolute /Users/... paths
+  // (handles both bare paths and ones in backticks) — leaves Mantis
+  // markdown otherwise unchanged for the @if block to render. Returns
+  // a list of {kind: 'text'|'path', value: string} segments.
+  mantisSegments(text: string | undefined): { kind: 'text' | 'path'; value: string }[] {
+    if (!text) return [];
+    const re = /(\/Users\/[^\s`'"<>]+)/g;
+    const out: { kind: 'text' | 'path'; value: string }[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        out.push({ kind: 'text', value: text.slice(lastIndex, match.index) });
+      }
+      // Strip trailing punctuation that's almost certainly not part of a path
+      let p = match[0];
+      while (/[.,;:)\]}]$/.test(p)) p = p.slice(0, -1);
+      out.push({ kind: 'path', value: p });
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+      out.push({ kind: 'text', value: text.slice(lastIndex) });
+    }
+    return out;
+  }
+
+  async openMantisPath(path: string) {
+    await this.openSearchResult({ path, line: 1 });
   }
 
   async openMantisIssue(id: number) {
