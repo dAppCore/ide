@@ -109,6 +109,36 @@ func (b *MCPBridge) toolMantisList(_ context.Context, params map[string]any) map
 		page = 1
 	}
 	statusFilter := strings.TrimSpace(paramString(params, "status", ""))
+	force := paramBool(params, "force", false)
+	// Cache only the default first-page-50 case — that's the hot path
+	// the panel hits on every navigation. Other page/page_size combos
+	// bypass cache so they always reflect the live API.
+	useCache := page == 1 && pageSize == 30 && statusFilter == ""
+	const collection = "mantis_issues"
+	const ttl = 60 * time.Second // mantis updates often; tight TTL
+
+	if useCache && !force && cacheAge(collection) < ttl {
+		_, raws, ok := cacheGetCollection(collection)
+		if ok && len(raws) > 0 {
+			out := make([]mantisIssueLite, 0, len(raws))
+			for _, r := range raws {
+				var i mantisIssueLite
+				if err := json.Unmarshal(r, &i); err == nil {
+					out = append(out, i)
+				}
+			}
+			return map[string]any{
+				"ok": true,
+				"value": map[string]any{
+					"issues":      out,
+					"count":       len(out),
+					"page":        page,
+					"cache_hit":   true,
+					"cache_age_s": int(cacheAge(collection).Seconds()),
+				},
+			}
+		}
+	}
 
 	q := "?page_size=" + strconv.Itoa(pageSize) + "&page=" + strconv.Itoa(page)
 	body, status, err := mantisGET("/issues" + q)
@@ -146,12 +176,23 @@ func (b *MCPBridge) toolMantisList(_ context.Context, params map[string]any) map
 		out = append(out, lite)
 	}
 
+	if useCache {
+		// Persist into cache for the next call.
+		cacheItems := make([]cacheItem, 0, len(out))
+		for _, i := range out {
+			cacheItems = append(cacheItems, cacheItem{Key: strconv.Itoa(i.ID), Data: i})
+		}
+		_ = cacheSetCollection(collection, cacheItems)
+	}
+
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"issues": out,
-			"count":  len(out),
-			"page":   page,
+			"issues":      out,
+			"count":       len(out),
+			"page":        page,
+			"cache_hit":   false,
+			"cache_age_s": 0,
 		},
 	}
 }

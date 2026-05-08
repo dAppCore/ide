@@ -1301,7 +1301,14 @@ $ _</pre>
             @case ('mantis') {
               <section class="block mn-block">
                 <div class="block-header mn-header">
-                  <h2 class="block-title">Tickets</h2>
+                  <h2 class="block-title">
+                    Tickets
+                    @if (mantisCacheHit()) {
+                      <span class="cache-pill" [class.cache-stale]="mantisCacheAge() > 60" (click)="loadMantisIssues(true)" title="Click to force re-fetch">● cached {{ formatCacheAge(mantisCacheAge()) }}</span>
+                    } @else if (mantisIssues().length > 0) {
+                      <span class="cache-pill cache-fresh" title="Just fetched">● fresh</span>
+                    }
+                  </h2>
                   <span class="editorial subtitle">tasks.lthn.sh · {{ mantisIssues().length }} issues loaded.</span>
                 </div>
                 @if (mantisRecent().length > 0) {
@@ -4883,11 +4890,19 @@ export class IdeComponent implements OnInit, OnDestroy {
     return Object.entries(counts).map(([s, c]) => ({ status: s, count: c })).sort((a, b) => b.count - a.count);
   });
 
-  async loadMantisIssues() {
+  mantisCacheHit = signal(false);
+  mantisCacheAge = signal(0);
+  async loadMantisIssues(force: boolean = false) {
     this.mantisLoading.set(true);
     try {
-      const res = await this.bridgeCall('mantis_list', { page_size: 50 });
-      if (res.ok) this.mantisIssues.set(res.value?.issues || []);
+      // page_size 30 lets the bridge cache trip (cache only the default
+      // shape — see mantis_bridge.go useCache gate).
+      const res = await this.bridgeCall('mantis_list', { force });
+      if (res.ok) {
+        this.mantisIssues.set(res.value?.issues || []);
+        this.mantisCacheHit.set(!!res.value?.cache_hit);
+        this.mantisCacheAge.set(res.value?.cache_age_s || 0);
+      }
     } finally {
       this.mantisLoading.set(false);
     }
