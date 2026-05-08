@@ -4947,10 +4947,38 @@ export class IdeComponent implements OnInit, OnDestroy {
     // Load installed-plugin menus so the sidebar's Plugins group renders
     // immediately. Re-runs after install/remove via reloadPluginMenus().
     void this.loadPluginMenus();
+
+    // Keyboard shortcuts: ⌘1..⌘9 (Ctrl+1..9 elsewhere) jumps to the first
+    // 9 Developer panels in sidebar order. Skips while focus is in a text
+    // input / textarea / contenteditable so we don't fight typing.
+    this.keyboardListener = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!meta || e.shiftKey || e.altKey) return;
+      if (e.key < '1' || e.key > '9') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (target?.isContentEditable) return;
+      // Skip when Monaco has focus — its own ⌘1..9 bindings are valuable.
+      if (target?.closest('.monaco-editor')) return;
+      const idx = parseInt(e.key, 10) - 1;
+      const ids = ['files', 'search', 'scm', 'updates', 'sessions', 'stream', 'memory', 'mantis', 'lint'];
+      const route = ids[idx];
+      if (!route) return;
+      e.preventDefault();
+      this.currentRoute.set(route);
+      this.saveUIState();
+    };
+    document.addEventListener('keydown', this.keyboardListener);
   }
+
+  private keyboardListener?: (e: KeyboardEvent) => void;
 
   ngOnDestroy() {
     this.timeEventCleanup?.();
+    if (this.keyboardListener) {
+      document.removeEventListener('keydown', this.keyboardListener);
+    }
     // Best-effort flush of any pending save before component teardown.
     this.flushUIState();
   }
