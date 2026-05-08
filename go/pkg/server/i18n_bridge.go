@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // i18n_* bridge tools — IDE surface over core/go-i18n.
@@ -62,41 +63,56 @@ func (b *MCPBridge) toolI18nScan(_ context.Context, params map[string]any) map[s
 	if maxDepth <= 0 {
 		maxDepth = 3
 	}
+	force := paramBool(params, "force", false)
+	const collection = "i18n_packages"
+	const ttl = 10 * time.Minute
 
-	pkgs := []LocalePackage{}
-	uniq := map[string]struct{}{}
-
-	for _, root := range roots {
-		_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if !d.IsDir() {
-				return nil
-			}
-			rel, _ := filepath.Rel(root, path)
-			depth := strings.Count(rel, string(os.PathSeparator))
-			// Skip vendor / node_modules / build artefacts / our own external
-			name := d.Name()
-			if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "external" {
-				return filepath.SkipDir
-			}
-			if depth > maxDepth {
-				return filepath.SkipDir
-			}
-			if name == "locales" {
-				if pkg := scanLocaleDir(path); pkg != nil {
-					pkgs = append(pkgs, *pkg)
-					for _, loc := range pkg.Locales {
-						uniq[loc.Name] = struct{}{}
-					}
+	scan := func() ([]LocalePackage, error) {
+		pkgs := []LocalePackage{}
+		for _, root := range roots {
+			_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return nil
 				}
-				return filepath.SkipDir
-			}
-			return nil
-		})
+				if !d.IsDir() {
+					return nil
+				}
+				rel, _ := filepath.Rel(root, path)
+				depth := strings.Count(rel, string(os.PathSeparator))
+				name := d.Name()
+				if name == "node_modules" || name == "vendor" || name == ".git" || name == "build" || name == "external" {
+					return filepath.SkipDir
+				}
+				if depth > maxDepth {
+					return filepath.SkipDir
+				}
+				if name == "locales" {
+					if pkg := scanLocaleDir(path); pkg != nil {
+						pkgs = append(pkgs, *pkg)
+					}
+					return filepath.SkipDir
+				}
+				return nil
+			})
+		}
+		return pkgs, nil
 	}
 
+	raws, hit, err := cacheGetOrScan(collection, ttl, force, func(p LocalePackage) string { return p.Code }, scan)
+	if err != nil {
+		return map[string]any{"ok": false, "error": err.Error()}
+	}
+	pkgs := make([]LocalePackage, 0, len(raws))
+	uniq := map[string]struct{}{}
+	for _, r := range raws {
+		var p LocalePackage
+		if err := json.Unmarshal(r, &p); err == nil {
+			pkgs = append(pkgs, p)
+			for _, loc := range p.Locales {
+				uniq[loc.Name] = struct{}{}
+			}
+		}
+	}
 	uniqList := make([]string, 0, len(uniq))
 	for k := range uniq {
 		uniqList = append(uniqList, k)
@@ -106,11 +122,13 @@ func (b *MCPBridge) toolI18nScan(_ context.Context, params map[string]any) map[s
 
 	return map[string]any{
 		"ok": true,
-		"value": LocaleScanOutput{
-			Roots:         roots,
-			Packages:      pkgs,
-			UniqueLocales: uniqList,
-			Total:         len(pkgs),
+		"value": map[string]any{
+			"roots":          roots,
+			"packages":       pkgs,
+			"unique_locales": uniqList,
+			"total":          len(pkgs),
+			"cache_hit":      hit,
+			"cache_age_s":    int(cacheAge(collection).Seconds()),
 		},
 	}
 }

@@ -689,7 +689,14 @@ $ _</pre>
             @case ('forge') {
               <section class="block frg-block">
                 <div class="block-header frg-header">
-                  <h2 class="block-title">Forge</h2>
+                  <h2 class="block-title">
+                    Forge
+                    @if (forgeReposCacheHit() && forgeSelectedOrg()) {
+                      <span class="cache-pill" [class.cache-stale]="forgeReposCacheAge() > 300" (click)="loadForgeRepos(forgeSelectedOrg(), true)" title="Click to force re-fetch repos">● cached {{ formatCacheAge(forgeReposCacheAge()) }}</span>
+                    } @else if (forgeRepos().length > 0) {
+                      <span class="cache-pill cache-fresh" title="Just fetched">● fresh</span>
+                    }
+                  </h2>
                   <span class="editorial subtitle">
                     @if (forgeStatus()?.authenticated) {
                       <code>{{ forgeStatus()?.base }}</code> · authenticated as <strong>{{ forgeStatus()?.as }}</strong>
@@ -5599,14 +5606,19 @@ export class IdeComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadForgeRepos(org: string) {
+  forgeReposCacheHit = signal(false);
+  forgeReposCacheAge = signal(0);
+  async loadForgeRepos(org: string, force: boolean = false) {
     this.forgeSelectedOrg.set(org);
     this.forgeSelectedRepo.set('');
     this.forgeIssues.set([]);
     this.forgePulls.set([]);
-    const res = await this.bridgeCall('forge_repos', { org });
-    if (res.ok) this.forgeRepos.set(res.value?.repos || []);
-    else this.forgeError.set(res.error || 'forge_repos failed');
+    const res = await this.bridgeCall('forge_repos', { org, force });
+    if (res.ok) {
+      this.forgeRepos.set(res.value?.repos || []);
+      this.forgeReposCacheHit.set(!!res.value?.cache_hit);
+      this.forgeReposCacheAge.set(res.value?.cache_age_s || 0);
+    } else this.forgeError.set(res.error || 'forge_repos failed');
   }
 
   async loadForgeRepo(repo: string) {
