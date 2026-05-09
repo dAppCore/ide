@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component, computed, inject, resource, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { callBridge } from '../../../lib/bridge';
@@ -61,32 +62,32 @@ function pluginNativeTag(code: string): string | null {
   selector: 'dev-marketplace',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block market-block">
       <div class="block-header market-header">
-        <h2 class="block-title">Marketplace</h2>
-        <span class="editorial subtitle">Plugins, themes, and agents for your Lethean workspace.</span>
+        <h2 class="block-title">{{ 'marketplace.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'marketplace.subtitle' | translate }}</span>
       </div>
       <div class="market-toolbar">
         <input
           type="text"
           class="market-search-input"
-          placeholder="Search marketplace…"
+          [placeholder]="'marketplace.placeholder.search' | translate"
           [value]="marketQuery()"
           (input)="marketQuery.set($any($event.target).value)"
           (keyup.enter)="loadMarketplace()" />
         <select class="market-category-select"
                 [value]="marketCategory()"
                 (change)="onCategoryChange($any($event.target).value)">
-          <option value="">All categories</option>
-          <option value="agents">Agents</option>
-          <option value="themes">Themes</option>
-          <option value="tools">Tools</option>
-          <option value="snippets">Snippets</option>
+          <option value="">{{ 'marketplace.category.all' | translate }}</option>
+          <option value="agents">{{ 'marketplace.category.agents' | translate }}</option>
+          <option value="themes">{{ 'marketplace.category.themes' | translate }}</option>
+          <option value="tools">{{ 'marketplace.category.tools' | translate }}</option>
+          <option value="snippets">{{ 'marketplace.category.snippets' | translate }}</option>
         </select>
         <button class="btn btn-primary btn-sm" (click)="loadMarketplace(true)" [disabled]="marketLoading()">
-          @if (marketLoading()) { <span>loading…</span> } @else { <span>Refresh</span> }
+          @if (marketLoading()) { <span>{{ 'marketplace.status.loading' | translate }}</span> } @else { <span>{{ 'marketplace.button.refresh' | translate }}</span> }
         </button>
       </div>
       @if (marketError(); as err) {
@@ -96,9 +97,9 @@ function pluginNativeTag(code: string): string | null {
         <div class="plugin-panel">
           <div class="plugin-panel-header">
             <span class="plugin-panel-title">▸ {{ ep.name }}</span>
-            <span class="plugin-panel-mode">{{ ep.mode }} mode</span>
+            <span class="plugin-panel-mode">{{ ep.mode }} {{ 'marketplace.label.mode' | translate }}</span>
             <span class="plugin-panel-url">{{ ep.mode === 'native' ? '<' + ep.tag + '>' : ep.url }}</span>
-            <button class="btn btn-ghost btn-sm" (click)="closeEmbeddedPlugin()">Close</button>
+            <button class="btn btn-ghost btn-sm" (click)="closeEmbeddedPlugin()">{{ 'marketplace.button.close' | translate }}</button>
           </div>
           @if (ep.mode === 'iframe') {
             <iframe class="plugin-panel-frame"
@@ -120,11 +121,11 @@ function pluginNativeTag(code: string): string | null {
           <article class="market-card" [class.installed]="isInstalled(m.code)">
             <header class="market-card-head">
               <h3 class="market-card-title">{{ m.name }}</h3>
-              <span class="market-card-cat">{{ m.category || 'misc' }}</span>
+              <span class="market-card-cat">{{ m.category || ('marketplace.category.misc' | translate) }}</span>
             </header>
             <div class="market-card-meta">
               <code class="market-card-code">{{ m.code }}</code>
-              <span class="market-card-version">v{{ m.version || 'latest' }}</span>
+              <span class="market-card-version">v{{ m.version || ('marketplace.label.latest' | translate) }}</span>
             </div>
             @if (m.description) {
               <div class="market-card-desc">{{ m.description }}</div>
@@ -135,32 +136,32 @@ function pluginNativeTag(code: string): string | null {
             <footer class="market-card-actions">
               @if (isInstalled(m.code)) {
                 @if (hasNativeMode(m.code)) {
-                  <button class="btn btn-primary btn-sm" (click)="runPluginNative(m.code)" title="Mount as native custom element (Mining-route)">
-                    ⚡ Native
+                  <button class="btn btn-primary btn-sm" (click)="runPluginNative(m.code)" [title]="'marketplace.tooltip.native' | translate">
+                    ⚡ {{ 'marketplace.button.native' | translate }}
                   </button>
                 }
                 @if (pluginRunUrl(m.code); as runUrl) {
-                  <button class="btn btn-ghost btn-sm" (click)="runPluginInline(m.code)" title="Mount as iframe panel inside the IDE">
-                    ▸ Frame
+                  <button class="btn btn-ghost btn-sm" (click)="runPluginInline(m.code)" [title]="'marketplace.tooltip.frame' | translate">
+                    ▸ {{ 'marketplace.button.frame' | translate }}
                   </button>
-                  <button class="btn btn-ghost btn-sm" (click)="runPlugin(m.code)" title="Open as separate window">
-                    ↗ Window
+                  <button class="btn btn-ghost btn-sm" (click)="runPlugin(m.code)" [title]="'marketplace.tooltip.window' | translate">
+                    ↗ {{ 'marketplace.button.window' | translate }}
                   </button>
                 }
                 <button class="btn btn-ghost btn-sm" (click)="removeModule(m.code)" [disabled]="marketBusy() === m.code">
-                  @if (marketBusy() === m.code) { <span>removing…</span> } @else { <span>Remove</span> }
+                  @if (marketBusy() === m.code) { <span>{{ 'marketplace.status.removing' | translate }}</span> } @else { <span>{{ 'marketplace.button.remove' | translate }}</span> }
                 </button>
-                <span class="market-card-state">Installed</span>
+                <span class="market-card-state">{{ 'marketplace.status.installed' | translate }}</span>
               } @else {
                 <button class="btn btn-primary btn-sm" (click)="installModule(m.code)" [disabled]="marketBusy() === m.code">
-                  @if (marketBusy() === m.code) { <span>installing…</span> } @else { <span>Install</span> }
+                  @if (marketBusy() === m.code) { <span>{{ 'marketplace.status.installing' | translate }}</span> } @else { <span>{{ 'marketplace.button.install' | translate }}</span> }
                 </button>
               }
             </footer>
           </article>
         }
         @if (marketModules().length === 0 && !marketLoading() && !marketError()) {
-          <div class="market-empty">No packages found.</div>
+          <div class="market-empty">{{ 'marketplace.empty.no-packages' | translate }}</div>
         }
       </div>
       @if (marketMessage(); as msg) {
