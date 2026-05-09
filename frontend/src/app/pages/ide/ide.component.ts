@@ -5205,16 +5205,33 @@ export class IdeComponent implements OnInit, OnDestroy {
   ngOnInit() {
     if (!this.isBrowser) return;
 
-    // Track whether a child route is currently active. The template
-    // shows <router-outlet /> when true and falls back to the legacy
-    // @switch otherwise. Initial check + every navigation.
-    const updateChildRoute = () => {
-      this.hasChildRoute.set(this.route.firstChild !== null);
+    // Track which route under /dev is active and which "shape" it
+    // takes:
+    //   - extracted route (e.g. /dev/build) → render <router-outlet>
+    //   - catch-all (`:panel`)              → render legacy @switch,
+    //     and copy the url segment into currentRoute so the @switch
+    //     picks the right panel
+    //   - bare /dev                         → currentRoute defaults
+    const updateRouteState = () => {
+      const child = this.route.snapshot.firstChild;
+      const path = child?.routeConfig?.path ?? null;
+      if (path === ':panel') {
+        // Catch-all — sidebar clicked an unextracted panel.
+        const panel = child?.params['panel'] as string | undefined;
+        if (panel) this.currentRoute.set(panel);
+        this.hasChildRoute.set(false);
+      } else if (path) {
+        // Extracted route — let the outlet render.
+        this.hasChildRoute.set(true);
+      } else {
+        // Bare /dev — keep current view, no outlet.
+        this.hasChildRoute.set(false);
+      }
     };
-    updateChildRoute();
+    updateRouteState();
     const sub = this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(updateChildRoute);
+      .subscribe(updateRouteState);
     this.destroyRef.onDestroy(() => sub.unsubscribe());
 
     import('@wailsio/runtime').then(({ Events }) => {

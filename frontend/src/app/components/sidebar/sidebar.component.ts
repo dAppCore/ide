@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ManifestService } from '../../services/manifest.service';
 import { SitesStore } from '../../services/store/sites.store';
 
@@ -17,7 +18,7 @@ import { SitesStore } from '../../services/store/sites.store';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [],
+  imports: [RouterLink, RouterLinkActive],
   template: `
     <nav class="sidebar">
       <!-- Workspace identity -->
@@ -37,13 +38,13 @@ import { SitesStore } from '../../services/store/sites.store';
       <div class="nav-group">
         <div class="nav-group-title">Developer</div>
         @for (item of developerPanels(); track item.id) {
-          <button
+          <a
             class="nav-row"
-            [class.active]="currentRoute === item.id"
-            (click)="routeChange.emit(item.id)">
+            [routerLink]="['/dev', item.route]"
+            routerLinkActive="active">
             <span class="nav-icon" [innerHTML]="trustIcon(item.icon)"></span>
             <span class="nav-label">{{ item.label }}</span>
-          </button>
+          </a>
         }
       </div>
 
@@ -96,13 +97,13 @@ import { SitesStore } from '../../services/store/sites.store';
       <div class="nav-group">
         <div class="nav-group-title">Account</div>
         @for (item of accountPanels(); track item.id) {
-          <button
+          <a
             class="nav-row"
-            [class.active]="currentRoute === item.id"
-            (click)="routeChange.emit(item.id)">
+            [routerLink]="['/dev', item.route]"
+            routerLinkActive="active">
             <span class="nav-icon" [innerHTML]="trustIcon(item.icon)"></span>
             <span class="nav-label">{{ item.label }}</span>
-          </button>
+          </a>
         }
       </div>
     </nav>

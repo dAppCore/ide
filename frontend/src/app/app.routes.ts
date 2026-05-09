@@ -7,6 +7,7 @@ import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
 import { WelcomeComponent } from './pages/dev/welcome/welcome.component';
 import { BuildComponent } from './pages/dev/build/build.component';
+import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
  * Routing pattern: blank top-level root → frames stub on as children →
@@ -53,6 +54,12 @@ export const routes: Routes = [
         children: [
           { path: 'welcome', component: WelcomeComponent },
           { path: 'build', component: BuildComponent },
+          // Catch-all for panel ids that haven't been extracted yet.
+          // Loads an empty host; IdeComponent reads the URL segment and
+          // renders the legacy @switch fallback for that panel id. As
+          // each panel extracts, replace its slot here with the real
+          // component (and delete its @case from IdeComponent).
+          { path: ':panel', component: LegacyPanelHost },
         ],
       },
       { path: 'ide', redirectTo: 'dev', pathMatch: 'full' },
