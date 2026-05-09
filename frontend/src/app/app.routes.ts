@@ -5,6 +5,8 @@ import { BlankFrame } from '../frame/blank.frame';
 import { ApplicationFrame } from '../frame/application.frame';
 import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
+import { WelcomeComponent } from './pages/dev/welcome/welcome.component';
+import { BuildComponent } from './pages/dev/build/build.component';
 
 /**
  * Routing pattern: blank top-level root → frames stub on as children →
@@ -40,7 +42,19 @@ export const routes: Routes = [
     component: BlankFrame,
     children: [
       { path: '', redirectTo: 'dev', pathMatch: 'full' },
-      { path: 'dev', component: IdeComponent },
+      // /dev is the Developer/advanced frame. Children mount in
+      // IdeComponent's <router-outlet>; when no child is active the
+      // legacy @switch fallback inside IdeComponent renders the panel.
+      // As panels are extracted (Phase 2), each one adds a child route
+      // here and removes its @case from IdeComponent.
+      {
+        path: 'dev',
+        component: IdeComponent,
+        children: [
+          { path: 'welcome', component: WelcomeComponent },
+          { path: 'build', component: BuildComponent },
+        ],
+      },
       { path: 'ide', redirectTo: 'dev', pathMatch: 'full' },
       { path: 'system-tray', component: SystemTrayFrame },
       {

@@ -1,6 +1,8 @@
-import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, computed, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, computed, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, inject, DestroyRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { Brief, Site, ActivityItem, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 
@@ -28,7 +30,7 @@ function pluginNativeTag(code: string): string | null {
 @Component({
   selector: 'app-ide',
   standalone: true,
-  imports: [CommonModule, SidebarComponent],
+  imports: [CommonModule, SidebarComponent, RouterOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="ide-layout">
@@ -54,6 +56,13 @@ function pluginNativeTag(code: string): string | null {
 
         <!-- Content -->
         <div class="content">
+          @if (hasChildRoute()) {
+            <!-- Phase 1+ migration target: extracted panels render
+                 here via /dev/<panel> child routes. Until a panel is
+                 extracted, the legacy @switch fallback below is what
+                 the sidebar drives via routeChange(viewKind). -->
+            <router-outlet />
+          } @else {
           @switch (viewKind()) {
             @case ('control-panel') {
               <!-- Brief grid -->
@@ -2459,6 +2468,7 @@ $ _</pre>
               </section>
             }
           }
+          }
         </div>
 
         <!-- Status bar (per Lethean-3 native handoff: 22px tall, mono, Vi state) -->
@@ -4610,6 +4620,15 @@ export class IdeComponent implements OnInit, OnDestroy {
 
   @ViewChild('editorRef') editorRef?: ElementRef<HTMLElement>;
 
+  // Phase-1 router-outlet gate. True whenever a child route under /dev
+  // is active (e.g. /dev/welcome) — flips the template from the legacy
+  // @switch fallback to the <router-outlet> shape. Updated on every
+  // NavigationEnd in ngOnInit.
+  readonly hasChildRoute = signal(false);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
   currentRoute = signal('dashboard');
   currentTime = signal('');
 
@@ -5185,6 +5204,18 @@ export class IdeComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (!this.isBrowser) return;
+
+    // Track whether a child route is currently active. The template
+    // shows <router-outlet /> when true and falls back to the legacy
+    // @switch otherwise. Initial check + every navigation.
+    const updateChildRoute = () => {
+      this.hasChildRoute.set(this.route.firstChild !== null);
+    };
+    updateChildRoute();
+    const sub = this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(updateChildRoute);
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
 
     import('@wailsio/runtime').then(({ Events }) => {
       this.timeEventCleanup = Events.On('time', (time: { data: string }) => {

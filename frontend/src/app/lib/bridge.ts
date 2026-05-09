@@ -1,18 +1,25 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 /**
- * Typed wrapper around core/ide's MCP HTTP bridge at port 9877.
+ * MCP HTTP bridge wrapper — last-resort transport for the rare case
+ * where a panel needs data that has no wails binding yet AND the right
+ * answer can't wait for the binding to land.
  *
- * The bridge speaks `{tool, params}` POST → `{ok, value, error?}`. Every
- * frontend store / signal that needs backend data flows through this
- * single helper so:
+ * **Default to wails bindings.** Line-speed goroutine access, secure,
+ * type-safe via the generated TS files in `frontend/bindings/`. MCP is
+ * orders of magnitude slower (HTTP round-trip per call) and was built
+ * as the EXTERNAL access layer for tooling (Cladius, Claude Code, the
+ * MCP CLI) — the app itself is not an MCP client.
  *
- *   - There's one place to add auth, retry, telemetry, error logging.
- *   - The bridge URL / port lives in one constant.
- *   - Components never touch `fetch` directly — they consume signals
- *     wired by stores that call this.
+ * Decision tree before importing this file:
+ *   1. Is there a wails binding for the data? → use it
+ *   2. Is there a Go service that could trivially expose one? → add it
+ *   3. Genuine third-party HTTP source? → use HttpClient directly
+ *   4. Only-currently-reachable-via-MCP? → use this, file the work to
+ *      replace with a binding
  *
- * Used by `services/store/*.ts` resource() loaders.
+ * Used by stores wrapping endpoints that haven't been bridged yet.
+ * Every consumer should carry a TODO pointing at the missing binding.
  */
 
 const BRIDGE_BASE = 'http://127.0.0.1:9877';
@@ -27,7 +34,6 @@ export interface BridgeError extends Error {
  * with a `BridgeError` carrying the tool name and the server payload
  * so callers can log or branch on specific failure modes.
  *
- *   const sites = await callBridge<Site[]>('vibridge.Sites');
  *   const repos = await callBridge<Repo[]>('forge_repos', { org: 'agent' });
  */
 export async function callBridge<T = unknown>(

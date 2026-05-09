@@ -85,10 +85,11 @@ export interface ViSnapshot {
   activity: ActivityItem[];
 }
 
-// Static import resolves the @bindings/* alias cleanly via Angular's
-// compiler walk; dynamic await import() doesn't get the same alias
-// chase, leaving TS2307 on screen even though the runtime fetch works.
-import * as vibridge from '@bindings/dappco.re/go/ide/pkg/server/vibridge';
+// Direct relative import — vite resolves relatives reliably, the
+// @bindings/* alias races during HMR (TS2307 overlay even when the
+// build succeeds). The bindings file is regenerated on every dev
+// rebuild via the wails3 task, so the path is stable.
+import * as vibridge from '../../../bindings/dappco.re/go/ide/pkg/server/vibridge';
 
 /**
  * Load all four Vi data slices in one round-trip.
