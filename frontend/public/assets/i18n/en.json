@@ -152,5 +152,18 @@
   "forge.column.published": "published",
   "forge.column.archive": "archive",
   "forge.badge.pre": "pre",
-  "forge.empty.pick-repo": "Pick a repo to view its issues + PRs."
+  "forge.empty.pick-repo": "Pick a repo to view its issues + PRs.",
+  "git.title": "Source Control",
+  "git.status.detached": "(detached)",
+  "git.tooltip.refresh-status": "Refresh status",
+  "git.button.refresh": "Refresh",
+  "git.empty.clean": "working tree clean",
+  "git.tooltip.unstage": "Unstage",
+  "git.tooltip.stage": "Stage",
+  "git.empty.select-file": "Select a file to view its diff",
+  "git.placeholder.commit-message": "Commit message...",
+  "git.tooltip.stage-all": "Stage all changes",
+  "git.button.stage-all": "Stage all",
+  "git.tooltip.commit-staged": "Commit staged",
+  "git.button.commit": "Commit"
 }

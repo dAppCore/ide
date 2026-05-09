@@ -152,5 +152,18 @@
   "forge.column.published": "опубликовано",
   "forge.column.archive": "архив",
   "forge.badge.pre": "предварительно",
-  "forge.empty.pick-repo": "Выберите репозиторий, чтобы просмотреть его выпуски и PR."
+  "forge.empty.pick-repo": "Выберите репозиторий, чтобы просмотреть его выпуски и PR.",
+  "git.title": "Система контроля версий",
+  "git.status.detached": "(отдельно)",
+  "git.tooltip.refresh-status": "Обновить статус",
+  "git.button.refresh": "Обновить",
+  "git.empty.clean": "рабочее дерево чистое",
+  "git.tooltip.unstage": "Выключить сцену",
+  "git.tooltip.stage": "Этап",
+  "git.empty.select-file": "Выберите файл, чтобы просмотреть его разницу",
+  "git.placeholder.commit-message": "Зафиксировать сообщение...",
+  "git.tooltip.stage-all": "Стадия всех изменений",
+  "git.button.stage-all": "Стадия все",
+  "git.tooltip.commit-staged": "Фиксация поставлена",
+  "git.button.commit": "Зафиксировать"
 }

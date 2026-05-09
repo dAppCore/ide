@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridgeRaw } from '../../../lib/bridge';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -29,26 +30,27 @@ interface GitEntry {
 @Component({
   selector: 'dev-git',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block git-block">
       <div class="block-header git-header">
-        <h2 class="block-title">Source Control</h2>
+        <h2 class="block-title">{{ 'git.title' | translate }}</h2>
         @if (gitBranch(); as b) {
           <span class="git-branch-pill">
-            <span class="git-branch-name">{{ b.branch || '(detached)' }}</span>
+            <span class="git-branch-name">{{ b.branch || ('git.status.detached' | translate) }}</span>
             @if (b.ahead > 0) { <span class="git-ahead">↑{{ b.ahead }}</span> }
             @if (b.behind > 0) { <span class="git-behind">↓{{ b.behind }}</span> }
           </span>
         }
-        <button class="btn btn-ghost btn-sm" (click)="refreshGit()" [disabled]="gitBusy()" title="Refresh status">
-          Refresh
+        <button class="btn btn-ghost btn-sm" (click)="refreshGit()" [disabled]="gitBusy()" [title]="'git.tooltip.refresh-status' | translate">
+          {{ 'git.button.refresh' | translate }}
         </button>
       </div>
 
       <div class="git-grid">
         <div class="git-list">
           @if (gitEntries().length === 0) {
-            <div class="git-empty">working tree clean</div>
+            <div class="git-empty">{{ 'git.empty.clean' | translate }}</div>
           }
           @for (e of gitEntries(); track e.path) {
             <div
@@ -62,9 +64,9 @@ interface GitEntry {
               <span class="git-status-flag">{{ gitFileLabel(e) }}</span>
               <span class="git-row-path">{{ e.path }}</span>
               @if (e.staged && !e.unstaged) {
-                <button class="git-row-btn" (click)="unstageFile(e.path, $event)" title="Unstage">−</button>
+                <button class="git-row-btn" (click)="unstageFile(e.path, $event)" [title]="'git.tooltip.unstage' | translate">−</button>
               } @else {
-                <button class="git-row-btn" (click)="stageFile(e.path, $event)" title="Stage">+</button>
+                <button class="git-row-btn" (click)="stageFile(e.path, $event)" [title]="'git.tooltip.stage' | translate">+</button>
               }
             </div>
           }
@@ -77,7 +79,7 @@ interface GitEntry {
             </div>
             <pre class="git-diff-body">{{ gitDiff() }}</pre>
           } @else {
-            <div class="git-diff-empty">Select a file to view its diff</div>
+            <div class="git-diff-empty">{{ 'git.empty.select-file' | translate }}</div>
           }
         </div>
       </div>
@@ -86,21 +88,21 @@ interface GitEntry {
         <input
           type="text"
           class="git-commit-input"
-          placeholder="Commit message…"
+          [placeholder]="'git.placeholder.commit-message' | translate"
           [value]="gitCommitMessage()"
           (input)="gitCommitMessage.set($any($event.target).value)"
           (keydown.enter)="commitStaged()"
         />
-        <button class="btn btn-secondary btn-sm" (click)="stageAll()" [disabled]="gitBusy()" title="Stage all changes">
-          Stage all
+        <button class="btn btn-secondary btn-sm" (click)="stageAll()" [disabled]="gitBusy()" [title]="'git.tooltip.stage-all' | translate">
+          {{ 'git.button.stage-all' | translate }}
         </button>
         <button
           class="btn btn-primary btn-sm"
           (click)="commitStaged()"
           [disabled]="gitBusy() || !hasStaged() || !gitCommitMessage().trim()"
-          title="Commit staged"
+          [title]="'git.tooltip.commit-staged' | translate"
         >
-          Commit
+          {{ 'git.button.commit' | translate }}
         </button>
       </div>
 

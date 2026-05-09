@@ -152,5 +152,18 @@
   "forge.column.published": "veröffentlicht",
   "forge.column.archive": "Archiv",
   "forge.badge.pre": "vor",
-  "forge.empty.pick-repo": "Wählen Sie ein Repo aus, um seine Probleme und PRs anzuzeigen."
+  "forge.empty.pick-repo": "Wählen Sie ein Repo aus, um seine Probleme und PRs anzuzeigen.",
+  "git.title": "Quellcodeverwaltung",
+  "git.status.detached": "(freistehend)",
+  "git.tooltip.refresh-status": "Status aktualisieren",
+  "git.button.refresh": "Aktualisieren",
+  "git.empty.clean": "Arbeitsbaum sauber",
+  "git.tooltip.unstage": "Unbühne",
+  "git.tooltip.stage": "Bühne",
+  "git.empty.select-file": "Wählen Sie eine Datei aus, um deren Unterschiede anzuzeigen",
+  "git.placeholder.commit-message": "Commit-Nachricht...",
+  "git.tooltip.stage-all": "Führen Sie alle Änderungen durch",
+  "git.button.stage-all": "Alles inszenieren",
+  "git.tooltip.commit-staged": "Commit inszeniert",
+  "git.button.commit": "Begehen"
 }

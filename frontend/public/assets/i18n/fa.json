@@ -152,5 +152,18 @@
   "forge.column.published": "منتشر شده است",
   "forge.column.archive": "بایگانی",
   "forge.badge.pre": "قبل از",
-  "forge.empty.pick-repo": "یک مخزن را برای مشاهده مشکلات + روابط عمومی آن انتخاب کنید."
+  "forge.empty.pick-repo": "یک مخزن را برای مشاهده مشکلات + روابط عمومی آن انتخاب کنید.",
+  "git.title": "کنترل منبع",
+  "git.status.detached": "(جدا شده)",
+  "git.tooltip.refresh-status": "وضعیت بازخوانی",
+  "git.button.refresh": "تازه کردن",
+  "git.empty.clean": "درخت کار تمیز",
+  "git.tooltip.unstage": "بدون صحنه",
+  "git.tooltip.stage": "مرحله",
+  "git.empty.select-file": "یک فایل را برای مشاهده تفاوت آن انتخاب کنید",
+  "git.placeholder.commit-message": "پیام متعهد ...",
+  "git.tooltip.stage-all": "تمام تغییرات را مرحله بندی کنید",
+  "git.button.stage-all": "مرحله همه",
+  "git.tooltip.commit-staged": "ارتکاب مرحله ای",
+  "git.button.commit": "متعهد شوید"
 }

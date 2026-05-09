@@ -152,5 +152,18 @@
   "forge.column.published": "发表",
   "forge.column.archive": "存档",
   "forge.badge.pre": "前",
-  "forge.empty.pick-repo": "选择一个存储库以查看其问题 + PR。"
+  "forge.empty.pick-repo": "选择一个存储库以查看其问题 + PR。",
+  "git.title": "源代码控制",
+  "git.status.detached": "（分离）",
+  "git.tooltip.refresh-status": "刷新状态",
+  "git.button.refresh": "刷新",
+  "git.empty.clean": "工作树干净",
+  "git.tooltip.unstage": "取消舞台",
+  "git.tooltip.stage": "舞台",
+  "git.empty.select-file": "选择一个文件以查看其差异",
+  "git.placeholder.commit-message": "提交消息...",
+  "git.tooltip.stage-all": "暂存所有更改",
+  "git.button.stage-all": "舞台全部",
+  "git.tooltip.commit-staged": "提交上演",
+  "git.button.commit": "提交"
 }
