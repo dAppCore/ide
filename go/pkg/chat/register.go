@@ -12,10 +12,23 @@ import (
 	"dappco.re/go/ide/pkg/config"
 )
 
+// CallToolError is the error type that ToolExecutor.CallTool returns
+// on failure. Type-aliased to interface{ Error() string } (the standard
+// Go error shape) to match the upstream gui_chat.ToolExecutor contract,
+// which uses the same anonymous interface to avoid taking a hard
+// dependency on the Go errors package.
+//
+// Kept as a named alias rather than the inline `interface{Error()string}`
+// literal that originally appeared in three places here — it reads
+// cleaner at use sites and gives a single point to migrate to
+// core.Result if/when the upstream gui chat package's resultFailure
+// alias graduates.
+type CallToolError = interface{ Error() string }
+
 type ToolExecutor interface {
 	Manifest() []guimcp.ToolDescriptor
 	ManifestText() string
-	CallTool(ctx context.Context, name string, arguments map[string]any) (string, interface{ Error() string })
+	CallTool(ctx context.Context, name string, arguments map[string]any) (string, CallToolError)
 }
 
 type Executor struct {
@@ -62,7 +75,7 @@ func (e *Executor) CallTool(
 	ctx context.Context,
 	name string,
 	arguments map[string]any,
-) (string, interface{ Error() string }) {
+) (string, CallToolError) {
 	if e.gui != nil {
 		for _, descriptor := range e.gui.Manifest() {
 			if descriptor.Name == name {
