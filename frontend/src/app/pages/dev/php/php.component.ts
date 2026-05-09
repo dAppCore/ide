@@ -2,6 +2,7 @@
 
 import { Component, computed, inject, linkedSignal, resource } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -63,26 +64,26 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
 @Component({
   selector: 'dev-php',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block php-block">
       <div class="block-header php-header">
         <h2 class="block-title">
-          PHP
+          {{ 'php.title' | translate }}
           @if (scan.cacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="scan.cacheAge() > 600" (click)="scan.refresh()" title="Click to force re-scan">● cached {{ formatCacheAge(scan.cacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="scan.cacheAge() > 600" (click)="scan.refresh()" [title]="'php.tooltip.force-rescan' | translate">● {{ 'php.cache.cached' | translate }} {{ formatCacheAge(scan.cacheAge()) }}</span>
           } @else if (projects().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'php.tooltip.just-scanned' | translate">● {{ 'php.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">Laravel project discovery + tooling · Surface over <code>core/php</code>.</span>
+        <span class="editorial subtitle">{{ 'php.subtitle.prefix' | translate }} <code>core/php</code>.</span>
       </div>
       @if (scan.error(); as err) {
         <div class="php-error">{{ err }}</div>
       }
       <div class="php-body">
         <div class="php-side">
-          <h3>Projects ({{ projects().length }})</h3>
+          <h3>{{ 'php.section.projects' | translate }} ({{ projects().length }})</h3>
           @if (scan.firstLoad()) {
             <dev-skeleton kind="rows" [count]="6" />
           }
@@ -106,21 +107,21 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
               <code class="php-path">{{ sel.path }}</code>
 
               <div class="php-grid">
-                <div class="php-cell"><span class="php-label">App name</span><span>{{ sel.app_name || '—' }}</span></div>
-                <div class="php-cell"><span class="php-label">App URL</span><span><code>{{ sel.app_url || '—' }}</code></span></div>
-                <div class="php-cell"><span class="php-label">Domain</span><span><code>{{ sel.domain || '—' }}</code></span></div>
-                <div class="php-cell"><span class="php-label">Package manager</span><span><code>{{ sel.package_mgr }}</code></span></div>
+                <div class="php-cell"><span class="php-label">{{ 'php.label.app-name' | translate }}</span><span>{{ sel.app_name || '—' }}</span></div>
+                <div class="php-cell"><span class="php-label">{{ 'php.label.app-url' | translate }}</span><span><code>{{ sel.app_url || '—' }}</code></span></div>
+                <div class="php-cell"><span class="php-label">{{ 'php.label.domain' | translate }}</span><span><code>{{ sel.domain || '—' }}</code></span></div>
+                <div class="php-cell"><span class="php-label">{{ 'php.label.package-manager' | translate }}</span><span><code>{{ sel.package_mgr }}</code></span></div>
               </div>
 
-              <h4>Detected services</h4>
+              <h4>{{ 'php.section.detected-services' | translate }}</h4>
               <div class="php-services">
                 @for (s of sel.services; track s) {
                   <span class="php-service">{{ s }}</span>
                 }
-                @if (sel.services.length === 0) { <span class="php-empty">none</span> }
+                @if (sel.services.length === 0) { <span class="php-empty">{{ 'php.empty.none' | translate }}</span> }
               </div>
 
-              <h4>Project state</h4>
+              <h4>{{ 'php.section.project-state' | translate }}</h4>
               <div class="php-state-grid">
                 <span class="php-state" [class.ok]="sel.has_env" [class.warn]="!sel.has_env">.env {{ sel.has_env ? '✓' : '⚠' }}</span>
                 <span class="php-state" [class.ok]="sel.has_env_example">env.example {{ sel.has_env_example ? '✓' : '—' }}</span>
@@ -132,7 +133,7 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
 
               @if (scripts.value(); as scr) {
                 @if (scr.composer_scripts.length > 0) {
-                  <h4>composer scripts <span class="php-grid-meta">({{ scr.composer_scripts.length }})</span></h4>
+                  <h4>{{ 'php.section.composer-scripts' | translate }} <span class="php-grid-meta">({{ scr.composer_scripts.length }})</span></h4>
                   <div class="php-script-grid">
                     @for (s of scr.composer_scripts; track s.name) {
                       <button class="php-script-card" (click)="runPHPScript(sel.path, 'composer', {name: s.name})" [title]="s.command">
@@ -144,7 +145,7 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
                   </div>
                 }
                 @if (scr.artisan_scripts.length > 0) {
-                  <h4>artisan <span class="php-grid-meta">({{ scr.artisan_scripts.length }} canonical)</span></h4>
+                  <h4>{{ 'php.section.artisan' | translate }} <span class="php-grid-meta">({{ scr.artisan_scripts.length }} {{ 'php.label.canonical' | translate }})</span></h4>
                   <div class="php-script-grid">
                     @for (s of scr.artisan_scripts; track s.name) {
                       <button class="php-script-card" (click)="runPHPScript(sel.path, 'artisan', {args: s.artisan_args})" [title]="s.command">
@@ -154,13 +155,13 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
                     }
                   </div>
                 }
-                <div class="php-hint">Click any script — runs in <code>{{ sel.path }}</code> and auto-jumps to /process.</div>
+                <div class="php-hint">{{ 'php.hint.click-script-prefix' | translate }} <code>{{ sel.path }}</code> {{ 'php.hint.click-script-suffix' | translate }}</div>
               } @else if (scripts.isLoading()) {
-                <div class="php-hint">Loading scripts…</div>
+                <div class="php-hint">{{ 'php.status.loading-scripts' | translate }}</div>
               }
             </div>
           } @else if (!scan.loading()) {
-            <div class="php-empty-pane">No project selected.</div>
+            <div class="php-empty-pane">{{ 'php.empty.no-project' | translate }}</div>
           }
         </div>
       </div>
