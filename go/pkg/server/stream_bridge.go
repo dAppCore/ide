@@ -4,10 +4,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
 
+	core "dappco.re/go"
 	stream "dappco.re/go/stream"
 )
 
@@ -79,6 +82,60 @@ func ensureStreamHub() *stream.Hub {
 		})
 	})
 	return streamHub
+}
+
+// AutoPublishCoreActions wires the IDE's core ACTION broadcaster into
+// the Stream Hub so every dispatched action lands as a Hub frame on
+// the canonical channel "actions". Each frame is JSON shaped:
+//
+//	{"channel":"actions","type":"<go.type.name>","ts":"<rfc3339>","data":<msg>}
+//
+// This is the bridge that lets frontend SSE consumers subscribe once
+// to /internal/events and observe lifecycle / contextmenu / p2p / chat
+// dispatches without polling each tool. Side-effects: every ACTION
+// becomes JSON-encoded once and published once; cheap per dispatch.
+//
+//	c.RegisterAction(...)  ──┐
+//	                          ├──► Hub.Publish("actions", frame)
+//	any other broadcast    ──┘                │
+//	                                          ▼
+//	                          /internal/events SSE subscriber
+//	                          (handleInternalEvents in mcp_bridge.go)
+func AutoPublishCoreActions(c *core.Core) {
+	if c == nil {
+		return
+	}
+	hub := ensureStreamHub()
+	c.RegisterAction(func(_ *core.Core, msg core.Message) core.Result {
+		// Derive a stable type name for the frame envelope. Anonymous
+		// or pointer-to-struct types come out as e.g.
+		// "*lifecycle.ActionDidBecomeActive" — strip the leading * for
+		// readability without losing fidelity.
+		typeName := ""
+		if msg != nil {
+			t := reflect.TypeOf(msg)
+			for t.Kind() == reflect.Ptr {
+				t = t.Elem()
+			}
+			typeName = t.PkgPath()
+			if typeName != "" {
+				typeName += "."
+			}
+			typeName += t.Name()
+		}
+		envelope := map[string]any{
+			"channel": "actions",
+			"type":    typeName,
+			"ts":      time.Now().UTC().Format(time.RFC3339Nano),
+			"data":    msg,
+		}
+		frame, err := json.Marshal(envelope)
+		if err != nil {
+			return core.Result{OK: true}
+		}
+		hub.Publish("actions", frame)
+		return core.Result{OK: true}
+	})
 }
 
 func (b *MCPBridge) toolStreamStatus(_ context.Context, _ map[string]any) map[string]any {

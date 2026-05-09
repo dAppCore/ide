@@ -143,6 +143,14 @@ func (b *MCPBridge) OnStartup(ctx context.Context) core.Result {
 	mux.HandleFunc("/plugin/", b.handlePluginShell)
 	mux.HandleFunc("/internal/ui-state", b.handleInternalUIState)
 	mux.HandleFunc("/internal/ide-config", b.handleInternalIDEConfig)
+	mux.HandleFunc("/internal/events", b.handleInternalEvents)
+
+	// Wire the core ACTION broadcaster into the Stream Hub so every
+	// dispatched action shows up on the "actions" channel and is
+	// available via the SSE endpoint above. This is the keystone for
+	// Go→FE event flow — contextmenu clicks, lifecycle events, chat
+	// thinking-state updates, p2p peer changes all stream through here.
+	AutoPublishCoreActions(b.Core())
 
 	b.mu.Lock()
 	b.httpSrv = &http.Server{
@@ -1104,6 +1112,90 @@ func (b *MCPBridge) handleInternalIDEConfig(w http.ResponseWriter, r *http.Reque
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// handleInternalEvents is an SSE (Server-Sent Events) endpoint that
+// streams every Hub publish on the "actions" channel — i.e. every
+// core ACTION broadcast — to the connected client as it happens.
+//
+// Frontend usage:
+//
+//	const es = new EventSource('http://127.0.0.1:9877/internal/events');
+//	es.onmessage = (ev) => {
+//	    const env = JSON.parse(ev.data);
+//	    // env.type    e.g. "dappco.re/go/gui/pkg/lifecycle.ActionDidBecomeActive"
+//	    // env.ts      RFC3339Nano
+//	    // env.data    original message payload
+//	};
+//
+// One handler per connection, one Hub subscription per connection;
+// disconnect = unsubscribe (the Hub's per-subscriber goroutine exits
+// when the request context is cancelled).
+//
+// Future lanes can take ?topics=lifecycle,contextmenu to filter the
+// stream server-side. For now every connection sees every action; the
+// frontend can filter on env.type prefix.
+func (b *MCPBridge) handleInternalEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	// Channel used by the Hub subscriber goroutine to fan frames out to
+	// the request goroutine. Buffered so a slow Hub publisher doesn't
+	// block on a slow client (we drop on overflow rather than backing
+	// up the Hub).
+	frames := make(chan []byte, 64)
+
+	hub := ensureStreamHub()
+	cancelSub := hub.Subscribe("actions", func(frame []byte) {
+		select {
+		case frames <- frame:
+		default:
+			// Client too slow — drop this frame; client may miss
+			// events. Document via a lost-event counter? Future lane.
+		}
+	})
+	defer cancelSub()
+
+	// Initial newline to flush headers immediately so EventSource
+	// resolves "open" before the first real frame.
+	_, _ = w.Write([]byte(":ok\n\n"))
+	flusher.Flush()
+
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-heartbeat.C:
+			// SSE comment line keeps proxies / browsers from idling
+			// the connection out at 30s/60s. Doesn't reach onmessage.
+			if _, err := w.Write([]byte(":hb\n\n")); err != nil {
+				return
+			}
+			flusher.Flush()
+		case frame := <-frames:
+			if _, err := w.Write([]byte("data: ")); err != nil {
+				return
+			}
+			if _, err := w.Write(frame); err != nil {
+				return
+			}
+			if _, err := w.Write([]byte("\n\n")); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
 	}
 }
 
