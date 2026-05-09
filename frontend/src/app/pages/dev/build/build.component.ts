@@ -164,13 +164,18 @@ export class BuildComponent implements OnInit {
   private buildPollTimer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
-    void this.detectBuild();
+    // SWR — render cached, then silently force-refresh.
+    void this.detectBuild().then(() => void this.detectBuild(true, true));
     this.destroyRef.onDestroy(() => {
       if (this.buildPollTimer) clearInterval(this.buildPollTimer);
     });
   }
 
-  async detectBuild(force: boolean = false): Promise<void> {
+  async detectBuild(force: boolean = false, _silent: boolean = false): Promise<void> {
+    // detectBuild has no loading flag (the panel doesn't show one) so
+    // _silent is consumed only to keep the SWR call signature uniform
+    // across panels.
+    void _silent;
     this.buildError.set(null);
     try {
       const value = await callBridge<BuildDetected>('build_detect', { path: this.workspace.root(), force });

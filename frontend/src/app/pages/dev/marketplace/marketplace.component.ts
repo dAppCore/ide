@@ -350,7 +350,11 @@ export class MarketplaceComponent implements OnInit {
   readonly embeddedPlugin = signal<EmbeddedPlugin | null>(null);
 
   ngOnInit(): void {
-    if (this.marketModules().length === 0) void this.loadMarketplace();
+    // SWR — render cached, then silently force-refresh pkg_installed
+    // (pkg_search is per-query and not cached server-side).
+    if (this.marketModules().length === 0) {
+      void this.loadMarketplace().then(() => void this.loadMarketplace(true, true));
+    }
   }
 
   onCategoryChange(value: string): void {
@@ -358,10 +362,10 @@ export class MarketplaceComponent implements OnInit {
     void this.loadMarketplace();
   }
 
-  async loadMarketplace(force: boolean = false): Promise<void> {
-    this.marketLoading.set(true);
+  async loadMarketplace(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.marketLoading.set(true);
     this.marketError.set(null);
-    this.marketMessage.set(null);
+    if (!silent) this.marketMessage.set(null);
     try {
       const [search, installed] = await Promise.all([
         callBridge<{ packages?: MarketModule[] }>('pkg_search', {
@@ -383,7 +387,7 @@ export class MarketplaceComponent implements OnInit {
     } catch (e) {
       this.marketError.set('marketplace bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.marketLoading.set(false);
+      if (!silent) this.marketLoading.set(false);
     }
   }
 

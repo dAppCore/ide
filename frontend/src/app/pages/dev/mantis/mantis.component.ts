@@ -253,18 +253,19 @@ export class MantisComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    void this.loadMantisIssues();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadMantisIssues().then(() => void this.loadMantisIssues(true, true));
   }
 
-  async loadMantisIssues(force: boolean = false): Promise<void> {
-    this.mantisLoading.set(true);
+  async loadMantisIssues(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.mantisLoading.set(true);
     try {
       const v = await callBridge<MantisListResponse>('mantis_list', { force });
       this.mantisIssues.set(v?.issues || []);
       this.mantisCacheHit.set(!!v?.cache_hit);
       this.mantisCacheAge.set(v?.cache_age_s || 0);
     } finally {
-      this.mantisLoading.set(false);
+      if (!silent) this.mantisLoading.set(false);
     }
   }
 

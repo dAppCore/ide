@@ -191,7 +191,8 @@ export class DevopsComponent {
   ensurePlaybooksLoaded(): void {
     if (this.playbooksLoaded) return;
     this.playbooksLoaded = true;
-    void this.loadDevopsPlaybooks();
+    // SWR — render cached on first tab visit, then silently force-refresh.
+    void this.loadDevopsPlaybooks().then(() => void this.loadDevopsPlaybooks(true, true));
   }
 
   async runDevopsSecretScan(): Promise<void> {
@@ -214,15 +215,15 @@ export class DevopsComponent {
     }
   }
 
-  async loadDevopsPlaybooks(force: boolean = false): Promise<void> {
-    this.devopsPlaybooksLoading.set(true);
+  async loadDevopsPlaybooks(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.devopsPlaybooksLoading.set(true);
     try {
       const v = await callBridge<DevopsPlaybooksResponse>('devops_playbooks', { force });
       this.devopsPlaybooks.set(v?.playbooks || []);
       this.playbooksCacheHit.set(!!v?.cache_hit);
       this.playbooksCacheAge.set(v?.cache_age_s || 0);
     } finally {
-      this.devopsPlaybooksLoading.set(false);
+      if (!silent) this.devopsPlaybooksLoading.set(false);
     }
   }
 

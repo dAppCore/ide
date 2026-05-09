@@ -212,11 +212,12 @@ export class PhpComponent implements OnInit {
   readonly phpCacheAge = signal(0);
 
   ngOnInit(): void {
-    void this.loadPHPProjects();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadPHPProjects().then(() => void this.loadPHPProjects(true, true));
   }
 
-  async loadPHPProjects(force: boolean = false): Promise<void> {
-    this.phpLoading.set(true);
+  async loadPHPProjects(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.phpLoading.set(true);
     this.phpError.set(null);
     try {
       const v = await callBridge<PHPDetectResponse>('php_detect', { force });
@@ -230,7 +231,7 @@ export class PhpComponent implements OnInit {
     } catch (e) {
       this.phpError.set('php_detect failed: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.phpLoading.set(false);
+      if (!silent) this.phpLoading.set(false);
     }
   }
 

@@ -160,21 +160,22 @@ export class LocalesComponent implements OnInit {
   readonly i18nViewContent = signal<any>(null);
 
   ngOnInit(): void {
-    void this.scanLocales();
+    // SWR — render cached, then silently force-refresh.
+    void this.scanLocales().then(() => void this.scanLocales(true, true));
   }
 
-  async scanLocales(): Promise<void> {
-    if (this.i18nLoading()) return;
-    this.i18nLoading.set(true);
+  async scanLocales(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (this.i18nLoading() && !silent) return;
+    if (!silent) this.i18nLoading.set(true);
     this.i18nError.set(null);
     try {
-      const v = await callBridge<I18nScanResponse>('i18n_scan', {});
+      const v = await callBridge<I18nScanResponse>('i18n_scan', { force });
       this.i18nPackages.set(v?.packages || []);
       this.i18nUniqueLocales.set(v?.unique_locales || []);
     } catch (e) {
       this.i18nError.set('i18n bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.i18nLoading.set(false);
+      if (!silent) this.i18nLoading.set(false);
     }
   }
 

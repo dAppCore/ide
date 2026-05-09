@@ -165,11 +165,12 @@ export class ContainersComponent implements OnInit {
   readonly containerLogs = signal<string>('');
 
   ngOnInit(): void {
-    void this.loadContainers();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadContainers().then(() => void this.loadContainers(true, true));
   }
 
-  async loadContainers(force: boolean = false): Promise<void> {
-    this.containerLoading.set(true);
+  async loadContainers(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.containerLoading.set(true);
     this.containerError.set(null);
     try {
       const [detect, list] = await Promise.all([
@@ -183,7 +184,7 @@ export class ContainersComponent implements OnInit {
     } catch (e) {
       this.containerError.set('container bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.containerLoading.set(false);
+      if (!silent) this.containerLoading.set(false);
     }
   }
 

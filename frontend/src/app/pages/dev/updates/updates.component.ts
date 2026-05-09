@@ -222,7 +222,9 @@ export class UpdatesComponent implements OnInit {
   readonly selfUpdateApplying = signal(false);
 
   ngOnInit(): void {
-    void this.loadSelfUpdate();
+    // SWR — render cached selfupdate, then silently force-refresh.
+    // refreshAllUpdates is the eager path (no separate cache layer).
+    void this.loadSelfUpdate().then(() => void this.loadSelfUpdate(true, true));
     void this.refreshAllUpdates();
   }
 
@@ -249,13 +251,13 @@ export class UpdatesComponent implements OnInit {
     }
   }
 
-  async loadSelfUpdate(force: boolean = false): Promise<void> {
-    this.selfUpdateLoading.set(true);
+  async loadSelfUpdate(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.selfUpdateLoading.set(true);
     try {
       const v = await callBridge<SelfUpdateStatus>('selfupdate_status', { force });
       this.selfUpdate.set(v ?? null);
     } finally {
-      this.selfUpdateLoading.set(false);
+      if (!silent) this.selfUpdateLoading.set(false);
     }
   }
 

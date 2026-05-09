@@ -436,19 +436,20 @@ export class SessionsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    void this.loadSessionProjects();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadSessionProjects().then(() => void this.loadSessionProjects(true, true));
     this.destroyRef.onDestroy(() => this.stopSessionLive());
   }
 
-  async loadSessionProjects(): Promise<void> {
-    this.sessionLoading.set(true);
+  async loadSessionProjects(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.sessionLoading.set(true);
     try {
-      const v = await callBridge<{ projects?: SessionProject[] }>('session_projects_list', {});
+      const v = await callBridge<{ projects?: SessionProject[] }>('session_projects_list', { force });
       this.sessionProjects.set(v?.projects || []);
     } catch {
       // tolerate
     } finally {
-      this.sessionLoading.set(false);
+      if (!silent) this.sessionLoading.set(false);
     }
   }
 

@@ -233,11 +233,12 @@ export class MemoryComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    void this.loadMemoryEntries();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadMemoryEntries().then(() => void this.loadMemoryEntries(true, true));
   }
 
-  async loadMemoryEntries(force: boolean = false): Promise<void> {
-    this.memoryLoading.set(true);
+  async loadMemoryEntries(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.memoryLoading.set(true);
     try {
       const v = await callBridge<MemoryListResponse>('memory_list', {
         sort: this.memorySort(),
@@ -249,7 +250,7 @@ export class MemoryComponent implements OnInit {
       this.memoryCacheHit.set(!!v?.cache_hit);
       this.memoryCacheAge.set(v?.cache_age_s || 0);
     } finally {
-      this.memoryLoading.set(false);
+      if (!silent) this.memoryLoading.set(false);
     }
   }
 

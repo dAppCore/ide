@@ -269,11 +269,12 @@ export class ReposComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    if (this.reposAll().length === 0) void this.loadRepos();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadRepos().then(() => void this.loadRepos(true, true));
   }
 
-  async loadRepos(force: boolean = false): Promise<void> {
-    this.reposLoading.set(true);
+  async loadRepos(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.reposLoading.set(true);
     this.reposError.set(null);
     try {
       // Honour user-configured scan roots from settings: one path per
@@ -294,7 +295,7 @@ export class ReposComponent implements OnInit {
     } catch (e) {
       this.reposError.set('repos bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.reposLoading.set(false);
+      if (!silent) this.reposLoading.set(false);
     }
   }
 

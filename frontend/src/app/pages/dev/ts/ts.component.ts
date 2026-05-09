@@ -194,11 +194,13 @@ export class TsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    void this.loadTSProjects();
+    // SWR — render cached data instantly, then silently force-refresh
+    // so the user never looks at hours-old data after a navigation.
+    void this.loadTSProjects().then(() => void this.loadTSProjects(true, true));
   }
 
-  async loadTSProjects(force: boolean = false): Promise<void> {
-    this.tsLoading.set(true);
+  async loadTSProjects(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.tsLoading.set(true);
     try {
       const v = await callBridge<TSDetectResponse>('ts_detect', { force });
       this.tsProjects.set(v?.projects || []);
@@ -208,7 +210,7 @@ export class TsComponent implements OnInit {
         this.tsSelected.set(v!.projects![0]);
       }
     } finally {
-      this.tsLoading.set(false);
+      if (!silent) this.tsLoading.set(false);
     }
   }
 

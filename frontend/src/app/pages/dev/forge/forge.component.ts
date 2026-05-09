@@ -300,16 +300,17 @@ export class ForgeComponent implements OnInit {
   readonly forgeReposCacheAge = signal(0);
 
   ngOnInit(): void {
-    void this.loadForge();
+    // SWR — render cached, then silently force-refresh.
+    void this.loadForge().then(() => void this.loadForge(true, true));
   }
 
-  async loadForge(): Promise<void> {
-    this.forgeLoading.set(true);
+  async loadForge(force: boolean = false, silent: boolean = false): Promise<void> {
+    if (!silent) this.forgeLoading.set(true);
     this.forgeError.set(null);
     try {
       const [status, orgsRes, notesRes] = await Promise.all([
-        callBridge<ForgeStatus>('forge_status', {}),
-        callBridge<{ orgs?: ForgeOrg[] }>('forge_orgs', {}),
+        callBridge<ForgeStatus>('forge_status', { force }),
+        callBridge<{ orgs?: ForgeOrg[] }>('forge_orgs', { force }),
         callBridge<{ notifications?: ForgeNotification[] }>('forge_notifications', {}),
       ]);
       this.forgeStatus.set(status);
@@ -317,13 +318,13 @@ export class ForgeComponent implements OnInit {
       this.forgeOrgs.set(orgs);
       if (orgs.length > 0 && !this.forgeSelectedOrg()) {
         this.forgeSelectedOrg.set(orgs[0].name);
-        await this.loadForgeRepos(orgs[0].name);
+        await this.loadForgeRepos(orgs[0].name, force);
       }
       this.forgeNotifications.set(notesRes?.notifications || []);
     } catch (e) {
       this.forgeError.set('forge bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      this.forgeLoading.set(false);
+      if (!silent) this.forgeLoading.set(false);
     }
   }
 
