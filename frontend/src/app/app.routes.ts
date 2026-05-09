@@ -23,6 +23,10 @@ import { TerminalComponent } from './pages/dev/terminal/terminal.component';
 import { LocalesComponent } from './pages/dev/locales/locales.component';
 import { StoreComponent } from './pages/dev/store/store.component';
 import { DataComponent } from './pages/dev/data/data.component';
+import { ControlPanelComponent } from './pages/dev/control-panel/control-panel.component';
+import { GitComponent } from './pages/dev/git/git.component';
+import { SearchComponent } from './pages/dev/search/search.component';
+import { ExplorerComponent } from './pages/dev/explorer/explorer.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -86,6 +90,14 @@ export const routes: Routes = [
           { path: 'locales', component: LocalesComponent },
           { path: 'store', component: StoreComponent },
           { path: 'data', component: DataComponent },
+          // Sidebar id 'dashboard' was the legacy currentRoute label
+          // for the control panel; keep both so old persisted state
+          // restores cleanly to the new component.
+          { path: 'control-panel', component: ControlPanelComponent },
+          { path: 'dashboard', component: ControlPanelComponent },
+          { path: 'git', component: GitComponent },
+          { path: 'search', component: SearchComponent },
+          { path: 'explorer', component: ExplorerComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As

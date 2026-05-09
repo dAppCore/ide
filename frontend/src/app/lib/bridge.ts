@@ -62,3 +62,31 @@ export async function callBridge<T = unknown>(
 
   return body.value as T;
 }
+
+/**
+ * Lower-level call: returns the full server envelope ({ok, value?,
+ * error?, …extra}) instead of unwrapping to value. Use this for tools
+ * that put their payload at the top level (git_branch returns
+ * {ok, branch, ahead, behind}; workspace_search returns
+ * {ok, matches, truncated}; …) — `callBridge<T>` would resolve those
+ * to undefined because there's no `value` field.
+ *
+ * Network failures still throw; tool-level errors come back as
+ * {ok:false, error:"…"}.
+ */
+export async function callBridgeRaw(
+  tool: string,
+  params: Record<string, unknown> = {},
+): Promise<{ ok: boolean; value?: any; error?: string } & Record<string, any>> {
+  const res = await fetch(`${BRIDGE_BASE}/mcp/call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tool, params }),
+  });
+  if (!res.ok) {
+    const err = new Error(`bridge HTTP ${res.status}`) as BridgeError;
+    err.tool = tool;
+    throw err;
+  }
+  return (await res.json()) as { ok: boolean; value?: any; error?: string } & Record<string, any>;
+}
