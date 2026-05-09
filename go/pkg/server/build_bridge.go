@@ -4,9 +4,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	core "dappco.re/go"
 )
@@ -34,22 +36,66 @@ func (b *MCPBridge) toolBuildDetect(_ context.Context, params map[string]any) ma
 		return errResp("path is not a directory: " + root)
 	}
 
+	// DuckDB cache — keyed per-path (each workspace gets its own entry,
+	// so detection results for /Users/snider/Code/core and /Code/lthn
+	// don't trample). TTL 5min; build markers don't change often.
+	const collection = "build_detect"
+	const ttl = 5 * time.Minute
+	force := paramBool(params, "force", false)
+
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit {
+			for _, r := range raws {
+				var entry map[string]any
+				if err := json.Unmarshal(r, &entry); err != nil {
+					continue
+				}
+				if p, _ := entry["path"].(string); p == root {
+					entry["cache_hit"] = true
+					entry["cache_age_s"] = int(cacheAge(collection).Seconds())
+					return map[string]any{"ok": true, "value": entry}
+				}
+			}
+		}
+	}
+
 	kind, command, args := detectProject(root)
 	hasCoreBin := false
 	if _, err := exec.LookPath("core"); err == nil {
 		hasCoreBin = true
 	}
 
-	return map[string]any{
-		"ok":           true,
-		"value": map[string]any{
-			"path":            root,
-			"project_type":    kind,
-			"command":         command,
-			"args":            args,
-			"core_bin_on_path": hasCoreBin,
-		},
+	value := map[string]any{
+		"path":             root,
+		"project_type":     kind,
+		"command":          command,
+		"args":             args,
+		"core_bin_on_path": hasCoreBin,
 	}
+
+	// Refresh just this path's entry — preserve other paths' cached data.
+	_, raws, _ := cacheGetCollection(collection)
+	cacheItems := make([]cacheItem, 0, len(raws)+1)
+	for _, r := range raws {
+		var entry map[string]any
+		if err := json.Unmarshal(r, &entry); err != nil {
+			continue
+		}
+		if p, _ := entry["path"].(string); p != root {
+			cacheItems = append(cacheItems, cacheItem{Key: p, Data: entry})
+		}
+	}
+	cacheItems = append(cacheItems, cacheItem{Key: root, Data: value})
+	_ = cacheSetCollection(collection, cacheItems)
+
+	out := map[string]any{}
+	for k, v := range value {
+		out[k] = v
+	}
+	out["cache_hit"] = false
+	out["cache_age_s"] = 0
+	return map[string]any{"ok": true, "value": out}
 }
 
 // toolBuildRun spawns the build command for a workspace via the existing

@@ -4,8 +4,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 
 	scmgit "dappco.re/go/scm/git"
 )
@@ -32,8 +34,40 @@ func (b *MCPBridge) toolReposStatus(ctx context.Context, params map[string]any) 
 	if len(paths) == 0 {
 		return map[string]any{"ok": true, "value": map[string]any{"repos": []any{}, "scanned": 0}}
 	}
+
+	// DuckDB cache — git status across N roots is the slowest scan in the
+	// codebase; the user re-visits this surface often. TTL is short (30s)
+	// because users expect the dashboard to react to commits/pulls quickly.
+	// Force-refresh from the panel's Re-scan button bypasses cache.
+	const collection = "repos_status"
+	const ttl = 30 * time.Second
+	force := paramBool(params, "force", false)
+
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			repos := make([]map[string]any, 0, len(raws))
+			for _, r := range raws {
+				var entry map[string]any
+				if err := json.Unmarshal(r, &entry); err == nil {
+					repos = append(repos, entry)
+				}
+			}
+			return map[string]any{
+				"ok": true,
+				"value": map[string]any{
+					"repos":       repos,
+					"scanned":     len(paths),
+					"cache_hit":   true,
+					"cache_age_s": int(cacheAge(collection).Seconds()),
+				},
+			}
+		}
+	}
+
 	statuses := scmgit.Status(ctx, scmgit.StatusOptions{Paths: paths})
 	repos := make([]map[string]any, 0, len(statuses))
+	cacheItems := make([]cacheItem, 0, len(statuses))
 	for _, st := range statuses {
 		entry := map[string]any{
 			"name":      st.Name,
@@ -50,12 +84,16 @@ func (b *MCPBridge) toolReposStatus(ctx context.Context, params map[string]any) 
 			entry["error"] = st.Error.Error()
 		}
 		repos = append(repos, entry)
+		cacheItems = append(cacheItems, cacheItem{Key: st.Path, Data: entry})
 	}
+	_ = cacheSetCollection(collection, cacheItems)
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"repos":   repos,
-			"scanned": len(paths),
+			"repos":       repos,
+			"scanned":     len(paths),
+			"cache_hit":   false,
+			"cache_age_s": 0,
 		},
 	}
 }

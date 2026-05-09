@@ -4,6 +4,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	core "dappco.re/go"
 )
@@ -40,12 +42,30 @@ func (b *MCPBridge) toolPkgInstall(ctx context.Context, params map[string]any) m
 	result := b.Core().Action("ide.pkg.install").Run(ctx, core.NewOptions(
 		core.Option{Key: "code", Value: code},
 	))
+	// Action mutated installed-pkg + menu state — bust both caches.
+	_ = cacheClearCollection("pkg_installed")
+	_ = cacheClearCollection("pkg_menus")
 	return pkgResultToResponse(result)
 }
 
 func (b *MCPBridge) toolPkgInstalled(ctx context.Context) map[string]any {
+	const collection = "pkg_installed"
+	const ttl = 5 * time.Minute
+	if cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			var cached any
+			if err := json.Unmarshal(raws[0], &cached); err == nil {
+				return map[string]any{"ok": true, "value": cached}
+			}
+		}
+	}
 	result := b.Core().Action("ide.pkg.installed").Run(ctx, core.NewOptions())
-	return pkgResultToResponse(result)
+	resp := pkgResultToResponse(result)
+	if ok, _ := resp["ok"].(bool); ok {
+		_ = cacheSetCollection(collection, []cacheItem{{Key: "_root", Data: resp["value"]}})
+	}
+	return resp
 }
 
 func (b *MCPBridge) toolPkgRemove(ctx context.Context, params map[string]any) map[string]any {
@@ -56,12 +76,30 @@ func (b *MCPBridge) toolPkgRemove(ctx context.Context, params map[string]any) ma
 	result := b.Core().Action("ide.pkg.remove").Run(ctx, core.NewOptions(
 		core.Option{Key: "code", Value: code},
 	))
+	// Action mutated installed-pkg + menu state — bust both caches.
+	_ = cacheClearCollection("pkg_installed")
+	_ = cacheClearCollection("pkg_menus")
 	return pkgResultToResponse(result)
 }
 
 func (b *MCPBridge) toolPkgMenus(ctx context.Context) map[string]any {
+	const collection = "pkg_menus"
+	const ttl = 5 * time.Minute
+	if cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			var cached any
+			if err := json.Unmarshal(raws[0], &cached); err == nil {
+				return map[string]any{"ok": true, "value": cached}
+			}
+		}
+	}
 	result := b.Core().Action("ide.pkg.menus").Run(ctx, core.NewOptions())
-	return pkgResultToResponse(result)
+	resp := pkgResultToResponse(result)
+	if ok, _ := resp["ok"].(bool); ok {
+		_ = cacheSetCollection(collection, []cacheItem{{Key: "_root", Data: resp["value"]}})
+	}
+	return resp
 }
 
 // pkgResultToResponse flattens the action result so the response is the

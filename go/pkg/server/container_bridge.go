@@ -53,7 +53,42 @@ type ContainerInfo struct {
 
 // toolContainerDetect returns the list of runtimes installed on this host
 // plus their capabilities. Drives the Containers panel header.
-func (b *MCPBridge) toolContainerDetect(_ context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolContainerDetect(_ context.Context, params map[string]any) map[string]any {
+	// DuckDB cache — runtime probes shell out to docker/podman/linuxkit/
+	// qemu/container for version. Cheap individually but adds up across
+	// 5 runtimes, and runtimes don't appear/vanish during a session.
+	// TTL 30s; covers the common case of nav-away-and-back.
+	const collection = "container_runtimes"
+	const ttl = 30 * time.Second
+	force := paramBool(params, "force", false)
+
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			runtimes := make([]ContainerRuntimeInfo, 0, len(raws))
+			available := []ContainerRuntimeInfo{}
+			for _, r := range raws {
+				var rt ContainerRuntimeInfo
+				if err := json.Unmarshal(r, &rt); err != nil {
+					continue
+				}
+				runtimes = append(runtimes, rt)
+				if rt.Available {
+					available = append(available, rt)
+				}
+			}
+			return map[string]any{
+				"ok": true,
+				"value": map[string]any{
+					"runtimes":    runtimes,
+					"available":   available,
+					"cache_hit":   true,
+					"cache_age_s": int(cacheAge(collection).Seconds()),
+				},
+			}
+		}
+	}
+
 	runtimes := []ContainerRuntimeInfo{
 		probeDocker(),
 		probePodman(),
@@ -62,16 +97,21 @@ func (b *MCPBridge) toolContainerDetect(_ context.Context, _ map[string]any) map
 		probeAppleContainer(),
 	}
 	available := []ContainerRuntimeInfo{}
+	cacheItems := make([]cacheItem, 0, len(runtimes))
 	for _, rt := range runtimes {
 		if rt.Available {
 			available = append(available, rt)
 		}
+		cacheItems = append(cacheItems, cacheItem{Key: rt.Name, Data: rt})
 	}
+	_ = cacheSetCollection(collection, cacheItems)
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"runtimes":  runtimes,
-			"available": available,
+			"runtimes":    runtimes,
+			"available":   available,
+			"cache_hit":   false,
+			"cache_age_s": 0,
 		},
 	}
 }

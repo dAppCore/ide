@@ -5,10 +5,12 @@ package server
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	core "dappco.re/go"
 	"dappco.re/go/devops/devkit"
@@ -113,7 +115,7 @@ func (b *MCPBridge) toolDevopsGitleaks(_ context.Context, params map[string]any)
 // and go-devops's own bundled playbooks (core/go-devops/playbooks).
 // Returns name + path + size + first-line description (parsed from a
 // `# description: …` comment if present, else the YAML `name:` field).
-func (b *MCPBridge) toolDevopsPlaybooks(_ context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolDevopsPlaybooks(_ context.Context, params map[string]any) map[string]any {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return errResp("user home not resolvable")
@@ -121,6 +123,34 @@ func (b *MCPBridge) toolDevopsPlaybooks(_ context.Context, _ map[string]any) map
 	roots := []string{
 		filepath.Join(home, "Code", "DevOps", "playbooks"),
 		filepath.Join(home, "Code", "core", "go-devops", "playbooks"),
+	}
+
+	// DuckDB cache — playbooks are filesystem-walked across two roots
+	// every panel visit. TTL 5min; force-refresh available.
+	const collection = "devops_playbooks"
+	const ttl = 5 * time.Minute
+	force := paramBool(params, "force", false)
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			out := make([]map[string]any, 0, len(raws))
+			for _, r := range raws {
+				var entry map[string]any
+				if err := json.Unmarshal(r, &entry); err == nil {
+					out = append(out, entry)
+				}
+			}
+			return map[string]any{
+				"ok": true,
+				"value": map[string]any{
+					"roots":       roots,
+					"playbooks":   out,
+					"count":       len(out),
+					"cache_hit":   true,
+					"cache_age_s": int(cacheAge(collection).Seconds()),
+				},
+			}
+		}
 	}
 
 	out := []map[string]any{}
@@ -156,12 +186,20 @@ func (b *MCPBridge) toolDevopsPlaybooks(_ context.Context, _ map[string]any) map
 	sort.Slice(out, func(i, j int) bool {
 		return out[i]["path"].(string) < out[j]["path"].(string)
 	})
+	cacheItems := make([]cacheItem, 0, len(out))
+	for _, entry := range out {
+		path, _ := entry["path"].(string)
+		cacheItems = append(cacheItems, cacheItem{Key: path, Data: entry})
+	}
+	_ = cacheSetCollection(collection, cacheItems)
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"roots":     roots,
-			"playbooks": out,
-			"count":     len(out),
+			"roots":       roots,
+			"playbooks":   out,
+			"count":       len(out),
+			"cache_hit":   false,
+			"cache_age_s": 0,
 		},
 	}
 }

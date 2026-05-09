@@ -4,9 +4,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	updater "dappco.re/go/update"
 )
@@ -52,7 +54,24 @@ func ideUpdateChannel() string {
 
 // selfupdate_status reports the current core-ide version + the latest
 // available release at the configured repo. Does not download anything.
-func (b *MCPBridge) toolSelfUpdateStatus(_ context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolSelfUpdateStatus(_ context.Context, params map[string]any) map[string]any {
+	// DuckDB cache — selfupdate hits GitHub Releases for the latest
+	// version. TTL 5min; force-refresh from the panel bypasses.
+	const collection = "selfupdate_status"
+	const ttl = 5 * time.Minute
+	force := paramBool(params, "force", false)
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			var entry map[string]any
+			if err := json.Unmarshal(raws[0], &entry); err == nil {
+				entry["cache_hit"] = true
+				entry["cache_age_s"] = int(cacheAge(collection).Seconds())
+				return map[string]any{"ok": true, "value": entry}
+			}
+		}
+	}
+
 	repoURL := ideUpdateRepoURL()
 	channel := ideUpdateChannel()
 	current := updater.Version
@@ -116,7 +135,17 @@ func (b *MCPBridge) toolSelfUpdateStatus(_ context.Context, _ map[string]any) ma
 	status["latest_version"] = r.TagName
 	status["release_url"] = repoURL + "/releases/tag/" + r.TagName
 	status["update_available"] = !versionEqual(current, r.TagName)
-	return map[string]any{"ok": true, "value": status}
+
+	// Cache the live status. Errored paths above bypass the write-through
+	// so the next call will retry; only the happy path persists.
+	_ = cacheSetCollection(collection, []cacheItem{{Key: "_root", Data: status}})
+	cached := map[string]any{}
+	for k, v := range status {
+		cached[k] = v
+	}
+	cached["cache_hit"] = false
+	cached["cache_age_s"] = 0
+	return map[string]any{"ok": true, "value": cached}
 }
 
 func versionEqual(a, b string) bool {
@@ -130,6 +159,9 @@ func versionEqual(a, b string) bool {
 // itself after the swap. Returns whether the download started; the
 // actual restart happens when the user kills + relaunches the binary.
 func (b *MCPBridge) toolSelfUpdateApply(_ context.Context, _ map[string]any) map[string]any {
+	// Action mutates state — bust the status cache so the next read
+	// reflects the new version (or the failure mode).
+	_ = cacheClearCollection("selfupdate_status")
 	repoURL := ideUpdateRepoURL()
 	channel := ideUpdateChannel()
 

@@ -4,6 +4,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	core "dappco.re/go"
 	"dappco.re/go/tenant"
@@ -89,12 +91,30 @@ func (b *MCPBridge) toolTenantWorkspace(ctx context.Context, params map[string]a
 
 // toolTenantUser fetches the authenticated user (per the API token's
 // associated identity). Errors when no client is configured.
-func (b *MCPBridge) toolTenantUser(ctx context.Context, _ map[string]any) map[string]any {
+func (b *MCPBridge) toolTenantUser(ctx context.Context, params map[string]any) map[string]any {
 	svc := b.tenantService()
 	if svc == nil {
 		return errResp("tenant service not registered")
 	}
-	return tenantResultToResponse(svc.GetUser(ctx))
+	// DuckDB cache — auth-bound user data is stable for the session;
+	// 5min TTL covers the common nav-and-back. Force-refresh available.
+	const collection = "tenant_user"
+	const ttl = 5 * time.Minute
+	force := paramBool(params, "force", false)
+	if !force && cacheAge(collection) < ttl {
+		_, raws, hit := cacheGetCollection(collection)
+		if hit && len(raws) > 0 {
+			var cached any
+			if err := json.Unmarshal(raws[0], &cached); err == nil {
+				return map[string]any{"ok": true, "value": cached}
+			}
+		}
+	}
+	resp := tenantResultToResponse(svc.GetUser(ctx))
+	if ok, _ := resp["ok"].(bool); ok {
+		_ = cacheSetCollection(collection, []cacheItem{{Key: "_root", Data: resp["value"]}})
+	}
+	return resp
 }
 
 // toolTenantCan runs an entitlement check. Cache-first; falls back to
