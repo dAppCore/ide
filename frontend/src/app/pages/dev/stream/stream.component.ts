@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -48,61 +49,62 @@ interface ParsedFrame {
 @Component({
   selector: 'dev-stream',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block stream-block">
       <div class="block-header stream-header">
-        <h2 class="block-title">Stream</h2>
-        <span class="editorial subtitle">go-stream Hub inspector · in-process pub/sub.</span>
+        <h2 class="block-title">{{ 'stream.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'stream.subtitle' | translate }}</span>
       </div>
       @if (streamStatus(); as st) {
         <div class="stream-status-grid">
           <div class="stream-stat">
-            <div class="stream-stat-label">running</div>
+            <div class="stream-stat-label">{{ 'stream.stat.running' | translate }}</div>
             <div class="stream-stat-value" [class.stream-ok]="st.running" [class.stream-warn]="!st.running">
-              {{ st.running ? '✓ yes' : '· starting' }}
+              {{ (st.running ? 'stream.status.yes' : 'stream.status.starting') | translate }}
             </div>
           </div>
           <div class="stream-stat">
-            <div class="stream-stat-label">peers</div>
+            <div class="stream-stat-label">{{ 'stream.stat.peers' | translate }}</div>
             <div class="stream-stat-value">{{ st.peer_count }}</div>
           </div>
           <div class="stream-stat">
-            <div class="stream-stat-label">channels</div>
+            <div class="stream-stat-label">{{ 'stream.stat.channels' | translate }}</div>
             <div class="stream-stat-value">{{ st.channel_count }}</div>
           </div>
           <div class="stream-stat">
-            <div class="stream-stat-label">heartbeat</div>
+            <div class="stream-stat-label">{{ 'stream.stat.heartbeat' | translate }}</div>
             <div class="stream-stat-value">{{ st.config.heartbeat_ms / 1000 }}s</div>
           </div>
         </div>
       }
       <div class="stream-body">
         <aside class="stream-channels">
-          <div class="stream-list-title">Channels ({{ streamChannels().length }})</div>
+          <div class="stream-list-title">{{ 'stream.heading.channels' | translate }} ({{ streamChannels().length }})</div>
           <button class="stream-channel-row" [class.active]="streamSelectedChannel() === null" (click)="loadStreamFrames(null)">
-            <span class="stream-channel-name"><em>(broadcast)</em></span>
-            <span class="stream-channel-meta">{{ streamBroadcastBufCount() }} fr</span>
+            <span class="stream-channel-name"><em>{{ 'stream.label.broadcast' | translate }}</em></span>
+            <span class="stream-channel-meta">{{ streamBroadcastBufCount() }} {{ 'stream.suffix.frames' | translate }}</span>
           </button>
           @for (c of streamChannels(); track c.name) {
             <button class="stream-channel-row" [class.active]="streamSelectedChannel() === c.name" (click)="loadStreamFrames(c.name)">
               <span class="stream-channel-name">{{ c.name }}</span>
               <span class="stream-channel-meta">
-                <span title="subscribers">{{ c.subscriber_count }} sub</span>
-                <span title="recent frames">· {{ c.recent_frames }} fr</span>
+                <span [title]="'stream.tooltip.subscribers' | translate">{{ c.subscriber_count }} {{ 'stream.suffix.subscribers' | translate }}</span>
+                <span [title]="'stream.tooltip.recent-frames' | translate">· {{ c.recent_frames }} {{ 'stream.suffix.frames' | translate }}</span>
               </span>
             </button>
           }
           @if (streamChannels().length === 0) {
-            <div class="stream-empty">No channels yet — publish below to seed.</div>
+            <div class="stream-empty">{{ 'stream.empty.no-channels' | translate }}</div>
           }
         </aside>
         <main class="stream-frames">
           <div class="stream-list-title">
-            Frames {{ streamSelectedChannel() ? '· ' + streamSelectedChannel() : '· (broadcast)' }}
+            {{ 'stream.heading.frames' | translate }} {{ streamSelectedChannel() ? '· ' + streamSelectedChannel() : '· ' + ('stream.label.broadcast' | translate) }}
             <button class="btn btn-ghost btn-sm stream-refresh" (click)="loadStream()" [disabled]="streamLoading()">↻</button>
           </div>
           @if (streamFrames().length === 0) {
-            <div class="stream-empty">No frames captured for this channel yet.</div>
+            <div class="stream-empty">{{ 'stream.empty.no-frames' | translate }}</div>
           } @else {
             <div class="stream-frame-list">
               @for (f of streamFrames(); track $index; let i = $index) {
@@ -113,11 +115,11 @@ interface ParsedFrame {
                     <span class="stream-frame-time">{{ f.timestamp.slice(11, 19) }}</span>
                     <span class="stream-frame-bytes">{{ f.frame_bytes }}B</span>
                     @if (parsed.isJson) {
-                      <span class="stream-frame-tag">json</span>
-                      <button class="stream-frame-toggle" (click)="toggleStreamFrameRaw(i)">{{ raw ? 'pretty' : 'raw' }}</button>
+                      <span class="stream-frame-tag">{{ 'stream.tag.json' | translate }}</span>
+                      <button class="stream-frame-toggle" (click)="toggleStreamFrameRaw(i)">{{ (raw ? 'stream.toggle.pretty' : 'stream.toggle.raw') | translate }}</button>
                     }
                     @if (parsed.clickablePath; as p) {
-                      <button class="stream-frame-jump" (click)="openStreamFramePath(p)" [title]="'Open ' + p">↗ {{ p.split('/').slice(-2).join('/') }}</button>
+                      <button class="stream-frame-jump" (click)="openStreamFramePath(p)" [title]="openTitle(p)">↗ {{ p.split('/').slice(-2).join('/') }}</button>
                     }
                   </div>
                   @if (parsed.isJson && !raw) {
@@ -132,17 +134,17 @@ interface ParsedFrame {
         </main>
       </div>
       <div class="stream-publish">
-        <div class="stream-list-title">Publish test frame</div>
+        <div class="stream-list-title">{{ 'stream.heading.publish' | translate }}</div>
         <div class="stream-publish-row">
           <select class="input stream-mode-select" [value]="streamPublishMode()" (change)="streamPublishMode.set($any($event.target).value)">
-            <option value="publish">publish</option>
-            <option value="broadcast">broadcast</option>
+            <option value="publish">{{ 'stream.option.publish' | translate }}</option>
+            <option value="broadcast">{{ 'stream.option.broadcast' | translate }}</option>
           </select>
           @if (streamPublishMode() === 'publish') {
-            <input class="input stream-channel-input" placeholder="channel name" [value]="streamPublishChannel()" (input)="streamPublishChannel.set($any($event.target).value)" />
+            <input class="input stream-channel-input" [placeholder]="'stream.placeholder.channel-name' | translate" [value]="streamPublishChannel()" (input)="streamPublishChannel.set($any($event.target).value)" />
           }
-          <input class="input stream-frame-input" placeholder="frame body (text or json)" [value]="streamPublishBody()" (input)="streamPublishBody.set($any($event.target).value)" (keyup.enter)="publishStreamFrame()" />
-          <button class="btn btn-primary btn-sm" (click)="publishStreamFrame()">Publish</button>
+          <input class="input stream-frame-input" [placeholder]="'stream.placeholder.frame-body' | translate" [value]="streamPublishBody()" (input)="streamPublishBody.set($any($event.target).value)" (keyup.enter)="publishStreamFrame()" />
+          <button class="btn btn-primary btn-sm" (click)="publishStreamFrame()">{{ 'stream.button.publish' | translate }}</button>
         </div>
       </div>
     </section>
@@ -191,6 +193,7 @@ interface ParsedFrame {
 export class StreamComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
+  private readonly t = inject(TranslateService);
 
   readonly streamStatus = signal<StreamStatus | null>(null);
   readonly streamChannels = signal<StreamChannel[]>([]);
@@ -205,6 +208,10 @@ export class StreamComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadStream();
+  }
+
+  openTitle(path: string): string {
+    return this.t.instant('stream.tooltip.open') + ' ' + path;
   }
 
   async loadStream(): Promise<void> {

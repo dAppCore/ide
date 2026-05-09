@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
@@ -46,32 +47,32 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
 @Component({
   selector: 'dev-ts',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block ts-block">
       <div class="block-header ts-header">
         <h2 class="block-title">
-          TypeScript
+          {{ 'ts.title' | translate }}
           @if (scan.cacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="scan.cacheAge() > 600" (click)="scan.refresh()" title="Click to force re-scan">● cached {{ formatCacheAge(scan.cacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="scan.cacheAge() > 600" (click)="scan.refresh()" [title]="'ts.tooltip.force-rescan' | translate">● {{ 'ts.cache.cached' | translate }} {{ formatCacheAge(scan.cacheAge()) }}</span>
           } @else if (projects().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'ts.tooltip.just-scanned' | translate">● {{ 'ts.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">TS / Deno / JS project discovery · 115 projects across the canon. Click a script → output streams in /process.</span>
+        <span class="editorial subtitle">{{ 'ts.subtitle' | translate }}</span>
       </div>
       <div class="ts-toolbar">
-        <input type="text" class="ts-filter" placeholder="filter by name, framework, package manager…"
+        <input type="text" class="ts-filter" [placeholder]="'ts.placeholder.filter' | translate"
                [value]="filter()"
                (input)="filter.set($any($event.target).value)" />
         <button class="btn btn-ghost btn-sm" (click)="scan.refresh()" [disabled]="scan.loading()">
-          @if (scan.loading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
+          @if (scan.loading()) { <span>{{ 'ts.status.scanning' | translate }}</span> } @else { <span>{{ 'ts.button.rescan' | translate }}</span> }
         </button>
       </div>
 
       <div class="ts-body">
         <div class="ts-side">
-          <h3>{{ visible().length }} of {{ projects().length }}</h3>
+          <h3>{{ visible().length }} {{ 'ts.label.of' | translate }} {{ projects().length }}</h3>
           @if (scan.firstLoad()) {
             <dev-skeleton kind="rows" [count]="8" />
           }
@@ -81,8 +82,8 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
                     (click)="selected.set(p)">
               <span class="ts-name">
                 {{ p.name }}
-                @if (p.deno) { <span class="ts-tag deno">deno</span> }
-                @if (p.workspace) { <span class="ts-tag ws">ws</span> }
+                @if (p.deno) { <span class="ts-tag deno">{{ 'ts.tag.deno' | translate }}</span> }
+                @if (p.workspace) { <span class="ts-tag ws">{{ 'ts.tag.workspace' | translate }}</span> }
               </span>
               <span class="ts-meta">
                 <code>{{ p.package_manager }}</code>
@@ -102,16 +103,16 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
               @if (sel.description) { <p class="ts-desc">{{ sel.description }}</p> }
 
               <div class="ts-grid">
-                <div class="ts-cell"><span class="ts-label">Package manager</span><code>{{ sel.package_manager }}</code></div>
-                <div class="ts-cell"><span class="ts-label">Modified</span><code>{{ sel.modified }}</code></div>
-                <div class="ts-cell"><span class="ts-label">tsconfig</span><span [class.ok]="sel.has_tsconfig">{{ sel.has_tsconfig ? '✓' : '—' }}</span></div>
-                <div class="ts-cell"><span class="ts-label">node_modules</span><span [class.ok]="sel.has_node_modules">{{ sel.has_node_modules ? '✓' : '—' }}</span></div>
-                <div class="ts-cell"><span class="ts-label">lockfile</span><span [class.ok]="sel.has_lockfile">{{ sel.has_lockfile ? '✓' : '—' }}</span></div>
-                <div class="ts-cell"><span class="ts-label">workspace root</span><span [class.ok]="sel.workspace">{{ sel.workspace ? '✓' : '—' }}</span></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.package-manager' | translate }}</span><code>{{ sel.package_manager }}</code></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.modified' | translate }}</span><code>{{ sel.modified }}</code></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.tsconfig' | translate }}</span><span [class.ok]="sel.has_tsconfig">{{ sel.has_tsconfig ? '✓' : '—' }}</span></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.node-modules' | translate }}</span><span [class.ok]="sel.has_node_modules">{{ sel.has_node_modules ? '✓' : '—' }}</span></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.lockfile' | translate }}</span><span [class.ok]="sel.has_lockfile">{{ sel.has_lockfile ? '✓' : '—' }}</span></div>
+                <div class="ts-cell"><span class="ts-label">{{ 'ts.label.workspace-root' | translate }}</span><span [class.ok]="sel.workspace">{{ sel.workspace ? '✓' : '—' }}</span></div>
               </div>
 
               @if (sel.frameworks.length > 0) {
-                <h4>Frameworks</h4>
+                <h4>{{ 'ts.heading.frameworks' | translate }}</h4>
                 <div class="ts-fw-list">
                   @for (fw of sel.frameworks; track fw) {
                     <span class="ts-fw-pill">{{ fw }}</span>
@@ -120,7 +121,7 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
               }
 
               @if (sel.scripts.length > 0) {
-                <h4>{{ sel.deno ? 'Tasks' : 'Scripts' }}</h4>
+                <h4>{{ (sel.deno ? 'ts.heading.tasks' : 'ts.heading.scripts') | translate }}</h4>
                 <div class="ts-scripts">
                   @for (s of sel.scripts; track s.name) {
                     <button class="ts-script" (click)="runTSScript(sel, s.name)" [title]="s.cmd">
@@ -130,11 +131,11 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
                   }
                 </div>
               } @else {
-                <p class="ts-empty">No scripts defined.</p>
+                <p class="ts-empty">{{ 'ts.empty.no-scripts' | translate }}</p>
               }
             </div>
           } @else {
-            <div class="ts-empty-pane">No project selected.</div>
+            <div class="ts-empty-pane">{{ 'ts.empty.no-project' | translate }}</div>
           }
         </div>
       </div>
@@ -183,6 +184,7 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
 })
 export class TsComponent {
   private readonly router = inject(Router);
+  private readonly t = inject(TranslateService);
 
   readonly scan = cachedBridgeResource<TSDetectResponse>({
     tool: 'ts_detect',
@@ -232,8 +234,9 @@ export class TsComponent {
   }
 
   formatCacheAge(seconds: number): string {
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+    const ago = this.t.instant('ts.label.ago');
+    if (seconds < 60) return `${seconds}s ${ago}`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${ago}`;
+    return `${Math.floor(seconds / 3600)}h ${ago}`;
   }
 }

@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 
 interface TenantStatus {
@@ -38,23 +39,24 @@ interface TenantCanResult {
 @Component({
   selector: 'dev-tenant',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block tnt-block">
       <div class="block-header tnt-header">
-        <h2 class="block-title">Tenant</h2>
-        <span class="editorial subtitle">Multi-tenancy + entitlements over <code>core/go-tenant</code> · PHP-API consumer with local cache.</span>
+        <h2 class="block-title">{{ 'tenant.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'tenant.subtitle.prefix' | translate }} <code>core/go-tenant</code> · {{ 'tenant.subtitle.suffix' | translate }}</span>
       </div>
 
       @if (tenantStatus(); as status) {
         <div class="tnt-status" [class.online]="status.online" [class.offline]="!status.online">
           <div class="tnt-status-row">
-            <span class="tnt-status-pill">{{ status.online ? 'online' : 'offline' }}</span>
+            <span class="tnt-status-pill">{{ (status.online ? 'tenant.status.online' : 'tenant.status.offline') | translate }}</span>
             <span class="tnt-status-detail">
-              @if (status.online) { Connected to <code>{{ status.api_url }}</code> }
-              @else if (status.registered) { Service registered — no PHP API configured }
-              @else { Service not registered }
+              @if (status.online) { {{ 'tenant.status.connected-to' | translate }} <code>{{ status.api_url }}</code> }
+              @else if (status.registered) { {{ 'tenant.status.registered-no-api' | translate }} }
+              @else { {{ 'tenant.status.not-registered' | translate }} }
             </span>
-            <button class="btn btn-ghost btn-sm" (click)="loadTenantStatus()">Refresh</button>
+            <button class="btn btn-ghost btn-sm" (click)="loadTenantStatus()">{{ 'tenant.button.refresh' | translate }}</button>
           </div>
           <div class="tnt-status-hint">{{ status.hint }}</div>
         </div>
@@ -62,13 +64,13 @@ interface TenantCanResult {
 
       <div class="tnt-body">
         <div class="tnt-card">
-          <h3>Workspace lookup</h3>
+          <h3>{{ 'tenant.card.workspace-lookup' | translate }}</h3>
           <div class="tnt-form-row">
-            <input class="tnt-input" type="text" placeholder="workspace slug (e.g. lethean)"
+            <input class="tnt-input" type="text" [placeholder]="'tenant.placeholder.workspace-slug' | translate"
                    [value]="tenantWorkspaceLookup()"
                    (input)="tenantWorkspaceLookup.set($any($event.target).value)"
                    (keyup.enter)="tenantLookupWorkspace()" />
-            <button class="btn btn-primary btn-sm" (click)="tenantLookupWorkspace()">Lookup</button>
+            <button class="btn btn-primary btn-sm" (click)="tenantLookupWorkspace()">{{ 'tenant.button.lookup' | translate }}</button>
           </div>
           @if (tenantWorkspaceError(); as err) {
             <div class="tnt-error">{{ err }}</div>
@@ -79,42 +81,42 @@ interface TenantCanResult {
         </div>
 
         <div class="tnt-card">
-          <h3>Authenticated user</h3>
-          <button class="btn btn-ghost btn-sm" (click)="tenantLookupUser(true)">Get user (force)</button>
+          <h3>{{ 'tenant.card.authenticated-user' | translate }}</h3>
+          <button class="btn btn-ghost btn-sm" (click)="tenantLookupUser(true)">{{ 'tenant.button.get-user-force' | translate }}</button>
           @if (tenantUserResult(); as user) {
             <pre class="tnt-result">{{ formatJson(user) }}</pre>
           }
         </div>
 
         <div class="tnt-card">
-          <h3>Entitlement check (Can)</h3>
+          <h3>{{ 'tenant.card.entitlement-check' | translate }}</h3>
           <div class="tnt-form-grid">
             <label>
-              <span>Workspace slug</span>
+              <span>{{ 'tenant.label.workspace-slug' | translate }}</span>
               <input class="tnt-input" type="text" [value]="tenantCanForm().workspace" (input)="tenantCanField('workspace', $any($event.target).value)" />
             </label>
             <label>
-              <span>Feature code</span>
-              <input class="tnt-input" type="text" [value]="tenantCanForm().feature" (input)="tenantCanField('feature', $any($event.target).value)" placeholder="pages / api_calls / models" />
+              <span>{{ 'tenant.label.feature-code' | translate }}</span>
+              <input class="tnt-input" type="text" [value]="tenantCanForm().feature" (input)="tenantCanField('feature', $any($event.target).value)" [placeholder]="'tenant.placeholder.feature' | translate" />
             </label>
             <label>
-              <span>Quantity</span>
+              <span>{{ 'tenant.label.quantity' | translate }}</span>
               <input class="tnt-input num" type="number" min="1" [value]="tenantCanForm().quantity" (input)="tenantCanField('quantity', $any($event.target).value)" />
             </label>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="runTenantCan()">Check entitlement</button>
+          <button class="btn btn-primary btn-sm" (click)="runTenantCan()">{{ 'tenant.button.check-entitlement' | translate }}</button>
           @if (tenantCanError(); as err) {
             <div class="tnt-error">{{ err }}</div>
           }
           @if (tenantCanResult(); as r) {
             <div class="tnt-can-result" [class.allowed]="r.allowed" [class.denied]="!r.allowed">
               <div class="tnt-can-verdict">
-                <span class="tnt-can-pill">{{ r.allowed ? 'ALLOW' : 'DENY' }}</span>
-                <span>{{ r.feature }} × {{ tenantCanForm().quantity }} on {{ r.workspace }}</span>
+                <span class="tnt-can-pill">{{ (r.allowed ? 'tenant.verdict.allow' : 'tenant.verdict.deny') | translate }}</span>
+                <span>{{ r.feature }} × {{ tenantCanForm().quantity }} {{ 'tenant.label.on' | translate }} {{ r.workspace }}</span>
               </div>
               @if (r.reason) { <div class="tnt-can-reason">{{ r.reason }}</div> }
               @if (r.used !== undefined || r.limit !== undefined) {
-                <div class="tnt-can-meta">used {{ r.used ?? '—' }} / limit {{ r.limit ?? '∞' }}{{ r.remaining !== undefined ? ' · remaining ' + r.remaining : '' }}</div>
+                <div class="tnt-can-meta">{{ 'tenant.label.used' | translate }} {{ r.used ?? '—' }} / {{ 'tenant.label.limit' | translate }} {{ r.limit ?? '∞' }}{{ r.remaining !== undefined ? ' · ' + ('tenant.label.remaining' | translate) + ' ' + r.remaining : '' }}</div>
               }
             </div>
           }
@@ -159,6 +161,8 @@ interface TenantCanResult {
   `],
 })
 export class TenantComponent implements OnInit {
+  private readonly t = inject(TranslateService);
+
   readonly tenantStatus = signal<TenantStatus | null>(null);
   readonly tenantWorkspaceLookup = signal<string>('');
   readonly tenantWorkspaceResult = signal<any>(null);
@@ -190,7 +194,7 @@ export class TenantComponent implements OnInit {
       const v = await callBridge<any>('tenant_workspace', { slug });
       this.tenantWorkspaceResult.set(v);
     } catch (e) {
-      this.tenantWorkspaceError.set('workspace lookup failed: ' + (e instanceof Error ? e.message : String(e)));
+      this.tenantWorkspaceError.set(this.t.instant('tenant.error.workspace-lookup') + ': ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -200,7 +204,7 @@ export class TenantComponent implements OnInit {
       const v = await callBridge<any>('tenant_user', { force });
       this.tenantUserResult.set(v);
     } catch (e) {
-      this.tenantUserResult.set({ error: 'user lookup failed: ' + (e instanceof Error ? e.message : String(e)) });
+      this.tenantUserResult.set({ error: this.t.instant('tenant.error.user-lookup') + ': ' + (e instanceof Error ? e.message : String(e)) });
     }
   }
 
@@ -224,7 +228,7 @@ export class TenantComponent implements OnInit {
       });
       this.tenantCanResult.set(v);
     } catch (e) {
-      this.tenantCanError.set('entitlement check failed: ' + (e instanceof Error ? e.message : String(e)));
+      this.tenantCanError.set(this.t.instant('tenant.error.entitlement-check') + ': ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
