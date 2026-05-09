@@ -7,6 +7,10 @@ import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
 import { WelcomeComponent } from './pages/dev/welcome/welcome.component';
 import { BuildComponent } from './pages/dev/build/build.component';
+import { CacheComponent } from './pages/dev/cache/cache.component';
+import { LintComponent } from './pages/dev/lint/lint.component';
+import { SessionsComponent } from './pages/dev/sessions/sessions.component';
+import { StreamComponent } from './pages/dev/stream/stream.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -54,6 +58,10 @@ export const routes: Routes = [
         children: [
           { path: 'welcome', component: WelcomeComponent },
           { path: 'build', component: BuildComponent },
+          { path: 'cache', component: CacheComponent },
+          { path: 'lint', component: LintComponent },
+          { path: 'sessions', component: SessionsComponent },
+          { path: 'stream', component: StreamComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As
