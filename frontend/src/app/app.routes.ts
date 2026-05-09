@@ -33,7 +33,6 @@ import { SettingsComponent } from './pages/dev/settings/settings.component';
 import { PluginComponent } from './pages/dev/plugin/plugin.component';
 import { ReposComponent } from './pages/dev/repos/repos.component';
 import { MarketplaceComponent } from './pages/dev/marketplace/marketplace.component';
-import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
  * Routing pattern: blank top-level root → frames stub on as children →
@@ -69,15 +68,16 @@ export const routes: Routes = [
     component: BlankFrame,
     children: [
       { path: '', redirectTo: 'dev', pathMatch: 'full' },
-      // /dev is the Developer/advanced frame. Children mount in
-      // IdeComponent's <router-outlet>; when no child is active the
-      // legacy @switch fallback inside IdeComponent renders the panel.
-      // As panels are extracted (Phase 2), each one adds a child route
-      // here and removes its @case from IdeComponent.
+      // /dev is the Developer/advanced frame. All 27 panels are routed
+      // children mounted in IdeComponent's <router-outlet>. Bare /dev
+      // redirects to /dev/control-panel; an unknown panel id (stale
+      // persisted ui.route, hand-typed URL, …) also lands there so
+      // the user always gets a real surface instead of empty chrome.
       {
         path: 'dev',
         component: IdeComponent,
         children: [
+          { path: '', redirectTo: 'control-panel', pathMatch: 'full' },
           { path: 'welcome', component: WelcomeComponent },
           { path: 'build', component: BuildComponent },
           { path: 'cache', component: CacheComponent },
@@ -114,12 +114,11 @@ export const routes: Routes = [
           { path: 'plugin/:code', component: PluginComponent },
           { path: 'repos', component: ReposComponent },
           { path: 'marketplace', component: MarketplaceComponent },
-          // Catch-all for panel ids that haven't been extracted yet.
-          // Loads an empty host; IdeComponent reads the URL segment and
-          // renders the legacy @switch fallback for that panel id. As
-          // each panel extracts, replace its slot here with the real
-          // component (and delete its @case from IdeComponent).
-          { path: ':panel', component: LegacyPanelHost },
+          // Catch-all — any unknown panel id (stale persisted ui.route,
+          // typo, removed plugin sub-page, …) redirects to control-panel
+          // so the user always lands on a real surface instead of empty
+          // chrome.
+          { path: '**', redirectTo: 'control-panel' },
         ],
       },
       { path: 'ide', redirectTo: 'dev', pathMatch: 'full' },
