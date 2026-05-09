@@ -91,6 +91,9 @@ export const routes: Routes = [
           { path: 'plugin/:code',      loadComponent: () => import('./pages/dev/plugin/plugin.component').then(m => m.PluginComponent) },
           { path: 'repos',         loadComponent: () => import('./pages/dev/repos/repos.component').then(m => m.ReposComponent) },
           { path: 'marketplace',   loadComponent: () => import('./pages/dev/marketplace/marketplace.component').then(m => m.MarketplaceComponent) },
+          { path: 'chat',          loadComponent: () => import('./pages/dev/chat/chat.component').then(m => m.ChatComponent) },
+          { path: 'tim',           loadComponent: () => import('./pages/dev/tim/tim.component').then(m => m.TimComponent) },
+          { path: 'p2p',           loadComponent: () => import('./pages/dev/p2p/p2p.component').then(m => m.P2PComponent) },
           // Site detail — placeholder until the ops dashboard ships,
           // see RFC.ops-dashboard.md. Sidebar's Sites group routes here.
           { path: 'site/:domain',  loadComponent: () => import('./pages/dev/site/site.component').then(m => m.SiteComponent) },

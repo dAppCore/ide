@@ -1,0 +1,238 @@
+// SPDX-Licence-Identifier: EUPL-1.2
+
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
+import { callBridge } from '../../../lib/bridge';
+import { NotificationService } from '../../../services/notification.service';
+
+interface TIMState {
+  name?: string;
+  image?: string;
+  runtime?: string;
+  status?: string;
+  started_at?: string;
+  command?: string[];
+  data_dir?: string;
+}
+
+const RUNTIME_LABELS: Record<string, string> = {
+  '': 'none',
+  apple: 'Apple Containers',
+  docker: 'Docker',
+  podman: 'Podman',
+};
+
+/**
+ * TIM (Trusted In-Memory) container panel — surface over the gui
+ * container service. Detects the host container runtime, shows the
+ * configured TIM container state, exposes start/stop.
+ *
+ * Empty states cover the two real "not running" cases:
+ *   - No container runtime installed → tells the user which to install
+ *   - TIM not yet configured (image blank) → points at /dev/settings
+ *
+ * TODO(snider/wails): replace callBridge('tim_*' / 'container_*') with
+ * a containerBridge wails service.
+ */
+@Component({
+  selector: 'dev-tim',
+  standalone: true,
+  imports: [TranslatePipe],
+  template: `
+    <section class="block tim-block">
+      <div class="block-header tim-header">
+        <h2 class="block-title">{{ 'tim.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'tim.subtitle' | translate }}</span>
+      </div>
+
+      <div class="tim-toolbar">
+        <button class="btn btn-ghost btn-sm" (click)="refresh()" [disabled]="loading()">
+          @if (loading()) { <span>{{ 'tim.status.loading' | translate }}</span> }
+          @else { <span>↻ {{ 'tim.button.refresh' | translate }}</span> }
+        </button>
+      </div>
+
+      @if (probeError(); as err) {
+        <div class="tim-empty">
+          <h3>{{ 'tim.empty.no-bridge.title' | translate }}</h3>
+          <p>{{ 'tim.empty.no-bridge.body' | translate }}</p>
+          <pre class="tim-error-detail">{{ err }}</pre>
+        </div>
+      } @else {
+        <div class="tim-grid">
+          <div class="tim-card">
+            <div class="tim-card-label">{{ 'tim.card.runtime' | translate }}</div>
+            <div class="tim-card-value" [class.tim-warn]="runtimeLabel() === 'none'">
+              {{ runtimeLabel() }}
+            </div>
+            @if (runtimeLabel() === 'none') {
+              <div class="tim-card-hint">{{ 'tim.hint.no-runtime' | translate }}</div>
+            }
+          </div>
+
+          <div class="tim-card">
+            <div class="tim-card-label">{{ 'tim.card.status' | translate }}</div>
+            <div class="tim-card-value" [class.tim-ok]="state()?.status === 'running'" [class.tim-warn]="!state()?.status || state()?.status === 'stopped'">
+              {{ state()?.status || ('tim.status.unknown' | translate) }}
+            </div>
+          </div>
+
+          <div class="tim-card">
+            <div class="tim-card-label">{{ 'tim.card.image' | translate }}</div>
+            <div class="tim-card-value tim-mono">{{ state()?.image || ('tim.value.unconfigured' | translate) }}</div>
+            @if (!state()?.image) {
+              <div class="tim-card-hint">{{ 'tim.hint.unconfigured' | translate }}</div>
+            }
+          </div>
+
+          <div class="tim-card">
+            <div class="tim-card-label">{{ 'tim.card.name' | translate }}</div>
+            <div class="tim-card-value tim-mono">{{ state()?.name || '—' }}</div>
+          </div>
+
+          @if (state()?.started_at) {
+            <div class="tim-card">
+              <div class="tim-card-label">{{ 'tim.card.started' | translate }}</div>
+              <div class="tim-card-value tim-mono">{{ state()?.started_at?.slice(0, 19)?.replace('T', ' ') }}</div>
+            </div>
+          }
+
+          @if (state()?.data_dir) {
+            <div class="tim-card tim-card-wide">
+              <div class="tim-card-label">{{ 'tim.card.data-dir' | translate }}</div>
+              <div class="tim-card-value tim-mono">{{ state()?.data_dir }}</div>
+            </div>
+          }
+        </div>
+
+        <div class="tim-actions">
+          <button class="btn btn-primary btn-sm"
+                  (click)="start()"
+                  [disabled]="busy() || runtimeLabel() === 'none' || !state()?.image">
+            {{ 'tim.button.start' | translate }}
+          </button>
+          <button class="btn btn-ghost btn-sm"
+                  (click)="stop()"
+                  [disabled]="busy() || state()?.status !== 'running'">
+            {{ 'tim.button.stop' | translate }}
+          </button>
+          @if (busy()) {
+            <span class="tim-busy">{{ 'tim.status.working' | translate }}</span>
+          }
+        </div>
+      }
+    </section>
+  `,
+  styles: [`
+    .tim-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .tim-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .tim-toolbar { padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; display: flex; gap: 8px; }
+
+    .tim-empty { padding: 32px; max-width: 600px; margin: 24px auto; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 8px; }
+    .tim-empty h3 { font-size: 14px; color: var(--fg-1); margin: 0 0 8px; }
+    .tim-empty p { color: var(--fg-2); font-size: 13px; line-height: 1.5; margin: 6px 0; }
+    .tim-error-detail { font-family: var(--font-mono); font-size: 11px; color: #fbbf24; background: var(--ink-1); padding: 10px 12px; border-radius: 4px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 12px; }
+
+    .tim-grid { padding: 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .tim-card { background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .tim-card-wide { grid-column: 1 / -1; }
+    .tim-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); }
+    .tim-card-value { font-size: 14px; font-weight: 500; color: var(--fg-1); }
+    .tim-card-value.tim-mono { font-family: var(--font-mono); font-size: 12px; word-break: break-all; }
+    .tim-card-value.tim-ok { color: #34d399; }
+    .tim-card-value.tim-warn { color: #fbbf24; }
+    .tim-card-hint { font-size: 11px; color: var(--fg-3); font-style: italic; }
+
+    .tim-actions { padding: 14px 18px; border-top: 1px solid var(--line-1); display: flex; gap: 10px; align-items: center; }
+    .tim-busy { font-size: 12px; color: var(--fg-3); font-style: italic; }
+  `],
+})
+export class TimComponent implements OnInit {
+  private readonly notify = inject(NotificationService);
+
+  readonly state = signal<TIMState | null>(null);
+  readonly runtime = signal<string>('');
+  readonly loading = signal(false);
+  readonly busy = signal(false);
+  readonly probeError = signal<string | null>(null);
+
+  ngOnInit(): void {
+    void this.refresh();
+  }
+
+  runtimeLabel(): string {
+    return RUNTIME_LABELS[this.runtime()] ?? this.runtime() ?? 'none';
+  }
+
+  /**
+   * Probe runtime detection + TIM status side-by-side. If both fail
+   * with a network error, the bridge itself is down — surface the
+   * underlying error rather than letting both calls toast.
+   */
+  async refresh(): Promise<void> {
+    this.loading.set(true);
+    this.probeError.set(null);
+    try {
+      const [runtimeResp, stateResp] = await Promise.allSettled([
+        callBridge<{ runtime?: string }>('container_detect_runtime', {}),
+        callBridge<{ state?: TIMState }>('tim_status', {}),
+      ]);
+
+      if (runtimeResp.status === 'fulfilled') {
+        this.runtime.set(runtimeResp.value?.runtime || '');
+      }
+      if (stateResp.status === 'fulfilled') {
+        this.state.set(stateResp.value?.state || null);
+      }
+
+      if (runtimeResp.status === 'rejected' && stateResp.status === 'rejected') {
+        const reason = runtimeResp.reason instanceof Error ? runtimeResp.reason.message : String(runtimeResp.reason);
+        this.probeError.set(reason);
+      }
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async start(): Promise<void> {
+    this.busy.set(true);
+    try {
+      const v = await callBridge<{ state?: TIMState }>('tim_start', {});
+      this.state.set(v?.state || null);
+      this.notify.notify({
+        message: this.state()?.status === 'running' ? 'TIM container started' : 'TIM start returned',
+        variant: 'success',
+        icon: 'check',
+      });
+    } catch (e) {
+      this.notify.notify({
+        message: 'TIM start failed: ' + (e instanceof Error ? e.message : String(e)),
+        variant: 'danger',
+        icon: 'triangle-exclamation',
+      });
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.busy.set(true);
+    try {
+      const v = await callBridge<{ state?: TIMState }>('tim_stop', {});
+      this.state.set(v?.state || null);
+      this.notify.notify({
+        message: 'TIM container stopped',
+        variant: 'success',
+        icon: 'check',
+      });
+    } catch (e) {
+      this.notify.notify({
+        message: 'TIM stop failed: ' + (e instanceof Error ? e.message : String(e)),
+        variant: 'danger',
+        icon: 'triangle-exclamation',
+      });
+    } finally {
+      this.busy.set(false);
+    }
+  }
+}
