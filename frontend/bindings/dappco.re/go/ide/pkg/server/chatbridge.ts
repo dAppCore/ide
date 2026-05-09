@@ -13,6 +13,61 @@ export function CallTool(input: $models.chatBridgeToolCall): $CancellablePromise
     return $Call.ByID(1464058329, input);
 }
 
+/**
+ * ConversationsList returns every saved conversation in the gui chat
+ * store, newest first. The panel binds the list into its sidebar.
+ */
+export function ConversationsList(): $CancellablePromise<$models.ChatConversationsListOutput> {
+    return $Call.ByID(1029740597).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * ConversationsLoad fetches a single conversation by id, including
+ * its full message history. The panel binds messages into its main
+ * pane on selection.
+ */
+export function ConversationsLoad(id: string): $CancellablePromise<$models.ChatConversationLoadOutput> {
+    return $Call.ByID(2681575813, id).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
+/**
+ * Models lists every model the configured chat backend exposes.
+ * Empty list = the backend is unreachable or has no models loaded;
+ * the panel surfaces that as the "no models — backend not reachable"
+ * option in its model picker.
+ */
+export function Models(): $CancellablePromise<$models.ChatModelsOutput> {
+    return $Call.ByID(835324397).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+/**
+ * SelectModel binds a model to a conversation so future Sends in
+ * that conversation use it without the panel passing model on every
+ * call.
+ */
+export function SelectModel(input: $models.ChatSelectModelInput): $CancellablePromise<$models.ChatSelectModelOutput> {
+    return $Call.ByID(1225647260, input).then(($result: any) => {
+        return $$createType3($result);
+    });
+}
+
+/**
+ * Send dispatches a user message to the LLM. Returns the new message
+ * id; the panel re-loads the conversation for the full reply because
+ * streaming isn't wired (yet — future SSE lane).
+ */
+export function Send(input: $models.ChatSendInput): $CancellablePromise<$models.ChatSendOutput> {
+    return $Call.ByID(4184372393, input).then(($result: any) => {
+        return $$createType4($result);
+    });
+}
+
 export function ToolManifest(): $CancellablePromise<string> {
     return $Call.ByID(365903904);
 }
@@ -20,3 +75,10 @@ export function ToolManifest(): $CancellablePromise<string> {
 export function Tools(): $CancellablePromise<any> {
     return $Call.ByID(570139470);
 }
+
+// Private type creation functions
+const $$createType0 = $models.ChatConversationsListOutput.createFrom;
+const $$createType1 = $models.ChatConversationLoadOutput.createFrom;
+const $$createType2 = $models.ChatModelsOutput.createFrom;
+const $$createType3 = $models.ChatSelectModelOutput.createFrom;
+const $$createType4 = $models.ChatSendOutput.createFrom;

@@ -5,8 +5,21 @@ export {
 };
 
 export {
+    ChatConversationDetail,
+    ChatConversationLoadOutput,
+    ChatConversationOutput,
+    ChatConversationsListOutput,
+    ChatMessageOutput,
+    ChatModelOutput,
+    ChatModelsOutput,
+    ChatSelectModelInput,
+    ChatSelectModelOutput,
+    ChatSendInput,
+    ChatSendOutput,
     P2PPeer,
     P2PPublishInput,
     P2PPublishOutput,
-    P2PStateOutput
+    P2PStateOutput,
+    TIMRuntimeOutput,
+    TIMStateOutput
 } from "./models.js";

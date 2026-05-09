@@ -5,6 +5,331 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+/**
+ * ChatConversationDetail is the LoadConversation result — the
+ * conversation metadata plus its full message list.
+ */
+export class ChatConversationDetail {
+    "id": string;
+    "title": string;
+    "model": string;
+    "created_at": string;
+    "updated_at": string;
+    "messages": ChatMessageOutput[];
+
+    /** Creates a new ChatConversationDetail instance. */
+    constructor($$source: Partial<ChatConversationDetail> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = "";
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = "";
+        }
+        if (!("messages" in $$source)) {
+            this["messages"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatConversationDetail instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatConversationDetail {
+        const $$createField5_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("messages" in $$parsedSource) {
+            $$parsedSource["messages"] = $$createField5_0($$parsedSource["messages"]);
+        }
+        return new ChatConversationDetail($$parsedSource as Partial<ChatConversationDetail>);
+    }
+}
+
+export class ChatConversationLoadOutput {
+    "conversation": ChatConversationDetail;
+
+    /** Creates a new ChatConversationLoadOutput instance. */
+    constructor($$source: Partial<ChatConversationLoadOutput> = {}) {
+        if (!("conversation" in $$source)) {
+            this["conversation"] = (new ChatConversationDetail());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatConversationLoadOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatConversationLoadOutput {
+        const $$createField0_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("conversation" in $$parsedSource) {
+            $$parsedSource["conversation"] = $$createField0_0($$parsedSource["conversation"]);
+        }
+        return new ChatConversationLoadOutput($$parsedSource as Partial<ChatConversationLoadOutput>);
+    }
+}
+
+/**
+ * ChatConversationOutput mirrors gui chat Conversation (without the
+ * nested Messages — those load via History or LoadConversation).
+ */
+export class ChatConversationOutput {
+    "id": string;
+    "title": string;
+    "model": string;
+    "created_at": string;
+    "updated_at": string;
+
+    /** Creates a new ChatConversationOutput instance. */
+    constructor($$source: Partial<ChatConversationOutput> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = "";
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatConversationOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatConversationOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatConversationOutput($$parsedSource as Partial<ChatConversationOutput>);
+    }
+}
+
+export class ChatConversationsListOutput {
+    "conversations": ChatConversationOutput[];
+
+    /** Creates a new ChatConversationsListOutput instance. */
+    constructor($$source: Partial<ChatConversationsListOutput> = {}) {
+        if (!("conversations" in $$source)) {
+            this["conversations"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatConversationsListOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatConversationsListOutput {
+        const $$createField0_0 = $$createType4;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("conversations" in $$parsedSource) {
+            $$parsedSource["conversations"] = $$createField0_0($$parsedSource["conversations"]);
+        }
+        return new ChatConversationsListOutput($$parsedSource as Partial<ChatConversationsListOutput>);
+    }
+}
+
+/**
+ * ChatMessageOutput mirrors the gui chat Message shape.
+ */
+export class ChatMessageOutput {
+    "id": string;
+    "role": string;
+    "content": string;
+    "created_at": string;
+    "model"?: string;
+
+    /** Creates a new ChatMessageOutput instance. */
+    constructor($$source: Partial<ChatMessageOutput> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("role" in $$source)) {
+            this["role"] = "";
+        }
+        if (!("content" in $$source)) {
+            this["content"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatMessageOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatMessageOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatMessageOutput($$parsedSource as Partial<ChatMessageOutput>);
+    }
+}
+
+/**
+ * ChatModelOutput mirrors the gui chat package's ModelEntry shape
+ * JSON-tagged so the wails generator emits a binding the existing
+ * /dev/chat panel can bind without renames.
+ */
+export class ChatModelOutput {
+    "name": string;
+    "size"?: number;
+    "status"?: string;
+    "architecture"?: string;
+    "quant_bits"?: number;
+    "size_bytes"?: number;
+    "loaded"?: boolean;
+    "backend"?: string;
+
+    /** Creates a new ChatModelOutput instance. */
+    constructor($$source: Partial<ChatModelOutput> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatModelOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatModelOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatModelOutput($$parsedSource as Partial<ChatModelOutput>);
+    }
+}
+
+export class ChatModelsOutput {
+    "models": ChatModelOutput[];
+
+    /** Creates a new ChatModelsOutput instance. */
+    constructor($$source: Partial<ChatModelsOutput> = {}) {
+        if (!("models" in $$source)) {
+            this["models"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatModelsOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatModelsOutput {
+        const $$createField0_0 = $$createType6;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("models" in $$parsedSource) {
+            $$parsedSource["models"] = $$createField0_0($$parsedSource["models"]);
+        }
+        return new ChatModelsOutput($$parsedSource as Partial<ChatModelsOutput>);
+    }
+}
+
+export class ChatSelectModelInput {
+    "conversation_id"?: string;
+    "model": string;
+
+    /** Creates a new ChatSelectModelInput instance. */
+    constructor($$source: Partial<ChatSelectModelInput> = {}) {
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatSelectModelInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatSelectModelInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatSelectModelInput($$parsedSource as Partial<ChatSelectModelInput>);
+    }
+}
+
+export class ChatSelectModelOutput {
+    "ok": boolean;
+
+    /** Creates a new ChatSelectModelOutput instance. */
+    constructor($$source: Partial<ChatSelectModelOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatSelectModelOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatSelectModelOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatSelectModelOutput($$parsedSource as Partial<ChatSelectModelOutput>);
+    }
+}
+
+/**
+ * ChatSendInput is the panel's Send button payload.
+ */
+export class ChatSendInput {
+    "conversation_id"?: string;
+    "content": string;
+    "model"?: string;
+
+    /** Creates a new ChatSendInput instance. */
+    constructor($$source: Partial<ChatSendInput> = {}) {
+        if (!("content" in $$source)) {
+            this["content"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatSendInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatSendInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatSendInput($$parsedSource as Partial<ChatSendInput>);
+    }
+}
+
+export class ChatSendOutput {
+    "message_id": string;
+
+    /** Creates a new ChatSendOutput instance. */
+    constructor($$source: Partial<ChatSendOutput> = {}) {
+        if (!("message_id" in $$source)) {
+            this["message_id"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatSendOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatSendOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatSendOutput($$parsedSource as Partial<ChatSendOutput>);
+    }
+}
+
 export class P2PPeer {
     "id": string;
     "topic": string;
@@ -61,7 +386,7 @@ export class P2PPublishInput {
      * Creates a new P2PPublishInput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PPublishInput {
-        const $$createField3_0 = $$createType0;
+        const $$createField3_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("payload" in $$parsedSource) {
             $$parsedSource["payload"] = $$createField3_0($$parsedSource["payload"]);
@@ -111,12 +436,70 @@ export class P2PStateOutput {
      * Creates a new P2PStateOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PStateOutput {
-        const $$createField2_0 = $$createType2;
+        const $$createField2_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("peers" in $$parsedSource) {
             $$parsedSource["peers"] = $$createField2_0($$parsedSource["peers"]);
         }
         return new P2PStateOutput($$parsedSource as Partial<P2PStateOutput>);
+    }
+}
+
+/**
+ * TIMRuntimeOutput is the result of container.runtime.detect — one of
+ * "" (none), "apple", "docker", "podman".
+ */
+export class TIMRuntimeOutput {
+    "runtime": string;
+
+    /** Creates a new TIMRuntimeOutput instance. */
+    constructor($$source: Partial<TIMRuntimeOutput> = {}) {
+        if (!("runtime" in $$source)) {
+            this["runtime"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TIMRuntimeOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TIMRuntimeOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TIMRuntimeOutput($$parsedSource as Partial<TIMRuntimeOutput>);
+    }
+}
+
+/**
+ * TIMStateOutput mirrors the gui container TIMState. Field shape
+ * matches the JSON the existing /dev/tim panel binds to so the
+ * template needs no changes.
+ */
+export class TIMStateOutput {
+    "name"?: string;
+    "image"?: string;
+    "runtime"?: string;
+    "status"?: string;
+    "started_at"?: string;
+    "command"?: string[];
+    "data_dir"?: string;
+
+    /** Creates a new TIMStateOutput instance. */
+    constructor($$source: Partial<TIMStateOutput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TIMStateOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TIMStateOutput {
+        const $$createField5_0 = $$createType10;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("command" in $$parsedSource) {
+            $$parsedSource["command"] = $$createField5_0($$parsedSource["command"]);
+        }
+        return new TIMStateOutput($$parsedSource as Partial<TIMStateOutput>);
     }
 }
 
@@ -137,7 +520,7 @@ export class chatBridgeToolCall {
      * Creates a new chatBridgeToolCall instance from a string or object.
      */
     static createFrom($$source: any = {}): chatBridgeToolCall {
-        const $$createField1_0 = $$createType0;
+        const $$createField1_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("arguments" in $$parsedSource) {
             $$parsedSource["arguments"] = $$createField1_0($$parsedSource["arguments"]);
@@ -147,6 +530,14 @@ export class chatBridgeToolCall {
 }
 
 // Private type creation functions
-const $$createType0 = $Create.Map($Create.Any, $Create.Any);
-const $$createType1 = P2PPeer.createFrom;
-const $$createType2 = $Create.Array($$createType1);
+const $$createType0 = ChatMessageOutput.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = ChatConversationDetail.createFrom;
+const $$createType3 = ChatConversationOutput.createFrom;
+const $$createType4 = $Create.Array($$createType3);
+const $$createType5 = ChatModelOutput.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = $Create.Map($Create.Any, $Create.Any);
+const $$createType8 = P2PPeer.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = $Create.Array($Create.Any);
