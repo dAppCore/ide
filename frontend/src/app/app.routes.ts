@@ -11,6 +11,10 @@ import { CacheComponent } from './pages/dev/cache/cache.component';
 import { LintComponent } from './pages/dev/lint/lint.component';
 import { SessionsComponent } from './pages/dev/sessions/sessions.component';
 import { StreamComponent } from './pages/dev/stream/stream.component';
+import { ContainersComponent } from './pages/dev/containers/containers.component';
+import { UpdatesComponent } from './pages/dev/updates/updates.component';
+import { MemoryComponent } from './pages/dev/memory/memory.component';
+import { MantisComponent } from './pages/dev/mantis/mantis.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -62,6 +66,10 @@ export const routes: Routes = [
           { path: 'lint', component: LintComponent },
           { path: 'sessions', component: SessionsComponent },
           { path: 'stream', component: StreamComponent },
+          { path: 'containers', component: ContainersComponent },
+          { path: 'updates', component: UpdatesComponent },
+          { path: 'memory', component: MemoryComponent },
+          { path: 'mantis', component: MantisComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As
