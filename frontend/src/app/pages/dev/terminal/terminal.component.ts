@@ -1,0 +1,26 @@
+// SPDX-Licence-Identifier: EUPL-1.2
+
+import { Component } from '@angular/core';
+
+/**
+ * Terminal panel — placeholder stub. Real backend lives at
+ * 127.0.0.1:9876 (charmbracelet/ssh) per
+ * feedback_ssh_terminal_canonical_pattern.md. xterm.js frontend parked
+ * pending auth/multi-session decisions.
+ */
+@Component({
+  selector: 'dev-terminal',
+  standalone: true,
+  template: `
+    <section class="block">
+      <h2 class="block-title">Terminal</h2>
+      <div class="terminal-output">
+        <pre>$ core dev health
+18 repos │ clean │ synced
+
+$ _</pre>
+      </div>
+    </section>
+  `,
+})
+export class TerminalComponent {}

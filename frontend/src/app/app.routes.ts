@@ -19,6 +19,10 @@ import { TsComponent } from './pages/dev/ts/ts.component';
 import { PhpComponent } from './pages/dev/php/php.component';
 import { DevopsComponent } from './pages/dev/devops/devops.component';
 import { ProcessComponent } from './pages/dev/process/process.component';
+import { TerminalComponent } from './pages/dev/terminal/terminal.component';
+import { LocalesComponent } from './pages/dev/locales/locales.component';
+import { StoreComponent } from './pages/dev/store/store.component';
+import { DataComponent } from './pages/dev/data/data.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -78,6 +82,10 @@ export const routes: Routes = [
           { path: 'php', component: PhpComponent },
           { path: 'devops', component: DevopsComponent },
           { path: 'process', component: ProcessComponent },
+          { path: 'terminal', component: TerminalComponent },
+          { path: 'locales', component: LocalesComponent },
+          { path: 'store', component: StoreComponent },
+          { path: 'data', component: DataComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As
