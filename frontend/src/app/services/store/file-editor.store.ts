@@ -75,6 +75,17 @@ export class FileEditorStore {
     this.editorRef = ref;
   }
 
+  /**
+   * Explicitly set the explorer's currentPath without triggering a
+   * dir_list fetch. Used at boot (loadUIState) + after Settings save
+   * to sync the explorer to the workspace root without forcing an
+   * eager fetch — the actual fetch happens lazily when the user
+   * visits /dev/explorer.
+   */
+  setExplorerPath(path: string): void {
+    this.currentPath.set(path);
+  }
+
   setOnChange(fn: (() => void) | null): void {
     this.onChange = fn;
   }
