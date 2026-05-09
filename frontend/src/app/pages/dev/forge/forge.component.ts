@@ -2,6 +2,7 @@
 
 import { Component, computed, linkedSignal, resource, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -99,25 +100,25 @@ interface ReposResponse {
 @Component({
   selector: 'dev-forge',
   standalone: true,
-  imports: [SlicePipe, DevSkeleton],
+  imports: [SlicePipe, DevSkeleton, TranslatePipe],
   template: `
     <section class="block frg-block">
       <div class="block-header frg-header">
         <h2 class="block-title">
-          Forge
+          {{ 'forge.title' | translate }}
           @if (forgeReposCacheHit() && forgeSelectedOrg()) {
-            <span class="cache-pill" [class.cache-stale]="forgeReposCacheAge() > 300" (click)="loadForgeRepos(forgeSelectedOrg(), true)" title="Click to force re-fetch repos">● cached {{ formatCacheAge(forgeReposCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="forgeReposCacheAge() > 300" (click)="loadForgeRepos(forgeSelectedOrg(), true)" [title]="'forge.tooltip.force-refetch-repos' | translate">● {{ 'forge.cache.cached' | translate }} {{ formatCacheAge(forgeReposCacheAge()) }}</span>
           } @else if (forgeRepos().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just fetched">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'forge.tooltip.just-fetched' | translate">● {{ 'forge.cache.fresh' | translate }}</span>
           }
         </h2>
         <span class="editorial subtitle">
           @if (forgeStatus()?.authenticated) {
-            <code>{{ forgeStatus()?.base }}</code> · authenticated as <strong>{{ forgeStatus()?.as }}</strong>
+            <code>{{ forgeStatus()?.base }}</code> · {{ 'forge.status.authenticated-as' | translate }} <strong>{{ forgeStatus()?.as }}</strong>
           } @else if (forgeStatus()?.configured) {
-            <code>{{ forgeStatus()?.base }}</code> · token rejected — see status hint
+            <code>{{ forgeStatus()?.base }}</code> · {{ 'forge.status.token-rejected' | translate }}
           } @else {
-            No forge token configured. Set FORGE_TOKEN env or write to ~/.claude/secrets/forge_token.
+            {{ 'forge.status.no-token' | translate }}
           }
         </span>
       </div>
@@ -130,7 +131,7 @@ interface ReposResponse {
 
       <div class="frg-body">
         <div class="frg-orgs-side">
-          <h3>Orgs</h3>
+          <h3>{{ 'forge.section.orgs' | translate }}</h3>
           @if (orgsResource.firstLoad()) {
             <dev-skeleton kind="rows" [count]="4" />
           }
@@ -139,7 +140,7 @@ interface ReposResponse {
               {{ o.name }}
             </button>
           }
-          <h3 style="margin-top: 14px;">Notifications</h3>
+          <h3 style="margin-top: 14px;">{{ 'forge.section.notifications' | translate }}</h3>
           @for (n of forgeNotifications().slice(0, 8); track n.id) {
             <a class="frg-note-row" [class.unread]="n.unread" [href]="n.url" target="_blank">
               <span class="frg-note-type">{{ n.type }}</span>
@@ -148,15 +149,15 @@ interface ReposResponse {
             </a>
           }
           @if (forgeNotifications().length === 0) {
-            <div class="frg-empty">No unread notifications.</div>
+            <div class="frg-empty">{{ 'forge.empty.no-unread-notifications' | translate }}</div>
           }
         </div>
 
         <div class="frg-main">
           <div class="frg-repos-bar">
-            <span class="frg-org-label">{{ forgeSelectedOrg() || '—' }} · {{ forgeRepos().length }} repos</span>
+            <span class="frg-org-label">{{ forgeSelectedOrg() || '—' }} · {{ forgeRepos().length }} {{ 'forge.label.repos' | translate }}</span>
             <select class="frg-repo-picker" [value]="forgeSelectedRepo()" (change)="loadForgeRepo($any($event.target).value)">
-              <option value="">(pick a repo)</option>
+              <option value="">{{ 'forge.placeholder.pick-repo' | translate }}</option>
               @for (r of forgeRepos(); track r.name) {
                 <option [value]="r.name">{{ r.name }}</option>
               }
@@ -165,17 +166,17 @@ interface ReposResponse {
 
           @if (forgeSelectedRepo()) {
             <div class="frg-tabs">
-              <button class="frg-tab" [class.active]="forgeTab() === 'issues'" (click)="forgeTab.set('issues')">Issues <span class="frg-tab-count">{{ forgeIssues().length }}</span></button>
-              <button class="frg-tab" [class.active]="forgeTab() === 'pulls'" (click)="forgeTab.set('pulls')">PRs <span class="frg-tab-count">{{ forgePulls().length }}</span></button>
-              <button class="frg-tab" [class.active]="forgeTab() === 'releases'" (click)="forgeTab.set('releases'); loadForgeReleases()">Releases <span class="frg-tab-count">{{ forgeReleases().length }}</span></button>
+              <button class="frg-tab" [class.active]="forgeTab() === 'issues'" (click)="forgeTab.set('issues')">{{ 'forge.tab.issues' | translate }} <span class="frg-tab-count">{{ forgeIssues().length }}</span></button>
+              <button class="frg-tab" [class.active]="forgeTab() === 'pulls'" (click)="forgeTab.set('pulls')">{{ 'forge.tab.prs' | translate }} <span class="frg-tab-count">{{ forgePulls().length }}</span></button>
+              <button class="frg-tab" [class.active]="forgeTab() === 'releases'" (click)="forgeTab.set('releases'); loadForgeReleases()">{{ 'forge.tab.releases' | translate }} <span class="frg-tab-count">{{ forgeReleases().length }}</span></button>
             </div>
 
             @if (forgeTab() === 'issues') {
               @if (forgeIssues().length === 0) {
-                <div class="frg-empty-pane">No open issues in {{ forgeSelectedOrg() }}/{{ forgeSelectedRepo() }}</div>
+                <div class="frg-empty-pane">{{ 'forge.empty.no-open-issues' | translate }} {{ forgeSelectedOrg() }}/{{ forgeSelectedRepo() }}</div>
               } @else {
                 <table class="frg-table">
-                  <thead><tr><th>#</th><th>title</th><th>state</th><th>author</th><th>updated</th></tr></thead>
+                  <thead><tr><th>#</th><th>{{ 'forge.column.title' | translate }}</th><th>{{ 'forge.column.state' | translate }}</th><th>{{ 'forge.column.author' | translate }}</th><th>{{ 'forge.column.updated' | translate }}</th></tr></thead>
                   <tbody>
                     @for (i of forgeIssues(); track i.number) {
                       <tr>
@@ -191,15 +192,15 @@ interface ReposResponse {
               }
             } @else if (forgeTab() === 'pulls') {
               @if (forgePulls().length === 0) {
-                <div class="frg-empty-pane">No open PRs.</div>
+                <div class="frg-empty-pane">{{ 'forge.empty.no-open-prs' | translate }}</div>
               } @else {
                 <table class="frg-table">
-                  <thead><tr><th>#</th><th>title</th><th>state</th><th>head→base</th><th>author</th><th>updated</th></tr></thead>
+                  <thead><tr><th>#</th><th>{{ 'forge.column.title' | translate }}</th><th>{{ 'forge.column.state' | translate }}</th><th>{{ 'forge.column.head-base' | translate }}</th><th>{{ 'forge.column.author' | translate }}</th><th>{{ 'forge.column.updated' | translate }}</th></tr></thead>
                   <tbody>
                     @for (p of forgePulls(); track p.number) {
                       <tr>
                         <td><a [href]="p.html_url" target="_blank"><code>#{{ p.number }}</code></a></td>
-                        <td class="frg-title">{{ p.title }}@if (p.draft) { <span class="frg-draft">draft</span> }</td>
+                        <td class="frg-title">{{ p.title }}@if (p.draft) { <span class="frg-draft">{{ 'forge.badge.draft' | translate }}</span> }</td>
                         <td><span class="frg-state {{ p.state }}">{{ p.state }}</span></td>
                         <td><code>{{ p.head }}→{{ p.base }}</code></td>
                         <td><code>{{ p.author }}</code></td>
@@ -211,19 +212,19 @@ interface ReposResponse {
               }
             } @else if (forgeTab() === 'releases') {
               @if (forgeReleasesLoading()) {
-                <div class="frg-empty-pane">Loading releases…</div>
+                <div class="frg-empty-pane">{{ 'forge.status.loading-releases' | translate }}</div>
               } @else if (forgeReleases().length === 0) {
-                <div class="frg-empty-pane">No releases or tags for this repo.</div>
+                <div class="frg-empty-pane">{{ 'forge.empty.no-releases' | translate }}</div>
               } @else {
                 <table class="frg-table">
-                  <thead><tr><th>kind</th><th>tag</th><th>title</th><th>published</th><th>archive</th></tr></thead>
+                  <thead><tr><th>{{ 'forge.column.kind' | translate }}</th><th>{{ 'forge.column.tag' | translate }}</th><th>{{ 'forge.column.title' | translate }}</th><th>{{ 'forge.column.published' | translate }}</th><th>{{ 'forge.column.archive' | translate }}</th></tr></thead>
                   <tbody>
                     @for (r of forgeReleases(); track r.name) {
                       <tr>
                         <td>
                           <span class="frg-state {{ r.kind }}">{{ r.kind }}</span>
-                          @if (r.prerelease) { <span class="frg-draft">pre</span> }
-                          @if (r.draft) { <span class="frg-draft">draft</span> }
+                          @if (r.prerelease) { <span class="frg-draft">{{ 'forge.badge.pre' | translate }}</span> }
+                          @if (r.draft) { <span class="frg-draft">{{ 'forge.badge.draft' | translate }}</span> }
                         </td>
                         <td><a [href]="r.html_url" target="_blank"><code>{{ r.name }}</code></a></td>
                         <td class="frg-title">{{ r.title }}</td>
@@ -239,7 +240,7 @@ interface ReposResponse {
               }
             }
           } @else {
-            <div class="frg-empty-pane">Pick a repo to view its issues + PRs.</div>
+            <div class="frg-empty-pane">{{ 'forge.empty.pick-repo' | translate }}</div>
           }
         </div>
       </div>
