@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -41,37 +42,37 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
 @Component({
   selector: 'dev-repos',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block repos-block">
       <div class="block-header repos-header">
         <h2 class="block-title">
-          Repos
+          {{ 'repos.title' | translate }}
           @if (reposCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="reposCacheAge() > 60" (click)="loadRepos(true)" title="Click to force re-scan">● cached {{ formatCacheAge(reposCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="reposCacheAge() > 60" (click)="loadRepos(true)" [title]="'repos.tooltip.force-rescan' | translate">● {{ 'repos.cache.cached' | translate }} {{ formatCacheAge(reposCacheAge()) }}</span>
           } @else if (reposAll().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'repos.tooltip.just-scanned' | translate">● {{ 'repos.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">Aggregate git status across your Lethean workspace.</span>
+        <span class="editorial subtitle">{{ 'repos.subtitle' | translate }}</span>
       </div>
       <div class="repos-toolbar">
         <div class="repos-filters">
           <button class="repos-chip" [class.active]="reposFilter() === 'all'" (click)="reposFilter.set('all')">
-            All <span class="repos-chip-count">{{ reposCounts().total }}</span>
+            {{ 'repos.filter.all' | translate }} <span class="repos-chip-count">{{ reposCounts().total }}</span>
           </button>
           <button class="repos-chip" [class.active]="reposFilter() === 'dirty'" (click)="reposFilter.set('dirty')">
-            Dirty <span class="repos-chip-count">{{ reposCounts().dirty }}</span>
+            {{ 'repos.filter.dirty' | translate }} <span class="repos-chip-count">{{ reposCounts().dirty }}</span>
           </button>
           <button class="repos-chip" [class.active]="reposFilter() === 'ahead'" (click)="reposFilter.set('ahead')">
-            Ahead <span class="repos-chip-count">{{ reposCounts().ahead }}</span>
+            {{ 'repos.filter.ahead' | translate }} <span class="repos-chip-count">{{ reposCounts().ahead }}</span>
           </button>
           <button class="repos-chip" [class.active]="reposFilter() === 'behind'" (click)="reposFilter.set('behind')">
-            Behind <span class="repos-chip-count">{{ reposCounts().behind }}</span>
+            {{ 'repos.filter.behind' | translate }} <span class="repos-chip-count">{{ reposCounts().behind }}</span>
           </button>
         </div>
         <button class="btn btn-primary btn-sm" (click)="loadRepos(true)" [disabled]="reposLoading()">
-          @if (reposLoading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
+          @if (reposLoading()) { <span>{{ 'repos.status.scanning' | translate }}</span> } @else { <span>{{ 'repos.button.rescan' | translate }}</span> }
         </button>
       </div>
       @if (reposError(); as err) {
@@ -98,7 +99,7 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
               @if (r.untracked > 0) { <span class="badge badge-unt">?{{ r.untracked }}</span> }
               @if (r.ahead > 0) { <span class="badge badge-ahead">↑{{ r.ahead }}</span> }
               @if (r.behind > 0) { <span class="badge badge-behind">↓{{ r.behind }}</span> }
-              @if (!r.dirty && r.ahead === 0 && r.behind === 0) { <span class="badge badge-clean">clean</span> }
+              @if (!r.dirty && r.ahead === 0 && r.behind === 0) { <span class="badge badge-clean">{{ 'repos.badge.clean' | translate }}</span> }
             </div>
             @if (r.error) { <div class="repos-card-error">{{ r.error }}</div> }
           </button>
@@ -106,9 +107,9 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
         @if (reposVisible().length === 0 && !reposLoading() && !reposError()) {
           <div class="repos-empty">
             @if (reposCounts().total === 0) {
-              No repositories found. Re-scan to refresh.
+              {{ 'repos.empty.none' | translate }}
             } @else {
-              No repos match the {{ reposFilter() }} filter.
+              {{ 'repos.empty.no-match.prefix' | translate }} {{ reposFilter() }} {{ 'repos.empty.no-match.suffix' | translate }}
             }
           </div>
         }
@@ -248,6 +249,7 @@ export class ReposComponent {
   private readonly settings = inject(SettingsStore);
   private readonly workspace = inject(WorkspaceStore);
   private readonly router = inject(Router);
+  private readonly t = inject(TranslateService);
 
   readonly scan = cachedBridgeResource<ReposResponse>({
     tool: 'repos_status',
@@ -303,9 +305,10 @@ export class ReposComponent {
   }
 
   formatCacheAge(seconds: number): string {
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+    const ago = this.t.instant('repos.label.ago');
+    if (seconds < 60) return `${seconds}s ${ago}`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${ago}`;
+    return `${Math.floor(seconds / 3600)}h ${ago}`;
   }
 
   /** Click → set workspace + jump to /dev/git for that repo. */

@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
@@ -105,48 +106,48 @@ const SESSION_LIVE_CAP = 500;
 @Component({
   selector: 'dev-sessions',
   standalone: true,
-  imports: [DecimalPipe, DevSkeleton],
+  imports: [DecimalPipe, DevSkeleton, TranslatePipe],
   template: `
     <section class="block sess-block">
       <div class="block-header sess-header">
-        <h2 class="block-title">Sessions</h2>
-        <span class="editorial subtitle">Claude Code transcript inspector · {{ sessionProjects().length }} projects.</span>
+        <h2 class="block-title">{{ 'sessions.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'sessions.subtitle.prefix' | translate }} · {{ sessionProjects().length }} {{ 'sessions.subtitle.projects' | translate }}.</span>
       </div>
       <div class="sess-tabs">
-        <button class="sess-tab" [class.active]="sessionTab() === 'browse'" (click)="sessionTab.set('browse')">Browse</button>
+        <button class="sess-tab" [class.active]="sessionTab() === 'browse'" (click)="sessionTab.set('browse')">{{ 'sessions.tab.browse' | translate }}</button>
         <button class="sess-tab" [class.active]="sessionTab() === 'active'" (click)="sessionTab.set('active'); loadActiveSessions()">
-          Active
+          {{ 'sessions.tab.active' | translate }}
           @if (sessionActive().length > 0) { <span class="sess-tab-count">{{ sessionActive().length }}</span> }
         </button>
-        <button class="sess-tab" [class.active]="sessionTab() === 'search'" (click)="sessionTab.set('search')">Search</button>
+        <button class="sess-tab" [class.active]="sessionTab() === 'search'" (click)="sessionTab.set('search')">{{ 'sessions.tab.search' | translate }}</button>
       </div>
 
       @if (sessionTab() === 'browse') {
         <div class="sess-toolbar">
-          <input class="input sess-filter" placeholder="filter projects…" [value]="sessionFilter()" (input)="sessionFilter.set($any($event.target).value)" />
-          <button class="btn btn-ghost btn-sm" (click)="loadSessionProjects()" [disabled]="sessionLoading()">↻ refresh</button>
+          <input class="input sess-filter" [placeholder]="'sessions.placeholder.filter-projects' | translate" [value]="sessionFilter()" (input)="sessionFilter.set($any($event.target).value)" />
+          <button class="btn btn-ghost btn-sm" (click)="loadSessionProjects()" [disabled]="sessionLoading()">↻ {{ 'sessions.button.refresh' | translate }}</button>
         </div>
       }
       @if (sessionTab() === 'active') {
         <div class="sess-toolbar">
           <select class="input sess-filter" [value]="sessionActiveSinceMinutes()" (change)="sessionActiveSinceMinutes.set(+$any($event.target).value); loadActiveSessions()">
-            <option [value]="15">last 15 min</option>
-            <option [value]="60">last hour</option>
-            <option [value]="240">last 4 hours</option>
-            <option [value]="1440">last 24 hours</option>
+            <option [value]="15">{{ 'sessions.range.15min' | translate }}</option>
+            <option [value]="60">{{ 'sessions.range.1hour' | translate }}</option>
+            <option [value]="240">{{ 'sessions.range.4hours' | translate }}</option>
+            <option [value]="1440">{{ 'sessions.range.24hours' | translate }}</option>
           </select>
-          <button class="btn btn-ghost btn-sm" (click)="loadActiveSessions()" [disabled]="sessionActiveLoading()">↻ refresh</button>
+          <button class="btn btn-ghost btn-sm" (click)="loadActiveSessions()" [disabled]="sessionActiveLoading()">↻ {{ 'sessions.button.refresh' | translate }}</button>
         </div>
       }
       @if (sessionTab() === 'search') {
         <div class="sess-toolbar">
-          <input class="input sess-filter" placeholder="search across sessions… (Enter)" [value]="sessionSearchQuery()" (input)="sessionSearchQuery.set($any($event.target).value)" (keyup.enter)="runSessionSearch()" />
+          <input class="input sess-filter" [placeholder]="'sessions.placeholder.search' | translate" [value]="sessionSearchQuery()" (input)="sessionSearchQuery.set($any($event.target).value)" (keyup.enter)="runSessionSearch()" />
           <select class="input sess-filter" style="flex: 0 0 160px" [value]="sessionSearchScope()" (change)="sessionSearchScope.set($any($event.target).value)">
-            <option value="current">current project</option>
-            <option value="all">all projects</option>
+            <option value="current">{{ 'sessions.scope.current' | translate }}</option>
+            <option value="all">{{ 'sessions.scope.all' | translate }}</option>
           </select>
           <button class="btn btn-primary btn-sm" (click)="runSessionSearch()" [disabled]="sessionSearchLoading()">
-            @if (sessionSearchLoading()) { <span>searching…</span> } @else { <span>Search</span> }
+            @if (sessionSearchLoading()) { <span>{{ 'sessions.status.searching' | translate }}</span> } @else { <span>{{ 'sessions.button.search' | translate }}</span> }
           </button>
         </div>
       }
@@ -155,14 +156,14 @@ const SESSION_LIVE_CAP = 500;
         @if (sessionTab() === 'search') {
           <aside class="sess-search-list">
             <div class="sess-list-title">
-              Cross-session hits
+              {{ 'sessions.heading.cross-session-hits' | translate }}
               @if (sessionSearchLoading()) { <span class="sess-spin">…</span> }
             </div>
             @if (sessionSearchHits().length === 0 && !sessionSearchLoading()) {
-              <div class="sess-empty">Type a query above and press Enter.</div>
+              <div class="sess-empty">{{ 'sessions.empty.search-prompt' | translate }}</div>
             }
             @for (h of sessionSearchHits(); track $index) {
-              <button class="sess-search-hit" (click)="openSessionSearchHit(h)" [title]="'Open session ' + h.session_id">
+              <button class="sess-search-hit" (click)="openSessionSearchHit(h)" [title]="openSessionTitle(h.session_id)">
                 <div class="sess-search-head">
                   <code class="sess-active-id">{{ h.session_id.slice(0, 8) }}</code>
                   <span class="sess-search-when">{{ h.timestamp.slice(0, 19).replace('T', ' ') }}</span>
@@ -175,17 +176,17 @@ const SESSION_LIVE_CAP = 500;
         } @else if (sessionTab() === 'active') {
           <aside class="sess-active-list">
             <div class="sess-list-title">
-              Active sessions ({{ sessionActive().length }})
+              {{ 'sessions.heading.active-sessions' | translate }} ({{ sessionActive().length }})
               @if (sessionActiveLoading()) { <span class="sess-spin">…</span> }
             </div>
             @if (sessionActive().length === 0 && !sessionActiveLoading()) {
-              <div class="sess-empty">No sessions modified in the last {{ sessionActiveSinceMinutes() }}min.</div>
+              <div class="sess-empty">{{ 'sessions.empty.no-active.prefix' | translate }} {{ sessionActiveSinceMinutes() }}{{ 'sessions.empty.no-active.suffix' | translate }}</div>
             }
             @for (a of sessionActive(); track a.path) {
               <button class="sess-active-row" [class.active]="sessionSelected()?.path === a.path" (click)="openActiveSession(a)">
                 <div class="sess-active-head">
                   <code class="sess-active-id">{{ a.id.slice(0, 8) }}</code>
-                  <span class="sess-active-age" [class.sess-active-fresh]="a.age_seconds < 60">{{ formatAge(a.age_seconds) }} ago</span>
+                  <span class="sess-active-age" [class.sess-active-fresh]="a.age_seconds < 60">{{ formatAge(a.age_seconds) }} {{ 'sessions.label.ago' | translate }}</span>
                 </div>
                 <div class="sess-active-proj">{{ a.project_path }}</div>
                 <div class="sess-active-meta">
@@ -196,7 +197,7 @@ const SESSION_LIVE_CAP = 500;
           </aside>
         } @else {
           <aside class="sess-projects">
-            <div class="sess-list-title">Projects ({{ sessionVisible().length }})</div>
+            <div class="sess-list-title">{{ 'sessions.heading.projects' | translate }} ({{ sessionVisible().length }})</div>
             @if (scan.firstLoad()) {
               <dev-skeleton kind="rows" [count]="6" />
             }
@@ -204,7 +205,7 @@ const SESSION_LIVE_CAP = 500;
               <button class="sess-project-row" [class.active]="sessionSelectedProject() === p.path" (click)="selectSessionProject(p.path)">
                 <div class="sess-project-name" [title]="p.display_path">{{ p.display_path }}</div>
                 <div class="sess-project-meta">
-                  <span>{{ p.session_count }} sess</span>
+                  <span>{{ p.session_count }} {{ 'sessions.label.sess' | translate }}</span>
                   @if (p.latest_at) { <span>· {{ p.latest_at.slice(0, 10) }}</span> }
                 </div>
               </button>
@@ -212,13 +213,13 @@ const SESSION_LIVE_CAP = 500;
           </aside>
           <aside class="sess-list">
             <div class="sess-list-title">
-              Sessions
+              {{ 'sessions.heading.sessions' | translate }}
               @if (sessionLoading()) { <span class="sess-spin">…</span> }
             </div>
             @if (!sessionSelectedProject()) {
-              <div class="sess-empty">Pick a project to list its sessions.</div>
+              <div class="sess-empty">{{ 'sessions.empty.pick-project' | translate }}</div>
             } @else if (sessions().length === 0 && !sessionLoading()) {
-              <div class="sess-empty">No sessions in this project.</div>
+              <div class="sess-empty">{{ 'sessions.empty.no-sessions' | translate }}</div>
             } @else {
               @for (s of sessions(); track s.id) {
                 <button class="sess-row" [class.active]="sessionSelected()?.path === s.path" (click)="inspectSession(s.path)">
@@ -235,10 +236,10 @@ const SESSION_LIVE_CAP = 500;
 
         <main class="sess-detail">
           @if (!sessionSelected() && !sessionInspectLoading()) {
-            <div class="sess-empty">Pick a session to inspect.</div>
+            <div class="sess-empty">{{ 'sessions.empty.pick-session' | translate }}</div>
           }
           @if (sessionInspectLoading()) {
-            <div class="sess-empty">Parsing transcript…</div>
+            <div class="sess-empty">{{ 'sessions.status.parsing' | translate }}</div>
           }
           @if (sessionSelected(); as sel) {
             <div class="sess-detail-head">
@@ -247,33 +248,33 @@ const SESSION_LIVE_CAP = 500;
               </div>
               <div class="sess-detail-sub">
                 {{ sel.start.slice(0, 19).replace('T', ' ') }} → {{ sel.end.slice(0, 19).replace('T', ' ') }}
-                · {{ sel.total_events }} events · duration {{ formatSessionDuration(sel.analytics?.duration_seconds || 0) }}
-                · {{ ((sel.analytics?.success_rate || 0) * 100).toFixed(1) }}% success
+                · {{ sel.total_events }} {{ 'sessions.label.events' | translate }} · {{ 'sessions.label.duration' | translate }} {{ formatSessionDuration(sel.analytics?.duration_seconds || 0) }}
+                · {{ ((sel.analytics?.success_rate || 0) * 100).toFixed(1) }}% {{ 'sessions.label.success' | translate }}
               </div>
             </div>
             <div class="sess-stats-grid">
               <div class="sess-stat">
-                <div class="sess-stat-label">events</div>
+                <div class="sess-stat-label">{{ 'sessions.stat.events' | translate }}</div>
                 <div class="sess-stat-value">{{ sel.analytics?.event_count }}</div>
               </div>
               <div class="sess-stat">
-                <div class="sess-stat-label">active time</div>
+                <div class="sess-stat-label">{{ 'sessions.stat.active-time' | translate }}</div>
                 <div class="sess-stat-value">{{ formatSessionDuration(sel.analytics?.active_seconds || 0) }}</div>
               </div>
               <div class="sess-stat">
-                <div class="sess-stat-label">in tokens</div>
+                <div class="sess-stat-label">{{ 'sessions.stat.in-tokens' | translate }}</div>
                 <div class="sess-stat-value">{{ sel.analytics?.estimated_input_tokens?.toLocaleString() }}</div>
               </div>
               <div class="sess-stat">
-                <div class="sess-stat-label">out tokens</div>
+                <div class="sess-stat-label">{{ 'sessions.stat.out-tokens' | translate }}</div>
                 <div class="sess-stat-value">{{ sel.analytics?.estimated_output_tokens?.toLocaleString() }}</div>
               </div>
             </div>
             <div class="sess-tools-section">
-              <div class="sess-section-title">Tool counts</div>
+              <div class="sess-section-title">{{ 'sessions.section.tool-counts' | translate }}</div>
               <div class="sess-tools-grid">
                 @for (t of sessionToolEntries(sel.analytics?.tool_counts); track t.name) {
-                  <div class="sess-tool-pill" [title]="(sel.analytics?.avg_latency_ms?.[t.name] || 0) + 'ms avg'">
+                  <div class="sess-tool-pill" [title]="(sel.analytics?.avg_latency_ms?.[t.name] || 0) + 'ms ' + ('sessions.label.avg' | translate)">
                     <span class="sess-tool-name">{{ t.name }}</span>
                     <span class="sess-tool-count">{{ t.count }}</span>
                   </div>
@@ -282,27 +283,27 @@ const SESSION_LIVE_CAP = 500;
             </div>
             <div class="sess-events-section">
               <div class="sess-section-title">
-                Recent events
-                @if (sel.tail_offset > 0) { <span class="sess-tail-note">(showing last {{ sel.event_tail.length }} of {{ sel.total_events }})</span> }
-                <button class="btn btn-ghost btn-sm sess-live-toggle" [class.sess-live-active]="sessionLiveActive()" (click)="toggleSessionLive()" [title]="sessionLiveActive() ? 'Stop live polling' : 'Start polling for new events every 3s'">
+                {{ 'sessions.section.recent-events' | translate }}
+                @if (sel.tail_offset > 0) { <span class="sess-tail-note">({{ 'sessions.label.showing-last' | translate }} {{ sel.event_tail.length }} {{ 'sessions.label.of' | translate }} {{ sel.total_events }})</span> }
+                <button class="btn btn-ghost btn-sm sess-live-toggle" [class.sess-live-active]="sessionLiveActive()" (click)="toggleSessionLive()" [title]="liveToggleTitle()">
                   @if (sessionLiveActive()) {
                     <span class="sess-live-pulse" [attr.data-tick]="sessionLiveHeartbeat() % 2"></span>
-                    <span>live</span>
+                    <span>{{ 'sessions.label.live' | translate }}</span>
                   } @else {
-                    <span>○ live</span>
+                    <span>○ {{ 'sessions.label.live' | translate }}</span>
                   }
                 </button>
                 @if (sessionLiveEvents().length > 0) {
-                  <span class="sess-live-count">+{{ sessionLiveEvents().length }} new</span>
+                  <span class="sess-live-count">+{{ sessionLiveEvents().length }} {{ 'sessions.label.new' | translate }}</span>
                 }
                 @if (sessionLiveDropped() > 0) {
-                  <span class="sess-live-dropped" [title]="'Older events dropped to keep buffer at 500'">−{{ sessionLiveDropped() }} dropped</span>
+                  <span class="sess-live-dropped" [title]="'sessions.tooltip.dropped' | translate">−{{ sessionLiveDropped() }} {{ 'sessions.label.dropped' | translate }}</span>
                 }
               </div>
               <div class="sess-events-list">
                 @for (e of sel.event_tail; track $index) {
                   @let evPath = sessionEventPath(e);
-                  <div class="sess-event" [class.sess-event-error]="!e.success && e.type === 'tool_use'" [class.sess-event-jumpable]="evPath !== null" (click)="evPath ? openSessionEventFile(e) : null" [title]="evPath ? 'Open ' + evPath + ' in editor' : ''">
+                  <div class="sess-event" [class.sess-event-error]="!e.success && e.type === 'tool_use'" [class.sess-event-jumpable]="evPath !== null" (click)="evPath ? openSessionEventFile(e) : null" [title]="evPath ? openInEditorTitle(evPath) : ''">
                     <span class="sess-event-time">{{ e.timestamp.slice(11, 19) }}</span>
                     <span class="sess-event-type">{{ e.type }}</span>
                     @if (e.tool) { <span class="sess-event-tool">{{ e.tool }}</span> }
@@ -311,7 +312,7 @@ const SESSION_LIVE_CAP = 500;
                   </div>
                 }
                 @if (sessionLiveEvents().length > 0) {
-                  <div class="sess-live-divider">live tail · {{ sessionLiveEvents().length }} events since toggle</div>
+                  <div class="sess-live-divider">{{ 'sessions.label.live-tail' | translate }} · {{ sessionLiveEvents().length }} {{ 'sessions.label.events-since-toggle' | translate }}</div>
                   @for (e of sessionLiveEvents(); track $index) {
                     <div class="sess-event sess-event-live">
                       <span class="sess-event-time">{{ e.timestamp.slice(11, 19) }}</span>
@@ -414,6 +415,7 @@ const SESSION_LIVE_CAP = 500;
 export class SessionsComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
+  private readonly t = inject(TranslateService);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -457,6 +459,20 @@ export class SessionsComponent implements OnInit {
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.stopSessionLive());
+  }
+
+  openSessionTitle(id: string): string {
+    return this.t.instant('sessions.tooltip.open-session') + ' ' + id;
+  }
+
+  openInEditorTitle(path: string): string {
+    return this.t.instant('sessions.tooltip.open-in-editor.prefix') + ' ' + path + ' ' + this.t.instant('sessions.tooltip.open-in-editor.suffix');
+  }
+
+  liveToggleTitle(): string {
+    return this.sessionLiveActive()
+      ? this.t.instant('sessions.tooltip.stop-live')
+      : this.t.instant('sessions.tooltip.start-live');
   }
 
   /** Template alias — Refresh button calls this. */

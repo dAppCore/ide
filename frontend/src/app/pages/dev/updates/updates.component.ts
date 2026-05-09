@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject, resource, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { NotificationService } from '../../../services/notification.service';
@@ -55,52 +56,52 @@ interface SelfUpdateApplyResponse {
 @Component({
   selector: 'dev-updates',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block upd-block">
       <div class="block-header upd-header">
-        <h2 class="block-title">Updates</h2>
-        <span class="editorial subtitle">core-ide self-update + tool version tracking.</span>
+        <h2 class="block-title">{{ 'updates.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'updates.subtitle' | translate }}</span>
       </div>
       @if (selfUpdate()) {
         <div class="self-upd-card" [class.self-upd-card--update]="selfUpdate()?.update_available">
           <div class="self-upd-row">
             <div class="self-upd-icon">
               @if (selfUpdate()?.update_available) {
-                <span title="Update available">⬇</span>
+                <span [title]="'updates.tooltip.update-available' | translate">⬇</span>
               } @else if (selfUpdate()?.error) {
-                <span title="No release endpoint or fetch error">·</span>
+                <span [title]="'updates.tooltip.no-release' | translate">·</span>
               } @else {
-                <span title="Up to date">✓</span>
+                <span [title]="'updates.tooltip.up-to-date' | translate">✓</span>
               }
             </div>
             <div class="self-upd-body">
               <div class="self-upd-title">core-ide</div>
               <div class="self-upd-meta">
-                current <code>{{ selfUpdate()?.current_version }}</code>
+                {{ 'updates.label.current' | translate }} <code>{{ selfUpdate()?.current_version }}</code>
                 @if (selfUpdate()?.latest_version) {
-                  · latest <a [href]="selfUpdate()?.release_url" target="_blank"><code>{{ selfUpdate()?.latest_version }}</code></a>
+                  · {{ 'updates.label.latest' | translate }} <a [href]="selfUpdate()?.release_url" target="_blank"><code>{{ selfUpdate()?.latest_version }}</code></a>
                 } @else if (selfUpdate()?.error) {
-                  · <span class="self-upd-err">no release: {{ selfUpdate()?.error }}</span>
+                  · <span class="self-upd-err">{{ 'updates.label.no-release' | translate }}: {{ selfUpdate()?.error }}</span>
                 }
-                · channel <code>{{ selfUpdate()?.channel }}</code>
+                · {{ 'updates.label.channel' | translate }} <code>{{ selfUpdate()?.channel }}</code>
                 · {{ selfUpdate()?.platform }}
               </div>
               <div class="self-upd-meta self-upd-source">
-                source: <a [href]="selfUpdate()?.repo_url" target="_blank">{{ selfUpdate()?.repo_url }}</a>
-                <span class="self-upd-hint"> · override via <code>CORE_IDE_UPDATE_URL</code></span>
+                {{ 'updates.label.source' | translate }}: <a [href]="selfUpdate()?.repo_url" target="_blank">{{ selfUpdate()?.repo_url }}</a>
+                <span class="self-upd-hint"> · {{ 'updates.hint.override' | translate }} <code>CORE_IDE_UPDATE_URL</code></span>
               </div>
             </div>
             <div class="self-upd-actions">
               @if (selfUpdate()?.cache_hit) {
-                <span class="cache-pill" [class.cache-stale]="(selfUpdate()?.cache_age_s ?? 0) > 600" (click)="loadSelfUpdate(true)" title="Click to force re-check">● cached {{ formatCacheAge(selfUpdate()?.cache_age_s ?? 0) }}</span>
+                <span class="cache-pill" [class.cache-stale]="(selfUpdate()?.cache_age_s ?? 0) > 600" (click)="loadSelfUpdate(true)" [title]="'updates.tooltip.force-recheck' | translate">● {{ 'updates.cache.cached' | translate }} {{ formatCacheAge(selfUpdate()?.cache_age_s ?? 0) }}</span>
               }
-              <button class="btn btn-ghost btn-sm" (click)="loadSelfUpdate(true)" [disabled]="selfUpdateLoading()" title="Re-check">
+              <button class="btn btn-ghost btn-sm" (click)="loadSelfUpdate(true)" [disabled]="selfUpdateLoading()" [title]="'updates.button.recheck' | translate">
                 @if (selfUpdateLoading()) { <span>…</span> } @else { <span>↻</span> }
               </button>
               @if (selfUpdate()?.update_available) {
                 <button class="btn btn-primary btn-sm" (click)="applySelfUpdate()" [disabled]="selfUpdateApplying()">
-                  @if (selfUpdateApplying()) { <span>updating…</span> } @else { <span>Update</span> }
+                  @if (selfUpdateApplying()) { <span>{{ 'updates.status.updating' | translate }}</span> } @else { <span>{{ 'updates.button.update' | translate }}</span> }
                 </button>
               }
             </div>
@@ -110,13 +111,13 @@ interface SelfUpdateApplyResponse {
       <div class="upd-toolbar">
         <span class="upd-summary">
           @if (updatesNeedingAttention().length === 0) {
-            <span class="upd-allgood">✓ all installed tools up to date</span>
+            <span class="upd-allgood">✓ {{ 'updates.summary.all-good' | translate }}</span>
           } @else {
-            <span class="upd-attn">⚠ {{ updatesNeedingAttention().length }} update{{ updatesNeedingAttention().length > 1 ? 's' : '' }} available</span>
+            <span class="upd-attn">⚠ {{ updatesNeedingAttention().length }} {{ (updatesNeedingAttention().length > 1 ? 'updates.summary.updates-available' : 'updates.summary.update-available') | translate }}</span>
           }
         </span>
         <button class="btn btn-ghost btn-sm" (click)="refreshAllUpdates()" [disabled]="updatesLoading()">
-          @if (updatesLoading()) { <span>checking…</span> } @else { <span>Refresh all</span> }
+          @if (updatesLoading()) { <span>{{ 'updates.status.checking' | translate }}</span> } @else { <span>{{ 'updates.button.refresh-all' | translate }}</span> }
         </button>
       </div>
       <div class="upd-body">
@@ -126,10 +127,10 @@ interface SelfUpdateApplyResponse {
         <table class="upd-table">
           <thead>
             <tr>
-              <th>tool</th>
-              <th>local</th>
-              <th>latest</th>
-              <th>status</th>
+              <th>{{ 'updates.column.tool' | translate }}</th>
+              <th>{{ 'updates.column.local' | translate }}</th>
+              <th>{{ 'updates.column.latest' | translate }}</th>
+              <th>{{ 'updates.column.status' | translate }}</th>
               <th class="upd-actions-col">·</th>
             </tr>
           </thead>
@@ -144,7 +145,7 @@ interface SelfUpdateApplyResponse {
                   @if (t.installed) {
                     <code>{{ t.local_version || '?' }}</code>
                   } @else {
-                    <span class="upd-missing">not installed</span>
+                    <span class="upd-missing">{{ 'updates.label.not-installed' | translate }}</span>
                   }
                 </td>
                 <td>
@@ -156,17 +157,17 @@ interface SelfUpdateApplyResponse {
                 </td>
                 <td>
                   @if (!t.installed) {
-                    <span class="upd-pill missing">missing</span>
+                    <span class="upd-pill missing">{{ 'updates.pill.missing' | translate }}</span>
                   } @else if (t.up_to_date) {
-                    <span class="upd-pill ok">up to date</span>
+                    <span class="upd-pill ok">{{ 'updates.pill.up-to-date' | translate }}</span>
                   } @else if (t.latest_version) {
-                    <span class="upd-pill warn">update available</span>
+                    <span class="upd-pill warn">{{ 'updates.pill.update-available' | translate }}</span>
                   } @else {
-                    <span class="upd-pill unknown">no source</span>
+                    <span class="upd-pill unknown">{{ 'updates.pill.no-source' | translate }}</span>
                   }
                 </td>
                 <td class="upd-actions-col">
-                  <button class="btn btn-ghost btn-sm" (click)="refreshUpdate(t.key)" title="Re-check this tool">↻</button>
+                  <button class="btn btn-ghost btn-sm" (click)="refreshUpdate(t.key)" [title]="'updates.tooltip.recheck-tool' | translate">↻</button>
                 </td>
               </tr>
             }
@@ -220,6 +221,7 @@ interface SelfUpdateApplyResponse {
 })
 export class UpdatesComponent {
   private readonly notify = inject(NotificationService);
+  private readonly t = inject(TranslateService);
 
   // Self-update — DuckDB-cached. SWR via cachedBridgeResource.
   readonly self = cachedBridgeResource<SelfUpdateStatus>({
@@ -274,16 +276,17 @@ export class UpdatesComponent {
   }
 
   formatCacheAge(seconds: number): string {
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+    const ago = this.t.instant('updates.label.ago');
+    if (seconds < 60) return `${seconds}s ${ago}`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${ago}`;
+    return `${Math.floor(seconds / 3600)}h ${ago}`;
   }
 
   async applySelfUpdate(): Promise<void> {
     const ok = await this.notify.confirm({
-      title: 'Replace core-ide binary?',
-      message: 'Download and swap the binary in place. You will need to quit and relaunch.',
-      confirmLabel: 'Download + replace',
+      title: this.t.instant('updates.confirm.title'),
+      message: this.t.instant('updates.confirm.message'),
+      confirmLabel: this.t.instant('updates.confirm.label'),
       variant: 'warning',
     });
     if (!ok) return;
@@ -291,7 +294,7 @@ export class UpdatesComponent {
     try {
       const v = await callBridge<SelfUpdateApplyResponse>('selfupdate_apply', {});
       this.notify.notify({
-        message: `Updated to ${v?.updated_to}. Quit and relaunch core-ide.`,
+        message: this.t.instant('updates.notify.success', { version: v?.updated_to }),
         variant: 'success',
         icon: 'check',
         duration: 0,
@@ -299,7 +302,7 @@ export class UpdatesComponent {
       this.self.refresh();
     } catch (e) {
       this.notify.notify({
-        message: 'Self-update failed: ' + (e instanceof Error ? e.message : String(e)),
+        message: this.t.instant('updates.notify.failed') + ': ' + (e instanceof Error ? e.message : String(e)),
         variant: 'danger',
         icon: 'triangle-exclamation',
       });
