@@ -1,7 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MantisIssue {
   id: number;
@@ -163,6 +165,9 @@ type Segment = { kind: 'text' | 'path'; value: string };
   `,
 })
 export class MantisComponent implements OnInit {
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
+
   readonly mantisIssues = signal<MantisIssue[]>([]);
   readonly mantisLoading = signal(false);
   readonly mantisSelected = signal<MantisIssueDetail | null>(null);
@@ -248,9 +253,9 @@ export class MantisComponent implements OnInit {
     return out;
   }
 
-  openMantisPath(path: string): void {
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[mantis] would open', path);
+  async openMantisPath(path: string): Promise<void> {
+    await this.fileEditor.openFile(path);
+    void this.router.navigate(['/dev/explorer']);
   }
 
   formatRelative(iso: string | undefined): string {

@@ -1,7 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface StoreGroup {
   name: string;
@@ -123,6 +125,9 @@ interface StoreFile {
   `,
 })
 export class StoreComponent implements OnInit {
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
+
   readonly storeTab = signal<'groups' | 'files'>('groups');
   readonly storeGroups = signal<StoreGroup[]>([]);
   readonly storeSelectedGroup = signal<string | null>(null);
@@ -171,8 +176,8 @@ export class StoreComponent implements OnInit {
     this.storeSelectedFile.set(file);
   }
 
-  openStoreFileInEditor(file: StoreFile): void {
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[store] would open', file.path);
+  async openStoreFileInEditor(file: StoreFile): Promise<void> {
+    await this.fileEditor.openFile(file.path);
+    void this.router.navigate(['/dev/explorer']);
   }
 }

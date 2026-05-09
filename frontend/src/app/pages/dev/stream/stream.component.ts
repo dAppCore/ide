@@ -1,7 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface StreamStatus {
   running: boolean;
@@ -147,6 +149,9 @@ interface ParsedFrame {
   `,
 })
 export class StreamComponent implements OnInit {
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
+
   readonly streamStatus = signal<StreamStatus | null>(null);
   readonly streamChannels = signal<StreamChannel[]>([]);
   readonly streamBroadcastBufCount = signal(0);
@@ -227,9 +232,9 @@ export class StreamComponent implements OnInit {
     this.streamFrameRawMode.set(s);
   }
 
-  openStreamFramePath(path: string): void {
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[stream] would open', path);
+  async openStreamFramePath(path: string): Promise<void> {
+    await this.fileEditor.openFile(path);
+    void this.router.navigate(['/dev/explorer']);
   }
 
   async publishStreamFrame(): Promise<void> {

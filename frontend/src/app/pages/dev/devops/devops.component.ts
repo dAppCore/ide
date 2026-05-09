@@ -1,7 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 interface DevopsFinding {
@@ -126,6 +128,8 @@ interface DevopsPlaybooksResponse {
 })
 export class DevopsComponent {
   readonly workspace = inject(WorkspaceStore);
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
 
   readonly devopsTab = signal<'secrets' | 'playbooks'>('secrets');
   readonly devopsScanner = signal<'regex' | 'gitleaks'>('regex');
@@ -175,15 +179,16 @@ export class DevopsComponent {
     }
   }
 
-  openDevopsFinding(f: DevopsFinding): void {
+  async openDevopsFinding(f: DevopsFinding): Promise<void> {
     const base = this.devopsBasePath() || this.workspace.root();
     const fullPath = f.file.startsWith('/') ? f.file : `${base.replace(/\/$/, '')}/${f.file}`;
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[devops] would open', fullPath, 'line', f.line);
+    await this.fileEditor.openFile(fullPath);
+    void this.router.navigate(['/dev/explorer']);
+    this.fileEditor.revealLine(f.line, 1);
   }
 
-  openPlaybook(p: DevopsPlaybook): void {
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[devops] would open', p.path);
+  async openPlaybook(p: DevopsPlaybook): Promise<void> {
+    await this.fileEditor.openFile(p.path);
+    void this.router.navigate(['/dev/explorer']);
   }
 }

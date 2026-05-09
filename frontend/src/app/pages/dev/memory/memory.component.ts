@@ -1,8 +1,10 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MemoryEntry {
   name: string;
@@ -142,6 +144,9 @@ interface MemorySearchResponse {
   `,
 })
 export class MemoryComponent implements OnInit {
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
+
   readonly memoryEntries = signal<MemoryEntry[]>([]);
   readonly memoryTypeCounts = signal<Record<string, number>>({});
   readonly memoryDir = signal('');
@@ -198,9 +203,10 @@ export class MemoryComponent implements OnInit {
     }
   }
 
-  openMemoryEntry(path: string, line: number = 1): void {
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[memory] would open', path, 'line', line);
+  async openMemoryEntry(path: string, line: number = 1): Promise<void> {
+    await this.fileEditor.openFile(path);
+    void this.router.navigate(['/dev/explorer']);
+    if (line > 1) this.fileEditor.revealLine(line, 1);
   }
 
   async runMemorySearch(query: string): Promise<void> {

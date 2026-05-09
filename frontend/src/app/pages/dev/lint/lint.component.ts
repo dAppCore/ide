@@ -1,7 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 interface LintIssue {
@@ -134,6 +136,8 @@ const ZERO_COUNTS: LintCounts = {
 })
 export class LintComponent implements OnInit {
   private readonly workspace = inject(WorkspaceStore);
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
 
   readonly lintIssues = signal<LintIssue[]>([]);
   readonly lintCounts = signal<LintCounts>(ZERO_COUNTS);
@@ -184,12 +188,11 @@ export class LintComponent implements OnInit {
     }
   }
 
-  openLintIssue(issue: LintIssue): void {
-    // TODO: route through a shared FileEditorService when Search is
-    // extracted; the IdeComponent legacy version opens the file in
-    // Monaco at the offending line via openSearchResult().
+  async openLintIssue(issue: LintIssue): Promise<void> {
     const base = this.lintBasePath() || this.workspace.root();
     const fullPath = issue.file.startsWith('/') ? issue.file : `${base.replace(/\/$/, '')}/${issue.file}`;
-    console.info('[lint] would open', fullPath, 'line', issue.line);
+    await this.fileEditor.openFile(fullPath);
+    void this.router.navigate(['/dev/explorer']);
+    this.fileEditor.revealLine(issue.line, 1);
   }
 }

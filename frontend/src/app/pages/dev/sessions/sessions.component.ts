@@ -9,7 +9,9 @@ import {
   signal,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface SessionProject {
   name: string;
@@ -316,6 +318,9 @@ const SESSION_LIVE_CAP = 500;
   `,
 })
 export class SessionsComponent implements OnInit {
+  private readonly fileEditor = inject(FileEditorStore);
+  private readonly router = inject(Router);
+
   private readonly destroyRef = inject(DestroyRef);
 
   readonly sessionProjects = signal<SessionProject[]>([]);
@@ -579,10 +584,10 @@ export class SessionsComponent implements OnInit {
     return m ? m[1] : null;
   }
 
-  openSessionEventFile(e: { tool?: string; input?: string }): void {
+  async openSessionEventFile(e: { tool?: string; input?: string }): Promise<void> {
     const path = this.sessionEventPath(e);
     if (!path) return;
-    // TODO: route through a shared FileEditorService when Search extracts.
-    console.info('[sessions] would open', path);
+    await this.fileEditor.openFile(path);
+    void this.router.navigate(['/dev/explorer']);
   }
 }
