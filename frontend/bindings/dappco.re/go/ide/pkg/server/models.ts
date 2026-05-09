@@ -5,6 +5,116 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class BuildDetectInput {
+    "path": string;
+    "force"?: boolean;
+
+    /** Creates a new BuildDetectInput instance. */
+    constructor($$source: Partial<BuildDetectInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BuildDetectInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BuildDetectInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new BuildDetectInput($$parsedSource as Partial<BuildDetectInput>);
+    }
+}
+
+export class BuildDetectOutput {
+    "ok": boolean;
+    "path"?: string;
+    "tool"?: string;
+    "source"?: string;
+    "command"?: string;
+    "args"?: string[];
+    "frameworks"?: string[];
+    "cache_hit"?: boolean;
+    "cache_age_s"?: number;
+    "error"?: string;
+
+    /** Creates a new BuildDetectOutput instance. */
+    constructor($$source: Partial<BuildDetectOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BuildDetectOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BuildDetectOutput {
+        const $$createField5_0 = $$createType0;
+        const $$createField6_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("args" in $$parsedSource) {
+            $$parsedSource["args"] = $$createField5_0($$parsedSource["args"]);
+        }
+        if ("frameworks" in $$parsedSource) {
+            $$parsedSource["frameworks"] = $$createField6_0($$parsedSource["frameworks"]);
+        }
+        return new BuildDetectOutput($$parsedSource as Partial<BuildDetectOutput>);
+    }
+}
+
+export class BuildRunInput {
+    "path": string;
+    "command"?: string;
+    "args"?: string[];
+
+    /** Creates a new BuildRunInput instance. */
+    constructor($$source: Partial<BuildRunInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BuildRunInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BuildRunInput {
+        const $$createField2_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("args" in $$parsedSource) {
+            $$parsedSource["args"] = $$createField2_0($$parsedSource["args"]);
+        }
+        return new BuildRunInput($$parsedSource as Partial<BuildRunInput>);
+    }
+}
+
+export class BuildRunOutput {
+    "ok": boolean;
+    "process_id"?: string;
+    "error"?: string;
+
+    /** Creates a new BuildRunOutput instance. */
+    constructor($$source: Partial<BuildRunOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BuildRunOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BuildRunOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new BuildRunOutput($$parsedSource as Partial<BuildRunOutput>);
+    }
+}
+
 /**
  * ChatConversationDetail is the LoadConversation result — the
  * conversation metadata plus its full message list.
@@ -45,7 +155,7 @@ export class ChatConversationDetail {
      * Creates a new ChatConversationDetail instance from a string or object.
      */
     static createFrom($$source: any = {}): ChatConversationDetail {
-        const $$createField5_0 = $$createType1;
+        const $$createField5_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("messages" in $$parsedSource) {
             $$parsedSource["messages"] = $$createField5_0($$parsedSource["messages"]);
@@ -70,7 +180,7 @@ export class ChatConversationLoadOutput {
      * Creates a new ChatConversationLoadOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ChatConversationLoadOutput {
-        const $$createField0_0 = $$createType2;
+        const $$createField0_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("conversation" in $$parsedSource) {
             $$parsedSource["conversation"] = $$createField0_0($$parsedSource["conversation"]);
@@ -136,7 +246,7 @@ export class ChatConversationsListOutput {
      * Creates a new ChatConversationsListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ChatConversationsListOutput {
-        const $$createField0_0 = $$createType4;
+        const $$createField0_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("conversations" in $$parsedSource) {
             $$parsedSource["conversations"] = $$createField0_0($$parsedSource["conversations"]);
@@ -231,7 +341,7 @@ export class ChatModelsOutput {
      * Creates a new ChatModelsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ChatModelsOutput {
-        const $$createField0_0 = $$createType6;
+        const $$createField0_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("models" in $$parsedSource) {
             $$parsedSource["models"] = $$createField0_0($$parsedSource["models"]);
@@ -330,6 +440,492 @@ export class ChatSendOutput {
     }
 }
 
+export class DirEntry {
+    "name": string;
+    "is_dir": boolean;
+    "size_bytes"?: number;
+    "modified"?: string;
+
+    /** Creates a new DirEntry instance. */
+    constructor($$source: Partial<DirEntry> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("is_dir" in $$source)) {
+            this["is_dir"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DirEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DirEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DirEntry($$parsedSource as Partial<DirEntry>);
+    }
+}
+
+export class DirListInput {
+    "path": string;
+
+    /** Creates a new DirListInput instance. */
+    constructor($$source: Partial<DirListInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DirListInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DirListInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DirListInput($$parsedSource as Partial<DirListInput>);
+    }
+}
+
+export class DirListOutput {
+    "ok": boolean;
+    "path"?: string;
+    "entries"?: DirEntry[];
+    "error"?: string;
+
+    /** Creates a new DirListOutput instance. */
+    constructor($$source: Partial<DirListOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DirListOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DirListOutput {
+        const $$createField2_0 = $$createType9;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("entries" in $$parsedSource) {
+            $$parsedSource["entries"] = $$createField2_0($$parsedSource["entries"]);
+        }
+        return new DirListOutput($$parsedSource as Partial<DirListOutput>);
+    }
+}
+
+export class FileReadInput {
+    "path": string;
+
+    /** Creates a new FileReadInput instance. */
+    constructor($$source: Partial<FileReadInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FileReadInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FileReadInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FileReadInput($$parsedSource as Partial<FileReadInput>);
+    }
+}
+
+export class FileReadOutput {
+    "ok": boolean;
+    "path"?: string;
+    "content"?: string;
+    "error"?: string;
+
+    /** Creates a new FileReadOutput instance. */
+    constructor($$source: Partial<FileReadOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FileReadOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FileReadOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FileReadOutput($$parsedSource as Partial<FileReadOutput>);
+    }
+}
+
+export class FileWriteInput {
+    "path": string;
+    "content": string;
+
+    /** Creates a new FileWriteInput instance. */
+    constructor($$source: Partial<FileWriteInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("content" in $$source)) {
+            this["content"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FileWriteInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FileWriteInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FileWriteInput($$parsedSource as Partial<FileWriteInput>);
+    }
+}
+
+export class FileWriteOutput {
+    "ok": boolean;
+    "error"?: string;
+
+    /** Creates a new FileWriteOutput instance. */
+    constructor($$source: Partial<FileWriteOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FileWriteOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FileWriteOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FileWriteOutput($$parsedSource as Partial<FileWriteOutput>);
+    }
+}
+
+export class GitAddInput {
+    "path": string;
+    "files"?: string[];
+    "all"?: boolean;
+
+    /** Creates a new GitAddInput instance. */
+    constructor($$source: Partial<GitAddInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitAddInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitAddInput {
+        const $$createField1_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("files" in $$parsedSource) {
+            $$parsedSource["files"] = $$createField1_0($$parsedSource["files"]);
+        }
+        return new GitAddInput($$parsedSource as Partial<GitAddInput>);
+    }
+}
+
+export class GitAddOutput {
+    "ok": boolean;
+    "error"?: string;
+
+    /** Creates a new GitAddOutput instance. */
+    constructor($$source: Partial<GitAddOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitAddOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitAddOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitAddOutput($$parsedSource as Partial<GitAddOutput>);
+    }
+}
+
+export class GitBranchOutput {
+    "ok": boolean;
+    "branch"?: string;
+    "ahead"?: number;
+    "behind"?: number;
+    "error"?: string;
+
+    /** Creates a new GitBranchOutput instance. */
+    constructor($$source: Partial<GitBranchOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitBranchOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitBranchOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitBranchOutput($$parsedSource as Partial<GitBranchOutput>);
+    }
+}
+
+export class GitCommitInput {
+    "path": string;
+    "message": string;
+
+    /** Creates a new GitCommitInput instance. */
+    constructor($$source: Partial<GitCommitInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("message" in $$source)) {
+            this["message"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitCommitInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitCommitInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitCommitInput($$parsedSource as Partial<GitCommitInput>);
+    }
+}
+
+export class GitCommitOutput {
+    "ok": boolean;
+    "sha"?: string;
+    "error"?: string;
+
+    /** Creates a new GitCommitOutput instance. */
+    constructor($$source: Partial<GitCommitOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitCommitOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitCommitOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitCommitOutput($$parsedSource as Partial<GitCommitOutput>);
+    }
+}
+
+export class GitDiffInput {
+    "path": string;
+    "file": string;
+    "staged"?: boolean;
+
+    /** Creates a new GitDiffInput instance. */
+    constructor($$source: Partial<GitDiffInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("file" in $$source)) {
+            this["file"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitDiffInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitDiffInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitDiffInput($$parsedSource as Partial<GitDiffInput>);
+    }
+}
+
+export class GitDiffOutput {
+    "ok": boolean;
+    "diff"?: string;
+    "error"?: string;
+
+    /** Creates a new GitDiffOutput instance. */
+    constructor($$source: Partial<GitDiffOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitDiffOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitDiffOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitDiffOutput($$parsedSource as Partial<GitDiffOutput>);
+    }
+}
+
+export class GitEntry {
+    "path": string;
+    "index_status"?: string;
+    "worktree_status"?: string;
+    "staged"?: boolean;
+    "unstaged"?: boolean;
+    "untracked"?: boolean;
+
+    /** Creates a new GitEntry instance. */
+    constructor($$source: Partial<GitEntry> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitEntry($$parsedSource as Partial<GitEntry>);
+    }
+}
+
+export class GitPathInput {
+    "path": string;
+
+    /** Creates a new GitPathInput instance. */
+    constructor($$source: Partial<GitPathInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitPathInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitPathInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GitPathInput($$parsedSource as Partial<GitPathInput>);
+    }
+}
+
+export class GitStatusOutput {
+    "ok": boolean;
+    "entries"?: GitEntry[];
+    "error"?: string;
+
+    /** Creates a new GitStatusOutput instance. */
+    constructor($$source: Partial<GitStatusOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitStatusOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitStatusOutput {
+        const $$createField1_0 = $$createType11;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("entries" in $$parsedSource) {
+            $$parsedSource["entries"] = $$createField1_0($$parsedSource["entries"]);
+        }
+        return new GitStatusOutput($$parsedSource as Partial<GitStatusOutput>);
+    }
+}
+
+export class GitUnstageInput {
+    "path": string;
+    "files": string[];
+
+    /** Creates a new GitUnstageInput instance. */
+    constructor($$source: Partial<GitUnstageInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("files" in $$source)) {
+            this["files"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GitUnstageInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GitUnstageInput {
+        const $$createField1_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("files" in $$parsedSource) {
+            $$parsedSource["files"] = $$createField1_0($$parsedSource["files"]);
+        }
+        return new GitUnstageInput($$parsedSource as Partial<GitUnstageInput>);
+    }
+}
+
+export class LangDetectInput {
+    "path": string;
+
+    /** Creates a new LangDetectInput instance. */
+    constructor($$source: Partial<LangDetectInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LangDetectInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LangDetectInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LangDetectInput($$parsedSource as Partial<LangDetectInput>);
+    }
+}
+
+export class LangDetectOutput {
+    "ok": boolean;
+    "lang"?: string;
+    "error"?: string;
+
+    /** Creates a new LangDetectOutput instance. */
+    constructor($$source: Partial<LangDetectOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LangDetectOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LangDetectOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LangDetectOutput($$parsedSource as Partial<LangDetectOutput>);
+    }
+}
+
 export class P2PPeer {
     "id": string;
     "topic": string;
@@ -386,7 +982,7 @@ export class P2PPublishInput {
      * Creates a new P2PPublishInput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PPublishInput {
-        const $$createField3_0 = $$createType7;
+        const $$createField3_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("payload" in $$parsedSource) {
             $$parsedSource["payload"] = $$createField3_0($$parsedSource["payload"]);
@@ -436,12 +1032,296 @@ export class P2PStateOutput {
      * Creates a new P2PStateOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PStateOutput {
-        const $$createField2_0 = $$createType9;
+        const $$createField2_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("peers" in $$parsedSource) {
             $$parsedSource["peers"] = $$createField2_0($$parsedSource["peers"]);
         }
         return new P2PStateOutput($$parsedSource as Partial<P2PStateOutput>);
+    }
+}
+
+export class ProcessIDInput {
+    "id": string;
+
+    /** Creates a new ProcessIDInput instance. */
+    constructor($$source: Partial<ProcessIDInput> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProcessIDInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProcessIDInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ProcessIDInput($$parsedSource as Partial<ProcessIDInput>);
+    }
+}
+
+export class ProcessKillOutput {
+    "ok": boolean;
+    "error"?: string;
+
+    /** Creates a new ProcessKillOutput instance. */
+    constructor($$source: Partial<ProcessKillOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProcessKillOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProcessKillOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ProcessKillOutput($$parsedSource as Partial<ProcessKillOutput>);
+    }
+}
+
+export class ProcessListEntry {
+    "id": string;
+    "status"?: string;
+
+    /** Creates a new ProcessListEntry instance. */
+    constructor($$source: Partial<ProcessListEntry> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProcessListEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProcessListEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ProcessListEntry($$parsedSource as Partial<ProcessListEntry>);
+    }
+}
+
+export class ProcessListOutput {
+    "ok": boolean;
+    "processes"?: ProcessListEntry[];
+    "error"?: string;
+
+    /** Creates a new ProcessListOutput instance. */
+    constructor($$source: Partial<ProcessListOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProcessListOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProcessListOutput {
+        const $$createField1_0 = $$createType16;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("processes" in $$parsedSource) {
+            $$parsedSource["processes"] = $$createField1_0($$parsedSource["processes"]);
+        }
+        return new ProcessListOutput($$parsedSource as Partial<ProcessListOutput>);
+    }
+}
+
+export class ProcessOutputResult {
+    "ok": boolean;
+    "output"?: string;
+    "error"?: string;
+
+    /** Creates a new ProcessOutputResult instance. */
+    constructor($$source: Partial<ProcessOutputResult> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProcessOutputResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProcessOutputResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ProcessOutputResult($$parsedSource as Partial<ProcessOutputResult>);
+    }
+}
+
+export class RepoEntry {
+    "name": string;
+    "path": string;
+    "branch"?: string;
+    "modified"?: number;
+    "untracked"?: number;
+    "staged"?: number;
+    "ahead"?: number;
+    "behind"?: number;
+    "dirty"?: boolean;
+    "error"?: string;
+
+    /** Creates a new RepoEntry instance. */
+    constructor($$source: Partial<RepoEntry> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RepoEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RepoEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RepoEntry($$parsedSource as Partial<RepoEntry>);
+    }
+}
+
+export class ReposStatusInput {
+    "roots"?: string[];
+    "force"?: boolean;
+
+    /** Creates a new ReposStatusInput instance. */
+    constructor($$source: Partial<ReposStatusInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ReposStatusInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ReposStatusInput {
+        const $$createField0_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("roots" in $$parsedSource) {
+            $$parsedSource["roots"] = $$createField0_0($$parsedSource["roots"]);
+        }
+        return new ReposStatusInput($$parsedSource as Partial<ReposStatusInput>);
+    }
+}
+
+export class ReposStatusOutput {
+    "ok": boolean;
+    "repos"?: RepoEntry[];
+    "scanned"?: number;
+    "cache_hit"?: boolean;
+    "cache_age_s"?: number;
+    "error"?: string;
+
+    /** Creates a new ReposStatusOutput instance. */
+    constructor($$source: Partial<ReposStatusOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ReposStatusOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ReposStatusOutput {
+        const $$createField1_0 = $$createType18;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("repos" in $$parsedSource) {
+            $$parsedSource["repos"] = $$createField1_0($$parsedSource["repos"]);
+        }
+        return new ReposStatusOutput($$parsedSource as Partial<ReposStatusOutput>);
+    }
+}
+
+export class SearchInput {
+    "query": string;
+    "path": string;
+    "max_results"?: number;
+
+    /** Creates a new SearchInput instance. */
+    constructor($$source: Partial<SearchInput> = {}) {
+        if (!("query" in $$source)) {
+            this["query"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SearchInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SearchInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SearchInput($$parsedSource as Partial<SearchInput>);
+    }
+}
+
+export class SearchMatch {
+    "path": string;
+    "line": number;
+    "text": string;
+
+    /** Creates a new SearchMatch instance. */
+    constructor($$source: Partial<SearchMatch> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("line" in $$source)) {
+            this["line"] = 0;
+        }
+        if (!("text" in $$source)) {
+            this["text"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SearchMatch instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SearchMatch {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SearchMatch($$parsedSource as Partial<SearchMatch>);
+    }
+}
+
+export class SearchOutput {
+    "ok": boolean;
+    "matches"?: SearchMatch[];
+    "truncated"?: boolean;
+    "error"?: string;
+
+    /** Creates a new SearchOutput instance. */
+    constructor($$source: Partial<SearchOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SearchOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SearchOutput {
+        const $$createField1_0 = $$createType20;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("matches" in $$parsedSource) {
+            $$parsedSource["matches"] = $$createField1_0($$parsedSource["matches"]);
+        }
+        return new SearchOutput($$parsedSource as Partial<SearchOutput>);
     }
 }
 
@@ -494,7 +1374,7 @@ export class TIMStateOutput {
      * Creates a new TIMStateOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): TIMStateOutput {
-        const $$createField5_0 = $$createType10;
+        const $$createField5_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("command" in $$parsedSource) {
             $$parsedSource["command"] = $$createField5_0($$parsedSource["command"]);
@@ -520,7 +1400,7 @@ export class chatBridgeToolCall {
      * Creates a new chatBridgeToolCall instance from a string or object.
      */
     static createFrom($$source: any = {}): chatBridgeToolCall {
-        const $$createField1_0 = $$createType7;
+        const $$createField1_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("arguments" in $$parsedSource) {
             $$parsedSource["arguments"] = $$createField1_0($$parsedSource["arguments"]);
@@ -530,14 +1410,24 @@ export class chatBridgeToolCall {
 }
 
 // Private type creation functions
-const $$createType0 = ChatMessageOutput.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = ChatConversationDetail.createFrom;
-const $$createType3 = ChatConversationOutput.createFrom;
-const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = ChatModelOutput.createFrom;
-const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = $Create.Map($Create.Any, $Create.Any);
-const $$createType8 = P2PPeer.createFrom;
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = ChatMessageOutput.createFrom;
+const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = ChatConversationDetail.createFrom;
+const $$createType4 = ChatConversationOutput.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = ChatModelOutput.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = DirEntry.createFrom;
 const $$createType9 = $Create.Array($$createType8);
-const $$createType10 = $Create.Array($Create.Any);
+const $$createType10 = GitEntry.createFrom;
+const $$createType11 = $Create.Array($$createType10);
+const $$createType12 = $Create.Map($Create.Any, $Create.Any);
+const $$createType13 = P2PPeer.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = ProcessListEntry.createFrom;
+const $$createType16 = $Create.Array($$createType15);
+const $$createType17 = RepoEntry.createFrom;
+const $$createType18 = $Create.Array($$createType17);
+const $$createType19 = SearchMatch.createFrom;
+const $$createType20 = $Create.Array($$createType19);

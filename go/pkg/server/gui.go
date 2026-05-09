@@ -139,6 +139,11 @@ func (shell *GUIShell) Run(
 	app.RegisterService(application.NewService(&viBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&p2pBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&timBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&searchBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&fileBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&gitBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&buildBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&reposBridge{core: coreInstance}))
 
 	// Open the IDE window through window.Service so the manager tracks it
 	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)

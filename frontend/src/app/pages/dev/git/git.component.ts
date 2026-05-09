@@ -2,7 +2,7 @@
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridgeRaw } from '../../../lib/bridge';
+import * as GitBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/gitbridge';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 interface GitBranch {
@@ -24,7 +24,10 @@ interface GitEntry {
  * Git panel — Source Control. Single-repo per-file status / diff /
  * stage / commit. Surface over core/go-git's editor-time path.
  *
- * TODO(snider/wails): swap callBridgeRaw('git_*') for a gitBridge wails
+ * Migrated 2026-05-09 to typed GitBridge wails binding (was
+ * callBridgeRaw('git_*')). Same pattern as P2PBridge / SearchBridge.
+ * Old TODO marker kept for reference:
+ * was: TODO(snider/wails): swap callBridgeRaw('git_*') for a gitBridge wails
  * service.
  */
 @Component({
@@ -281,18 +284,18 @@ export class GitComponent implements OnInit {
   async refreshGit(): Promise<void> {
     const repo = this.workspace.root();
     const [branchRes, statusRes] = await Promise.all([
-      callBridgeRaw('git_branch', { path: repo }),
-      callBridgeRaw('git_status', { path: repo }),
+      GitBridge.Branch({ path: repo }),
+      GitBridge.Status({ path: repo }),
     ]);
     if (branchRes.ok) {
       this.gitBranch.set({
-        branch: branchRes['branch'] as string,
-        ahead: (branchRes['ahead'] as number) || 0,
-        behind: (branchRes['behind'] as number) || 0,
+        branch: branchRes.branch || '',
+        ahead: branchRes.ahead || 0,
+        behind: branchRes.behind || 0,
       });
     }
     if (statusRes.ok) {
-      this.gitEntries.set((statusRes['entries'] as GitEntry[]) || []);
+      this.gitEntries.set((statusRes.entries as GitEntry[]) || []);
     } else {
       this.gitMessage.set(statusRes.error || 'git status failed');
     }
@@ -303,9 +306,9 @@ export class GitComponent implements OnInit {
     const repo = this.workspace.root();
     const entry = this.gitEntries().find((e) => e.path === path);
     const staged = !!entry?.staged && !entry?.unstaged;
-    const res = await callBridgeRaw('git_diff', { path: repo, file: path, staged });
+    const res = await GitBridge.Diff({ path: repo, file: path, staged });
     if (res.ok) {
-      this.gitDiff.set((res['diff'] as string) || '(no diff — file may be untracked or unchanged)');
+      this.gitDiff.set(res.diff || '(no diff — file may be untracked or unchanged)');
     } else {
       this.gitDiff.set(`(error: ${res.error || 'git diff failed'})`);
     }
@@ -320,7 +323,7 @@ export class GitComponent implements OnInit {
   async stageFile(path: string, ev: Event): Promise<void> {
     ev.stopPropagation();
     this.gitBusy.set(true);
-    const res = await callBridgeRaw('git_add', { path: this.workspace.root(), files: [path] });
+    const res = await GitBridge.Add({ path: this.workspace.root(), files: [path] });
     this.gitBusy.set(false);
     if (!res.ok) {
       this.gitMessage.set(res.error || 'stage failed');
@@ -333,7 +336,7 @@ export class GitComponent implements OnInit {
   async unstageFile(path: string, ev: Event): Promise<void> {
     ev.stopPropagation();
     this.gitBusy.set(true);
-    const res = await callBridgeRaw('git_unstage', { path: this.workspace.root(), files: [path] });
+    const res = await GitBridge.Unstage({ path: this.workspace.root(), files: [path] });
     this.gitBusy.set(false);
     if (!res.ok) {
       this.gitMessage.set(res.error || 'unstage failed');
@@ -345,7 +348,7 @@ export class GitComponent implements OnInit {
 
   async stageAll(): Promise<void> {
     this.gitBusy.set(true);
-    const res = await callBridgeRaw('git_add', { path: this.workspace.root(), all: true });
+    const res = await GitBridge.Add({ path: this.workspace.root(), all: true });
     this.gitBusy.set(false);
     if (!res.ok) {
       this.gitMessage.set(res.error || 'stage all failed');
@@ -362,7 +365,7 @@ export class GitComponent implements OnInit {
       return;
     }
     this.gitBusy.set(true);
-    const res = await callBridgeRaw('git_commit', { path: this.workspace.root(), message: msg });
+    const res = await GitBridge.Commit({ path: this.workspace.root(), message: msg });
     this.gitBusy.set(false);
     if (!res.ok) {
       this.gitMessage.set(res.error || 'commit failed');

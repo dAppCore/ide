@@ -1,7 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { ElementRef, Injectable, computed, inject, signal } from '@angular/core';
-import { callBridgeRaw } from '../../lib/bridge';
+import * as FileBridge from '../../../../bindings/dappco.re/go/ide/pkg/server/filebridge';
 import { NotificationService } from '../notification.service';
 import { WorkspaceStore } from './workspace.store';
 
@@ -99,9 +99,9 @@ export class FileEditorStore {
   async loadDir(path: string): Promise<void> {
     this.explorerLoading.set(true);
     try {
-      const data = await callBridgeRaw('dir_list', { path });
-      if (data.ok && Array.isArray(data.value)) {
-        const entries = (data.value as DirEntry[])
+      const data = await FileBridge.Dir({ path });
+      if (data.ok && Array.isArray(data.entries)) {
+        const entries = (data.entries as DirEntry[])
           .slice()
           .sort((a, b) => {
             if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
@@ -147,15 +147,11 @@ export class FileEditorStore {
       return existing;
     }
     const [data, lang] = await Promise.all([
-      callBridgeRaw('file_read', { path }),
-      callBridgeRaw('lang_detect', { path }),
+      FileBridge.Read({ path }),
+      FileBridge.LangDetect({ path }),
     ]);
-    const content = data.ok
-      ? typeof data.value === 'string'
-        ? data.value
-        : JSON.stringify(data.value, null, 2)
-      : `(error: ${data.error || 'unknown'})`;
-    const language = ((lang as any).language as string) || 'plaintext';
+    const content = data.ok ? (data.content || '') : `(error: ${data.error || 'unknown'})`;
+    const language = lang.lang || 'plaintext';
     this.openFiles.update((files) => [...files, { path, content, language, dirty: false }]);
     const idx = this.openFiles().length - 1;
     this.activeFileIdx.set(idx);
@@ -251,7 +247,7 @@ export class FileEditorStore {
     if (idx < 0) return;
     const f = this.openFiles()[idx];
     if (!f) return;
-    const data = await callBridgeRaw('file_write', { path: f.path, content: value });
+    const data = await FileBridge.Write({ path: f.path, content: value });
     if (data.ok) {
       this.openFiles.update((files) =>
         files.map((file, i) =>
@@ -260,7 +256,7 @@ export class FileEditorStore {
       );
     } else {
       this.notify.notify({
-        message: `Save failed: ${(data as any).error || 'unknown'}`,
+        message: `Save failed: ${data.error || 'unknown'}`,
         variant: 'danger',
         icon: 'triangle-exclamation',
       });
@@ -277,12 +273,10 @@ export class FileEditorStore {
    * marking dirty — used by IdeComponent.loadUIState() at boot.
    */
   async restoreOpenFile(path: string): Promise<boolean> {
-    const data = await callBridgeRaw('file_read', { path });
+    const data = await FileBridge.Read({ path });
     if (!data.ok) return false;
-    const lang = await callBridgeRaw('lang_detect', { path });
-    const content = typeof data.value === 'string' ? data.value : JSON.stringify(data.value, null, 2);
-    const language = ((lang as any).language as string) || 'plaintext';
-    this.openFiles.update((arr) => [...arr, { path, content, language, dirty: false }]);
+    const lang = await FileBridge.LangDetect({ path });
+    this.openFiles.update((arr) => [...arr, { path, content: data.content || '', language: lang.lang || 'plaintext', dirty: false }]);
     return true;
   }
 

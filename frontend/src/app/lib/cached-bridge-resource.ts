@@ -14,8 +14,21 @@ export interface CachedBridgeEnvelope {
 }
 
 export interface CachedBridgeResourceOptions<T extends CachedBridgeEnvelope> {
-  /** Bridge tool name. */
-  tool: string;
+  /**
+   * Bridge tool name (callBridge HTTP path). Mutually exclusive with
+   * `loader`. Pass this when the panel hasn't been migrated to typed
+   * wails bindings yet — the helper builds the loader internally.
+   */
+  tool?: string;
+  /**
+   * Custom loader for typed wails-binding panels. Receives the merged
+   * params (force flag + extraParams output) and returns a Promise of
+   * the typed envelope. Mutually exclusive with `tool` — pass this
+   * when migrating off callBridge to a typed wails binding.
+   *
+   *   loader: ({ force, path }) => BuildBridge.Detect({ path, force }),
+   */
+  loader?: (params: Record<string, unknown> & { force: boolean }) => Promise<T>;
   /** Initial value before the first loader resolve (used as resource defaultValue). */
   emptyValue: T;
   /**
@@ -89,6 +102,17 @@ export function cachedBridgeResource<T extends CachedBridgeEnvelope>(
   const tick = signal(0);
   const forceFlag = opts.forceFlag ?? ((t: number) => t > 0);
 
+  // Caller picks between callBridge tool name (legacy) and a typed
+  // wails-binding loader. We synthesise the appropriate loader either
+  // way; downstream SWR / cache-pill logic doesn't care which path.
+  if (!opts.tool && !opts.loader) {
+    throw new Error('cachedBridgeResource: must supply either `tool` or `loader`');
+  }
+  const callLoader = opts.loader
+    ? opts.loader
+    : (params: Record<string, unknown> & { force: boolean }) =>
+        callBridge<T>(opts.tool as string, params);
+
   const raw = resource<T, Record<string, unknown> & { __tick: number }>({
     defaultValue: opts.emptyValue,
     // extraParams must be evaluated INSIDE params() so its signal reads
@@ -98,7 +122,7 @@ export function cachedBridgeResource<T extends CachedBridgeEnvelope>(
     params: () => ({ __tick: tick(), ...(opts.extraParams?.() ?? {}) }),
     loader: ({ params }) => {
       const { __tick: t, ...extra } = params;
-      return callBridge<T>(opts.tool, { force: forceFlag(t), ...extra });
+      return callLoader({ force: forceFlag(t), ...extra });
     },
   });
 

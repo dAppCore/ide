@@ -3,7 +3,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridgeRaw } from '../../../lib/bridge';
+import * as SearchBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/searchbridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -19,9 +19,9 @@ interface SearchMatch {
  * FileEditorStore so a click opens the file in the explorer's tabs and
  * jumps to the line.
  *
- * TODO(snider/wails): swap callBridgeRaw('workspace_search') for a
- * searchBridge wails service that streams matches as ripgrep yields
- * them.
+ * Migrated 2026-05-09 to typed SearchBridge wails binding (was
+ * callBridgeRaw('workspace_search')). Streaming as ripgrep yields
+ * matches is a future SSE lane.
  */
 @Component({
   selector: 'dev-search',
@@ -175,7 +175,7 @@ export class SearchComponent {
     this.searchLoading.set(true);
     this.searchError.set(null);
     try {
-      const data = await callBridgeRaw('workspace_search', {
+      const data = await SearchBridge.Search({
         query: q,
         path: this.workspace.root(),
         max_results: 200,
@@ -186,8 +186,8 @@ export class SearchComponent {
         this.searchTruncated.set(false);
         return;
       }
-      this.searchResults.set((data['matches'] as SearchMatch[]) || []);
-      this.searchTruncated.set(!!data['truncated']);
+      this.searchResults.set(data.matches || []);
+      this.searchTruncated.set(!!data.truncated);
     } finally {
       this.searchLoading.set(false);
     }

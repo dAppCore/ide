@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
+import * as BuildBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/buildbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
@@ -165,7 +165,8 @@ export class BuildComponent implements OnInit {
   // reactively, so changing the workspace root (via repos card click,
   // settings save, explorer navigation) auto-refetches detection.
   readonly detect = cachedBridgeResource<BuildDetected>({
-    tool: 'build_detect',
+    loader: ({ path, force }) =>
+      BuildBridge.Detect({ path: String(path ?? ''), force: !!force }) as unknown as Promise<BuildDetected>,
     emptyValue: { path: '', project_type: 'unknown', command: '', args: [], core_bin_on_path: false },
     isEmpty: (v) => v.project_type === 'unknown' && v.path === '',
     extraParams: () => ({ path: this.workspace.root() }),
@@ -210,15 +211,16 @@ export class BuildComponent implements OnInit {
     try {
       // build_run wraps process_start; the response carries the spawned
       // process id at the top level so we can poll its output stream.
-      const res = await callBridge<BuildRunResponse>('build_run', { path: this.workspace.root() });
-      const pid = res.id || res.process_id || res.value?.process_id;
+      const res = await BuildBridge.Run({ path: this.workspace.root() });
+      const pid = res.process_id;
       if (!pid) {
-        this.buildError.set('build kicked off but no process id returned');
+        this.buildError.set(res.error || 'build kicked off but no process id returned');
         this.buildRunning.set(false);
         return;
       }
       this.buildProcessId.set(pid);
-      this.buildLog.set(`$ ${res.build_command} ${(res.build_args || []).join(' ')}\n\n`);
+      const detected = this.detect.stable();
+      this.buildLog.set(`$ ${detected.command} ${(detected.args || []).join(' ')}\n\n`);
       if (this.buildPollTimer) clearInterval(this.buildPollTimer);
       this.buildPollTimer = setInterval(() => void this.pollBuildLog(), 500);
     } catch (e) {
@@ -231,7 +233,7 @@ export class BuildComponent implements OnInit {
     const pid = this.buildProcessId();
     if (!pid) return;
     try {
-      await callBridge('process_kill', { id: pid });
+      await BuildBridge.ProcessKill({ id: pid });
     } catch (e) {
       this.buildError.set('cancel failed: ' + (e instanceof Error ? e.message : String(e)));
     }
@@ -243,11 +245,11 @@ export class BuildComponent implements OnInit {
     const pid = this.buildProcessId();
     if (!pid) return;
     try {
-      const out = await callBridge<string>('process_output', { id: pid });
+      const out = await BuildBridge.ProcessOutput({ id: pid });
       const baseLog = this.buildLog().split('\n\n')[0] + '\n\n';
-      this.buildLog.set(baseLog + (out || ''));
-      const procs = await callBridge<{ id: string; status?: string }[]>('process_list', {});
-      const proc = procs?.find((p) => p.id === pid);
+      this.buildLog.set(baseLog + (out.output || ''));
+      const procs = await BuildBridge.ProcessList();
+      const proc = (procs.processes || []).find((p) => p.id === pid);
       if (!proc || proc.status === 'exited' || proc.status === 'killed') {
         this.stopPolling();
         this.buildRunning.set(false);

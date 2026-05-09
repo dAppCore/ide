@@ -4,6 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as ReposBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/reposbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { SettingsStore } from '../../../services/store/settings.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
@@ -36,8 +37,10 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
  * the workspace roots configured in /dev/settings (repos_status
  * surface over core/go-scm).
  *
- * TODO(snider/wails): swap callBridge('repos_status') for a reposBridge
- * wails service.
+ * Migrated 2026-05-09 to typed ReposBridge wails binding (was
+ * callBridge('repos_status') via cachedBridgeResource). Cache pill,
+ * SWR + force-refresh stay intact via the loader-based variant of
+ * cachedBridgeResource.
  */
 @Component({
   selector: 'dev-repos',
@@ -252,7 +255,11 @@ export class ReposComponent {
   private readonly t = inject(TranslateService);
 
   readonly scan = cachedBridgeResource<ReposResponse>({
-    tool: 'repos_status',
+    loader: ({ force, roots }) =>
+      ReposBridge.Status({
+        force: !!force,
+        roots: (roots as string[]) || [],
+      }) as unknown as Promise<ReposResponse>,
     emptyValue: EMPTY_REPOS,
     isEmpty: (v) => v.repos.length === 0,
     // Reactive — when settings.reposRoots changes, re-fetch with the
