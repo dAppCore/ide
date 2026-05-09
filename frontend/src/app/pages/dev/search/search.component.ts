@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, inject, signal } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridgeRaw } from '../../../lib/bridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -25,24 +26,25 @@ interface SearchMatch {
 @Component({
   selector: 'dev-search',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block search-block">
       <div class="block-header search-header">
-        <h2 class="block-title">Search</h2>
+        <h2 class="block-title">{{ 'search.title' | translate }}</h2>
         <span class="editorial subtitle">{{ workspace.root() }}</span>
       </div>
       <div class="search-toolbar">
         <input
           type="text"
           class="search-input"
-          placeholder="Search workspace…"
+          [placeholder]="'search.placeholder' | translate"
           [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)"
           (keydown.enter)="runSearch()"
         />
         <button class="btn btn-primary btn-sm" (click)="runSearch()" [disabled]="searchLoading()">
-          @if (searchLoading()) { <span>searching…</span> }
-          @else { <span>Search</span> }
+          @if (searchLoading()) { <span>{{ 'search.status.searching' | translate }}</span> }
+          @else { <span>{{ 'search.button.search' | translate }}</span> }
         </button>
       </div>
 
@@ -51,13 +53,13 @@ interface SearchMatch {
       }
 
       @if (searchResults().length === 0 && !searchError() && !searchLoading() && searchQuery()) {
-        <div class="search-empty">No matches</div>
+        <div class="search-empty">{{ 'search.empty.no-matches' | translate }}</div>
       }
 
       @if (searchResults().length > 0) {
         <div class="search-summary">
-          {{ searchResults().length }} match{{ searchResults().length === 1 ? '' : 'es' }}
-          @if (searchTruncated()) { <span>· truncated at 200 results</span> }
+          {{ searchResults().length }} {{ (searchResults().length === 1 ? 'search.label.match' : 'search.label.matches') | translate }}
+          @if (searchTruncated()) { <span>· {{ 'search.label.truncated' | translate }}</span> }
         </div>
         <div class="search-results">
           @for (m of searchResults(); track $index) {
@@ -154,6 +156,7 @@ export class SearchComponent {
   readonly workspace = inject(WorkspaceStore);
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
+  private readonly t = inject(TranslateService);
 
   readonly searchQuery = signal<string>('');
   readonly searchResults = signal<SearchMatch[]>([]);
@@ -178,7 +181,7 @@ export class SearchComponent {
         max_results: 200,
       });
       if (!data.ok) {
-        this.searchError.set(data.error || 'search failed');
+        this.searchError.set(data.error || this.t.instant('search.error.failed'));
         this.searchResults.set([]);
         this.searchTruncated.set(false);
         return;

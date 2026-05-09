@@ -1,7 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 
 interface ManagedProcess {
@@ -37,38 +38,38 @@ interface DaemonProcess {
 @Component({
   selector: 'dev-process',
   standalone: true,
-  imports: [SlicePipe],
+  imports: [SlicePipe, TranslatePipe],
   template: `
     <section class="block proc-block">
       <div class="block-header proc-header">
-        <h2 class="block-title">Processes</h2>
-        <span class="editorial subtitle">Managed processes + daemon registry · Surface over <code>core/go-process</code>.</span>
+        <h2 class="block-title">{{ 'process.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'process.subtitle.prefix' | translate }} <code>core/go-process</code>.</span>
       </div>
       <div class="proc-toolbar">
         <div class="proc-tabs">
           <button class="proc-tab" [class.active]="procTab() === 'managed'" (click)="procTab.set('managed')">
-            Managed <span class="proc-tab-count">{{ procManaged().length }}</span>
+            {{ 'process.tab.managed' | translate }} <span class="proc-tab-count">{{ procManaged().length }}</span>
           </button>
           <button class="proc-tab" [class.active]="procTab() === 'daemons'" (click)="procTab.set('daemons')">
-            Daemons <span class="proc-tab-count">{{ procDaemons().length }}</span>
+            {{ 'process.tab.daemons' | translate }} <span class="proc-tab-count">{{ procDaemons().length }}</span>
           </button>
         </div>
-        <button class="btn btn-ghost btn-sm" (click)="refreshProcesses()">Refresh</button>
+        <button class="btn btn-ghost btn-sm" (click)="refreshProcesses()">{{ 'process.button.refresh' | translate }}</button>
       </div>
 
       <div class="proc-body">
         @if (procTab() === 'managed') {
           @if (procManaged().length === 0) {
-            <div class="proc-empty">No managed processes. Use <code>process_start</code> from the bridge or run a build.</div>
+            <div class="proc-empty">{{ 'process.empty.managed-prefix' | translate }} <code>process_start</code> {{ 'process.empty.managed-suffix' | translate }}</div>
           } @else {
             <table class="proc-table">
               <thead>
                 <tr>
-                  <th>id</th>
-                  <th>pid</th>
-                  <th>command</th>
-                  <th>status</th>
-                  <th>started</th>
+                  <th>{{ 'process.column.id' | translate }}</th>
+                  <th>{{ 'process.column.pid' | translate }}</th>
+                  <th>{{ 'process.column.command' | translate }}</th>
+                  <th>{{ 'process.column.status' | translate }}</th>
+                  <th>{{ 'process.column.started' | translate }}</th>
                   <th class="proc-actions-col">·</th>
                 </tr>
               </thead>
@@ -82,10 +83,10 @@ interface DaemonProcess {
                     <td><code>{{ p.started_at | slice:11:19 }}</code></td>
                     <td class="proc-actions-col">
                       @if (p.status === 'running') {
-                        <button class="btn btn-ghost btn-sm" (click)="signalProcess(p.id, 'term'); $event.stopPropagation()" title="SIGTERM">⏹</button>
-                        <button class="btn btn-ghost btn-sm" (click)="signalProcess(p.id, 'kill'); $event.stopPropagation()" title="SIGKILL">×</button>
+                        <button class="btn btn-ghost btn-sm" (click)="signalProcess(p.id, 'term'); $event.stopPropagation()" [title]="'process.tooltip.sigterm' | translate">⏹</button>
+                        <button class="btn btn-ghost btn-sm" (click)="signalProcess(p.id, 'kill'); $event.stopPropagation()" [title]="'process.tooltip.sigkill' | translate">×</button>
                       } @else {
-                        <button class="btn btn-ghost btn-sm" (click)="removeProcess(p.id); $event.stopPropagation()" title="Remove">✕</button>
+                        <button class="btn btn-ghost btn-sm" (click)="removeProcess(p.id); $event.stopPropagation()" [title]="'process.tooltip.remove' | translate">✕</button>
                       }
                     </td>
                   </tr>
@@ -94,25 +95,25 @@ interface DaemonProcess {
             </table>
             @if (procSelected() && procOutput()) {
               <div class="proc-output">
-                <div class="proc-output-head">Output · {{ procSelected() }}</div>
+                <div class="proc-output-head">{{ 'process.label.output' | translate }} · {{ procSelected() }}</div>
                 <pre>{{ procOutput() }}</pre>
               </div>
             }
           }
         } @else {
           @if (procDaemons().length === 0) {
-            <div class="proc-empty">No daemons in <code>~/.core/daemons/</code>. Lethean services that register as daemons (lemma, vi, etc.) will appear here when running.</div>
+            <div class="proc-empty">{{ 'process.empty.daemons-prefix' | translate }} <code>~/.core/daemons/</code>. {{ 'process.empty.daemons-suffix' | translate }}</div>
           } @else {
             <table class="proc-table">
               <thead>
                 <tr>
-                  <th>code</th>
-                  <th>daemon</th>
-                  <th>pid</th>
-                  <th>alive</th>
-                  <th>health</th>
-                  <th>project</th>
-                  <th>started</th>
+                  <th>{{ 'process.column.code' | translate }}</th>
+                  <th>{{ 'process.column.daemon' | translate }}</th>
+                  <th>{{ 'process.column.pid' | translate }}</th>
+                  <th>{{ 'process.column.alive' | translate }}</th>
+                  <th>{{ 'process.column.health' | translate }}</th>
+                  <th>{{ 'process.column.project' | translate }}</th>
+                  <th>{{ 'process.column.started' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,7 +122,7 @@ interface DaemonProcess {
                     <td><code>{{ d.code }}</code></td>
                     <td><code>{{ d.daemon }}</code></td>
                     <td><code>{{ d.pid }}</code></td>
-                    <td><span class="proc-status" [class.sev-running]="d.alive" [class.sev-stopped]="!d.alive">{{ d.alive ? 'alive' : 'dead' }}</span></td>
+                    <td><span class="proc-status" [class.sev-running]="d.alive" [class.sev-stopped]="!d.alive">{{ (d.alive ? 'process.status.alive' : 'process.status.dead') | translate }}</span></td>
                     <td>@if (d.health) { <a [href]="d.health" target="_blank">{{ d.health }}</a> } @else { — }</td>
                     <td><code>{{ d.project || '—' }}</code></td>
                     <td><code>{{ d.started | slice:0:19 }}</code></td>
@@ -167,6 +168,8 @@ interface DaemonProcess {
   `],
 })
 export class ProcessComponent implements OnInit {
+  private readonly t = inject(TranslateService);
+
   readonly procManaged = signal<ManagedProcess[]>([]);
   readonly procDaemons = signal<DaemonProcess[]>([]);
   readonly procTab = signal<'managed' | 'daemons'>('managed');
@@ -192,12 +195,12 @@ export class ProcessComponent implements OnInit {
 
   async loadProcessOutput(id: string): Promise<void> {
     this.procSelected.set(id);
-    this.procOutput.set('Loading…');
+    this.procOutput.set(this.t.instant('process.status.loading'));
     try {
       const v = await callBridge<string>('process_output', { id });
       this.procOutput.set(typeof v === 'string' ? v : JSON.stringify(v, null, 2));
     } catch (e) {
-      this.procOutput.set('Error: ' + (e instanceof Error ? e.message : String(e)));
+      this.procOutput.set(this.t.instant('process.label.error') + ': ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 

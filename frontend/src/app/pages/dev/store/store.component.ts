@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -37,30 +38,31 @@ interface StoreFile {
 @Component({
   selector: 'dev-store',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block str-block">
       <div class="block-header str-header">
-        <h2 class="block-title">Store</h2>
-        <span class="editorial subtitle">SQLite KV store + ~/.core/* config files. The IDE's persistent layer surfaced.</span>
+        <h2 class="block-title">{{ 'store.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'store.subtitle' | translate }}</span>
       </div>
       <div class="str-toolbar">
         <div class="str-tabs">
           <button class="str-tab" [class.active]="storeTab() === 'groups'" (click)="storeTab.set('groups')">
-            KV Groups <span class="str-tab-count">{{ storeGroups().length }}</span>
+            {{ 'store.tab.groups' | translate }} <span class="str-tab-count">{{ storeGroups().length }}</span>
           </button>
           <button class="str-tab" [class.active]="storeTab() === 'files'" (click)="storeTab.set('files')">
-            Files <span class="str-tab-count">{{ storeFiles().length }}</span>
+            {{ 'store.tab.files' | translate }} <span class="str-tab-count">{{ storeFiles().length }}</span>
           </button>
         </div>
-        <button class="btn btn-ghost btn-sm" (click)="loadStore()">Refresh</button>
+        <button class="btn btn-ghost btn-sm" (click)="loadStore()">{{ 'store.button.refresh' | translate }}</button>
       </div>
 
       <div class="str-body">
         @if (storeTab() === 'groups') {
           <div class="str-side">
-            <h3>Namespaces ({{ storeGroups().length }})</h3>
+            <h3>{{ 'store.heading.namespaces' | translate }} ({{ storeGroups().length }})</h3>
             @if (storeGroups().length === 0) {
-              <div class="str-empty">No KV namespaces. Store may be empty.</div>
+              <div class="str-empty">{{ 'store.empty.no-namespaces' | translate }}</div>
             }
             @for (g of storeGroups(); track g.name) {
               <button class="str-row"
@@ -73,19 +75,19 @@ interface StoreFile {
           </div>
           <div class="str-main">
             @if (storeSelectedGroup(); as group) {
-              <div class="str-group-head">{{ group }} · {{ storeEntries().length }} entries</div>
+              <div class="str-group-head">{{ group }} · {{ storeEntries().length }} {{ 'store.label.entries' | translate }}</div>
               @if (storeEntries().length === 0) {
-                <div class="str-empty-pane">Empty namespace.</div>
+                <div class="str-empty-pane">{{ 'store.empty.namespace' | translate }}</div>
               } @else {
                 <table class="str-table">
-                  <thead><tr><th>key</th><th>value</th><th class="str-actions">·</th></tr></thead>
+                  <thead><tr><th>{{ 'store.column.key' | translate }}</th><th>{{ 'store.column.value' | translate }}</th><th class="str-actions">·</th></tr></thead>
                   <tbody>
                     @for (e of storeEntries(); track e.key) {
                       <tr>
                         <td><code>{{ e.key }}</code></td>
                         <td><code>{{ e.value.length > 200 ? e.value.slice(0, 200) + '…' : e.value }}</code></td>
                         <td class="str-actions">
-                          <button class="btn btn-ghost btn-sm" (click)="deleteStoreEntry(group, e.key)" title="Delete entry">×</button>
+                          <button class="btn btn-ghost btn-sm" (click)="deleteStoreEntry(group, e.key)" [title]="'store.tooltip.delete-entry' | translate">×</button>
                         </td>
                       </tr>
                     }
@@ -93,12 +95,12 @@ interface StoreFile {
                 </table>
               }
             } @else {
-              <div class="str-empty-pane">Pick a namespace to view its entries.</div>
+              <div class="str-empty-pane">{{ 'store.empty.pick-namespace' | translate }}</div>
             }
           </div>
         } @else {
           <div class="str-side str-files-side">
-            <h3>Config files ({{ storeFiles().length }})</h3>
+            <h3>{{ 'store.heading.config-files' | translate }} ({{ storeFiles().length }})</h3>
             @for (f of storeFiles(); track f.path) {
               <button class="str-row"
                       [class.active]="storeSelectedFile()?.path === f.path"
@@ -112,11 +114,11 @@ interface StoreFile {
             @if (storeSelectedFile(); as f) {
               <div class="str-file-head">
                 <code class="str-file-path">{{ f.path }}</code>
-                <button class="btn btn-ghost btn-sm" (click)="openStoreFileInEditor(f)">Open in editor</button>
+                <button class="btn btn-ghost btn-sm" (click)="openStoreFileInEditor(f)">{{ 'store.button.open-editor' | translate }}</button>
               </div>
               <pre class="str-file-preview">{{ f.preview }}</pre>
             } @else {
-              <div class="str-empty-pane">Pick a file to preview.</div>
+              <div class="str-empty-pane">{{ 'store.empty.pick-file' | translate }}</div>
             }
           </div>
         }
