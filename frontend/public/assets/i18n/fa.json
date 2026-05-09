@@ -165,5 +165,19 @@
   "git.tooltip.stage-all": "تمام تغییرات را مرحله بندی کنید",
   "git.button.stage-all": "مرحله همه",
   "git.tooltip.commit-staged": "ارتکاب مرحله ای",
-  "git.button.commit": "متعهد شوید"
+  "git.button.commit": "متعهد شوید",
+  "lint.title": "Lint",
+  "lint.subtitle.prefix": "تحلیل استاتیکی مبتنی بر الگو سطح روی",
+  "lint.tab.all": "همه",
+  "lint.tab.critical": "انتقادی",
+  "lint.tab.high": "بالا",
+  "lint.tab.medium": "متوسط",
+  "lint.tab.low": "کم",
+  "lint.tab.info": "اطلاعات",
+  "lint.status.scanning": "اسکن کردن...",
+  "lint.button.rerun": "دوباره اجرا کنید",
+  "lint.label.issues": "مسائل",
+  "lint.empty.no-issues": "مشکلی پیدا نشد.",
+  "lint.empty.no-filter-match.prefix": "هیچ مشکلی مطابقت ندارد",
+  "lint.empty.no-filter-match.suffix": "فیلتر"
 }

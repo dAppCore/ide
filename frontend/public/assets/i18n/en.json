@@ -165,5 +165,19 @@
   "git.tooltip.stage-all": "Stage all changes",
   "git.button.stage-all": "Stage all",
   "git.tooltip.commit-staged": "Commit staged",
-  "git.button.commit": "Commit"
+  "git.button.commit": "Commit",
+  "lint.title": "Lint",
+  "lint.subtitle.prefix": "Pattern-based static analysis. Surface over",
+  "lint.tab.all": "All",
+  "lint.tab.critical": "Critical",
+  "lint.tab.high": "High",
+  "lint.tab.medium": "Medium",
+  "lint.tab.low": "Low",
+  "lint.tab.info": "Info",
+  "lint.status.scanning": "scanning...",
+  "lint.button.rerun": "Re-run",
+  "lint.label.issues": "issues",
+  "lint.empty.no-issues": "No issues found.",
+  "lint.empty.no-filter-match.prefix": "No issues match the",
+  "lint.empty.no-filter-match.suffix": "filter."
 }

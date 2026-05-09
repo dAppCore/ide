@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -60,45 +61,46 @@ const ZERO_COUNTS: LintCounts = {
 @Component({
   selector: 'dev-lint',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block lint-block">
       <div class="block-header lint-header">
-        <h2 class="block-title">Lint</h2>
-        <span class="editorial subtitle">Pattern-based static analysis. Surface over <code>core/lint</code>.</span>
+        <h2 class="block-title">{{ 'lint.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'lint.subtitle.prefix' | translate }} <code>core/lint</code>.</span>
       </div>
       <div class="lint-toolbar">
         <div class="lint-filters">
           <button class="lint-chip" [class.active]="lintFilter() === 'all'" (click)="lintFilter.set('all')">
-            All <span class="lint-chip-count">{{ lintCounts().total }}</span>
+            {{ 'lint.tab.all' | translate }} <span class="lint-chip-count">{{ lintCounts().total }}</span>
           </button>
           @if (lintCounts().critical > 0) {
             <button class="lint-chip critical" [class.active]="lintFilter() === 'critical'" (click)="lintFilter.set('critical')">
-              Critical <span class="lint-chip-count">{{ lintCounts().critical }}</span>
+              {{ 'lint.tab.critical' | translate }} <span class="lint-chip-count">{{ lintCounts().critical }}</span>
             </button>
           }
           @if (lintCounts().high > 0) {
             <button class="lint-chip high" [class.active]="lintFilter() === 'high'" (click)="lintFilter.set('high')">
-              High <span class="lint-chip-count">{{ lintCounts().high }}</span>
+              {{ 'lint.tab.high' | translate }} <span class="lint-chip-count">{{ lintCounts().high }}</span>
             </button>
           }
           @if (lintCounts().medium > 0) {
             <button class="lint-chip medium" [class.active]="lintFilter() === 'medium'" (click)="lintFilter.set('medium')">
-              Medium <span class="lint-chip-count">{{ lintCounts().medium }}</span>
+              {{ 'lint.tab.medium' | translate }} <span class="lint-chip-count">{{ lintCounts().medium }}</span>
             </button>
           }
           @if (lintCounts().low > 0) {
             <button class="lint-chip low" [class.active]="lintFilter() === 'low'" (click)="lintFilter.set('low')">
-              Low <span class="lint-chip-count">{{ lintCounts().low }}</span>
+              {{ 'lint.tab.low' | translate }} <span class="lint-chip-count">{{ lintCounts().low }}</span>
             </button>
           }
           @if (lintCounts().info > 0) {
             <button class="lint-chip info" [class.active]="lintFilter() === 'info'" (click)="lintFilter.set('info')">
-              Info <span class="lint-chip-count">{{ lintCounts().info }}</span>
+              {{ 'lint.tab.info' | translate }} <span class="lint-chip-count">{{ lintCounts().info }}</span>
             </button>
           }
         </div>
         <button class="btn btn-primary btn-sm" (click)="runLint()" [disabled]="lintRunning()">
-          @if (lintRunning()) { <span>scanning…</span> } @else { <span>Re-run</span> }
+          @if (lintRunning()) { <span>{{ 'lint.status.scanning' | translate }}</span> } @else { <span>{{ 'lint.button.rerun' | translate }}</span> }
         </button>
       </div>
       @if (lintError(); as err) {
@@ -106,7 +108,7 @@ const ZERO_COUNTS: LintCounts = {
       }
       @if (lintBinary()) {
         <div class="lint-meta">
-          {{ lintCounts().total }} issues · {{ lintDurationMs() }}ms · <code>{{ lintBinary() }}</code>
+          {{ lintCounts().total }} {{ 'lint.label.issues' | translate }} · {{ lintDurationMs() }}ms · <code>{{ lintBinary() }}</code>
         </div>
       }
       <div class="lint-list">
@@ -124,9 +126,9 @@ const ZERO_COUNTS: LintCounts = {
         @if (lintVisible().length === 0 && !lintRunning() && !lintError()) {
           <div class="lint-empty">
             @if (lintCounts().total === 0) {
-              ✓ No issues found.
+              ✓ {{ 'lint.empty.no-issues' | translate }}
             } @else {
-              No issues match the {{ lintFilter() }} filter.
+              {{ 'lint.empty.no-filter-match.prefix' | translate }} {{ lintFilter() }} {{ 'lint.empty.no-filter-match.suffix' | translate }}
             }
           </div>
         }

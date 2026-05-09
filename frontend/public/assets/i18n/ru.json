@@ -165,5 +165,19 @@
   "git.tooltip.stage-all": "Стадия всех изменений",
   "git.button.stage-all": "Стадия все",
   "git.tooltip.commit-staged": "Фиксация поставлена",
-  "git.button.commit": "Зафиксировать"
+  "git.button.commit": "Зафиксировать",
+  "lint.title": "Lint",
+  "lint.subtitle.prefix": "Статический анализ на основе шаблонов. Поверхность над",
+  "lint.tab.all": "Все",
+  "lint.tab.critical": "Критический",
+  "lint.tab.high": "Высокий",
+  "lint.tab.medium": "Средний",
+  "lint.tab.low": "Низкий",
+  "lint.tab.info": "Информация",
+  "lint.status.scanning": "сканирование...",
+  "lint.button.rerun": "Повторный запуск",
+  "lint.label.issues": "проблемы",
+  "lint.empty.no-issues": "Проблем не обнаружено.",
+  "lint.empty.no-filter-match.prefix": "Нет проблем, соответствующих",
+  "lint.empty.no-filter-match.suffix": "фильтр."
 }

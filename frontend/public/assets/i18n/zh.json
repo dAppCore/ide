@@ -165,5 +165,19 @@
   "git.tooltip.stage-all": "暂存所有更改",
   "git.button.stage-all": "舞台全部",
   "git.tooltip.commit-staged": "提交上演",
-  "git.button.commit": "提交"
+  "git.button.commit": "提交",
+  "lint.title": "Lint",
+  "lint.subtitle.prefix": "基于模式的静态分析。表面超过",
+  "lint.tab.all": "全部",
+  "lint.tab.critical": "关键",
+  "lint.tab.high": "高",
+  "lint.tab.medium": "中等",
+  "lint.tab.low": "低",
+  "lint.tab.info": "信息",
+  "lint.status.scanning": "扫描...",
+  "lint.button.rerun": "重新运行",
+  "lint.label.issues": "问题",
+  "lint.empty.no-issues": "没有发现问题。",
+  "lint.empty.no-filter-match.prefix": "没有符合条件的问题",
+  "lint.empty.no-filter-match.suffix": "过滤器。"
 }

@@ -165,5 +165,19 @@
   "git.tooltip.stage-all": "Führen Sie alle Änderungen durch",
   "git.button.stage-all": "Alles inszenieren",
   "git.tooltip.commit-staged": "Commit inszeniert",
-  "git.button.commit": "Begehen"
+  "git.button.commit": "Begehen",
+  "lint.title": "Lint",
+  "lint.subtitle.prefix": "Musterbasierte statische Analyse. Oberfläche vorbei",
+  "lint.tab.all": "Alle",
+  "lint.tab.critical": "Kritisch",
+  "lint.tab.high": "Hoch",
+  "lint.tab.medium": "Mittel",
+  "lint.tab.low": "Niedrig",
+  "lint.tab.info": "Infos",
+  "lint.status.scanning": "Scannen...",
+  "lint.button.rerun": "Wiederholen",
+  "lint.label.issues": "Probleme",
+  "lint.empty.no-issues": "Keine Probleme gefunden.",
+  "lint.empty.no-filter-match.prefix": "Es liegen keine Probleme vor",
+  "lint.empty.no-filter-match.suffix": "Filter."
 }
