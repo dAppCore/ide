@@ -534,5 +534,11 @@
   "sessions.tooltip.stop-live": "Остановить live-опрос",
   "sessions.tooltip.dropped": "Старые события сброшены для удержания буфера на 500",
   "sessions.tooltip.open-in-editor.prefix": "Открыть",
-  "sessions.tooltip.open-in-editor.suffix": "в редакторе"
+  "sessions.tooltip.open-in-editor.suffix": "в редакторе",
+  "explorer.button.open-file": "Открыть файл…",
+  "explorer.button.open-folder": "Открыть папку…",
+  "explorer.tooltip.open-file": "Выбрать файл через диалог OS",
+  "explorer.tooltip.open-folder": "Выбрать папку workspace через диалог OS",
+  "explorer.dialog.open-file-title": "Открыть файл",
+  "explorer.dialog.open-folder-title": "Открыть папку"
 }

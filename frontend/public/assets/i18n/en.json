@@ -534,5 +534,11 @@
   "sessions.tooltip.stop-live": "Stop live polling",
   "sessions.tooltip.dropped": "Older events dropped to keep buffer at 500",
   "sessions.tooltip.open-in-editor.prefix": "Open",
-  "sessions.tooltip.open-in-editor.suffix": "in editor"
+  "sessions.tooltip.open-in-editor.suffix": "in editor",
+  "explorer.button.open-file": "Open File…",
+  "explorer.button.open-folder": "Open Folder…",
+  "explorer.tooltip.open-file": "Pick a file via the OS dialog",
+  "explorer.tooltip.open-folder": "Pick a workspace folder via the OS dialog",
+  "explorer.dialog.open-file-title": "Open File",
+  "explorer.dialog.open-folder-title": "Open Folder"
 }

@@ -534,5 +534,11 @@
   "sessions.tooltip.stop-live": "Live-Polling stoppen",
   "sessions.tooltip.dropped": "Ältere Ereignisse verworfen, um Puffer bei 500 zu halten",
   "sessions.tooltip.open-in-editor.prefix": "Öffne",
-  "sessions.tooltip.open-in-editor.suffix": "im Editor"
+  "sessions.tooltip.open-in-editor.suffix": "im Editor",
+  "explorer.button.open-file": "Datei öffnen…",
+  "explorer.button.open-folder": "Ordner öffnen…",
+  "explorer.tooltip.open-file": "Datei via OS-Dialog wählen",
+  "explorer.tooltip.open-folder": "Workspace-Ordner via OS-Dialog wählen",
+  "explorer.dialog.open-file-title": "Datei öffnen",
+  "explorer.dialog.open-folder-title": "Ordner öffnen"
 }

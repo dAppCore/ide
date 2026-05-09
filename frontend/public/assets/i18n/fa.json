@@ -534,5 +534,11 @@
   "sessions.tooltip.stop-live": "توقف پایش زنده",
   "sessions.tooltip.dropped": "رویدادهای قدیمی برای حفظ بافر در 500 حذف شد",
   "sessions.tooltip.open-in-editor.prefix": "بازکردن",
-  "sessions.tooltip.open-in-editor.suffix": "در ویرایشگر"
+  "sessions.tooltip.open-in-editor.suffix": "در ویرایشگر",
+  "explorer.button.open-file": "باز کردن فایل…",
+  "explorer.button.open-folder": "باز کردن پوشه…",
+  "explorer.tooltip.open-file": "انتخاب فایل از طریق دیالوگ OS",
+  "explorer.tooltip.open-folder": "انتخاب پوشه فضای کاری از طریق دیالوگ OS",
+  "explorer.dialog.open-file-title": "باز کردن فایل",
+  "explorer.dialog.open-folder-title": "باز کردن پوشه"
 }

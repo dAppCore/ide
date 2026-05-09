@@ -1,9 +1,19 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { callBridge } from '../../../lib/bridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { SettingsStore } from '../../../services/store/settings.store';
+import { WorkspaceStore } from '../../../services/store/workspace.store';
+
+interface DialogOpenFileResult {
+  paths?: string[];
+}
+
+interface DialogOpenDirectoryResult {
+  path?: string;
+}
 
 /**
  * Explorer panel — directory tree + tabs + Monaco editor. Backed by
@@ -35,6 +45,14 @@ import { SettingsStore } from '../../../services/store/settings.store';
               <span class="crumb-sep">/</span>
             }
           }
+        </div>
+        <div class="explorer-actions">
+          <button class="btn btn-ghost btn-sm" (click)="openFileDialog()" [title]="'explorer.tooltip.open-file' | translate">
+            {{ 'explorer.button.open-file' | translate }}
+          </button>
+          <button class="btn btn-ghost btn-sm" (click)="openFolderDialog()" [title]="'explorer.tooltip.open-folder' | translate">
+            {{ 'explorer.button.open-folder' | translate }}
+          </button>
         </div>
       </div>
 
@@ -135,7 +153,8 @@ import { SettingsStore } from '../../../services/store/settings.store';
   styles: [`
     /* Explorer — file tree + viewer */
     .explorer-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
-    .explorer-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .explorer-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .explorer-actions { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
     .breadcrumb {
       display: flex;
       align-items: center;
@@ -379,6 +398,8 @@ import { SettingsStore } from '../../../services/store/settings.store';
 export class ExplorerComponent implements OnInit, OnDestroy {
   readonly fileEditor = inject(FileEditorStore);
   readonly settings = inject(SettingsStore);
+  readonly workspace = inject(WorkspaceStore);
+  private readonly t = inject(TranslateService);
 
   @ViewChild('editorRef') editorRef?: ElementRef<HTMLElement>;
 
@@ -411,6 +432,46 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   onEditorChange(value: string): void { this.fileEditor.onEditorChange(value); }
   onEditorSave(value: string): void { void this.fileEditor.onEditorSave(value); }
   saveActiveTab(): void { this.fileEditor.saveActiveTab(); }
+
+  /**
+   * Native OS file picker. Wired through the gui dialog service
+   * (Wails 3 NSOpenPanel / IFileOpenDialog / GtkFileChooser). Empty
+   * paths array = user cancelled — silent return is the canonical signal.
+   */
+  async openFileDialog(): Promise<void> {
+    try {
+      const v = await callBridge<DialogOpenFileResult>('dialog_open_file', {
+        title: this.t.instant('explorer.dialog.open-file-title'),
+        directory: this.fileEditor.currentPath() || this.workspace.root(),
+        canChooseFiles: true,
+      });
+      const paths = v?.paths || [];
+      if (paths.length === 0) return;
+      await this.fileEditor.openFile(paths[0]);
+    } catch {
+      // Native dialog cancellation surfaces as an error on some
+      // platforms; treat as a no-op rather than spamming a toast.
+    }
+  }
+
+  /**
+   * Native OS folder picker. Sets the workspace root, which fans out
+   * via WorkspaceStore signals to the file tree, search, repos, etc.
+   */
+  async openFolderDialog(): Promise<void> {
+    try {
+      const v = await callBridge<DialogOpenDirectoryResult>('dialog_open_directory', {
+        title: this.t.instant('explorer.dialog.open-folder-title'),
+        directory: this.workspace.root(),
+      });
+      const path = v?.path || '';
+      if (!path) return;
+      this.workspace.setRoot(path);
+      void this.fileEditor.loadDir(path);
+    } catch {
+      // ignore — same cancellation shape as openFileDialog
+    }
+  }
 
   basename(path: string): string {
     const idx = path.lastIndexOf('/');

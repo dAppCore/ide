@@ -534,5 +534,11 @@
   "sessions.tooltip.stop-live": "停止实时轮询",
   "sessions.tooltip.dropped": "丢弃旧事件以将缓冲区保持在 500",
   "sessions.tooltip.open-in-editor.prefix": "打开",
-  "sessions.tooltip.open-in-editor.suffix": "在编辑器中"
+  "sessions.tooltip.open-in-editor.suffix": "在编辑器中",
+  "explorer.button.open-file": "打开文件…",
+  "explorer.button.open-folder": "打开文件夹…",
+  "explorer.tooltip.open-file": "通过 OS 对话框选择文件",
+  "explorer.tooltip.open-folder": "通过 OS 对话框选择工作区文件夹",
+  "explorer.dialog.open-file-title": "打开文件",
+  "explorer.dialog.open-folder-title": "打开文件夹"
 }
