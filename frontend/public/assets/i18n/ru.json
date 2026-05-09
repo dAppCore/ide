@@ -110,5 +110,15 @@
   "devops.column.name": "имя",
   "devops.column.description": "описание",
   "devops.column.size": "размер",
-  "devops.column.root": "корень"
+  "devops.column.root": "корень",
+  "explorer.title": "Проводник",
+  "explorer.tooltip.up-directory": "Вверх на один каталог",
+  "explorer.status.loading": "загрузка...",
+  "explorer.empty.directory": "(пусто)",
+  "explorer.tooltip.close-tab": "Закрыть вкладку",
+  "explorer.tooltip.close-all-tabs": "Закрыть все вкладки",
+  "explorer.button.all": "все",
+  "explorer.tooltip.unsaved-changes": "несохраненные изменения",
+  "explorer.tooltip.save": "Сохранить (Cmd+S)",
+  "explorer.button.save": "Сохранить"
 }

@@ -110,5 +110,15 @@
   "devops.column.name": "name",
   "devops.column.description": "description",
   "devops.column.size": "size",
-  "devops.column.root": "root"
+  "devops.column.root": "root",
+  "explorer.title": "Explorer",
+  "explorer.tooltip.up-directory": "Up one directory",
+  "explorer.status.loading": "loading...",
+  "explorer.empty.directory": "(empty)",
+  "explorer.tooltip.close-tab": "Close tab",
+  "explorer.tooltip.close-all-tabs": "Close all tabs",
+  "explorer.button.all": "all",
+  "explorer.tooltip.unsaved-changes": "unsaved changes",
+  "explorer.tooltip.save": "Save (Cmd+S)",
+  "explorer.button.save": "Save"
 }

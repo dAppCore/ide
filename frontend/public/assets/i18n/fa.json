@@ -110,5 +110,15 @@
   "devops.column.name": "نام",
   "devops.column.description": "توضیحات",
   "devops.column.size": "اندازه",
-  "devops.column.root": "ریشه"
+  "devops.column.root": "ریشه",
+  "explorer.title": "کاوشگر",
+  "explorer.tooltip.up-directory": "یک دایرکتوری بالا",
+  "explorer.status.loading": "در حال بارگذاری...",
+  "explorer.empty.directory": "(خالی)",
+  "explorer.tooltip.close-tab": "بستن برگه",
+  "explorer.tooltip.close-all-tabs": "همه برگه ها را ببندید",
+  "explorer.button.all": "همه",
+  "explorer.tooltip.unsaved-changes": "تغییرات ذخیره نشده",
+  "explorer.tooltip.save": "ذخیره (Cmd+S)",
+  "explorer.button.save": "ذخیره کنید"
 }

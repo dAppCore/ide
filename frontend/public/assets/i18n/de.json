@@ -110,5 +110,15 @@
   "devops.column.name": "Namen",
   "devops.column.description": "Beschreibung",
   "devops.column.size": "Größe",
-  "devops.column.root": "Wurzel"
+  "devops.column.root": "Wurzel",
+  "explorer.title": "Explorer",
+  "explorer.tooltip.up-directory": "Ein Verzeichnis nach oben",
+  "explorer.status.loading": "Laden...",
+  "explorer.empty.directory": "(leer)",
+  "explorer.tooltip.close-tab": "Tab schließen",
+  "explorer.tooltip.close-all-tabs": "Schließen Sie alle Tabs",
+  "explorer.button.all": "alle",
+  "explorer.tooltip.unsaved-changes": "nicht gespeicherte Änderungen",
+  "explorer.tooltip.save": "Speichern (Befehl+S)",
+  "explorer.button.save": "Speichern"
 }

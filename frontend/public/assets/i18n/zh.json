@@ -110,5 +110,15 @@
   "devops.column.name": "姓名",
   "devops.column.description": "描述",
   "devops.column.size": "尺寸",
-  "devops.column.root": "根"
+  "devops.column.root": "根",
+  "explorer.title": "资源管理器",
+  "explorer.tooltip.up-directory": "上一级目录",
+  "explorer.status.loading": "正在加载...",
+  "explorer.empty.directory": "（空）",
+  "explorer.tooltip.close-tab": "关闭选项卡",
+  "explorer.tooltip.close-all-tabs": "关闭所有选项卡",
+  "explorer.button.all": "全部",
+  "explorer.tooltip.unsaved-changes": "未保存的更改",
+  "explorer.tooltip.save": "保存（Cmd+S）",
+  "explorer.button.save": "保存"
 }

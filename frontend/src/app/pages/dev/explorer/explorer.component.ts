@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { SettingsStore } from '../../../services/store/settings.store';
 
@@ -21,11 +22,12 @@ import { SettingsStore } from '../../../services/store/settings.store';
 @Component({
   selector: 'dev-explorer',
   standalone: true,
+  imports: [TranslatePipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <section class="block explorer-block">
       <div class="block-header explorer-header">
-        <h2 class="block-title">Explorer</h2>
+        <h2 class="block-title">{{ 'explorer.title' | translate }}</h2>
         <div class="breadcrumb">
           @for (seg of fileEditor.pathSegments(); track seg.path; let isLast = $last) {
             <button class="crumb" (click)="loadDir(seg.path)">{{ seg.name }}</button>
@@ -39,12 +41,12 @@ import { SettingsStore } from '../../../services/store/settings.store';
       <div class="explorer-grid" [class.has-file]="fileEditor.openFiles().length > 0">
         <!-- Directory listing -->
         <div class="explorer-tree">
-          <div class="tree-row up" (click)="navigateUp()" title="Up one directory">
+          <div class="tree-row up" (click)="navigateUp()" [title]="'explorer.tooltip.up-directory' | translate">
             <span class="tree-icon">⤴</span>
             <span class="tree-name">..</span>
           </div>
           @if (fileEditor.explorerLoading()) {
-            <div class="tree-row loading">loading…</div>
+            <div class="tree-row loading">{{ 'explorer.status.loading' | translate }}</div>
           }
           @for (entry of fileEditor.dirEntries(); track entry.name) {
             <div
@@ -59,7 +61,7 @@ import { SettingsStore } from '../../../services/store/settings.store';
             </div>
           }
           @if (!fileEditor.explorerLoading() && fileEditor.dirEntries().length === 0) {
-            <div class="tree-row empty">(empty)</div>
+            <div class="tree-row empty">{{ 'explorer.empty.directory' | translate }}</div>
           }
         </div>
 
@@ -81,7 +83,7 @@ import { SettingsStore } from '../../../services/store/settings.store';
                     <span class="tab-dirty" [class.show]="f.dirty">●</span>
                     <button
                       class="tab-close"
-                      title="Close tab"
+                      [title]="'explorer.tooltip.close-tab' | translate"
                       (click)="closeTab(i, $event)"
                     >×</button>
                   </div>
@@ -89,10 +91,10 @@ import { SettingsStore } from '../../../services/store/settings.store';
               </div>
               <button
                 class="tab-close-all"
-                title="Close all tabs"
+                [title]="'explorer.tooltip.close-all-tabs' | translate"
                 (click)="closeAllTabs()"
                 [disabled]="fileEditor.openFiles().length === 0"
-              >× all</button>
+              >× {{ 'explorer.button.all' | translate }}</button>
             </div>
 
             <!-- Active file metadata -->
@@ -101,9 +103,9 @@ import { SettingsStore } from '../../../services/store/settings.store';
                 <span class="viewer-path">{{ f.path }}</span>
                 <span class="viewer-lang">{{ f.language }}</span>
                 @if (f.dirty) {
-                  <span class="viewer-dirty" title="unsaved changes">●</span>
+                  <span class="viewer-dirty" [title]="'explorer.tooltip.unsaved-changes' | translate">●</span>
                 }
-                <button class="viewer-save" (click)="saveActiveTab()" title="Save (⌘S)">Save</button>
+                <button class="viewer-save" (click)="saveActiveTab()" [title]="'explorer.tooltip.save' | translate">{{ 'explorer.button.save' | translate }}</button>
               </div>
 
               <!-- Monaco — single instance, switches model per tab -->
