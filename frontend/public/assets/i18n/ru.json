@@ -30,5 +30,17 @@
   "build.button.build": "Построить",
   "build.button.cancel": "Отмена",
   "build.status.building": "здание...",
-  "build.empty.start": "Нажмите «Создать», чтобы начать. Выходные потоки здесь."
+  "build.empty.start": "Нажмите «Создать», чтобы начать. Выходные потоки здесь.",
+  "cache.title": "Кэш",
+  "cache.subtitle.state": "Состояние приложения, поддерживаемого DuckDB, на",
+  "cache.subtitle.collections": "коллекции.",
+  "cache.button.refresh-status": "обновить статус",
+  "cache.empty.no-collections": "Кэшированных коллекций пока нет. Откройте /memory, /sessions, /ts или /php для заполнения.",
+  "cache.column.collection": "коллекция",
+  "cache.column.items": "предметы",
+  "cache.column.last-scan": "последнее сканирование",
+  "cache.column.age": "возраст",
+  "cache.column.actions": "действия",
+  "cache.tooltip.rescan-write": "Повторное сканирование + запись",
+  "cache.tooltip.drop-rows": "Удалить кэшированные строки"
 }

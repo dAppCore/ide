@@ -30,5 +30,17 @@
   "build.button.build": "ساخت",
   "build.button.cancel": "لغو کنید",
   "build.status.building": "ساختمان...",
-  "build.empty.start": "برای شروع روی Build کلیک کنید. خروجی جریان در اینجا."
+  "build.empty.start": "برای شروع روی Build کلیک کنید. خروجی جریان در اینجا.",
+  "cache.title": "حافظه پنهان",
+  "cache.subtitle.state": "وضعیت برنامه با پشتیبانی DuckDB در",
+  "cache.subtitle.collections": "مجموعه ها",
+  "cache.button.refresh-status": "وضعیت تازه کردن",
+  "cache.empty.no-collections": "هنوز مجموعه‌ای در حافظه پنهان وجود ندارد. /memory، /sessions، /ts یا /php را به seed باز کنید.",
+  "cache.column.collection": "مجموعه",
+  "cache.column.items": "موارد",
+  "cache.column.last-scan": "آخرین اسکن",
+  "cache.column.age": "سن",
+  "cache.column.actions": "اقدامات",
+  "cache.tooltip.rescan-write": "اسکن مجدد + نوشتن از طریق",
+  "cache.tooltip.drop-rows": "سطرهای کش را رها کنید"
 }

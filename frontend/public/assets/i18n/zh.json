@@ -30,5 +30,17 @@
   "build.button.build": "构建",
   "build.button.cancel": "取消",
   "build.status.building": "建筑...",
-  "build.empty.start": "单击构建开始。此处输出流。"
+  "build.empty.start": "单击构建开始。此处输出流。",
+  "cache.title": "缓存",
+  "cache.subtitle.state": "DuckDB 支持的应用程序状态为",
+  "cache.subtitle.collections": "收藏。",
+  "cache.button.refresh-status": "刷新状态",
+  "cache.empty.no-collections": "还没有缓存的集合。打开 /memory、/sessions、/ts 或 /php 进行种子。",
+  "cache.column.collection": "收藏",
+  "cache.column.items": "项目",
+  "cache.column.last-scan": "最后一次扫描",
+  "cache.column.age": "年龄",
+  "cache.column.actions": "行动",
+  "cache.tooltip.rescan-write": "重新扫描+直写",
+  "cache.tooltip.drop-rows": "删除缓存的行"
 }

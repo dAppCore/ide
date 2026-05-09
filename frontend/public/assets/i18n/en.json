@@ -30,5 +30,17 @@
   "build.button.build": "Build",
   "build.button.cancel": "Cancel",
   "build.status.building": "building...",
-  "build.empty.start": "Click Build to start. Output streams here."
+  "build.empty.start": "Click Build to start. Output streams here.",
+  "cache.title": "Cache",
+  "cache.subtitle.state": "DuckDB-backed app state at",
+  "cache.subtitle.collections": "collections.",
+  "cache.button.refresh-status": "refresh status",
+  "cache.empty.no-collections": "No cached collections yet. Open /memory, /sessions, /ts, or /php to seed.",
+  "cache.column.collection": "collection",
+  "cache.column.items": "items",
+  "cache.column.last-scan": "last scan",
+  "cache.column.age": "age",
+  "cache.column.actions": "actions",
+  "cache.tooltip.rescan-write": "Re-scan + write through",
+  "cache.tooltip.drop-rows": "Drop cached rows"
 }

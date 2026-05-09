@@ -30,5 +30,17 @@
   "build.button.build": "Bauen",
   "build.button.cancel": "Abbrechen",
   "build.status.building": "Gebäude...",
-  "build.empty.start": "Klicken Sie zum Starten auf „Erstellen“. Ausgabestreams hier."
+  "build.empty.start": "Klicken Sie zum Starten auf „Erstellen“. Ausgabestreams hier.",
+  "cache.title": "Cache",
+  "cache.subtitle.state": "Status der von DuckDB unterstützten App unter",
+  "cache.subtitle.collections": "Sammlungen.",
+  "cache.button.refresh-status": "Aktualisierungsstatus",
+  "cache.empty.no-collections": "Noch keine zwischengespeicherten Sammlungen. Öffnen Sie /memory, /sessions, /ts oder /php zum Seeding.",
+  "cache.column.collection": "Sammlung",
+  "cache.column.items": "Artikel",
+  "cache.column.last-scan": "letzter Scan",
+  "cache.column.age": "Alter",
+  "cache.column.actions": "Aktionen",
+  "cache.tooltip.rescan-write": "Erneut scannen + durchschreiben",
+  "cache.tooltip.drop-rows": "Zwischengespeicherte Zeilen löschen"
 }

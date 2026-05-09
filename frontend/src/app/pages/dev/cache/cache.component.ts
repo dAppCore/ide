@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { NotificationService } from '../../../services/notification.service';
 
@@ -25,21 +26,22 @@ interface CacheStatusResponse {
 @Component({
   selector: 'dev-cache',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block ch-block">
       <div class="block-header ch-header">
-        <h2 class="block-title">Cache</h2>
-        <span class="editorial subtitle">DuckDB-backed app state at <code>~/.core/ide-cache.db</code> · {{ cacheCollections().length }} collections.</span>
+        <h2 class="block-title">{{ 'cache.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'cache.subtitle.state' | translate }} <code>~/.core/ide-cache.db</code> · {{ cacheCollections().length }} {{ 'cache.subtitle.collections' | translate }}</span>
       </div>
       <div class="ch-toolbar">
-        <button class="btn btn-ghost btn-sm" (click)="loadCacheStatus()" [disabled]="cacheLoading()">↻ refresh status</button>
+        <button class="btn btn-ghost btn-sm" (click)="loadCacheStatus()" [disabled]="cacheLoading()">↻ {{ 'cache.button.refresh-status' | translate }}</button>
       </div>
       <div class="ch-body">
         @if (cacheCollections().length === 0 && !cacheLoading()) {
-          <div class="sess-empty">No cached collections yet. Open /memory, /sessions, /ts, or /php to seed.</div>
+          <div class="sess-empty">{{ 'cache.empty.no-collections' | translate }}</div>
         }
         <table class="ch-table">
-          <thead><tr><th>collection</th><th>items</th><th>last scan</th><th>age</th><th class="ch-actions-col">actions</th></tr></thead>
+          <thead><tr><th>{{ 'cache.column.collection' | translate }}</th><th>{{ 'cache.column.items' | translate }}</th><th>{{ 'cache.column.last-scan' | translate }}</th><th>{{ 'cache.column.age' | translate }}</th><th class="ch-actions-col">{{ 'cache.column.actions' | translate }}</th></tr></thead>
           <tbody>
             @for (c of cacheCollections(); track c.collection) {
               <tr [class.ch-stale]="c.age_seconds > 600">
@@ -52,8 +54,8 @@ interface CacheStatusResponse {
                   @else { {{ (c.age_seconds / 3600).toFixed(1) }}h }
                 </td>
                 <td class="ch-actions-col">
-                  <button class="btn btn-ghost btn-sm" (click)="refreshCacheCollection(c.collection)" title="Re-scan + write through">↻</button>
-                  <button class="btn btn-ghost btn-sm" (click)="clearCacheCollection(c.collection)" title="Drop cached rows">×</button>
+                  <button class="btn btn-ghost btn-sm" (click)="refreshCacheCollection(c.collection)" [title]="'cache.tooltip.rescan-write' | translate">↻</button>
+                  <button class="btn btn-ghost btn-sm" (click)="clearCacheCollection(c.collection)" [title]="'cache.tooltip.drop-rows' | translate">×</button>
                 </td>
               </tr>
             }
