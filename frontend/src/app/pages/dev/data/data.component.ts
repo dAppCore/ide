@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, OnInit, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 
 interface OrmTable {
@@ -26,33 +27,34 @@ interface OrmBackend {
 @Component({
   selector: 'dev-data',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block data-block">
       <div class="block-header data-header">
-        <h2 class="block-title">Data</h2>
-        <span class="editorial subtitle">Live ORM bridge over <code>core/orm</code> · Memium-backed v1 demo. Same dispatch path swaps to DuckDB / Postgres / Borg under the hood.</span>
+        <h2 class="block-title">{{ 'data.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'data.subtitle.prefix' | translate }} <code>core/orm</code> · {{ 'data.subtitle.suffix' | translate }}</span>
       </div>
       @if (ormError(); as err) {
         <div class="data-error">{{ err }}</div>
       }
       <div class="data-body">
         <div class="data-tables-side">
-          <h3>Backend</h3>
+          <h3>{{ 'data.section.backend' | translate }}</h3>
           <div class="data-backend-picker">
             <button class="data-backend-btn" [class.active]="ormBackend().current === 'memium'" (click)="switchOrmBackend('memium')">
               <span class="data-backend-name">Memium</span>
-              <span class="data-backend-meta">in-memory</span>
+              <span class="data-backend-meta">{{ 'data.backend.in-memory' | translate }}</span>
             </button>
             <button class="data-backend-btn" [class.active]="ormBackend().current === 'duckdb'" (click)="switchOrmBackend('duckdb')">
               <span class="data-backend-name">DuckDB</span>
-              <span class="data-backend-meta">persistent</span>
+              <span class="data-backend-meta">{{ 'data.backend.persistent' | translate }}</span>
             </button>
           </div>
           @if (ormBackend().current === 'duckdb' && ormBackend().duck_path) {
             <div class="data-backend-path"><code>{{ ormBackend().duck_path }}</code></div>
           }
 
-          <h3 style="margin-top: 16px;">Tables</h3>
+          <h3 style="margin-top: 16px;">{{ 'data.section.tables' | translate }}</h3>
           @for (t of ormTables(); track t.name) {
             <button class="data-table-row" [class.active]="ormSelectedTable() === t.name" (click)="selectOrmTable(t.name)">
               <span class="data-table-name">{{ t.name }}</span>
@@ -64,13 +66,13 @@ interface OrmBackend {
         <div class="data-main">
           @if (ormSelectedTable(); as tbl) {
             <div class="data-toolbar">
-              <span class="data-count">{{ ormCount() }} rows in <strong>{{ tbl }}</strong></span>
-              <button class="btn btn-ghost btn-sm" (click)="refreshOrmRows()" [disabled]="ormLoading()">Refresh</button>
+              <span class="data-count">{{ ormCount() }} {{ 'data.label.rows-in' | translate }} <strong>{{ tbl }}</strong></span>
+              <button class="btn btn-ghost btn-sm" (click)="refreshOrmRows()" [disabled]="ormLoading()">{{ 'data.button.refresh' | translate }}</button>
             </div>
 
             @if (ormTableSpec(tbl); as spec) {
               <div class="data-form">
-                <h4>Insert row</h4>
+                <h4>{{ 'data.section.insert-row' | translate }}</h4>
                 <div class="data-form-grid">
                   @for (f of spec.fields; track f) {
                     @if (f !== 'id' && f !== 'created_at') {
@@ -83,13 +85,13 @@ interface OrmBackend {
                     }
                   }
                 </div>
-                <button class="btn btn-primary btn-sm" (click)="saveOrmDraft()">+ Save</button>
-                <span class="data-hint">id auto-assigned · created_at auto-stamped</span>
+                <button class="btn btn-primary btn-sm" (click)="saveOrmDraft()">+ {{ 'data.button.save' | translate }}</button>
+                <span class="data-hint">{{ 'data.hint.auto-fields' | translate }}</span>
               </div>
             }
 
             @if (ormRows().length === 0) {
-              <div class="data-empty">No rows.</div>
+              <div class="data-empty">{{ 'data.empty.no-rows' | translate }}</div>
             } @else {
               <div class="data-grid-wrap">
                 <table class="data-grid">
@@ -108,7 +110,7 @@ interface OrmBackend {
                           <td><code>{{ r[f] }}</code></td>
                         }
                         <td class="data-actions-col">
-                          <button class="btn btn-ghost btn-sm" (click)="deleteOrmRow(r, tbl)" title="Delete row">×</button>
+                          <button class="btn btn-ghost btn-sm" (click)="deleteOrmRow(r, tbl)" [title]="'data.tooltip.delete-row' | translate">×</button>
                         </td>
                       </tr>
                     }
@@ -117,7 +119,7 @@ interface OrmBackend {
               </div>
             }
           } @else {
-            <div class="data-empty">No table selected.</div>
+            <div class="data-empty">{{ 'data.empty.no-table' | translate }}</div>
           }
         </div>
       </div>

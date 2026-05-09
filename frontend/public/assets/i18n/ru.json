@@ -76,5 +76,20 @@
   "control-panel.column.response": "Ответ",
   "control-panel.column.deploy": "Развертывание",
   "control-panel.section.activity": "Деятельность",
-  "control-panel.subtitle.last-hours": "последние несколько часов"
+  "control-panel.subtitle.last-hours": "последние несколько часов",
+  "data.title": "Данные",
+  "data.subtitle.prefix": "Живой мост ORM через",
+  "data.subtitle.suffix": "Демо-версия v1, поддерживаемая Memium. Тот же путь отправки переключается на DuckDB/Postgres/Borg под капотом.",
+  "data.section.backend": "Бэкэнд",
+  "data.backend.in-memory": "в памяти",
+  "data.backend.persistent": "настойчивый",
+  "data.section.tables": "Таблицы",
+  "data.button.refresh": "Обновить",
+  "data.section.insert-row": "Вставить строку",
+  "data.button.save": "Сохранить",
+  "data.hint.auto-fields": "идентификатор присваивается автоматически · созданный_ат ставится автоматически",
+  "data.empty.no-rows": "Никаких строк.",
+  "data.tooltip.delete-row": "Удалить строку",
+  "data.empty.no-table": "Таблица не выбрана.",
+  "data.label.rows-in": "строк в"
 }

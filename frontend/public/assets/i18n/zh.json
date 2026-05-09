@@ -76,5 +76,20 @@
   "control-panel.column.response": "回应",
   "control-panel.column.deploy": "部署",
   "control-panel.section.activity": "活动",
-  "control-panel.subtitle.last-hours": "最后几个小时"
+  "control-panel.subtitle.last-hours": "最后几个小时",
+  "data.title": "数据",
+  "data.subtitle.prefix": "实时 ORM 桥接",
+  "data.subtitle.suffix": "Memium 支持的 v1 演示。相同的调度路径在底层交换到 DuckDB / Postgres / Borg。",
+  "data.section.backend": "后端",
+  "data.backend.in-memory": "内存中",
+  "data.backend.persistent": "执着的",
+  "data.section.tables": "表格",
+  "data.button.refresh": "刷新",
+  "data.section.insert-row": "插入行",
+  "data.button.save": "保存",
+  "data.hint.auto-fields": "id 自动分配·created_at 自动标记",
+  "data.empty.no-rows": "没有行。",
+  "data.tooltip.delete-row": "删除行",
+  "data.empty.no-table": "未选择表格。",
+  "data.label.rows-in": "行于"
 }

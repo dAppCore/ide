@@ -76,5 +76,20 @@
   "control-panel.column.response": "پاسخ",
   "control-panel.column.deploy": "مستقر کنید",
   "control-panel.section.activity": "فعالیت",
-  "control-panel.subtitle.last-hours": "چند ساعت گذشته"
+  "control-panel.subtitle.last-hours": "چند ساعت گذشته",
+  "data.title": "داده ها",
+  "data.subtitle.prefix": "روی پل ORM زنده",
+  "data.subtitle.suffix": "نسخه ی نمایشی نسخه 1 با پشتیبانی Memium. همان مسیر اعزام به DuckDB / Postgres / Borg زیر کاپوت تغییر می کند.",
+  "data.section.backend": "Backend",
+  "data.backend.in-memory": "در حافظه",
+  "data.backend.persistent": "مداوم",
+  "data.section.tables": "جداول",
+  "data.button.refresh": "تازه کردن",
+  "data.section.insert-row": "درج ردیف",
+  "data.button.save": "ذخیره کنید",
+  "data.hint.auto-fields": "شناسه اختصاص داده شده به صورت خودکار · ایجاد شده_در مهر خودکار",
+  "data.empty.no-rows": "بدون ردیف",
+  "data.tooltip.delete-row": "حذف ردیف",
+  "data.empty.no-table": "جدولی انتخاب نشده است.",
+  "data.label.rows-in": "ردیف در"
 }

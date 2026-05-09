@@ -76,5 +76,20 @@
   "control-panel.column.response": "Response",
   "control-panel.column.deploy": "Deploy",
   "control-panel.section.activity": "Activity",
-  "control-panel.subtitle.last-hours": "last few hours"
+  "control-panel.subtitle.last-hours": "last few hours",
+  "data.title": "Data",
+  "data.subtitle.prefix": "Live ORM bridge over",
+  "data.subtitle.suffix": "Memium-backed v1 demo. Same dispatch path swaps to DuckDB / Postgres / Borg under the hood.",
+  "data.section.backend": "Backend",
+  "data.backend.in-memory": "in-memory",
+  "data.backend.persistent": "persistent",
+  "data.section.tables": "Tables",
+  "data.button.refresh": "Refresh",
+  "data.section.insert-row": "Insert row",
+  "data.button.save": "Save",
+  "data.hint.auto-fields": "id auto-assigned · created_at auto-stamped",
+  "data.empty.no-rows": "No rows.",
+  "data.tooltip.delete-row": "Delete row",
+  "data.empty.no-table": "No table selected.",
+  "data.label.rows-in": "rows in"
 }

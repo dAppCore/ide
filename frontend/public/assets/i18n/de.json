@@ -76,5 +76,20 @@
   "control-panel.column.response": "Antwort",
   "control-panel.column.deploy": "Bereitstellen",
   "control-panel.section.activity": "Aktivität",
-  "control-panel.subtitle.last-hours": "letzten paar Stunden"
+  "control-panel.subtitle.last-hours": "letzten paar Stunden",
+  "data.title": "Daten",
+  "data.subtitle.prefix": "Live-ORM-Brücke vorbei",
+  "data.subtitle.suffix": "Von Memium unterstützte v1-Demo. Unter der Haube wechselt der gleiche Versandpfad zu DuckDB / Postgres / Borg.",
+  "data.section.backend": "Backend",
+  "data.backend.in-memory": "im Speicher",
+  "data.backend.persistent": "hartnäckig",
+  "data.section.tables": "Tische",
+  "data.button.refresh": "Aktualisieren",
+  "data.section.insert-row": "Zeile einfügen",
+  "data.button.save": "Speichern",
+  "data.hint.auto-fields": "ID automatisch zugewiesen · erstellt_at automatisch gestempelt",
+  "data.empty.no-rows": "Keine Reihen.",
+  "data.tooltip.delete-row": "Zeile löschen",
+  "data.empty.no-table": "Keine Tabelle ausgewählt.",
+  "data.label.rows-in": "Zeilen in"
 }
