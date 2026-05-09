@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
@@ -55,23 +56,23 @@ type Segment = { kind: 'text' | 'path'; value: string };
 @Component({
   selector: 'dev-mantis',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block mn-block">
       <div class="block-header mn-header">
         <h2 class="block-title">
-          Tickets
+          {{ 'mantis.title' | translate }}
           @if (mantisCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="mantisCacheAge() > 60" (click)="loadMantisIssues(true)" title="Click to force re-fetch">● cached {{ formatCacheAge(mantisCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="mantisCacheAge() > 60" (click)="loadMantisIssues(true)" [title]="'mantis.tooltip.force-refetch' | translate">● {{ 'mantis.cache.cached' | translate }} {{ formatCacheAge(mantisCacheAge()) }}</span>
           } @else if (mantisIssues().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just fetched">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'mantis.tooltip.just-fetched' | translate">● {{ 'mantis.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">tasks.lthn.sh · {{ mantisIssues().length }} issues loaded.</span>
+        <span class="editorial subtitle">tasks.lthn.sh · {{ mantisIssues().length }} {{ 'mantis.label.issues-loaded' | translate }}</span>
       </div>
       @if (mantisRecent().length > 0) {
         <div class="mn-recent-strip">
-          <div class="mn-recent-label">recent · last 7 days</div>
+          <div class="mn-recent-label">{{ 'mantis.section.recent' | translate }}</div>
           <div class="mn-recent-row">
             @for (i of mantisRecent(); track i.id) {
               <button class="mn-recent-pill" (click)="openMantisIssue(i.id)" [title]="'#' + i.id + ': ' + i.summary">
@@ -86,16 +87,16 @@ type Segment = { kind: 'text' | 'path'; value: string };
       }
       <div class="mn-toolbar">
         <div class="mn-status-pills">
-          <button class="mn-status-pill" [class.active]="mantisStatusFilter() === ''" (click)="mantisStatusFilter.set('')">all <span class="mn-pill-count">{{ mantisIssues().length }}</span></button>
+          <button class="mn-status-pill" [class.active]="mantisStatusFilter() === ''" (click)="mantisStatusFilter.set('')">{{ 'mantis.tab.all' | translate }} <span class="mn-pill-count">{{ mantisIssues().length }}</span></button>
           @for (s of mantisStatuses(); track s.status) {
             <button class="mn-status-pill" [class.active]="mantisStatusFilter() === s.status" (click)="mantisStatusFilter.set(s.status)">{{ s.status }} <span class="mn-pill-count">{{ s.count }}</span></button>
           }
         </div>
-        <button class="btn btn-ghost btn-sm" (click)="loadMantisIssues()" [disabled]="mantisLoading()">↻ refresh</button>
+        <button class="btn btn-ghost btn-sm" (click)="loadMantisIssues()" [disabled]="mantisLoading()">↻ {{ 'mantis.button.refresh' | translate }}</button>
       </div>
       <div class="mn-body">
         <aside class="mn-list">
-          <div class="sess-list-title">Issues ({{ mantisVisible().length }})</div>
+          <div class="sess-list-title">{{ 'mantis.section.issues' | translate }} ({{ mantisVisible().length }})</div>
           @if (scan.firstLoad()) {
             <dev-skeleton kind="rows" [count]="8" />
           }
@@ -116,37 +117,37 @@ type Segment = { kind: 'text' | 'path'; value: string };
         </aside>
         <main class="mn-detail">
           @if (!mantisSelected() && !mantisInspectLoading()) {
-            <div class="sess-empty">Pick an issue to view.</div>
+            <div class="sess-empty">{{ 'mantis.empty.pick-issue' | translate }}</div>
           }
           @if (mantisInspectLoading()) {
-            <div class="sess-empty">Loading…</div>
+            <div class="sess-empty">{{ 'mantis.status.loading' | translate }}</div>
           }
           @if (mantisSelected(); as sel) {
             <div class="mn-detail-head">
               <code class="mn-id mn-id-large">#{{ sel.id }}</code>
               <span class="mn-status" [attr.data-status]="sel.status">{{ sel.status }}</span>
-              <a class="mn-web-link" [href]="sel.web_url" target="_blank">↗ open in browser</a>
+              <a class="mn-web-link" [href]="sel.web_url" target="_blank">↗ {{ 'mantis.button.open-browser' | translate }}</a>
             </div>
             <h3 class="mn-detail-summary">{{ sel.summary }}</h3>
             <div class="mn-detail-meta">
-              project <code>{{ sel.project }}</code>
-              · reporter <code>{{ sel.reporter }}</code>
-              @if (sel.handler) { · handler <code>{{ sel.handler }}</code> }
-              @if (sel.severity) { · severity <code>{{ sel.severity }}</code> }
-              @if (sel.created) { · created {{ sel.created.slice(0, 10) }} }
+              {{ 'mantis.label.project' | translate }} <code>{{ sel.project }}</code>
+              · {{ 'mantis.label.reporter' | translate }} <code>{{ sel.reporter }}</code>
+              @if (sel.handler) { · {{ 'mantis.label.handler' | translate }} <code>{{ sel.handler }}</code> }
+              @if (sel.severity) { · {{ 'mantis.label.severity' | translate }} <code>{{ sel.severity }}</code> }
+              @if (sel.created) { · {{ 'mantis.label.created' | translate }} {{ sel.created.slice(0, 10) }} }
             </div>
             @if (sel.description) {
-              <div class="mn-section-title">Description</div>
+              <div class="mn-section-title">{{ 'mantis.section.description' | translate }}</div>
               <pre class="mn-description">@for (seg of mantisSegments(sel.description); track $index) {
                 @if (seg.kind === 'path') {
-                  <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="'Open ' + seg.value">{{ seg.value }}</a>
+                  <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="('mantis.tooltip.open-path' | translate) + ' ' + seg.value">{{ seg.value }}</a>
                 } @else {
                   <span>{{ seg.value }}</span>
                 }
               }</pre>
             }
             @if (sel.notes && sel.notes.length > 0) {
-              <div class="mn-section-title">Notes ({{ sel.notes.length }})</div>
+              <div class="mn-section-title">{{ 'mantis.section.notes' | translate }} ({{ sel.notes.length }})</div>
               @for (n of sel.notes; track n.id) {
                 <div class="mn-note">
                   <div class="mn-note-head">
@@ -155,7 +156,7 @@ type Segment = { kind: 'text' | 'path'; value: string };
                   </div>
                   <pre class="mn-note-text">@for (seg of mantisSegments(n.text); track $index) {
                     @if (seg.kind === 'path') {
-                      <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="'Open ' + seg.value">{{ seg.value }}</a>
+                      <a class="mn-path-link" (click)="openMantisPath(seg.value)" [title]="('mantis.tooltip.open-path' | translate) + ' ' + seg.value">{{ seg.value }}</a>
                     } @else {
                       <span>{{ seg.value }}</span>
                     }
