@@ -15,5 +15,7 @@
   "Developer": "Разработчик",
   "Networking": "Сеть",
   "Settings": "Настройки",
-  "Documentation": "Документация"
+  "Documentation": "Документация",
+
+  "settings.appearance.language": "Язык"
 }

@@ -15,5 +15,7 @@
   "Developer": "توسعه‌دهنده",
   "Networking": "شبکه",
   "Settings": "تنظیمات",
-  "Documentation": "مستندات"
+  "Documentation": "مستندات",
+
+  "settings.appearance.language": "زبان"
 }

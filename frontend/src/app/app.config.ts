@@ -4,7 +4,6 @@ import {
   ApplicationConfig,
   importProvidersFrom,
   inject,
-  isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
@@ -47,13 +46,12 @@ export const appConfig: ApplicationConfig = {
       // contribute additional panels later via ManifestService.register().
       inject(ManifestService).seed(builtinPanels);
     }),
-    ...(isDevMode()
-      ? [
-          provideTranslateHttpLoader({
-            prefix: './assets/i18n/',
-            suffix: '.json',
-          }),
-        ]
-      : []),
+    // i18n loader — pulls /assets/i18n/{lang}.json on demand. Used in
+    // both dev and production until the canonical lthn-core/go-i18n
+    // Wails binding ships (then I18nService can swap loaders).
+    provideTranslateHttpLoader({
+      prefix: './assets/i18n/',
+      suffix: '.json',
+    }),
   ],
 };

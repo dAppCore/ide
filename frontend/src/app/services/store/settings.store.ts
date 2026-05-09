@@ -39,6 +39,12 @@ export interface CoreSettings {
    * stock WA for taste exploration.
    */
   theme: ThemeName;
+
+  /**
+   * UI language code. Drives ngx-translate's active locale (matched
+   * against /assets/i18n/{lang}.json). Default 'en'.
+   */
+  language: string;
 }
 
 export const DEFAULT_SETTINGS: CoreSettings = {
@@ -56,6 +62,7 @@ export const DEFAULT_SETTINGS: CoreSettings = {
   marketplaceEndpoint: '',
   terminalSshPort: 9876,
   theme: 'lethean',
+  language: 'en',
 };
 
 /**

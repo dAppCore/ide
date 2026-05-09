@@ -15,5 +15,7 @@
   "Developer": "Developer",
   "Networking": "Networking",
   "Settings": "Settings",
-  "Documentation": "Documentation"
+  "Documentation": "Documentation",
+
+  "settings.appearance.language": "Language"
 }

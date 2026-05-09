@@ -15,5 +15,7 @@
   "Developer": "开发者",
   "Networking": "网络",
   "Settings": "设置",
-  "Documentation": "文档"
+  "Documentation": "文档",
+
+  "settings.appearance.language": "语言"
 }

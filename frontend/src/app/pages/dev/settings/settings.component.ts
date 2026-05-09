@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { SettingsStore, CoreSettings } from '../../../services/store/settings.store';
 
 /**
@@ -16,6 +17,7 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
 @Component({
   selector: 'dev-settings',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block settings-block">
       <div class="block-header settings-header">
@@ -50,6 +52,18 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
               <option value="shoelace">Shoelace (classic)</option>
               <option value="premium">Premium Pro (cyan)</option>
               <option value="matter">Matter Pro (purple)</option>
+            </select>
+          </label>
+          <label class="settings-row">
+            <span class="settings-label">{{ 'settings.appearance.language' | translate }}</span>
+            <select class="settings-input"
+                    [value]="store.settings().language"
+                    (change)="updateStr('language', $any($event.target).value)">
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="ru">Русский</option>
+              <option value="zh">中文</option>
+              <option value="fa">فارسی</option>
             </select>
           </label>
         </div>

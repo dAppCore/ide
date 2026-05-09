@@ -9,6 +9,7 @@ import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/st
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
 import { WorkspaceStore } from '../../services/store/workspace.store';
 import { ThemeService } from '../../services/theme.service';
+import { I18nService } from '../../services/i18n.service';
 import { FileEditorStore } from '../../services/store/file-editor.store';
 
 
@@ -353,6 +354,9 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly workspaceStore = inject(WorkspaceStore);
   // Booted for its constructor effect — applies wa-theme-* class to <html>.
   private readonly themeService = inject(ThemeService);
+  // Booted for its constructor effect — bridges SettingsStore.language
+  // → ngx-translate.use().
+  private readonly i18n = inject(I18nService);
   private readonly fileEditor = inject(FileEditorStore);
 
   // Active sidebar route id — drives the sidebar [class.active] highlight
