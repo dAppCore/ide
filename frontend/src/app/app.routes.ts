@@ -5,35 +5,6 @@ import { BlankFrame } from '../frame/blank.frame';
 import { ApplicationFrame } from '../frame/application.frame';
 import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
-import { WelcomeComponent } from './pages/dev/welcome/welcome.component';
-import { BuildComponent } from './pages/dev/build/build.component';
-import { CacheComponent } from './pages/dev/cache/cache.component';
-import { LintComponent } from './pages/dev/lint/lint.component';
-import { SessionsComponent } from './pages/dev/sessions/sessions.component';
-import { StreamComponent } from './pages/dev/stream/stream.component';
-import { ContainersComponent } from './pages/dev/containers/containers.component';
-import { UpdatesComponent } from './pages/dev/updates/updates.component';
-import { MemoryComponent } from './pages/dev/memory/memory.component';
-import { MantisComponent } from './pages/dev/mantis/mantis.component';
-import { TsComponent } from './pages/dev/ts/ts.component';
-import { PhpComponent } from './pages/dev/php/php.component';
-import { DevopsComponent } from './pages/dev/devops/devops.component';
-import { ProcessComponent } from './pages/dev/process/process.component';
-import { TerminalComponent } from './pages/dev/terminal/terminal.component';
-import { LocalesComponent } from './pages/dev/locales/locales.component';
-import { StoreComponent } from './pages/dev/store/store.component';
-import { DataComponent } from './pages/dev/data/data.component';
-import { ControlPanelComponent } from './pages/dev/control-panel/control-panel.component';
-import { GitComponent } from './pages/dev/git/git.component';
-import { SearchComponent } from './pages/dev/search/search.component';
-import { ExplorerComponent } from './pages/dev/explorer/explorer.component';
-import { ForgeComponent } from './pages/dev/forge/forge.component';
-import { TenantComponent } from './pages/dev/tenant/tenant.component';
-import { SettingsComponent } from './pages/dev/settings/settings.component';
-import { PluginComponent } from './pages/dev/plugin/plugin.component';
-import { ReposComponent } from './pages/dev/repos/repos.component';
-import { MarketplaceComponent } from './pages/dev/marketplace/marketplace.component';
-import { SiteComponent } from './pages/dev/site/site.component';
 
 /**
  * Routing pattern: blank top-level root → frames stub on as children →
@@ -62,6 +33,11 @@ import { SiteComponent } from './pages/dev/site/site.component';
  *
  * Persona-driven onboarding (project_core_agent_orchestration_doorway.md)
  * picks which frame to mount based on the user's calibration answers.
+ *
+ * All /dev/<panel> children are lazy-loaded via loadComponent so each
+ * panel's TS + CSS only ships when the user navigates to it. The shell
+ * (IdeComponent + sidebar + status bar + chat) is the only initial-bundle
+ * cost; ~25 lazy chunks stream in on demand.
  */
 export const routes: Routes = [
   {
@@ -79,45 +55,45 @@ export const routes: Routes = [
         component: IdeComponent,
         children: [
           { path: '', redirectTo: 'control-panel', pathMatch: 'full' },
-          { path: 'welcome', component: WelcomeComponent },
-          { path: 'build', component: BuildComponent },
-          { path: 'cache', component: CacheComponent },
-          { path: 'lint', component: LintComponent },
-          { path: 'sessions', component: SessionsComponent },
-          { path: 'stream', component: StreamComponent },
-          { path: 'containers', component: ContainersComponent },
-          { path: 'updates', component: UpdatesComponent },
-          { path: 'memory', component: MemoryComponent },
-          { path: 'mantis', component: MantisComponent },
-          { path: 'ts', component: TsComponent },
-          { path: 'php', component: PhpComponent },
-          { path: 'devops', component: DevopsComponent },
-          { path: 'process', component: ProcessComponent },
-          { path: 'terminal', component: TerminalComponent },
-          { path: 'locales', component: LocalesComponent },
-          { path: 'store', component: StoreComponent },
-          { path: 'data', component: DataComponent },
+          { path: 'welcome',       loadComponent: () => import('./pages/dev/welcome/welcome.component').then(m => m.WelcomeComponent) },
+          { path: 'build',         loadComponent: () => import('./pages/dev/build/build.component').then(m => m.BuildComponent) },
+          { path: 'cache',         loadComponent: () => import('./pages/dev/cache/cache.component').then(m => m.CacheComponent) },
+          { path: 'lint',          loadComponent: () => import('./pages/dev/lint/lint.component').then(m => m.LintComponent) },
+          { path: 'sessions',      loadComponent: () => import('./pages/dev/sessions/sessions.component').then(m => m.SessionsComponent) },
+          { path: 'stream',        loadComponent: () => import('./pages/dev/stream/stream.component').then(m => m.StreamComponent) },
+          { path: 'containers',    loadComponent: () => import('./pages/dev/containers/containers.component').then(m => m.ContainersComponent) },
+          { path: 'updates',       loadComponent: () => import('./pages/dev/updates/updates.component').then(m => m.UpdatesComponent) },
+          { path: 'memory',        loadComponent: () => import('./pages/dev/memory/memory.component').then(m => m.MemoryComponent) },
+          { path: 'mantis',        loadComponent: () => import('./pages/dev/mantis/mantis.component').then(m => m.MantisComponent) },
+          { path: 'ts',            loadComponent: () => import('./pages/dev/ts/ts.component').then(m => m.TsComponent) },
+          { path: 'php',           loadComponent: () => import('./pages/dev/php/php.component').then(m => m.PhpComponent) },
+          { path: 'devops',        loadComponent: () => import('./pages/dev/devops/devops.component').then(m => m.DevopsComponent) },
+          { path: 'process',       loadComponent: () => import('./pages/dev/process/process.component').then(m => m.ProcessComponent) },
+          { path: 'terminal',      loadComponent: () => import('./pages/dev/terminal/terminal.component').then(m => m.TerminalComponent) },
+          { path: 'locales',       loadComponent: () => import('./pages/dev/locales/locales.component').then(m => m.LocalesComponent) },
+          { path: 'store',         loadComponent: () => import('./pages/dev/store/store.component').then(m => m.StoreComponent) },
+          { path: 'data',          loadComponent: () => import('./pages/dev/data/data.component').then(m => m.DataComponent) },
           // Sidebar id 'dashboard' was the legacy currentRoute label
           // for the control panel; keep both so old persisted state
           // restores cleanly to the new component.
-          { path: 'control-panel', component: ControlPanelComponent },
-          { path: 'dashboard', component: ControlPanelComponent },
-          { path: 'git', component: GitComponent },
-          { path: 'search', component: SearchComponent },
-          { path: 'explorer', component: ExplorerComponent },
-          { path: 'forge', component: ForgeComponent },
-          { path: 'tenant', component: TenantComponent },
-          { path: 'settings', component: SettingsComponent },
+          { path: 'control-panel', loadComponent: () => import('./pages/dev/control-panel/control-panel.component').then(m => m.ControlPanelComponent) },
+          { path: 'dashboard',     loadComponent: () => import('./pages/dev/control-panel/control-panel.component').then(m => m.ControlPanelComponent) },
+          { path: 'git',           loadComponent: () => import('./pages/dev/git/git.component').then(m => m.GitComponent) },
+          { path: 'search',        loadComponent: () => import('./pages/dev/search/search.component').then(m => m.SearchComponent) },
+          { path: 'explorer',      loadComponent: () => import('./pages/dev/explorer/explorer.component').then(m => m.ExplorerComponent) },
+          { path: 'forge',         loadComponent: () => import('./pages/dev/forge/forge.component').then(m => m.ForgeComponent) },
+          { path: 'tenant',        loadComponent: () => import('./pages/dev/tenant/tenant.component').then(m => m.TenantComponent) },
+          { path: 'settings',      loadComponent: () => import('./pages/dev/settings/settings.component').then(m => m.SettingsComponent) },
           // Plugin route — :code is the installed plugin code, :sub
           // is an optional sub-page (replaces the legacy "plugin:vi:ask"
           // colon-string scheme with real Angular params).
-          { path: 'plugin/:code/:sub', component: PluginComponent },
-          { path: 'plugin/:code', component: PluginComponent },
-          { path: 'repos', component: ReposComponent },
-          { path: 'marketplace', component: MarketplaceComponent },
+          { path: 'plugin/:code/:sub', loadComponent: () => import('./pages/dev/plugin/plugin.component').then(m => m.PluginComponent) },
+          { path: 'plugin/:code',      loadComponent: () => import('./pages/dev/plugin/plugin.component').then(m => m.PluginComponent) },
+          { path: 'repos',         loadComponent: () => import('./pages/dev/repos/repos.component').then(m => m.ReposComponent) },
+          { path: 'marketplace',   loadComponent: () => import('./pages/dev/marketplace/marketplace.component').then(m => m.MarketplaceComponent) },
           // Site detail — placeholder until the ops dashboard ships,
           // see RFC.ops-dashboard.md. Sidebar's Sites group routes here.
-          { path: 'site/:domain', component: SiteComponent },
+          { path: 'site/:domain',  loadComponent: () => import('./pages/dev/site/site.component').then(m => m.SiteComponent) },
           // Catch-all — any unknown panel id (stale persisted ui.route,
           // typo, removed plugin sub-page, …) redirects to control-panel
           // so the user always lands on a real surface instead of empty

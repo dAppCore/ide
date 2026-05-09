@@ -8,7 +8,6 @@ import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/st
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
 import { WorkspaceStore } from '../../services/store/workspace.store';
 import { FileEditorStore } from '../../services/store/file-editor.store';
-import { SettingsComponent } from '../dev/settings/settings.component';
 
 
 /**
@@ -587,11 +586,15 @@ export class IdeComponent implements OnInit, OnDestroy {
   }
 
   // --- Router outlet activate hook ---
-  // Wires SettingsComponent (requestSave) so /dev/settings save flows
-  // through onSettingsSave \u2192 flushUIState in one HTTP round-trip.
+  // Wires the lazy-loaded SettingsComponent's (requestSave) Output so
+  // /dev/settings save flows through onSettingsSave \u2192 flushUIState in
+  // one HTTP round-trip. Duck-typed so we don't need a static import
+  // of SettingsComponent \u2014 that import would defeat its lazy chunk by
+  // pulling it into the IDE shell's eager bundle.
   onOutletActivate(component: any): void {
-    if (component instanceof SettingsComponent) {
-      component.requestSave.subscribe(() => this.onSettingsSave());
+    const save = component?.requestSave;
+    if (save && typeof save.subscribe === 'function') {
+      save.subscribe(() => this.onSettingsSave());
     }
   }
 
