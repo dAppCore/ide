@@ -3,7 +3,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import * as LintBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/lintbridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -49,7 +49,8 @@ const ZERO_COUNTS: LintCounts = {
 /**
  * Lint panel — pattern-based static analysis surface over core/lint.
  *
- * TODO(snider/wails): swap callBridge('lint_run') for a lintBridge
+ * Migrated 2026-05-09 to typed LintBridge wails binding.
+ * was: TODO(snider/wails): swap callBridge('lint_run') for a lintBridge
  * wails service. Big-payoff binding — lint runs are slow enough that
  * goroutine line-speed matters.
  *
@@ -223,16 +224,16 @@ export class LintComponent implements OnInit {
     this.lintRunning.set(true);
     this.lintError.set(null);
     try {
-      const v = await callBridge<LintRunResponse>('lint_run', { path: this.workspace.root() });
+      const v = await LintBridge.Run({ path: this.workspace.root() });
       const issues = Array.isArray(v.issues) ? v.issues : [];
       const counts = v.counts || {};
       this.lintIssues.set(issues);
       this.lintCounts.set({
-        critical: counts.critical || 0,
-        high: counts.high || 0,
-        medium: counts.medium || 0,
-        low: counts.low || 0,
-        info: counts.info || 0,
+        critical: counts['critical'] || 0,
+        high: counts['high'] || 0,
+        medium: counts['medium'] || 0,
+        low: counts['low'] || 0,
+        info: counts['info'] || 0,
         total: v.total ?? issues.length,
       });
       this.lintBinary.set(v.binary_path || '');

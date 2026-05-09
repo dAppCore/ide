@@ -11,7 +11,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import * as SessionBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/sessionbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -94,7 +94,8 @@ const SESSION_LIVE_CAP = 500;
  * Sessions panel — Claude Code transcript inspector with browse / active
  * / search tabs and live-tailing for the selected session.
  *
- * TODO(snider/wails): swap callBridge('session_*') for a sessionBridge
+ * Migrated 2026-05-09 to typed SessionBridge wails binding.
+ * was: TODO(snider/wails): swap callBridge('session_*') for a sessionBridge
  * wails service. Sessions polling especially benefits from line-speed
  * goroutine access.
  *
@@ -420,7 +421,8 @@ export class SessionsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly scan = cachedBridgeResource<SessionProjectsResponse>({
-    tool: 'session_projects_list',
+    loader: ({ force }) =>
+      SessionBridge.ProjectsList({ force: !!force }) as unknown as Promise<SessionProjectsResponse>,
     emptyValue: EMPTY_SESSIONS,
     isEmpty: (v) => v.projects.length === 0,
   });
@@ -486,8 +488,8 @@ export class SessionsComponent implements OnInit {
     this.sessionSelected.set(null);
     this.sessionLoading.set(true);
     try {
-      const v = await callBridge<{ sessions?: SessionSummary[] }>('session_list', { project_dir: projectPath });
-      this.sessions.set(v?.sessions || []);
+      const v = await SessionBridge.List({ project_dir: projectPath });
+      this.sessions.set((v?.sessions as SessionSummary[]) || []);
     } finally {
       this.sessionLoading.set(false);
     }
@@ -500,7 +502,7 @@ export class SessionsComponent implements OnInit {
     this.sessionLiveHeartbeat.set(0);
     this.sessionInspectLoading.set(true);
     try {
-      const v = await callBridge<InspectedSession>('session_inspect', { path, limit: 200 });
+      const v = (await SessionBridge.Inspect({ path, limit: 200 })) as unknown as InspectedSession;
       this.sessionSelected.set(v);
       const size = this.sessions().find((s) => s.path === path)?.size_bytes || 0;
       this.sessionLiveOffset.set(size);
@@ -512,10 +514,10 @@ export class SessionsComponent implements OnInit {
   async loadActiveSessions(): Promise<void> {
     this.sessionActiveLoading.set(true);
     try {
-      const v = await callBridge<{ active?: ActiveSession[] }>('session_active_list', {
+      const v = await SessionBridge.Active({
         since_minutes: this.sessionActiveSinceMinutes(),
       });
-      this.sessionActive.set(v?.active || []);
+      this.sessionActive.set((v?.active as ActiveSession[]) || []);
     } finally {
       this.sessionActiveLoading.set(false);
     }
@@ -528,7 +530,7 @@ export class SessionsComponent implements OnInit {
     this.sessionLiveHeartbeat.set(0);
     this.sessionInspectLoading.set(true);
     try {
-      const v = await callBridge<InspectedSession>('session_inspect', { path: entry.path, limit: 200 });
+      const v = (await SessionBridge.Inspect({ path: entry.path, limit: 200 })) as unknown as InspectedSession;
       this.sessionSelected.set(v);
       const active = this.sessionActive().find((a) => a.path === entry.path);
       this.sessionLiveOffset.set(active?.size_bytes || 0);
@@ -557,8 +559,8 @@ export class SessionsComponent implements OnInit {
       const allHits: SearchHit[] = [];
       for (const project_dir of projects) {
         try {
-          const v = await callBridge<{ hits?: SearchHit[] }>('session_search', { project_dir, query: q });
-          if (v?.hits) allHits.push(...v.hits);
+          const v = await SessionBridge.Search({ project_dir, query: q });
+          if (v?.hits) allHits.push(...(v.hits as SearchHit[]));
         } catch {
           // skip per-project errors
         }
@@ -579,8 +581,8 @@ export class SessionsComponent implements OnInit {
     }
     for (const proj of this.sessionProjects()) {
       try {
-        const v = await callBridge<{ sessions?: SessionSummary[] }>('session_list', { project_dir: proj.path });
-        const match = (v?.sessions || []).find((s) => s.id === hit.session_id);
+        const v = await SessionBridge.List({ project_dir: proj.path });
+        const match = ((v?.sessions as SessionSummary[]) || []).find((s) => s.id === hit.session_id);
         if (match) {
           this.sessionTab.set('browse');
           await this.selectSessionProject(proj.path);
@@ -619,11 +621,11 @@ export class SessionsComponent implements OnInit {
     if (!sel?.path) return;
     let v: { events?: LiveEvent[]; next_offset?: number };
     try {
-      v = await callBridge<{ events?: LiveEvent[]; next_offset?: number }>('session_tail', {
+      v = (await SessionBridge.Tail({
         path: sel.path,
         since_offset: this.sessionLiveOffset(),
         limit: 200,
-      });
+      })) as unknown as { events?: LiveEvent[]; next_offset?: number };
     } catch {
       return;
     }

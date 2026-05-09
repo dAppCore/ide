@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import * as MemoryBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/memorybridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -45,7 +45,8 @@ interface MemorySearchResponse {
 /**
  * Memory panel — browse ~/.claude/memory/ frontmatter and contents.
  *
- * TODO(snider/wails): swap callBridge('memory_list' / 'memory_search')
+ * Migrated 2026-05-09 to typed MemoryBridge wails binding.
+ * was: TODO(snider/wails): swap callBridge('memory_list' / 'memory_search')
  * for a memoryBridge wails service.
  *
  * TODO: openMemoryEntry no-ops with a console log. The IdeComponent
@@ -207,7 +208,11 @@ export class MemoryComponent {
   readonly memorySort = signal<'modified' | 'name' | 'type'>('modified');
 
   readonly scan = cachedBridgeResource<MemoryListResponse>({
-    tool: 'memory_list',
+    loader: ({ sort, force }) =>
+      MemoryBridge.List({
+        sort: String(sort ?? ''),
+        force: !!force,
+      }) as unknown as Promise<MemoryListResponse>,
     emptyValue: EMPTY_MEM,
     isEmpty: (v) => v.memories.length === 0,
     // sort is reactive — changing it re-fires the loader automatically.
@@ -268,7 +273,7 @@ export class MemoryComponent {
     this.memorySearchLoading.set(true);
     this.memorySearchActive.set(true);
     try {
-      const v = await callBridge<MemorySearchResponse>('memory_search', { query: q });
+      const v = (await MemoryBridge.Search({ query: q })) as unknown as MemorySearchResponse;
       this.memorySearchHits.set(v?.hits || []);
     } finally {
       this.memorySearchLoading.set(false);

@@ -3,7 +3,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import * as StreamBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/streambridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface StreamStatus {
@@ -38,7 +38,8 @@ interface ParsedFrame {
  * Stream panel — go-stream Hub inspector. In-process pub/sub viewer
  * with channel browser, frame list, and a publish form.
  *
- * TODO(snider/wails): swap callBridge('stream_*') for a streamBridge
+ * Migrated 2026-05-09 to typed StreamBridge wails binding.
+ * was: TODO(snider/wails): swap callBridge('stream_*') for a streamBridge
  * wails service. The Hub already exposes a clean interface in core/
  * stream — wrapping it as wails services is straightforward.
  *
@@ -217,10 +218,10 @@ export class StreamComponent implements OnInit {
   async loadStream(): Promise<void> {
     this.streamLoading.set(true);
     try {
-      const status = await callBridge<StreamStatus>('stream_status', {});
+      const status = (await StreamBridge.Status()) as unknown as StreamStatus;
       this.streamStatus.set(status);
-      const channels = await callBridge<{ channels?: StreamChannel[]; broadcast_buf?: number }>('stream_channels', {});
-      this.streamChannels.set(channels?.channels || []);
+      const channels = await StreamBridge.Channels();
+      this.streamChannels.set((channels?.channels as StreamChannel[]) || []);
       this.streamBroadcastBufCount.set(channels?.broadcast_buf || 0);
       const sel = this.streamSelectedChannel();
       if (sel !== null) {
@@ -238,8 +239,8 @@ export class StreamComponent implements OnInit {
     const params: Record<string, string> = {};
     if (channel) params['channel'] = channel;
     try {
-      const v = await callBridge<{ frames?: StreamFrame[] }>('stream_recent', params);
-      this.streamFrames.set((v?.frames || []).slice().reverse());
+      const v = await StreamBridge.Recent({ channel: params['channel'] || '' });
+      this.streamFrames.set(((v?.frames as StreamFrame[]) || []).slice().reverse());
     } catch {
       this.streamFrames.set([]);
     }
@@ -290,7 +291,7 @@ export class StreamComponent implements OnInit {
     const frame = this.streamPublishBody();
     if (mode === 'publish' && !channel) return;
     try {
-      await callBridge('stream_publish', { mode, channel, frame });
+      await StreamBridge.Publish({ mode, channel, frame });
       this.streamPublishBody.set('');
       await this.loadStream();
     } catch {

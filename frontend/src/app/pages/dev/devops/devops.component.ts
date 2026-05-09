@@ -3,7 +3,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import * as DevopsBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/devopsbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
@@ -48,7 +48,8 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
  * DevOps panel — secret scanning + Ansible playbook listing. Surface
  * over core/go-devops.
  *
- * TODO(snider/wails): swap callBridge('devops_*') for a devopsBridge
+ * Migrated 2026-05-09 to typed DevopsBridge wails binding.
+ * was: TODO(snider/wails): swap callBridge('devops_*') for a devopsBridge
  * wails service.
  *
  * TODO: openDevopsFinding + openPlaybook no-op (logs only). Wire to
@@ -189,7 +190,8 @@ export class DevopsComponent {
   readonly devopsBasePath = signal<string>('');
 
   readonly playbooksScan = cachedBridgeResource<DevopsPlaybooksResponse>({
-    tool: 'devops_playbooks',
+    loader: ({ force }) =>
+      DevopsBridge.Playbooks({ force: !!force }) as unknown as Promise<DevopsPlaybooksResponse>,
     emptyValue: EMPTY_PLAYBOOKS,
     isEmpty: (v) => v.playbooks.length === 0,
   });
@@ -210,11 +212,12 @@ export class DevopsComponent {
     this.devopsScanError.set(null);
     this.devopsFindings.set([]);
     this.devopsRules.set([]);
-    const tool = this.devopsScanner() === 'gitleaks' ? 'devops_gitleaks' : 'devops_secrets_scan';
     const path = this.workspace.root();
     this.devopsBasePath.set(path);
     try {
-      const v = await callBridge<DevopsScanResponse>(tool, { path });
+      const v = (this.devopsScanner() === 'gitleaks'
+        ? await DevopsBridge.Gitleaks({ path })
+        : await DevopsBridge.SecretsScan({ path })) as unknown as DevopsScanResponse;
       this.devopsFindings.set(v?.findings || []);
       this.devopsRules.set(v?.rules || []);
     } catch (e) {
