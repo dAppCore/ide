@@ -50,10 +50,10 @@ export class PluginMenuStore {
     return this.menus().find((p) => p.code === code) || null;
   }
 
-  async reload(): Promise<void> {
+  async reload(force: boolean = false): Promise<void> {
     this.loading.set(true);
     try {
-      const v = await callBridge<MenusResponse>('pkg_menus', {});
+      const v = await callBridge<MenusResponse>('pkg_menus', { force });
       this.menus.set(Array.isArray(v?.plugins) ? v!.plugins! : []);
     } catch (e) {
       console.warn('[plugin-menus] reload failed:', e);

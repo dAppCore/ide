@@ -80,7 +80,7 @@ interface TenantCanResult {
 
         <div class="tnt-card">
           <h3>Authenticated user</h3>
-          <button class="btn btn-ghost btn-sm" (click)="tenantLookupUser()">Get user</button>
+          <button class="btn btn-ghost btn-sm" (click)="tenantLookupUser(true)">Get user (force)</button>
           @if (tenantUserResult(); as user) {
             <pre class="tnt-result">{{ formatJson(user) }}</pre>
           }
@@ -194,10 +194,10 @@ export class TenantComponent implements OnInit {
     }
   }
 
-  async tenantLookupUser(): Promise<void> {
+  async tenantLookupUser(force: boolean = false): Promise<void> {
     this.tenantUserResult.set(null);
     try {
-      const v = await callBridge<any>('tenant_user', {});
+      const v = await callBridge<any>('tenant_user', { force });
       this.tenantUserResult.set(v);
     } catch (e) {
       this.tenantUserResult.set({ error: 'user lookup failed: ' + (e instanceof Error ? e.message : String(e)) });

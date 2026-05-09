@@ -48,10 +48,11 @@ func (b *MCPBridge) toolPkgInstall(ctx context.Context, params map[string]any) m
 	return pkgResultToResponse(result)
 }
 
-func (b *MCPBridge) toolPkgInstalled(ctx context.Context) map[string]any {
+func (b *MCPBridge) toolPkgInstalled(ctx context.Context, params map[string]any) map[string]any {
+	force := paramBool(params, "force", false)
 	const collection = "pkg_installed"
 	const ttl = 5 * time.Minute
-	if cacheAge(collection) < ttl {
+	if !force && cacheAge(collection) < ttl {
 		_, raws, hit := cacheGetCollection(collection)
 		if hit && len(raws) > 0 {
 			var cached any
@@ -82,10 +83,11 @@ func (b *MCPBridge) toolPkgRemove(ctx context.Context, params map[string]any) ma
 	return pkgResultToResponse(result)
 }
 
-func (b *MCPBridge) toolPkgMenus(ctx context.Context) map[string]any {
+func (b *MCPBridge) toolPkgMenus(ctx context.Context, params map[string]any) map[string]any {
+	force := paramBool(params, "force", false)
 	const collection = "pkg_menus"
 	const ttl = 5 * time.Minute
-	if cacheAge(collection) < ttl {
+	if !force && cacheAge(collection) < ttl {
 		_, raws, hit := cacheGetCollection(collection)
 		if hit && len(raws) > 0 {
 			var cached any

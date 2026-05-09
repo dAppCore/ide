@@ -29,6 +29,8 @@ interface SelfUpdateStatus {
   release_url?: string;
   update_available?: boolean;
   error?: string;
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 interface UpdatesRefreshResponse {
@@ -86,7 +88,10 @@ interface SelfUpdateApplyResponse {
               </div>
             </div>
             <div class="self-upd-actions">
-              <button class="btn btn-ghost btn-sm" (click)="loadSelfUpdate()" [disabled]="selfUpdateLoading()" title="Re-check">
+              @if (selfUpdate()?.cache_hit) {
+                <span class="cache-pill" [class.cache-stale]="(selfUpdate()?.cache_age_s ?? 0) > 600" (click)="loadSelfUpdate(true)" title="Click to force re-check">● cached {{ formatCacheAge(selfUpdate()?.cache_age_s ?? 0) }}</span>
+              }
+              <button class="btn btn-ghost btn-sm" (click)="loadSelfUpdate(true)" [disabled]="selfUpdateLoading()" title="Re-check">
                 @if (selfUpdateLoading()) { <span>…</span> } @else { <span>↻</span> }
               </button>
               @if (selfUpdate()?.update_available) {
@@ -244,14 +249,20 @@ export class UpdatesComponent implements OnInit {
     }
   }
 
-  async loadSelfUpdate(): Promise<void> {
+  async loadSelfUpdate(force: boolean = false): Promise<void> {
     this.selfUpdateLoading.set(true);
     try {
-      const v = await callBridge<SelfUpdateStatus>('selfupdate_status', {});
+      const v = await callBridge<SelfUpdateStatus>('selfupdate_status', { force });
       this.selfUpdate.set(v ?? null);
     } finally {
       this.selfUpdateLoading.set(false);
     }
+  }
+
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   async applySelfUpdate(): Promise<void> {

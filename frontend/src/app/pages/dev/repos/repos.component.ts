@@ -21,6 +21,8 @@ interface RepoStatus {
 
 interface ReposResponse {
   repos?: RepoStatus[];
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
@@ -39,7 +41,14 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
   template: `
     <section class="block repos-block">
       <div class="block-header repos-header">
-        <h2 class="block-title">Repos</h2>
+        <h2 class="block-title">
+          Repos
+          @if (reposCacheHit()) {
+            <span class="cache-pill" [class.cache-stale]="reposCacheAge() > 60" (click)="loadRepos(true)" title="Click to force re-scan">● cached {{ formatCacheAge(reposCacheAge()) }}</span>
+          } @else if (reposAll().length > 0) {
+            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+          }
+        </h2>
         <span class="editorial subtitle">Aggregate git status across your Lethean workspace.</span>
       </div>
       <div class="repos-toolbar">
@@ -57,7 +66,7 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
             Behind <span class="repos-chip-count">{{ reposCounts().behind }}</span>
           </button>
         </div>
-        <button class="btn btn-primary btn-sm" (click)="loadRepos()" [disabled]="reposLoading()">
+        <button class="btn btn-primary btn-sm" (click)="loadRepos(true)" [disabled]="reposLoading()">
           @if (reposLoading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
         </button>
       </div>
@@ -236,6 +245,8 @@ export class ReposComponent implements OnInit {
   readonly reposAll = signal<RepoStatus[]>([]);
   readonly reposFilter = signal<ReposFilter>('all');
   readonly reposLoading = signal(false);
+  readonly reposCacheHit = signal(false);
+  readonly reposCacheAge = signal(0);
   readonly reposError = signal<string | null>(null);
 
   readonly reposVisible = computed(() => {
@@ -261,14 +272,14 @@ export class ReposComponent implements OnInit {
     if (this.reposAll().length === 0) void this.loadRepos();
   }
 
-  async loadRepos(): Promise<void> {
+  async loadRepos(force: boolean = false): Promise<void> {
     this.reposLoading.set(true);
     this.reposError.set(null);
     try {
       // Honour user-configured scan roots from settings: one path per
       // line. Empty → backend falls back to its built-in canonical roots.
       const rootsRaw = (this.settings.settings().reposRoots || '').trim();
-      const params: Record<string, unknown> = {};
+      const params: Record<string, unknown> = { force };
       if (rootsRaw) {
         params['roots'] = rootsRaw.split('\n').map((l) => l.trim()).filter(Boolean);
       }
@@ -278,11 +289,19 @@ export class ReposComponent implements OnInit {
         return (a.name || '').localeCompare(b.name || '');
       });
       this.reposAll.set(repos);
+      this.reposCacheHit.set(!!v?.cache_hit);
+      this.reposCacheAge.set(v?.cache_age_s || 0);
     } catch (e) {
       this.reposError.set('repos bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       this.reposLoading.set(false);
     }
+  }
+
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   /** Click → set workspace + jump to /dev/git for that repo. */

@@ -530,11 +530,11 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "pkg_install":
 		return b.toolPkgInstall(ctx, params)
 	case "pkg_installed":
-		return b.toolPkgInstalled(ctx)
+		return b.toolPkgInstalled(ctx, params)
 	case "pkg_remove":
 		return b.toolPkgRemove(ctx, params)
 	case "pkg_menus":
-		return b.toolPkgMenus(ctx)
+		return b.toolPkgMenus(ctx, params)
 
 	// Build panel — IDE surface over go-build's pipeline. Detect project
 	// type + spawn build via process.Service. See build_bridge.go.

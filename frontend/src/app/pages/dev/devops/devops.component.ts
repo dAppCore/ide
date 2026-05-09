@@ -35,6 +35,8 @@ interface DevopsPlaybook {
 
 interface DevopsPlaybooksResponse {
   playbooks?: DevopsPlaybook[];
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 /**
@@ -65,6 +67,13 @@ interface DevopsPlaybooksResponse {
             Playbooks <span class="dvo-tab-count">{{ devopsPlaybooks().length }}</span>
           </button>
         </div>
+        @if (devopsTab() === 'playbooks') {
+          @if (playbooksCacheHit()) {
+            <span class="cache-pill" [class.cache-stale]="playbooksCacheAge() > 600" (click)="loadDevopsPlaybooks(true)" title="Click to force re-scan">● cached {{ formatCacheAge(playbooksCacheAge()) }}</span>
+          } @else if (devopsPlaybooks().length > 0) {
+            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+          }
+        }
       </div>
 
       <div class="dvo-body">
@@ -175,6 +184,8 @@ export class DevopsComponent {
 
   readonly devopsPlaybooks = signal<DevopsPlaybook[]>([]);
   readonly devopsPlaybooksLoading = signal(false);
+  readonly playbooksCacheHit = signal(false);
+  readonly playbooksCacheAge = signal(0);
   private playbooksLoaded = false;
 
   ensurePlaybooksLoaded(): void {
@@ -203,14 +214,22 @@ export class DevopsComponent {
     }
   }
 
-  async loadDevopsPlaybooks(): Promise<void> {
+  async loadDevopsPlaybooks(force: boolean = false): Promise<void> {
     this.devopsPlaybooksLoading.set(true);
     try {
-      const v = await callBridge<DevopsPlaybooksResponse>('devops_playbooks', {});
+      const v = await callBridge<DevopsPlaybooksResponse>('devops_playbooks', { force });
       this.devopsPlaybooks.set(v?.playbooks || []);
+      this.playbooksCacheHit.set(!!v?.cache_hit);
+      this.playbooksCacheAge.set(v?.cache_age_s || 0);
     } finally {
       this.devopsPlaybooksLoading.set(false);
     }
+  }
+
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   async openDevopsFinding(f: DevopsFinding): Promise<void> {

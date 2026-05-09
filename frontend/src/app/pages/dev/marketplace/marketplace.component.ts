@@ -82,7 +82,7 @@ function pluginNativeTag(code: string): string | null {
           <option value="tools">Tools</option>
           <option value="snippets">Snippets</option>
         </select>
-        <button class="btn btn-primary btn-sm" (click)="loadMarketplace()" [disabled]="marketLoading()">
+        <button class="btn btn-primary btn-sm" (click)="loadMarketplace(true)" [disabled]="marketLoading()">
           @if (marketLoading()) { <span>loading…</span> } @else { <span>Refresh</span> }
         </button>
       </div>
@@ -358,7 +358,7 @@ export class MarketplaceComponent implements OnInit {
     void this.loadMarketplace();
   }
 
-  async loadMarketplace(): Promise<void> {
+  async loadMarketplace(force: boolean = false): Promise<void> {
     this.marketLoading.set(true);
     this.marketError.set(null);
     this.marketMessage.set(null);
@@ -368,7 +368,7 @@ export class MarketplaceComponent implements OnInit {
           query: this.marketQuery(),
           category: this.marketCategory(),
         }),
-        callBridge<{ packages?: any[] }>('pkg_installed', {}),
+        callBridge<{ packages?: any[] }>('pkg_installed', { force }),
       ]);
       this.marketModules.set(search?.packages || []);
       const pkgs = installed?.packages || [];

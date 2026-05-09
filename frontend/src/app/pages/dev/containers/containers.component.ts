@@ -39,12 +39,19 @@ interface ContainerEntry {
   template: `
     <section class="block ctn-block">
       <div class="block-header ctn-header">
-        <h2 class="block-title">Containers</h2>
+        <h2 class="block-title">
+          Containers
+          @if (runtimesCacheHit()) {
+            <span class="cache-pill" [class.cache-stale]="runtimesCacheAge() > 60" (click)="loadContainers(true)" title="Click to force re-probe">● cached {{ formatCacheAge(runtimesCacheAge()) }}</span>
+          } @else if (containerRuntimes().length > 0) {
+            <span class="cache-pill cache-fresh" title="Just probed">● fresh</span>
+          }
+        </h2>
         <span class="editorial subtitle">Runtimes detected on this host. Surface over <code>core/go-container</code>.</span>
       </div>
 
       <div class="ctn-toolbar">
-        <button class="btn btn-ghost btn-sm" (click)="loadContainers()" [disabled]="containerLoading()">
+        <button class="btn btn-ghost btn-sm" (click)="loadContainers(true)" [disabled]="containerLoading()">
           @if (containerLoading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
         </button>
         <span class="ctn-count">{{ containerList().length }} running · {{ containerRuntimes().length }} runtimes detected</span>
@@ -152,6 +159,8 @@ export class ContainersComponent implements OnInit {
   readonly containerList = signal<ContainerEntry[]>([]);
   readonly containerLoading = signal(false);
   readonly containerError = signal<string | null>(null);
+  readonly runtimesCacheHit = signal(false);
+  readonly runtimesCacheAge = signal(0);
   readonly containerSelected = signal<string | null>(null);
   readonly containerLogs = signal<string>('');
 
@@ -159,21 +168,29 @@ export class ContainersComponent implements OnInit {
     void this.loadContainers();
   }
 
-  async loadContainers(): Promise<void> {
+  async loadContainers(force: boolean = false): Promise<void> {
     this.containerLoading.set(true);
     this.containerError.set(null);
     try {
       const [detect, list] = await Promise.all([
-        callBridge<{ runtimes?: ContainerRuntime[] }>('container_detect', {}),
+        callBridge<{ runtimes?: ContainerRuntime[]; cache_hit?: boolean; cache_age_s?: number }>('container_detect', { force }),
         callBridge<{ containers?: ContainerEntry[] }>('container_list', {}),
       ]);
       this.containerRuntimes.set(detect?.runtimes || []);
+      this.runtimesCacheHit.set(!!detect?.cache_hit);
+      this.runtimesCacheAge.set(detect?.cache_age_s || 0);
       this.containerList.set(list?.containers || []);
     } catch (e) {
       this.containerError.set('container bridge error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       this.containerLoading.set(false);
     }
+  }
+
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   async loadContainerLogs(id: string, runtime: string): Promise<void> {

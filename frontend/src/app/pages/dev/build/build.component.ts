@@ -25,6 +25,8 @@ interface BuildDetected {
   command: string;
   args: string[];
   core_bin_on_path: boolean;
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 interface BuildRunResponse {
@@ -43,7 +45,14 @@ interface BuildRunResponse {
   template: `
     <section class="block build-block">
       <div class="block-header build-header">
-        <h2 class="block-title">Build</h2>
+        <h2 class="block-title">
+          Build
+          @if (buildCacheHit()) {
+            <span class="cache-pill" [class.cache-stale]="buildCacheAge() > 600" (click)="detectBuild(true)" title="Click to force re-detect">● cached {{ formatCacheAge(buildCacheAge()) }}</span>
+          } @else if (buildDetected()) {
+            <span class="cache-pill cache-fresh" title="Just detected">● fresh</span>
+          }
+        </h2>
         <span class="editorial subtitle">Surface over <code>core/go-build</code>. Detects your project, runs the build, streams output.</span>
       </div>
       <div class="build-toolbar">
@@ -59,7 +68,7 @@ interface BuildRunResponse {
           }
         </div>
         <div class="build-actions">
-          <button class="btn btn-ghost btn-sm" (click)="detectBuild()" [disabled]="buildRunning()">Re-detect</button>
+          <button class="btn btn-ghost btn-sm" (click)="detectBuild(true)" [disabled]="buildRunning()">Re-detect</button>
           @if (!buildRunning()) {
             <button class="btn btn-primary btn-sm" (click)="runBuild()" [disabled]="!buildDetected() || buildDetected()?.project_type === 'unknown'">
               ▸ Build
@@ -149,6 +158,8 @@ export class BuildComponent implements OnInit {
   readonly buildRunning = signal(false);
   readonly buildError = signal<string | null>(null);
   readonly buildProcessId = signal<string | null>(null);
+  readonly buildCacheHit = signal(false);
+  readonly buildCacheAge = signal(0);
 
   private buildPollTimer?: ReturnType<typeof setInterval>;
 
@@ -159,14 +170,22 @@ export class BuildComponent implements OnInit {
     });
   }
 
-  async detectBuild(): Promise<void> {
+  async detectBuild(force: boolean = false): Promise<void> {
     this.buildError.set(null);
     try {
-      const value = await callBridge<BuildDetected>('build_detect', { path: this.workspace.root() });
+      const value = await callBridge<BuildDetected>('build_detect', { path: this.workspace.root(), force });
       this.buildDetected.set(value);
+      this.buildCacheHit.set(!!value?.cache_hit);
+      this.buildCacheAge.set(value?.cache_age_s || 0);
     } catch (e) {
       this.buildError.set('build detect error: ' + (e instanceof Error ? e.message : String(e)));
     }
+  }
+
+  formatCacheAge(seconds: number): string {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
   async runBuild(): Promise<void> {
