@@ -1,8 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, linkedSignal, resource, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 
 interface ForgeStatus {
   configured: boolean;
@@ -10,6 +11,8 @@ interface ForgeStatus {
   as: string;
   base: string;
   hint: string;
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 interface ForgeOrg {
@@ -282,93 +285,136 @@ interface ReposResponse {
     .frg-state.merged { background: color-mix(in oklch, #a78bfa 18%, var(--ink-1)); color: #a78bfa; }
   `],
 })
-export class ForgeComponent implements OnInit {
-  readonly forgeStatus = signal<ForgeStatus | null>(null);
-  readonly forgeOrgs = signal<ForgeOrg[]>([]);
-  readonly forgeSelectedOrg = signal<string>('');
-  readonly forgeRepos = signal<ForgeRepo[]>([]);
+export class ForgeComponent {
+  // 1. Status — DuckDB-cached, no params.
+  readonly statusResource = cachedBridgeResource<ForgeStatus>({
+    tool: 'forge_status',
+    emptyValue: { configured: false, authenticated: false, as: '', base: '', hint: '' },
+    isEmpty: (v) => !v.configured,
+  });
+
+  // 2. Orgs — DuckDB-cached, no params.
+  readonly orgsResource = cachedBridgeResource<{ orgs: ForgeOrg[]; cache_hit?: boolean; cache_age_s?: number }>({
+    tool: 'forge_orgs',
+    emptyValue: { orgs: [] },
+    isEmpty: (v) => v.orgs.length === 0,
+  });
+
+  // 3. Notifications — live (no cache layer).
+  readonly notesResource = resource<ForgeNotification[], void>({
+    defaultValue: [],
+    loader: () =>
+      callBridge<{ notifications?: ForgeNotification[] }>('forge_notifications', {}).then(
+        (v) => v?.notifications || [],
+      ),
+  });
+
+  // 4. Selected org — defaults to first org, user-overridable.
+  readonly forgeSelectedOrg = linkedSignal<ForgeOrg[], string>({
+    source: () => this.orgsResource.stable().orgs,
+    computation: (newOrgs, prev) => {
+      const prevName = prev?.value;
+      if (prevName && newOrgs.find((o) => o.name === prevName)) return prevName;
+      return newOrgs[0]?.name ?? '';
+    },
+  });
+
+  // 5. Repos — DuckDB-cached, depends on selectedOrg.
+  readonly reposResource = cachedBridgeResource<{ repos: ForgeRepo[]; cache_hit?: boolean; cache_age_s?: number }>({
+    tool: 'forge_repos',
+    emptyValue: { repos: [] },
+    isEmpty: (v) => v.repos.length === 0,
+    extraParams: () => {
+      const org = this.forgeSelectedOrg();
+      return org ? { org } : { org: '' };
+    },
+  });
+
+  // 6. Selected repo — user-clicked, no auto-default (too noisy).
   readonly forgeSelectedRepo = signal<string>('');
-  readonly forgeIssues = signal<ForgeIssue[]>([]);
-  readonly forgePulls = signal<ForgePull[]>([]);
-  readonly forgeNotifications = signal<ForgeNotification[]>([]);
-  readonly forgeError = signal<string | null>(null);
-  readonly forgeLoading = signal(false);
+
+  // 7. Issues — live, depends on owner+repo.
+  readonly issuesResource = resource<ForgeIssue[], { owner: string; repo: string }>({
+    defaultValue: [],
+    params: () => ({ owner: this.forgeSelectedOrg(), repo: this.forgeSelectedRepo() }),
+    loader: ({ params }) => {
+      if (!params.owner || !params.repo) return Promise.resolve([]);
+      return callBridge<{ issues?: ForgeIssue[] }>('forge_issues', params).then((v) => v?.issues || []);
+    },
+  });
+
+  // 8. Pulls — live, depends on owner+repo.
+  readonly pullsResource = resource<ForgePull[], { owner: string; repo: string }>({
+    defaultValue: [],
+    params: () => ({ owner: this.forgeSelectedOrg(), repo: this.forgeSelectedRepo() }),
+    loader: ({ params }) => {
+      if (!params.owner || !params.repo) return Promise.resolve([]);
+      return callBridge<{ pulls?: ForgePull[] }>('forge_pulls', params).then((v) => v?.pulls || []);
+    },
+  });
+
+  // 9. Releases — live, lazy on tab switch (gated by forgeTab signal).
   readonly forgeTab = signal<'issues' | 'pulls' | 'releases'>('issues');
-  readonly forgeReleases = signal<ForgeRelease[]>([]);
-  readonly forgeReleasesLoading = signal(false);
-  readonly forgeReposCacheHit = signal(false);
-  readonly forgeReposCacheAge = signal(0);
+  readonly releasesResource = resource<ForgeRelease[], { owner: string; repo: string; tab: string }>({
+    defaultValue: [],
+    params: () => ({ owner: this.forgeSelectedOrg(), repo: this.forgeSelectedRepo(), tab: this.forgeTab() }),
+    loader: ({ params }) => {
+      if (params.tab !== 'releases' || !params.owner || !params.repo) return Promise.resolve([]);
+      return callBridge<{ releases?: ForgeRelease[] }>('forge_releases', {
+        owner: params.owner,
+        repo: params.repo,
+        limit: 30,
+      }).then((v) => v?.releases || []);
+    },
+  });
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadForge().then(() => void this.loadForge(true, true));
-  }
+  // ===== Template-friendly aliases =====
+  readonly forgeStatus = computed(() => {
+    const v = this.statusResource.stable();
+    return v.configured || v.authenticated ? v : null;
+  });
+  readonly forgeOrgs = computed(() => this.orgsResource.stable().orgs);
+  readonly forgeRepos = computed(() => this.reposResource.stable().repos);
+  readonly forgeIssues = computed(() => this.issuesResource.value() ?? []);
+  readonly forgePulls = computed(() => this.pullsResource.value() ?? []);
+  readonly forgeNotifications = computed(() => this.notesResource.value() ?? []);
+  readonly forgeReleases = computed(() => this.releasesResource.value() ?? []);
+  readonly forgeReleasesLoading = computed(() => this.releasesResource.isLoading());
+  readonly forgeReposCacheHit = computed(() => this.reposResource.cacheHit());
+  readonly forgeReposCacheAge = computed(() => this.reposResource.cacheAge());
+  readonly forgeLoading = computed(
+    () =>
+      this.statusResource.loading() ||
+      this.orgsResource.loading() ||
+      this.notesResource.isLoading() ||
+      this.reposResource.loading(),
+  );
+  readonly forgeError = computed(
+    () =>
+      this.statusResource.error() ??
+      this.orgsResource.error() ??
+      this.reposResource.error() ??
+      this.issuesResource.error()?.message ??
+      this.pullsResource.error()?.message ??
+      this.notesResource.error()?.message ??
+      this.releasesResource.error()?.message ??
+      null,
+  );
 
-  async loadForge(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.forgeLoading.set(true);
-    this.forgeError.set(null);
-    try {
-      const [status, orgsRes, notesRes] = await Promise.all([
-        callBridge<ForgeStatus>('forge_status', { force }),
-        callBridge<{ orgs?: ForgeOrg[] }>('forge_orgs', { force }),
-        callBridge<{ notifications?: ForgeNotification[] }>('forge_notifications', {}),
-      ]);
-      this.forgeStatus.set(status);
-      const orgs = orgsRes?.orgs || [];
-      this.forgeOrgs.set(orgs);
-      if (orgs.length > 0 && !this.forgeSelectedOrg()) {
-        this.forgeSelectedOrg.set(orgs[0].name);
-        await this.loadForgeRepos(orgs[0].name, force);
-      }
-      this.forgeNotifications.set(notesRes?.notifications || []);
-    } catch (e) {
-      this.forgeError.set('forge bridge error: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.forgeLoading.set(false);
-    }
-  }
-
-  async loadForgeRepos(org: string, force: boolean = false): Promise<void> {
+  // ===== Template aliases for sidebar/picker click handlers =====
+  loadForgeRepos(org: string, _force?: boolean): void {
     this.forgeSelectedOrg.set(org);
     this.forgeSelectedRepo.set('');
-    this.forgeIssues.set([]);
-    this.forgePulls.set([]);
-    try {
-      const v = await callBridge<ReposResponse>('forge_repos', { org, force });
-      this.forgeRepos.set(v?.repos || []);
-      this.forgeReposCacheHit.set(!!v?.cache_hit);
-      this.forgeReposCacheAge.set(v?.cache_age_s || 0);
-    } catch (e) {
-      this.forgeError.set('forge_repos failed: ' + (e instanceof Error ? e.message : String(e)));
-    }
+    if (_force) this.reposResource.refresh();
   }
 
-  async loadForgeRepo(repo: string): Promise<void> {
+  loadForgeRepo(repo: string): void {
     this.forgeSelectedRepo.set(repo);
-    const owner = this.forgeSelectedOrg();
-    try {
-      const [issues, pulls] = await Promise.all([
-        callBridge<{ issues?: ForgeIssue[] }>('forge_issues', { owner, repo }),
-        callBridge<{ pulls?: ForgePull[] }>('forge_pulls', { owner, repo }),
-      ]);
-      this.forgeIssues.set(issues?.issues || []);
-      this.forgePulls.set(pulls?.pulls || []);
-    } catch (e) {
-      this.forgeError.set('forge repo load failed: ' + (e instanceof Error ? e.message : String(e)));
-    }
+    // issues + pulls re-fire automatically via their params signals.
   }
 
-  async loadForgeReleases(): Promise<void> {
-    const owner = this.forgeSelectedOrg();
-    const repo = this.forgeSelectedRepo();
-    if (!owner || !repo) return;
-    this.forgeReleasesLoading.set(true);
-    try {
-      const v = await callBridge<{ releases?: ForgeRelease[] }>('forge_releases', { owner, repo, limit: 30 });
-      this.forgeReleases.set(v?.releases || []);
-    } finally {
-      this.forgeReleasesLoading.set(false);
-    }
+  loadForgeReleases(): void {
+    // No-op now — releasesResource auto-fires when forgeTab='releases'.
   }
 
   formatCacheAge(seconds: number): string {

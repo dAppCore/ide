@@ -1,7 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, resource, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 
 interface ContainerRuntime {
   name: string;
@@ -154,38 +155,36 @@ interface ContainerEntry {
     .ctn-logs { background: var(--ink-0); border: 1px solid var(--line-1); border-radius: 6px; padding: 12px 14px; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: var(--fg-2); white-space: pre-wrap; max-height: 300px; overflow-y: auto; margin: 0; }
   `],
 })
-export class ContainersComponent implements OnInit {
-  readonly containerRuntimes = signal<ContainerRuntime[]>([]);
-  readonly containerList = signal<ContainerEntry[]>([]);
-  readonly containerLoading = signal(false);
-  readonly containerError = signal<string | null>(null);
-  readonly runtimesCacheHit = signal(false);
-  readonly runtimesCacheAge = signal(0);
+export class ContainersComponent {
+  // Runtimes (cached server-side). Reactive SWR via cachedBridgeResource.
+  readonly runtimes = cachedBridgeResource<{ runtimes: ContainerRuntime[]; cache_hit?: boolean; cache_age_s?: number }>({
+    tool: 'container_detect',
+    emptyValue: { runtimes: [] },
+    isEmpty: (v) => v.runtimes.length === 0,
+  });
+
+  // Live list — not cached server-side (running containers change too
+  // fast to cache safely). Manual resource for parity, fires alongside
+  // the runtimes detect.
+  readonly list = resource<{ containers: ContainerEntry[] }, void>({
+    defaultValue: { containers: [] },
+    loader: () => callBridge<{ containers?: ContainerEntry[] }>('container_list', {}).then((v) => ({ containers: v?.containers || [] })),
+  });
+
+  readonly containerRuntimes = computed(() => this.runtimes.stable().runtimes);
+  readonly containerList = computed(() => this.list.value()?.containers || []);
+  readonly containerLoading = computed(() => this.runtimes.loading() || this.list.isLoading());
+  readonly containerError = computed(() => this.runtimes.error() ?? this.list.error()?.message ?? null);
+  readonly runtimesCacheHit = computed(() => this.runtimes.cacheHit());
+  readonly runtimesCacheAge = computed(() => this.runtimes.cacheAge());
+
   readonly containerSelected = signal<string | null>(null);
   readonly containerLogs = signal<string>('');
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadContainers().then(() => void this.loadContainers(true, true));
-  }
-
-  async loadContainers(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.containerLoading.set(true);
-    this.containerError.set(null);
-    try {
-      const [detect, list] = await Promise.all([
-        callBridge<{ runtimes?: ContainerRuntime[]; cache_hit?: boolean; cache_age_s?: number }>('container_detect', { force }),
-        callBridge<{ containers?: ContainerEntry[] }>('container_list', {}),
-      ]);
-      this.containerRuntimes.set(detect?.runtimes || []);
-      this.runtimesCacheHit.set(!!detect?.cache_hit);
-      this.runtimesCacheAge.set(detect?.cache_age_s || 0);
-      this.containerList.set(list?.containers || []);
-    } catch (e) {
-      this.containerError.set('container bridge error: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.containerLoading.set(false);
-    }
+  /** Template alias — Re-scan button. Forces both list and runtimes. */
+  loadContainers(force?: boolean): void {
+    if (force) this.runtimes.refresh();
+    this.list.reload();
   }
 
   formatCacheAge(seconds: number): string {

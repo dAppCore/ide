@@ -1,8 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MantisIssue {
@@ -31,10 +32,12 @@ interface MantisIssueDetail extends MantisIssue {
 }
 
 interface MantisListResponse {
-  issues?: MantisIssue[];
+  issues: MantisIssue[];
   cache_hit?: boolean;
   cache_age_s?: number;
 }
+
+const EMPTY_MANTIS: MantisListResponse = { issues: [] };
 
 type Segment = { kind: 'text' | 'path'; value: string };
 
@@ -215,17 +218,30 @@ type Segment = { kind: 'text' | 'path'; value: string };
     .mn-recent-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
   `],
 })
-export class MantisComponent implements OnInit {
+export class MantisComponent {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
 
-  readonly mantisIssues = signal<MantisIssue[]>([]);
-  readonly mantisLoading = signal(false);
+  readonly scan = cachedBridgeResource<MantisListResponse>({
+    tool: 'mantis_list',
+    emptyValue: EMPTY_MANTIS,
+    isEmpty: (v) => v.issues.length === 0,
+  });
+
+  readonly mantisIssues = computed(() => this.scan.stable().issues);
+  readonly mantisLoading = computed(() => this.scan.loading());
+  readonly mantisCacheHit = computed(() => this.scan.cacheHit());
+  readonly mantisCacheAge = computed(() => this.scan.cacheAge());
+
   readonly mantisSelected = signal<MantisIssueDetail | null>(null);
   readonly mantisInspectLoading = signal(false);
   readonly mantisStatusFilter = signal('');
-  readonly mantisCacheHit = signal(false);
-  readonly mantisCacheAge = signal(0);
+
+  // Wraps cachedBridgeResource.refresh() so the existing
+  // `loadMantisIssues(true)` call sites in the template keep working.
+  loadMantisIssues(force?: boolean): void {
+    if (force) this.scan.refresh();
+  }
 
   readonly mantisVisible = computed(() => {
     const f = this.mantisStatusFilter().trim().toLowerCase();
@@ -251,23 +267,6 @@ export class MantisComponent implements OnInit {
       .map(([s, c]) => ({ status: s, count: c }))
       .sort((a, b) => b.count - a.count);
   });
-
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadMantisIssues().then(() => void this.loadMantisIssues(true, true));
-  }
-
-  async loadMantisIssues(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.mantisLoading.set(true);
-    try {
-      const v = await callBridge<MantisListResponse>('mantis_list', { force });
-      this.mantisIssues.set(v?.issues || []);
-      this.mantisCacheHit.set(!!v?.cache_hit);
-      this.mantisCacheAge.set(v?.cache_age_s || 0);
-    } finally {
-      if (!silent) this.mantisLoading.set(false);
-    }
-  }
 
   async openMantisIssue(id: number): Promise<void> {
     this.mantisInspectLoading.set(true);

@@ -1,7 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 
 interface LocaleEntry {
   name: string;
@@ -19,8 +20,10 @@ interface I18nPackage {
 }
 
 interface I18nScanResponse {
-  packages?: I18nPackage[];
-  unique_locales?: string[];
+  packages: I18nPackage[];
+  unique_locales: string[];
+  cache_hit?: boolean;
+  cache_age_s?: number;
 }
 
 interface I18nViewResponse {
@@ -33,9 +36,17 @@ interface SelectedCell {
   path: string;
 }
 
+const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
+
 /**
  * Locales panel — translation coverage matrix across the canon.
  * Surface over core/go-i18n.
+ *
+ * Pilot for the resource() + linkedSignal SWR pattern via
+ * `cachedBridgeResource()` (see lib/cached-bridge-resource.ts and
+ * plans/code/core/ide/RFC.swr-resource-migration.md). Replaces the
+ * imperative `loadX().then(loadX(true,true))` chain with Angular's
+ * canonical reactive primitives.
  *
  * TODO(snider/wails): swap callBridge('i18n_*') for an i18nBridge
  * wails service.
@@ -51,13 +62,13 @@ interface SelectedCell {
       </div>
       <div class="i18n-toolbar">
         <span class="i18n-meta">
-          {{ i18nPackages().length }} packages · {{ i18nUniqueLocales().length }} locales seen: {{ i18nUniqueLocales().join(', ') || '—' }}
+          {{ scan.stable().packages.length }} packages · {{ scan.stable().unique_locales.length }} locales seen: {{ scan.stable().unique_locales.join(', ') || '—' }}
         </span>
-        <button class="btn btn-ghost btn-sm" (click)="scanLocales()" [disabled]="i18nLoading()">
-          @if (i18nLoading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
+        <button class="btn btn-ghost btn-sm" (click)="scan.refresh()" [disabled]="scan.loading()">
+          @if (scan.loading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
         </button>
       </div>
-      @if (i18nError(); as err) {
+      @if (scan.error(); as err) {
         <div class="i18n-error">{{ err }}</div>
       }
       <div class="i18n-body">
@@ -67,23 +78,23 @@ interface SelectedCell {
               <tr>
                 <th class="i18n-pkg-col">Package</th>
                 <th class="i18n-baseline-col">en keys</th>
-                @for (loc of i18nUniqueLocales(); track loc) {
+                @for (loc of scan.stable().unique_locales; track loc) {
                   <th>{{ loc }}</th>
                 }
               </tr>
             </thead>
             <tbody>
-              @for (p of i18nPackages(); track p.code) {
+              @for (p of scan.stable().packages; track p.code) {
                 <tr>
                   <td class="i18n-pkg-name">{{ p.code }}</td>
                   <td class="i18n-baseline">{{ p.baseline_keys || '—' }}</td>
-                  @for (loc of i18nUniqueLocales(); track loc) {
-                    @if (i18nFindLocale(p, loc); as cell) {
+                  @for (loc of scan.stable().unique_locales; track loc) {
+                    @if (findLocale(p, loc); as cell) {
                       <td class="i18n-cell present"
                           [class.complete]="cell.missing_vs_en === 0"
                           [class.partial]="cell.missing_vs_en > 0 && cell.keys < p.baseline_keys"
                           [class.over]="cell.keys > p.baseline_keys && p.baseline_keys > 0"
-                          [class.active]="i18nSelectedCell()?.pkg === p.code && i18nSelectedCell()?.locale === loc"
+                          [class.active]="selectedCell()?.pkg === p.code && selectedCell()?.locale === loc"
                           (click)="openLocaleCell(p.code, loc, cell.path)">
                         <span class="i18n-cell-keys">{{ cell.keys }}</span>
                         @if (cell.missing_vs_en > 0) {
@@ -98,20 +109,20 @@ interface SelectedCell {
                   }
                 </tr>
               }
-              @if (i18nPackages().length === 0 && !i18nLoading()) {
-                <tr><td [attr.colspan]="2 + i18nUniqueLocales().length" class="i18n-empty">No locales found in workspace.</td></tr>
+              @if (scan.stable().packages.length === 0 && !scan.loading()) {
+                <tr><td [attr.colspan]="2 + scan.stable().unique_locales.length" class="i18n-empty">No locales found in workspace.</td></tr>
               }
             </tbody>
           </table>
         </div>
 
-        @if (i18nSelectedCell(); as sel) {
+        @if (selectedCell(); as sel) {
           <div class="i18n-viewer">
             <div class="i18n-viewer-head">
               <span class="i18n-viewer-title">{{ sel.pkg }} · <strong>{{ sel.locale }}</strong></span>
               <code class="i18n-viewer-path">{{ sel.path }}</code>
             </div>
-            <pre class="i18n-viewer-body">{{ formatLocaleContent(i18nViewContent()) }}</pre>
+            <pre class="i18n-viewer-body">{{ formatLocaleContent(viewContent()) }}</pre>
           </div>
         }
       </div>
@@ -151,42 +162,26 @@ interface SelectedCell {
     .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
   `],
 })
-export class LocalesComponent implements OnInit {
-  readonly i18nPackages = signal<I18nPackage[]>([]);
-  readonly i18nUniqueLocales = signal<string[]>([]);
-  readonly i18nLoading = signal(false);
-  readonly i18nError = signal<string | null>(null);
-  readonly i18nSelectedCell = signal<SelectedCell | null>(null);
-  readonly i18nViewContent = signal<any>(null);
+export class LocalesComponent {
+  readonly scan = cachedBridgeResource<I18nScanResponse>({
+    tool: 'i18n_scan',
+    emptyValue: EMPTY_SCAN,
+    isEmpty: (v) => v.packages.length === 0,
+  });
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.scanLocales().then(() => void this.scanLocales(true, true));
-  }
-
-  async scanLocales(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (this.i18nLoading() && !silent) return;
-    if (!silent) this.i18nLoading.set(true);
-    this.i18nError.set(null);
-    try {
-      const v = await callBridge<I18nScanResponse>('i18n_scan', { force });
-      this.i18nPackages.set(v?.packages || []);
-      this.i18nUniqueLocales.set(v?.unique_locales || []);
-    } catch (e) {
-      this.i18nError.set('i18n bridge error: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.i18nLoading.set(false);
-    }
-  }
+  // Drill-down state (i18n_view per-cell) is fire-and-forget — not
+  // worth the resource() ceremony for a single-shot fetch.
+  readonly selectedCell = signal<SelectedCell | null>(null);
+  readonly viewContent = signal<any>(null);
 
   async openLocaleCell(pkg: string, locale: string, path: string): Promise<void> {
-    this.i18nSelectedCell.set({ pkg, locale, path });
-    this.i18nViewContent.set('Loading…');
+    this.selectedCell.set({ pkg, locale, path });
+    this.viewContent.set('Loading…');
     try {
       const v = await callBridge<I18nViewResponse>('i18n_view', { path });
-      this.i18nViewContent.set(v?.content);
+      this.viewContent.set(v?.content);
     } catch (e) {
-      this.i18nViewContent.set('Error: ' + (e instanceof Error ? e.message : String(e)));
+      this.viewContent.set('Error: ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -198,7 +193,7 @@ export class LocalesComponent implements OnInit {
     }
   }
 
-  i18nFindLocale(pkg: I18nPackage, locale: string): LocaleEntry | null {
+  findLocale(pkg: I18nPackage, locale: string): LocaleEntry | null {
     return pkg.locales.find((l) => l.name === locale) || null;
   }
 }

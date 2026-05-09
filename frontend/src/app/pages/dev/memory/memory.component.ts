@@ -1,9 +1,10 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MemoryEntry {
@@ -26,12 +27,14 @@ interface MemorySearchHit {
 }
 
 interface MemoryListResponse {
-  memories?: MemoryEntry[];
-  type_counts?: Record<string, number>;
-  dir?: string;
+  memories: MemoryEntry[];
+  type_counts: Record<string, number>;
+  dir: string;
   cache_hit?: boolean;
   cache_age_s?: number;
 }
+
+const EMPTY_MEM: MemoryListResponse = { memories: [], type_counts: {}, dir: '' };
 
 interface MemorySearchResponse {
   hits?: MemorySearchHit[];
@@ -91,7 +94,7 @@ interface MemorySearchResponse {
             </button>
           }
         </div>
-        <select class="input mem-sort" [value]="memorySort()" (change)="memorySort.set($any($event.target).value); loadMemoryEntries()">
+        <select class="input mem-sort" [value]="memorySort()" (change)="memorySort.set($any($event.target).value)">
           <option value="modified">sort: modified</option>
           <option value="name">sort: name</option>
           <option value="type">sort: type</option>
@@ -193,22 +196,37 @@ interface MemorySearchResponse {
     .mem-search-match { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); margin: 0; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
   `],
 })
-export class MemoryComponent implements OnInit {
+export class MemoryComponent {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
 
-  readonly memoryEntries = signal<MemoryEntry[]>([]);
-  readonly memoryTypeCounts = signal<Record<string, number>>({});
-  readonly memoryDir = signal('');
-  readonly memoryLoading = signal(false);
   readonly memoryFilter = signal('');
   readonly memoryTypeFilter = signal<string | null>(null);
   readonly memorySort = signal<'modified' | 'name' | 'type'>('modified');
+
+  readonly scan = cachedBridgeResource<MemoryListResponse>({
+    tool: 'memory_list',
+    emptyValue: EMPTY_MEM,
+    isEmpty: (v) => v.memories.length === 0,
+    // sort is reactive — changing it re-fires the loader automatically.
+    extraParams: () => ({ sort: this.memorySort() }),
+  });
+
+  readonly memoryEntries = computed(() => this.scan.stable().memories);
+  readonly memoryTypeCounts = computed(() => this.scan.stable().type_counts);
+  readonly memoryDir = computed(() => this.scan.stable().dir);
+  readonly memoryLoading = computed(() => this.scan.loading());
+  readonly memoryCacheHit = computed(() => this.scan.cacheHit());
+  readonly memoryCacheAge = computed(() => this.scan.cacheAge());
+
   readonly memorySearchHits = signal<MemorySearchHit[]>([]);
   readonly memorySearchActive = signal(false);
   readonly memorySearchLoading = signal(false);
-  readonly memoryCacheHit = signal(false);
-  readonly memoryCacheAge = signal(0);
+
+  /** Template alias — `loadMemoryEntries(true)` keeps working. */
+  loadMemoryEntries(force?: boolean): void {
+    if (force) this.scan.refresh();
+  }
 
   /** Last 7 days of memories — quick-access strip at the top. */
   readonly memoryRecent = computed(() => {
@@ -231,28 +249,6 @@ export class MemoryComponent implements OnInit {
       return (m.name + ' ' + m.description + ' ' + m.filename).toLowerCase().includes(f);
     });
   });
-
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadMemoryEntries().then(() => void this.loadMemoryEntries(true, true));
-  }
-
-  async loadMemoryEntries(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.memoryLoading.set(true);
-    try {
-      const v = await callBridge<MemoryListResponse>('memory_list', {
-        sort: this.memorySort(),
-        force,
-      });
-      this.memoryEntries.set(v?.memories || []);
-      this.memoryTypeCounts.set(v?.type_counts || {});
-      this.memoryDir.set(v?.dir || '');
-      this.memoryCacheHit.set(!!v?.cache_hit);
-      this.memoryCacheAge.set(v?.cache_age_s || 0);
-    } finally {
-      if (!silent) this.memoryLoading.set(false);
-    }
-  }
 
   async openMemoryEntry(path: string, line: number = 1): Promise<void> {
     await this.fileEditor.openFile(path);

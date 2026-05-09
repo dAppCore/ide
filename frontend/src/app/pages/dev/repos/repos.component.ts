@@ -1,8 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { SettingsStore } from '../../../services/store/settings.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -20,10 +20,12 @@ interface RepoStatus {
 }
 
 interface ReposResponse {
-  repos?: RepoStatus[];
+  repos: RepoStatus[];
   cache_hit?: boolean;
   cache_age_s?: number;
 }
+
+const EMPTY_REPOS: ReposResponse = { repos: [] };
 
 type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
 
@@ -237,17 +239,39 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
     }
   `],
 })
-export class ReposComponent implements OnInit {
+export class ReposComponent {
   private readonly settings = inject(SettingsStore);
   private readonly workspace = inject(WorkspaceStore);
   private readonly router = inject(Router);
 
-  readonly reposAll = signal<RepoStatus[]>([]);
+  readonly scan = cachedBridgeResource<ReposResponse>({
+    tool: 'repos_status',
+    emptyValue: EMPTY_REPOS,
+    isEmpty: (v) => v.repos.length === 0,
+    // Reactive — when settings.reposRoots changes, re-fetch with the
+    // new root list. Empty (no roots configured) → backend uses its
+    // built-in canonical roots.
+    extraParams: () => {
+      const rootsRaw = (this.settings.settings().reposRoots || '').trim();
+      if (!rootsRaw) return {};
+      return {
+        roots: rootsRaw.split('\n').map((l) => l.trim()).filter(Boolean),
+      };
+    },
+  });
+
+  readonly reposAll = computed(() => {
+    const repos = this.scan.stable().repos;
+    return repos.slice().sort((a, b) => {
+      if (a.dirty !== b.dirty) return a.dirty ? -1 : 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  });
   readonly reposFilter = signal<ReposFilter>('all');
-  readonly reposLoading = signal(false);
-  readonly reposCacheHit = signal(false);
-  readonly reposCacheAge = signal(0);
-  readonly reposError = signal<string | null>(null);
+  readonly reposLoading = computed(() => this.scan.loading());
+  readonly reposCacheHit = computed(() => this.scan.cacheHit());
+  readonly reposCacheAge = computed(() => this.scan.cacheAge());
+  readonly reposError = computed(() => this.scan.error());
 
   readonly reposVisible = computed(() => {
     const filter = this.reposFilter();
@@ -268,35 +292,9 @@ export class ReposComponent implements OnInit {
     };
   });
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadRepos().then(() => void this.loadRepos(true, true));
-  }
-
-  async loadRepos(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.reposLoading.set(true);
-    this.reposError.set(null);
-    try {
-      // Honour user-configured scan roots from settings: one path per
-      // line. Empty → backend falls back to its built-in canonical roots.
-      const rootsRaw = (this.settings.settings().reposRoots || '').trim();
-      const params: Record<string, unknown> = { force };
-      if (rootsRaw) {
-        params['roots'] = rootsRaw.split('\n').map((l) => l.trim()).filter(Boolean);
-      }
-      const v = await callBridge<ReposResponse>('repos_status', params);
-      const repos = (v?.repos || []).slice().sort((a, b) => {
-        if (a.dirty !== b.dirty) return a.dirty ? -1 : 1;
-        return (a.name || '').localeCompare(b.name || '');
-      });
-      this.reposAll.set(repos);
-      this.reposCacheHit.set(!!v?.cache_hit);
-      this.reposCacheAge.set(v?.cache_age_s || 0);
-    } catch (e) {
-      this.reposError.set('repos bridge error: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.reposLoading.set(false);
-    }
+  /** Template alias — Re-scan button. */
+  loadRepos(force?: boolean): void {
+    if (force) this.scan.refresh();
   }
 
   formatCacheAge(seconds: number): string {

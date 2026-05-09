@@ -11,7 +11,16 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
+
+interface SessionProjectsResponse {
+  projects: SessionProject[];
+  cache_hit?: boolean;
+  cache_age_s?: number;
+}
+
+const EMPTY_SESSIONS: SessionProjectsResponse = { projects: [] };
 
 interface SessionProject {
   name: string;
@@ -404,7 +413,14 @@ export class SessionsComponent implements OnInit {
 
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly sessionProjects = signal<SessionProject[]>([]);
+  readonly scan = cachedBridgeResource<SessionProjectsResponse>({
+    tool: 'session_projects_list',
+    emptyValue: EMPTY_SESSIONS,
+    isEmpty: (v) => v.projects.length === 0,
+  });
+
+  readonly sessionProjects = computed(() => this.scan.stable().projects);
+
   readonly sessionSelectedProject = signal<string | null>(null);
   readonly sessions = signal<SessionSummary[]>([]);
   readonly sessionSelected = signal<InspectedSession | null>(null);
@@ -436,21 +452,12 @@ export class SessionsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadSessionProjects().then(() => void this.loadSessionProjects(true, true));
     this.destroyRef.onDestroy(() => this.stopSessionLive());
   }
 
-  async loadSessionProjects(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.sessionLoading.set(true);
-    try {
-      const v = await callBridge<{ projects?: SessionProject[] }>('session_projects_list', { force });
-      this.sessionProjects.set(v?.projects || []);
-    } catch {
-      // tolerate
-    } finally {
-      if (!silent) this.sessionLoading.set(false);
-    }
+  /** Template alias — Refresh button calls this. */
+  loadSessionProjects(): void {
+    this.scan.refresh();
   }
 
   async selectSessionProject(projectPath: string): Promise<void> {

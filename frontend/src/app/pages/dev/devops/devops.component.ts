@@ -1,8 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -34,10 +35,12 @@ interface DevopsPlaybook {
 }
 
 interface DevopsPlaybooksResponse {
-  playbooks?: DevopsPlaybook[];
+  playbooks: DevopsPlaybook[];
   cache_hit?: boolean;
   cache_age_s?: number;
 }
+
+const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
 
 /**
  * DevOps panel — secret scanning + Ansible playbook listing. Surface
@@ -182,18 +185,21 @@ export class DevopsComponent {
   readonly devopsScanRunning = signal(false);
   readonly devopsBasePath = signal<string>('');
 
-  readonly devopsPlaybooks = signal<DevopsPlaybook[]>([]);
-  readonly devopsPlaybooksLoading = signal(false);
-  readonly playbooksCacheHit = signal(false);
-  readonly playbooksCacheAge = signal(0);
-  private playbooksLoaded = false;
+  readonly playbooksScan = cachedBridgeResource<DevopsPlaybooksResponse>({
+    tool: 'devops_playbooks',
+    emptyValue: EMPTY_PLAYBOOKS,
+    isEmpty: (v) => v.playbooks.length === 0,
+  });
 
-  ensurePlaybooksLoaded(): void {
-    if (this.playbooksLoaded) return;
-    this.playbooksLoaded = true;
-    // SWR — render cached on first tab visit, then silently force-refresh.
-    void this.loadDevopsPlaybooks().then(() => void this.loadDevopsPlaybooks(true, true));
-  }
+  readonly devopsPlaybooks = computed(() => this.playbooksScan.stable().playbooks);
+  readonly devopsPlaybooksLoading = computed(() => this.playbooksScan.loading());
+  readonly playbooksCacheHit = computed(() => this.playbooksScan.cacheHit());
+  readonly playbooksCacheAge = computed(() => this.playbooksScan.cacheAge());
+
+  /** No-op now — cachedBridgeResource fires at construction. Kept so
+   *  the existing template (click)="ensurePlaybooksLoaded()" doesn't
+   *  break. The cache makes eager-load cheap. */
+  ensurePlaybooksLoaded(): void {}
 
   async runDevopsSecretScan(): Promise<void> {
     if (this.devopsScanRunning()) return;
@@ -215,16 +221,9 @@ export class DevopsComponent {
     }
   }
 
-  async loadDevopsPlaybooks(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.devopsPlaybooksLoading.set(true);
-    try {
-      const v = await callBridge<DevopsPlaybooksResponse>('devops_playbooks', { force });
-      this.devopsPlaybooks.set(v?.playbooks || []);
-      this.playbooksCacheHit.set(!!v?.cache_hit);
-      this.playbooksCacheAge.set(v?.cache_age_s || 0);
-    } finally {
-      if (!silent) this.devopsPlaybooksLoading.set(false);
-    }
+  /** Template alias — cache-pill click forces a refresh. */
+  loadDevopsPlaybooks(force?: boolean): void {
+    if (force) this.playbooksScan.refresh();
   }
 
   formatCacheAge(seconds: number): string {

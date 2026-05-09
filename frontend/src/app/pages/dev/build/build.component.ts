@@ -4,10 +4,12 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 /**
@@ -21,6 +23,7 @@ import { WorkspaceStore } from '../../../services/store/workspace.store';
  * cmd/core-ide and wired into Options.Services.
  */
 interface BuildDetected {
+  path: string;
   project_type: string;
   command: string;
   args: string[];
@@ -153,38 +156,39 @@ export class BuildComponent implements OnInit {
   private readonly workspace = inject(WorkspaceStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly buildDetected = signal<BuildDetected | null>(null);
+  // build_detect is per-path — extraParams reads workspace.root()
+  // reactively, so changing the workspace root (via repos card click,
+  // settings save, explorer navigation) auto-refetches detection.
+  readonly detect = cachedBridgeResource<BuildDetected>({
+    tool: 'build_detect',
+    emptyValue: { path: '', project_type: 'unknown', command: '', args: [], core_bin_on_path: false },
+    isEmpty: (v) => v.project_type === 'unknown' && v.path === '',
+    extraParams: () => ({ path: this.workspace.root() }),
+  });
+
+  readonly buildDetected = computed(() => {
+    const v = this.detect.stable();
+    return v.path ? v : null;
+  });
+  readonly buildCacheHit = computed(() => this.detect.cacheHit());
+  readonly buildCacheAge = computed(() => this.detect.cacheAge());
+
   readonly buildLog = signal<string>('');
   readonly buildRunning = signal(false);
   readonly buildError = signal<string | null>(null);
   readonly buildProcessId = signal<string | null>(null);
-  readonly buildCacheHit = signal(false);
-  readonly buildCacheAge = signal(0);
 
   private buildPollTimer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.detectBuild().then(() => void this.detectBuild(true, true));
     this.destroyRef.onDestroy(() => {
       if (this.buildPollTimer) clearInterval(this.buildPollTimer);
     });
   }
 
-  async detectBuild(force: boolean = false, _silent: boolean = false): Promise<void> {
-    // detectBuild has no loading flag (the panel doesn't show one) so
-    // _silent is consumed only to keep the SWR call signature uniform
-    // across panels.
-    void _silent;
-    this.buildError.set(null);
-    try {
-      const value = await callBridge<BuildDetected>('build_detect', { path: this.workspace.root(), force });
-      this.buildDetected.set(value);
-      this.buildCacheHit.set(!!value?.cache_hit);
-      this.buildCacheAge.set(value?.cache_age_s || 0);
-    } catch (e) {
-      this.buildError.set('build detect error: ' + (e instanceof Error ? e.message : String(e)));
-    }
+  /** Template alias — Re-detect button. */
+  detectBuild(force?: boolean): void {
+    if (force) this.detect.refresh();
   }
 
   formatCacheAge(seconds: number): string {

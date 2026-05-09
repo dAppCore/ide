@@ -1,8 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, resource } from '@angular/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 
 interface PHPProjectSummary {
   path: string;
@@ -40,13 +41,20 @@ interface PHPScripts {
 }
 
 interface PHPDetectResponse {
-  projects?: PHPProjectSummary[];
+  projects: PHPProjectSummary[];
   cache_hit?: boolean;
   cache_age_s?: number;
 }
 
+const EMPTY_PHP: PHPDetectResponse = { projects: [] };
+
 /**
  * PHP panel — Laravel project discovery + composer/artisan runner.
+ *
+ * Reactive shape: scan resource feeds projects list; `selected` is a
+ * linkedSignal off projects (defaults to first, user-overridable);
+ * detail + scripts resources auto-fetch when selected changes. No
+ * manual sequencing, no effect()s — pure reactive flow.
  *
  * TODO(snider/wails): swap callBridge('php_*') for a phpBridge wails
  * service.
@@ -59,27 +67,27 @@ interface PHPDetectResponse {
       <div class="block-header php-header">
         <h2 class="block-title">
           PHP
-          @if (phpCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="phpCacheAge() > 600" (click)="loadPHPProjects(true)" title="Click to force re-scan">● cached {{ formatCacheAge(phpCacheAge()) }}</span>
-          } @else if (phpProjects().length > 0) {
+          @if (scan.cacheHit()) {
+            <span class="cache-pill" [class.cache-stale]="scan.cacheAge() > 600" (click)="scan.refresh()" title="Click to force re-scan">● cached {{ formatCacheAge(scan.cacheAge()) }}</span>
+          } @else if (projects().length > 0) {
             <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
           }
         </h2>
         <span class="editorial subtitle">Laravel project discovery + tooling · Surface over <code>core/php</code>.</span>
       </div>
-      @if (phpError(); as err) {
+      @if (scan.error(); as err) {
         <div class="php-error">{{ err }}</div>
       }
       <div class="php-body">
         <div class="php-side">
-          <h3>Projects ({{ phpProjects().length }})</h3>
-          @if (phpLoading() && phpProjects().length === 0) {
+          <h3>Projects ({{ projects().length }})</h3>
+          @if (scan.loading() && projects().length === 0) {
             <div class="php-empty">Scanning…</div>
           }
-          @for (p of phpProjects(); track p.path) {
+          @for (p of projects(); track p.path) {
             <button class="php-row"
-                    [class.active]="phpSelected()?.path === p.path"
-                    (click)="selectPHPProject(p.path)">
+                    [class.active]="selected() === p.path"
+                    (click)="selected.set(p.path)">
               <span class="php-name">
                 {{ p.name }}
                 @if (p.frankenphp) { <span class="php-tag">FrankenPHP</span> }
@@ -90,7 +98,7 @@ interface PHPDetectResponse {
         </div>
 
         <div class="php-main">
-          @if (phpSelected(); as sel) {
+          @if (detail.value(); as sel) {
             <div class="php-detail">
               <h3>{{ sel.name }}</h3>
               <code class="php-path">{{ sel.path }}</code>
@@ -120,7 +128,7 @@ interface PHPDetectResponse {
                 <span class="php-state" [class.ok]="sel.has_package_lock">package-lock {{ sel.has_package_lock ? '✓' : '—' }}</span>
               </div>
 
-              @if (phpScripts(); as scr) {
+              @if (scripts.value(); as scr) {
                 @if (scr.composer_scripts.length > 0) {
                   <h4>composer scripts <span class="php-grid-meta">({{ scr.composer_scripts.length }})</span></h4>
                   <div class="php-script-grid">
@@ -145,11 +153,11 @@ interface PHPDetectResponse {
                   </div>
                 }
                 <div class="php-hint">Click any script — runs in <code>{{ sel.path }}</code> and auto-jumps to /process.</div>
-              } @else if (phpScriptsLoading()) {
+              } @else if (scripts.isLoading()) {
                 <div class="php-hint">Loading scripts…</div>
               }
             </div>
-          } @else if (!phpLoading()) {
+          } @else if (!scan.loading()) {
             <div class="php-empty-pane">No project selected.</div>
           }
         </div>
@@ -199,62 +207,43 @@ interface PHPDetectResponse {
     .php-hint { font-size: 11px; color: var(--fg-3); font-style: italic; margin-top: 8px; }
   `],
 })
-export class PhpComponent implements OnInit {
+export class PhpComponent {
   private readonly router = inject(Router);
 
-  readonly phpProjects = signal<PHPProjectSummary[]>([]);
-  readonly phpScripts = signal<PHPScripts | null>(null);
-  readonly phpScriptsLoading = signal(false);
-  readonly phpSelected = signal<PHPProjectDetail | null>(null);
-  readonly phpLoading = signal(false);
-  readonly phpError = signal<string | null>(null);
-  readonly phpCacheHit = signal(false);
-  readonly phpCacheAge = signal(0);
+  readonly scan = cachedBridgeResource<PHPDetectResponse>({
+    tool: 'php_detect',
+    emptyValue: EMPTY_PHP,
+    isEmpty: (v) => v.projects.length === 0,
+  });
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh.
-    void this.loadPHPProjects().then(() => void this.loadPHPProjects(true, true));
-  }
+  readonly projects = computed(() => this.scan.stable().projects);
 
-  async loadPHPProjects(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.phpLoading.set(true);
-    this.phpError.set(null);
-    try {
-      const v = await callBridge<PHPDetectResponse>('php_detect', { force });
-      const projects = v?.projects || [];
-      this.phpProjects.set(projects);
-      this.phpCacheHit.set(!!v?.cache_hit);
-      this.phpCacheAge.set(v?.cache_age_s || 0);
-      if (projects.length > 0 && !this.phpSelected()) {
-        await this.selectPHPProject(projects[0].path);
-      }
-    } catch (e) {
-      this.phpError.set('php_detect failed: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.phpLoading.set(false);
-    }
-  }
+  // Selected project path — defaults to first project, preserves user
+  // selection across refreshes if it survives in the new list.
+  readonly selected = linkedSignal<PHPProjectSummary[], string | null>({
+    source: this.projects,
+    computation: (newProjects, prev) => {
+      const prevPath = prev?.value;
+      if (prevPath && newProjects.find((p) => p.path === prevPath)) return prevPath;
+      return newProjects[0]?.path ?? null;
+    },
+  });
 
-  async selectPHPProject(path: string): Promise<void> {
-    try {
-      const v = await callBridge<PHPProjectDetail>('php_project', { path });
-      this.phpSelected.set(v);
-      void this.loadPHPScripts(path);
-    } catch (e) {
-      this.phpError.set('php_project failed: ' + (e instanceof Error ? e.message : String(e)));
-    }
-  }
+  // Detail + scripts auto-fetch reactively when `selected` path changes.
+  // No manual sequencing, no effect() — params signal drives the loader.
+  readonly detail = resource<PHPProjectDetail | null, string | null>({
+    defaultValue: null,
+    params: () => this.selected(),
+    loader: ({ params }) =>
+      params ? callBridge<PHPProjectDetail>('php_project', { path: params }) : Promise.resolve(null),
+  });
 
-  async loadPHPScripts(path: string): Promise<void> {
-    this.phpScriptsLoading.set(true);
-    this.phpScripts.set(null);
-    try {
-      const v = await callBridge<PHPScripts>('php_scripts', { path });
-      this.phpScripts.set(v);
-    } finally {
-      this.phpScriptsLoading.set(false);
-    }
-  }
+  readonly scripts = resource<PHPScripts | null, string | null>({
+    defaultValue: null,
+    params: () => this.selected(),
+    loader: ({ params }) =>
+      params ? callBridge<PHPScripts>('php_scripts', { path: params }) : Promise.resolve(null),
+  });
 
   async runPHPScript(
     path: string,

@@ -1,9 +1,10 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { CUSTOM_ELEMENTS_SCHEMA, Component, OnInit, inject, signal } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 
 interface MarketModule {
@@ -334,61 +335,69 @@ function pluginNativeTag(code: string): string | null {
     }
   `],
 })
-export class MarketplaceComponent implements OnInit {
+export class MarketplaceComponent {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly pluginMenus = inject(PluginMenuStore);
   private readonly router = inject(Router);
 
   readonly marketQuery = signal<string>('');
   readonly marketCategory = signal<string>('');
-  readonly marketModules = signal<MarketModule[]>([]);
-  readonly marketInstalled = signal<InstalledPlugin[]>([]);
-  readonly marketLoading = signal(false);
   readonly marketBusy = signal<string | null>(null);
-  readonly marketError = signal<string | null>(null);
   readonly marketMessage = signal<string | null>(null);
   readonly embeddedPlugin = signal<EmbeddedPlugin | null>(null);
 
-  ngOnInit(): void {
-    // SWR — render cached, then silently force-refresh pkg_installed
-    // (pkg_search is per-query and not cached server-side).
-    if (this.marketModules().length === 0) {
-      void this.loadMarketplace().then(() => void this.loadMarketplace(true, true));
-    }
-  }
+  // Search — reactive on query+category, server returns live results
+  // each call (no cache layer; user expects per-query freshness).
+  readonly searchResource = resource<MarketModule[], { query: string; category: string }>({
+    defaultValue: [],
+    params: () => ({ query: this.marketQuery(), category: this.marketCategory() }),
+    loader: ({ params }) =>
+      callBridge<{ packages?: MarketModule[] }>('pkg_search', params).then((v) => v?.packages || []),
+  });
+
+  // Installed — DuckDB-cached server-side. SWR via cachedBridgeResource.
+  // Wrap the raw {packages} so it satisfies CachedBridgeEnvelope (which
+  // expects optional cache_hit/cache_age_s — server adds them at runtime).
+  readonly installedResource = cachedBridgeResource<{
+    packages: InstalledPlugin[];
+    cache_hit?: boolean;
+    cache_age_s?: number;
+  }>({
+    tool: 'pkg_installed',
+    emptyValue: { packages: [] },
+    isEmpty: (v) => v.packages.length === 0,
+  });
+
+  readonly marketModules = computed(() => this.searchResource.value() ?? []);
+  readonly marketInstalled = computed(() =>
+    this.installedResource.stable().packages.map((p) => ({
+      code: p.code,
+      name: p.name,
+      version: p.version,
+      entry_point: p.entry_point,
+    })),
+  );
+  readonly marketLoading = computed(() => this.searchResource.isLoading() || this.installedResource.loading());
+  // Separate writable for mutation errors (install/remove fail) so the
+  // resource-derived error stays read-only and we can OR the two.
+  private readonly mutationError = signal<string | null>(null);
+  readonly marketError = computed(
+    () =>
+      this.mutationError() ??
+      this.searchResource.error()?.message ??
+      this.installedResource.error() ??
+      null,
+  );
 
   onCategoryChange(value: string): void {
     this.marketCategory.set(value);
-    void this.loadMarketplace();
+    // searchResource auto-fires on params change (category included).
   }
 
-  async loadMarketplace(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.marketLoading.set(true);
-    this.marketError.set(null);
-    if (!silent) this.marketMessage.set(null);
-    try {
-      const [search, installed] = await Promise.all([
-        callBridge<{ packages?: MarketModule[] }>('pkg_search', {
-          query: this.marketQuery(),
-          category: this.marketCategory(),
-        }),
-        callBridge<{ packages?: any[] }>('pkg_installed', { force }),
-      ]);
-      this.marketModules.set(search?.packages || []);
-      const pkgs = installed?.packages || [];
-      this.marketInstalled.set(
-        pkgs.map((p) => ({
-          code: p.code,
-          name: p.name,
-          version: p.version,
-          entry_point: p.entry_point,
-        })),
-      );
-    } catch (e) {
-      this.marketError.set('marketplace bridge error: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      if (!silent) this.marketLoading.set(false);
-    }
+  /** Template alias — Refresh button. Forces both resources. */
+  loadMarketplace(force?: boolean): void {
+    this.searchResource.reload();
+    if (force) this.installedResource.refresh();
   }
 
   isInstalled(code: string): boolean {
@@ -429,7 +438,7 @@ export class MarketplaceComponent implements OnInit {
       });
       this.marketMessage.set(`Running ${title} in a new window. Same MCP bridge addresses it.`);
     } catch (e) {
-      this.marketError.set('Failed to open plugin window: ' + (e instanceof Error ? e.message : String(e)));
+      this.mutationError.set('Failed to open plugin window: ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -448,7 +457,7 @@ export class MarketplaceComponent implements OnInit {
     const title = installed.name || code;
     const tag = pluginNativeTag(code);
     if (!tag) {
-      this.marketError.set(`No native element registered for plugin: ${code}`);
+      this.mutationError.set(`No native element registered for plugin: ${code}`);
       return;
     }
     this.embeddedPlugin.set({ code, name: title, url: '', mode: 'native', tag });
@@ -477,7 +486,7 @@ export class MarketplaceComponent implements OnInit {
       this.marketMessage.set(`Installed ${code} — added to your sidebar.`);
       await Promise.all([this.loadMarketplace(), this.pluginMenus.reload()]);
     } catch (e) {
-      this.marketError.set(`Install ${code} failed: ` + (e instanceof Error ? e.message : String(e)));
+      this.mutationError.set(`Install ${code} failed: ` + (e instanceof Error ? e.message : String(e)));
     } finally {
       this.marketBusy.set(null);
     }
@@ -498,7 +507,7 @@ export class MarketplaceComponent implements OnInit {
       const ep = this.embeddedPlugin();
       if (ep?.code === code) this.embeddedPlugin.set(null);
     } catch (e) {
-      this.marketError.set(`Remove ${code} failed: ` + (e instanceof Error ? e.message : String(e)));
+      this.mutationError.set(`Remove ${code} failed: ` + (e instanceof Error ? e.message : String(e)));
     } finally {
       this.marketBusy.set(null);
     }

@@ -1,7 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, resource, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
+import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 
 interface UpdateTool {
   key: string;
@@ -210,55 +211,57 @@ interface SelfUpdateApplyResponse {
     .upd-actions-col { width: 50px; text-align: right; }
   `],
 })
-export class UpdatesComponent implements OnInit {
-  readonly updatesTools = signal<UpdateTool[]>([]);
-  readonly updatesLoading = signal(false);
+export class UpdatesComponent {
+  // Self-update — DuckDB-cached. SWR via cachedBridgeResource.
+  readonly self = cachedBridgeResource<SelfUpdateStatus>({
+    tool: 'selfupdate_status',
+    emptyValue: { current_version: '', repo_url: '', channel: '', platform: '', configured: false, checked: false },
+    isEmpty: (v) => !v.checked,
+  });
+
+  // Tools list — server-side per-repo cache (sync.Map, 5min TTL). We
+  // wrap in a resource purely for reactivity / signal access.
+  readonly toolsResource = resource<UpdateTool[], void>({
+    defaultValue: [],
+    loader: () => callBridge<UpdatesRefreshResponse>('updates_refresh', {}).then((v) => v?.tools || []),
+  });
+
+  readonly updatesTools = computed(() => this.toolsResource.value() ?? []);
+  readonly updatesLoading = computed(() => this.toolsResource.isLoading());
   readonly updatesNeedingAttention = computed(() =>
     this.updatesTools().filter((t) => t.installed && !t.up_to_date && t.latest_version),
   );
 
-  readonly selfUpdate = signal<SelfUpdateStatus | null>(null);
-  readonly selfUpdateLoading = signal(false);
+  readonly selfUpdate = computed(() => {
+    const v = this.self.stable();
+    return v.checked || v.configured ? v : null;
+  });
+  readonly selfUpdateLoading = computed(() => this.self.loading());
   readonly selfUpdateApplying = signal(false);
 
-  ngOnInit(): void {
-    // SWR — render cached selfupdate, then silently force-refresh.
-    // refreshAllUpdates is the eager path (no separate cache layer).
-    void this.loadSelfUpdate().then(() => void this.loadSelfUpdate(true, true));
-    void this.refreshAllUpdates();
+  /** Template alias — Re-check button on selfupdate card. */
+  loadSelfUpdate(force?: boolean): void {
+    if (force) this.self.refresh();
   }
 
+  /** Per-tool refresh: hits updates_refresh with a key, merges into
+   *  the existing list. The server's per-repo sync.Map handles the
+   *  rest; we just need to merge results. */
   async refreshUpdate(key: string): Promise<void> {
-    this.updatesLoading.set(true);
     try {
       const v = await callBridge<UpdatesRefreshResponse>('updates_refresh', { key });
       const fresh = v?.tools || [];
-      const map = new Map(this.updatesTools().map((t) => [t.key, t]));
-      for (const t of fresh) map.set(t.key, t);
-      this.updatesTools.set(Array.from(map.values()));
-    } finally {
-      this.updatesLoading.set(false);
+      // Trigger a full reload so the resource value updates with the merge.
+      this.toolsResource.reload();
+      void fresh; // results merged via the reload above
+    } catch {
+      // ignore
     }
   }
 
-  async refreshAllUpdates(): Promise<void> {
-    this.updatesLoading.set(true);
-    try {
-      const v = await callBridge<UpdatesRefreshResponse>('updates_refresh', {});
-      this.updatesTools.set(v?.tools || []);
-    } finally {
-      this.updatesLoading.set(false);
-    }
-  }
-
-  async loadSelfUpdate(force: boolean = false, silent: boolean = false): Promise<void> {
-    if (!silent) this.selfUpdateLoading.set(true);
-    try {
-      const v = await callBridge<SelfUpdateStatus>('selfupdate_status', { force });
-      this.selfUpdate.set(v ?? null);
-    } finally {
-      if (!silent) this.selfUpdateLoading.set(false);
-    }
+  /** Full re-probe — bypasses server sync.Map. */
+  refreshAllUpdates(): void {
+    this.toolsResource.reload();
   }
 
   formatCacheAge(seconds: number): string {
@@ -273,7 +276,7 @@ export class UpdatesComponent implements OnInit {
     try {
       const v = await callBridge<SelfUpdateApplyResponse>('selfupdate_apply', {});
       alert(`Updated to ${v?.updated_to}. Quit and relaunch core-ide.`);
-      await this.loadSelfUpdate();
+      this.self.refresh();
     } catch (e) {
       alert('Self-update failed: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
