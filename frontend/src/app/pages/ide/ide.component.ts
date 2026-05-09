@@ -37,7 +37,7 @@ import { SettingsComponent } from '../dev/settings/settings.component';
   encapsulation: ViewEncapsulation.None,
   template: `
     <div class="ide-layout">
-      <app-sidebar [currentRoute]="currentRoute()" [pluginMenus]="pluginMenus()" (routeChange)="onRouteChange($event)"></app-sidebar>
+      <app-sidebar [pluginMenus]="pluginMenus()"></app-sidebar>
 
       <div class="ide-main">
         <!-- Toolbar -->
@@ -2276,13 +2276,16 @@ export class IdeComponent implements OnInit, OnDestroy {
       const child = this.route.snapshot.firstChild;
       const path = child?.routeConfig?.path ?? null;
       if (!path) return;
-      if (path === ':panel') {
+      if (path === ':panel' || path === '**') {
         const panel = child?.params['panel'] as string | undefined;
         if (panel) this.currentRoute.set(panel);
       } else if (path === 'plugin/:code' || path === 'plugin/:code/:sub') {
         const code = child?.params['code'] as string | undefined;
         const sub = child?.params['sub'] as string | undefined;
         if (code) this.currentRoute.set(sub ? `plugin:${code}:${sub}` : `plugin:${code}`);
+      } else if (path === 'site/:domain') {
+        const domain = child?.params['domain'] as string | undefined;
+        if (domain) this.currentRoute.set(`site:${domain}`);
       } else {
         this.currentRoute.set(path);
       }
@@ -2425,15 +2428,6 @@ export class IdeComponent implements OnInit, OnDestroy {
       body: JSON.stringify(state),
       keepalive: true,
     }).catch((e) => console.warn('[ui-state] save failed:', e));
-  }
-
-  // --- Sidebar (routeChange) hook ---
-  // Almost every sidebar row uses [routerLink] now; the only emits
-  // that still flow through here are from the Sites section
-  // ('site:foo'). Mirror to currentRoute and persist.
-  onRouteChange(route: string) {
-    this.currentRoute.set(route);
-    this.saveUIState();
   }
 
   // --- Settings round-trip ---

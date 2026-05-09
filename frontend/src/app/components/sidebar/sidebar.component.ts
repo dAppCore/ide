@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -84,14 +84,18 @@ import { SitesStore } from '../../services/store/sites.store';
         </div>
       }
 
-      <!-- Group: Sites (status-dot per row, per Lethean-3 native handoff) -->
+      <!-- Group: Sites (status-dot per row, per Lethean-3 native handoff).
+           Routes to /dev/site/:domain — placeholder until the ops
+           dashboard lands (see RFC.ops-dashboard.md). -->
       <div class="nav-group">
         <div class="nav-group-title">Sites</div>
         @for (site of sites(); track site.domain) {
-          <button class="nav-row site-row" [class.active]="currentRoute === 'site:' + site.domain" (click)="routeChange.emit('site:' + site.domain)">
+          <a class="nav-row site-row"
+             [routerLink]="['/dev/site', site.domain]"
+             routerLinkActive="active">
             <span class="status-dot" [attr.data-status]="site.status"></span>
             <span class="nav-label">{{ site.domain }}</span>
-          </button>
+          </a>
         }
       </div>
 
@@ -386,9 +390,11 @@ import { SitesStore } from '../../services/store/sites.store';
   `]
 })
 export class SidebarComponent {
-  @Input() currentRoute = 'dashboard';
+  // Plugin menus passed from IdeComponent (delegating signal sourced
+  // from PluginMenuStore). Will swap to direct PluginMenuStore inject
+  // once the @Input is no longer needed for change-detection across
+  // the legacy boundary.
   @Input() pluginMenus: { code: string; name: string; menu?: { label: string; icon_svg?: string; subpages?: { label: string; path: string }[] } }[] = [];
-  @Output() routeChange = new EventEmitter<string>();
 
   private readonly manifest = inject(ManifestService);
   private readonly sitesStore = inject(SitesStore);

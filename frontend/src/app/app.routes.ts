@@ -33,6 +33,7 @@ import { SettingsComponent } from './pages/dev/settings/settings.component';
 import { PluginComponent } from './pages/dev/plugin/plugin.component';
 import { ReposComponent } from './pages/dev/repos/repos.component';
 import { MarketplaceComponent } from './pages/dev/marketplace/marketplace.component';
+import { SiteComponent } from './pages/dev/site/site.component';
 
 /**
  * Routing pattern: blank top-level root → frames stub on as children →
@@ -114,6 +115,9 @@ export const routes: Routes = [
           { path: 'plugin/:code', component: PluginComponent },
           { path: 'repos', component: ReposComponent },
           { path: 'marketplace', component: MarketplaceComponent },
+          // Site detail — placeholder until the ops dashboard ships,
+          // see RFC.ops-dashboard.md. Sidebar's Sites group routes here.
+          { path: 'site/:domain', component: SiteComponent },
           // Catch-all — any unknown panel id (stale persisted ui.route,
           // typo, removed plugin sub-page, …) redirects to control-panel
           // so the user always lands on a real surface instead of empty
