@@ -17,10 +17,21 @@
    utility classes (wa-stack, wa-cluster, wa-grid). Pro themes/palettes
    under premium/vogue. */
 @import "@awesome.me/webawesome-pro/dist/styles/webawesome.css";
-@import "@awesome.me/webawesome-pro/dist/styles/themes/premium.css";
 @import "@awesome.me/webawesome-pro/dist/styles/native.css";
 @import "@awesome.me/webawesome-pro/dist/styles/utilities.css";
 @import "@awesome.me/webawesome-pro/dist/styles/color/palettes/vogue.css";
+
+/* Selectable themes — `lethean` (canon, defined by tokens-wa-bridge.css)
+   is the polished default. The others are stock WA themes for users
+   who want to taste alternatives — left in their as-shipped form per
+   feedback_dark_only_design_system memory. Add a theme here + in
+   ThemeName (settings.store.ts) + the /dev/settings select to expose
+   it in the UI. */
+@import "@awesome.me/webawesome-pro/dist/styles/themes/default.css";
+@import "@awesome.me/webawesome-pro/dist/styles/themes/awesome.css";
+@import "@awesome.me/webawesome-pro/dist/styles/themes/shoelace.css";
+@import "@awesome.me/webawesome-pro/dist/styles/themes/premium.css";
+@import "@awesome.me/webawesome-pro/dist/styles/themes/matter.css";
 
 /* tokens.css → WebAwesome theme bridge. Maps our --brand-*, --ink-*,
    --fg-*, --success-*, etc. onto WA's --wa-color-* / --wa-font-* /

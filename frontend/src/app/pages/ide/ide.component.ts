@@ -8,6 +8,7 @@ import { ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/store/settings.store';
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
 import { WorkspaceStore } from '../../services/store/workspace.store';
+import { ThemeService } from '../../services/theme.service';
 import { FileEditorStore } from '../../services/store/file-editor.store';
 
 
@@ -350,6 +351,8 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly settingsStore = inject(SettingsStore);
   private readonly pluginMenuStore = inject(PluginMenuStore);
   private readonly workspaceStore = inject(WorkspaceStore);
+  // Booted for its constructor effect — applies wa-theme-* class to <html>.
+  private readonly themeService = inject(ThemeService);
   private readonly fileEditor = inject(FileEditorStore);
 
   // Active sidebar route id — drives the sidebar [class.active] highlight

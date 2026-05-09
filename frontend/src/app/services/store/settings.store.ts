@@ -4,6 +4,21 @@ import { Injectable, signal } from '@angular/core';
 
 export type RenderWhitespace = 'none' | 'boundary' | 'selection' | 'trailing' | 'all';
 
+/**
+ * WebAwesome theme names — the project's canon `lethean` plus a curated
+ * subset of WA's built-in themes for users who want to taste alternatives.
+ * The polished design canon stays `lethean` (warm-purple ink + Vi #663399);
+ * other themes are intentionally left in their stock WA appearance — see
+ * feedback_dark_only_design_system memory.
+ */
+export type ThemeName =
+  | 'lethean'    // canon — Vi purple on warm-purple ink (the polished one)
+  | 'default'    // WA default
+  | 'awesome'    // WA bright
+  | 'shoelace'   // WA classic shoelace
+  | 'premium'    // WA Pro — cyan / anodized
+  | 'matter';    // WA Pro — purple / mild
+
 export interface CoreSettings {
   editorFontSize: number;
   editorTabSize: number;
@@ -17,6 +32,13 @@ export interface CoreSettings {
   chatVisibleOnLaunch: boolean;
   marketplaceEndpoint: string;
   terminalSshPort: number;
+  /**
+   * UI theme — switches the WebAwesome theme class on `<html>`. Stays
+   * dark-only (we don't expose a light variant; the canon is dark by
+   * design). Default `'lethean'` is the polished design; others are
+   * stock WA for taste exploration.
+   */
+  theme: ThemeName;
 }
 
 export const DEFAULT_SETTINGS: CoreSettings = {
@@ -33,6 +55,7 @@ export const DEFAULT_SETTINGS: CoreSettings = {
   chatVisibleOnLaunch: false,
   marketplaceEndpoint: '',
   terminalSshPort: 9876,
+  theme: 'lethean',
 };
 
 /**

@@ -37,6 +37,24 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
       <div class="settings-body">
 
         <div class="settings-group">
+          <h3 class="settings-group-title">Appearance</h3>
+          <p class="settings-group-hint">Theme switches WebAwesome's component styling. The IDE stays dark — light mode isn't part of the canon.</p>
+          <label class="settings-row">
+            <span class="settings-label">Theme</span>
+            <select class="settings-input"
+                    [value]="store.settings().theme"
+                    (change)="updateStr('theme', $any($event.target).value)">
+              <option value="lethean">Lethean (canon — Vi purple)</option>
+              <option value="default">WebAwesome Default</option>
+              <option value="awesome">Awesome (bright)</option>
+              <option value="shoelace">Shoelace (classic)</option>
+              <option value="premium">Premium Pro (cyan)</option>
+              <option value="matter">Matter Pro (purple)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="settings-group">
           <h3 class="settings-group-title">Editor</h3>
           <p class="settings-group-hint">Live-applied to Monaco. No restart needed.</p>
           <label class="settings-row">
