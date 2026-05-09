@@ -49,32 +49,34 @@ import { SitesStore } from '../../services/store/sites.store';
       </div>
 
       <!-- Group: Plugins — installed marketplace modules that declare a Menu
-           extend the IDE frame here. Click navigates to plugin:<code>; sub-pages
-           render as nested rows when the plugin row is active. -->
+           extend the IDE frame here. Routes to /dev/plugin/:code(/:sub),
+           a real Angular route (replaces the legacy "plugin:code:sub"
+           colon-string scheme). -->
       @if (pluginMenus.length > 0) {
         <div class="nav-group">
           <div class="nav-group-title">Plugins</div>
           @for (p of pluginMenus; track p.code) {
             @if (p.menu) {
-              <button
+              <a
                 class="nav-row"
-                [class.active]="isPluginActive(p.code)"
-                (click)="routeChange.emit(pluginRouteId(p.code))">
+                [routerLink]="['/dev/plugin', p.code]"
+                routerLinkActive="active"
+                #pluginLink="routerLinkActive">
                 @if (p.menu.icon_svg) {
                   <span class="nav-icon" [innerHTML]="trustIcon(p.menu.icon_svg)"></span>
                 } @else {
                   <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></span>
                 }
                 <span class="nav-label">{{ p.menu.label }}</span>
-              </button>
-              @if (isPluginActive(p.code) && p.menu.subpages?.length) {
+              </a>
+              @if (pluginLink.isActive && p.menu.subpages?.length) {
                 @for (s of p.menu.subpages; track s.path) {
-                  <button
+                  <a
                     class="nav-row nav-subpage"
-                    [class.active]="currentRoute === pluginRouteId(p.code, s.path)"
-                    (click)="routeChange.emit(pluginRouteId(p.code, s.path))">
+                    [routerLink]="['/dev/plugin', p.code, s.path]"
+                    routerLinkActive="active">
                     <span class="nav-label">— {{ s.label }}</span>
-                  </button>
+                  </a>
                 }
               }
             }
@@ -405,15 +407,6 @@ export class SidebarComponent {
       this.trustedIconCache.set(svg, trusted);
     }
     return trusted;
-  }
-
-  pluginRouteId(code: string, sub?: string): string {
-    return sub ? `plugin:${code}:${sub}` : `plugin:${code}`;
-  }
-
-  isPluginActive(code: string): boolean {
-    const r = this.currentRoute || '';
-    return r === `plugin:${code}` || r.startsWith(`plugin:${code}:`);
   }
 
 }

@@ -27,6 +27,10 @@ import { ControlPanelComponent } from './pages/dev/control-panel/control-panel.c
 import { GitComponent } from './pages/dev/git/git.component';
 import { SearchComponent } from './pages/dev/search/search.component';
 import { ExplorerComponent } from './pages/dev/explorer/explorer.component';
+import { ForgeComponent } from './pages/dev/forge/forge.component';
+import { TenantComponent } from './pages/dev/tenant/tenant.component';
+import { SettingsComponent } from './pages/dev/settings/settings.component';
+import { PluginComponent } from './pages/dev/plugin/plugin.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -98,6 +102,14 @@ export const routes: Routes = [
           { path: 'git', component: GitComponent },
           { path: 'search', component: SearchComponent },
           { path: 'explorer', component: ExplorerComponent },
+          { path: 'forge', component: ForgeComponent },
+          { path: 'tenant', component: TenantComponent },
+          { path: 'settings', component: SettingsComponent },
+          // Plugin route — :code is the installed plugin code, :sub
+          // is an optional sub-page (replaces the legacy "plugin:vi:ask"
+          // colon-string scheme with real Angular params).
+          { path: 'plugin/:code/:sub', component: PluginComponent },
+          { path: 'plugin/:code', component: PluginComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As

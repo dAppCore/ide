@@ -5,6 +5,9 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { filter } from 'rxjs';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { Brief, Site, ActivityItem, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
+import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/store/settings.store';
+import { PluginMenuStore } from '../../services/store/plugin-menu.store';
+import { SettingsComponent } from '../dev/settings/settings.component';
 
 // Plugin → native-element-tag map. v1 fixture allowlist; v2 will read from
 // each marketplace module's manifest entry_native_tag field.
@@ -61,7 +64,7 @@ function pluginNativeTag(code: string): string | null {
                  here via /dev/<panel> child routes. Until a panel is
                  extracted, the legacy @switch fallback below is what
                  the sidebar drives via routeChange(viewKind). -->
-            <router-outlet />
+            <router-outlet (activate)="onOutletActivate($event)" />
           } @else {
           @switch (viewKind()) {
             @case ('control-panel') {
@@ -4628,6 +4631,8 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly settingsStore = inject(SettingsStore);
+  private readonly pluginMenuStore = inject(PluginMenuStore);
 
   currentRoute = signal('dashboard');
   currentTime = signal('');
@@ -4713,23 +4718,13 @@ export class IdeComponent implements OnInit, OnDestroy {
   // User settings — persisted under ui.settings.* in ~/.core/config.yaml.
   // Loaded once on launch, edited via the Settings panel, applied live to the
   // editor / explorer / repos / launch defaults.
-  readonly defaultSettings = {
-    editorFontSize: 12.5,
-    editorTabSize: 2,
-    editorWordWrap: false,
-    editorLineNumbers: true,
-    editorMinimap: false,
-    editorRenderWhitespace: 'selection' as 'none' | 'boundary' | 'selection' | 'trailing' | 'all',
-    workspaceRoot: '/Users/snider/Code/core/ide',
-    defaultRoute: 'dashboard',
-    reposRoots: '/Users/snider/Code/core\n/Users/snider/Code/lthn\n/Users/snider/Code/host-uk\n/Users/snider/Code/lab\n/Users/snider/Code/snider',
-    chatVisibleOnLaunch: false,
-    marketplaceEndpoint: '',
-    terminalSshPort: 9876,
-  };
-  settings = signal({ ...this.defaultSettings });
-  settingsDirty = signal(false);
-  settingsSaveMessage = signal<string | null>(null);
+  // Settings live in SettingsStore — these are delegating signals so
+  // the legacy template + flushUIState read the same source as the
+  // routed /dev/settings component (services/store/settings.store.ts).
+  readonly defaultSettings = DEFAULT_SETTINGS;
+  readonly settings = this.settingsStore.settings;
+  readonly settingsDirty = this.settingsStore.dirty;
+  readonly settingsSaveMessage = this.settingsStore.saveMessage;
 
   // Multi-repo dashboard — aggregate git status across workspace roots via repos_status
   reposAll = signal<{ name: string; path: string; branch: string; modified: number; untracked: number; staged: number; ahead: number; behind: number; dirty: boolean; error?: string }[]>([]);
@@ -5120,9 +5115,11 @@ export class IdeComponent implements OnInit, OnDestroy {
   private buildPollTimer?: ReturnType<typeof setInterval>;
 
   // Plugin menus — installed marketplace modules that declare a Menu
-  // contribute to the IDE sidebar's "Plugins" group. The IDE frame
-  // literally is the union of installed plugin menus (CoreApp pattern).
-  pluginMenus = signal<{ code: string; name: string; native_tag?: string; default_mode?: string; entrypoint?: string; menu?: { label: string; icon_svg?: string; subpages?: { label: string; path: string }[] } }[]>([]);
+  // contribute to the IDE sidebar's "Plugins" group AND drive the
+  // /dev/plugin/:code route. Source-of-truth lives in PluginMenuStore;
+  // this is a delegating signal so the existing sidebar @Input keeps
+  // working unchanged.
+  readonly pluginMenus = this.pluginMenuStore.menus;
 
   // Embedded plugin panel — when set, the marketplace block shows the
   // plugin's web interface inside the IDE. Three modes:
@@ -5304,18 +5301,10 @@ export class IdeComponent implements OnInit, OnDestroy {
       const ui = (data?.ui ?? {}) as Record<string, any>;
 
       // Restore user settings first — they shape downstream defaults.
-      // dappco.re/go/config lowercases YAML keys (editorFontSize → editorfontsize),
-      // so look up each default key by both its camelCase form and its all-lowercase
-      // form when merging the persisted blob back in.
+      // SettingsStore.hydrate() handles the camelCase / lowercase key
+      // normalisation that dappco.re/go/config imposes on YAML.
       if (ui['settings'] && typeof ui['settings'] === 'object') {
-        const loaded = ui['settings'] as Record<string, any>;
-        const merged: Record<string, any> = { ...this.defaultSettings };
-        for (const key of Object.keys(this.defaultSettings)) {
-          const lk = key.toLowerCase();
-          if (key in loaded) merged[key] = loaded[key];
-          else if (lk in loaded) merged[key] = loaded[lk];
-        }
-        this.settings.set(merged as any);
+        this.settingsStore.hydrate(ui['settings'] as Record<string, any>);
       }
       const s = this.settings();
       // Apply launch-time settings before per-session ui state overrides.
@@ -6599,15 +6588,7 @@ export class IdeComponent implements OnInit, OnDestroy {
 
   // Load installed-plugin menus and surface them in the sidebar.
   async loadPluginMenus() {
-    try {
-      const res = await this.bridgeCall('pkg_menus', {});
-      if (res.ok) {
-        const value = res.value || {};
-        this.pluginMenus.set(Array.isArray(value.plugins) ? value.plugins : []);
-      }
-    } catch (e) {
-      console.warn('[plugin-menus] load failed:', e);
-    }
+    await this.pluginMenuStore.reload();
   }
 
   // Multi-repo dashboard
@@ -6651,35 +6632,46 @@ export class IdeComponent implements OnInit, OnDestroy {
     this.saveUIState();
   }
 
-  // Settings — typed setters so we can keep the @case template tidy.
-  updateSetting<K extends keyof IdeComponent['defaultSettings']>(key: K, value: IdeComponent['defaultSettings'][K]) {
-    this.settings.update((s) => ({ ...s, [key]: value }));
-    this.settingsDirty.set(true);
-    this.settingsSaveMessage.set(null);
+  // Settings — typed setter for the legacy @case template. Delegates
+  // to SettingsStore so the routed /dev/settings panel and this one
+  // share a single source of truth.
+  updateSetting<K extends keyof CoreSettings>(key: K, value: CoreSettings[K]) {
+    this.settingsStore.update(key, value);
   }
 
-  saveSettings() {
-    // Apply settings that change runtime state immediately. Editor knobs
-    // already react via signal-bound attributes on lethean-monaco; the rest
-    // affects launch defaults or other surfaces' inputs.
+  /**
+   * Save handler — invoked by the legacy @case template's Save button
+   * AND by the routed SettingsComponent via (requestSave)="onSettingsSave()".
+   * Applies any runtime-affecting fields, flushes UI state, marks the
+   * store clean.
+   */
+  onSettingsSave() {
     const s = this.settings();
     if (this.workspaceRoot() !== s.workspaceRoot) {
       this.workspaceRoot.set(s.workspaceRoot);
       this.currentPath.set(s.workspaceRoot);
-      // refresh explorer if it's the active surface
       if (this.currentRoute() === 'explorer') void this.loadDir(s.workspaceRoot);
     }
     // Force a repos rescan with the new roots next time the user opens it.
     this.reposLoadedOnce = false;
     this.flushUIState();
-    this.settingsDirty.set(false);
-    this.settingsSaveMessage.set('Saved. Backend settings (marketplace endpoint, SSH port) take effect after restart.');
+    this.settingsStore.markSaved('Saved. Backend settings (marketplace endpoint, SSH port) take effect after restart.');
   }
 
-  resetSettings() {
-    this.settings.set({ ...this.defaultSettings });
-    this.settingsDirty.set(true);
-    this.settingsSaveMessage.set(null);
+  /** Legacy template alias for onSettingsSave(). */
+  saveSettings() { this.onSettingsSave(); }
+
+  resetSettings() { this.settingsStore.reset(); }
+
+  /**
+   * Router outlet activate hook — wires the routed SettingsComponent's
+   * (requestSave) output to onSettingsSave so /dev/settings save flows
+   * through the same flushUIState path as the legacy panel.
+   */
+  onOutletActivate(component: any): void {
+    if (component instanceof SettingsComponent) {
+      component.requestSave.subscribe(() => this.onSettingsSave());
+    }
   }
 
   // Marketplace — package browse / install / remove via /mcp/call pkg_*
