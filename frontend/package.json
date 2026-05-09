@@ -47,7 +47,7 @@
     "@shoelace-style/animations": "^1.2.0",
     "@shoelace-style/localize": "^3.2.2",
     "@tailwindcss/postcss": "^4.3.0",
-    "@wailsio/runtime": "3.0.0-alpha.72",
+    "@wailsio/runtime": "^3.0.0-alpha.79",
     "composed-offset-position": "^0.0.6",
     "express": "^5.1.0",
     "highlight.js": "^11.11.1",

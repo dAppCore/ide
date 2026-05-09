@@ -85,24 +85,16 @@ export interface ViSnapshot {
   activity: ActivityItem[];
 }
 
-// Static import of the wails-generated bridge. The earlier dynamic
-// `await import(...)` was meant to keep SSR contexts from evaluating
-// the @wailsio/runtime side-effect, but we don't actually SSR Wails —
-// main.server.ts is scaffolding only. Static import resolves cleanly
-// via tsconfig.json paths and survives both dev (vite) and prod
-// (angular full build).
-//
-// @ts-expect-error — bindings live outside the TS project graph
-// (tsconfig.app.json files:[src/main.ts]); the @bindings/* alias
-// resolves at module-resolution time only.
+// Static import resolves the @bindings/* alias cleanly via Angular's
+// compiler walk; dynamic await import() doesn't get the same alias
+// chase, leaving TS2307 on screen even though the runtime fetch works.
 import * as vibridge from '@bindings/dappco.re/go/ide/pkg/server/vibridge';
 
 /**
- * Load all four Vi data slices in one round-trip. Browser-only — the
- * @wailsio/runtime side-effect import in the binding won't tolerate
- * SSR. Today the only non-browser entry point is main.server.ts which
- * never imports vi.types.ts, so we're safe; if that changes, gate the
- * caller with isPlatformBrowser.
+ * Load all four Vi data slices in one round-trip.
+ *
+ * Browser-only — caller must guard with isPlatformBrowser; SSR would
+ * crash on the @wailsio/runtime side-effect import inside the binding.
  */
 export async function loadViData(): Promise<ViSnapshot> {
   const [status, briefs, sites, activity] = await Promise.all([
