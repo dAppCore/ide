@@ -31,6 +31,8 @@ import { ForgeComponent } from './pages/dev/forge/forge.component';
 import { TenantComponent } from './pages/dev/tenant/tenant.component';
 import { SettingsComponent } from './pages/dev/settings/settings.component';
 import { PluginComponent } from './pages/dev/plugin/plugin.component';
+import { ReposComponent } from './pages/dev/repos/repos.component';
+import { MarketplaceComponent } from './pages/dev/marketplace/marketplace.component';
 import { LegacyPanelHost } from './pages/dev/legacy-panel-host';
 
 /**
@@ -110,6 +112,8 @@ export const routes: Routes = [
           // colon-string scheme with real Angular params).
           { path: 'plugin/:code/:sub', component: PluginComponent },
           { path: 'plugin/:code', component: PluginComponent },
+          { path: 'repos', component: ReposComponent },
+          { path: 'marketplace', component: MarketplaceComponent },
           // Catch-all for panel ids that haven't been extracted yet.
           // Loads an empty host; IdeComponent reads the URL segment and
           // renders the legacy @switch fallback for that panel id. As

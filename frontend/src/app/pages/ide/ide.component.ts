@@ -7,6 +7,7 @@ import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { Brief, Site, ActivityItem, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/store/settings.store';
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
+import { WorkspaceStore } from '../../services/store/workspace.store';
 import { SettingsComponent } from '../dev/settings/settings.component';
 
 // Plugin → native-element-tag map. v1 fixture allowlist; v2 will read from
@@ -4633,6 +4634,7 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly settingsStore = inject(SettingsStore);
   private readonly pluginMenuStore = inject(PluginMenuStore);
+  private readonly workspaceStore = inject(WorkspaceStore);
 
   currentRoute = signal('dashboard');
   currentTime = signal('');
@@ -5141,7 +5143,11 @@ export class IdeComponent implements OnInit, OnDestroy {
   marketLoadedOnce = false;
 
   // Workspace explorer state — drives the Explorer view via /mcp/call
-  workspaceRoot = signal('/Users/snider/Code/core/ide');
+  // Delegating signal — WorkspaceStore is the source of truth, shared
+  // with FileEditorStore (explorer breadcrumbs) and every routed panel
+  // that needs the IDE-wide working directory. Mutations go through
+  // workspaceStore.setRoot().
+  readonly workspaceRoot = this.workspaceStore.root;
   currentPath = signal('/Users/snider/Code/core/ide');
   dirEntries = signal<{ name: string; is_dir: boolean; type: string }[]>([]);
   explorerLoading = signal(false);
@@ -5308,7 +5314,7 @@ export class IdeComponent implements OnInit, OnDestroy {
       }
       const s = this.settings();
       // Apply launch-time settings before per-session ui state overrides.
-      this.workspaceRoot.set(s.workspaceRoot);
+      this.workspaceStore.setRoot(s.workspaceRoot);
       this.currentPath.set(s.workspaceRoot);
       this.currentRoute.set(s.defaultRoute);
       this.chatVisible.set(s.chatVisibleOnLaunch);
@@ -5316,7 +5322,7 @@ export class IdeComponent implements OnInit, OnDestroy {
       if (typeof ui['chat_visible'] === 'boolean') this.chatVisible.set(ui['chat_visible']);
       if (typeof ui['route'] === 'string') this.currentRoute.set(ui['route'] as string);
       if (typeof ui['workspace_root'] === 'string') {
-        this.workspaceRoot.set(ui['workspace_root']);
+        this.workspaceStore.setRoot(ui['workspace_root']);
         this.currentPath.set(ui['workspace_root']);
       }
       if (Array.isArray(ui['open_files'])) {
@@ -6625,7 +6631,7 @@ export class IdeComponent implements OnInit, OnDestroy {
   }
 
   openRepoInGit(repo: { path: string }) {
-    this.workspaceRoot.set(repo.path);
+    this.workspaceStore.setRoot(repo.path);
     this.currentPath.set(repo.path);
     this.currentRoute.set('git');
     void this.refreshGit();
@@ -6648,7 +6654,7 @@ export class IdeComponent implements OnInit, OnDestroy {
   onSettingsSave() {
     const s = this.settings();
     if (this.workspaceRoot() !== s.workspaceRoot) {
-      this.workspaceRoot.set(s.workspaceRoot);
+      this.workspaceStore.setRoot(s.workspaceRoot);
       this.currentPath.set(s.workspaceRoot);
       if (this.currentRoute() === 'explorer') void this.loadDir(s.workspaceRoot);
     }
@@ -6937,7 +6943,7 @@ export class IdeComponent implements OnInit, OnDestroy {
         this.currentPath.set(path);
         this.dirEntries.set(entries);
         // Treat the user's last-navigated dir as the workspace root for restore.
-        this.workspaceRoot.set(path);
+        this.workspaceStore.setRoot(path);
         this.saveUIState();
       }
     } finally {
