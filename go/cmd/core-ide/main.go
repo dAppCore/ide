@@ -56,7 +56,29 @@ func main() {
 		// automatically — window position/size + named layouts persist to
 		// $DIR_CONFIG/Core/{window_state.json,layouts.json}.
 		app = newWailsApp(FrontendFS())
-		guiServices = gui.Bootstrap(app)
+		// Pass IDE config through to gui Bootstrap so chat / container /
+		// p2p services pick up the user's settings (api_url, TIM image,
+		// p2p listen_addr) instead of running on package defaults that
+		// nobody configured. Blank fields keep package defaults — only
+		// the override fields the user actually set in /dev/settings
+		// flow through.
+		guiServices = gui.BootstrapWithConfig(app, gui.BootstrapConfig{
+			Chat: gui.ChatConfig{
+				APIURL:    cfg.Ide.Chat.APIURL,
+				StorePath: cfg.Ide.Chat.StorePath,
+			},
+			Container: gui.ContainerConfig{
+				Image:   cfg.Ide.TIM.Image,
+				Name:    cfg.Ide.TIM.Name,
+				DataDir: cfg.Ide.TIM.DataDir,
+				Command: cfg.Ide.TIM.Command,
+			},
+			P2P: gui.P2PConfig{
+				ListenAddr: cfg.Ide.P2P.ListenAddr,
+				PeerAddrs:  cfg.Ide.P2P.PeerAddrs,
+				NodeID:     cfg.Ide.P2P.NodeID,
+			},
+		})
 	}
 
 	srv, err := server.NewServer(server.Options{

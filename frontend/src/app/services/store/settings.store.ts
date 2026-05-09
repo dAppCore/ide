@@ -45,6 +45,33 @@ export interface CoreSettings {
    * against /assets/i18n/{lang}.json). Default 'en'.
    */
   language: string;
+
+  /**
+   * Chat backend (gui chat service). APIURL points at a local LLM
+   * server (Ollama, Lemma, Vi, etc.). Defaults to "http://localhost:8090"
+   * which matches the gui chat package default. Restart-required —
+   * change takes effect on next IDE launch via gui.BootstrapWithConfig.
+   */
+  chatApiUrl: string;
+  chatStorePath: string;
+
+  /**
+   * TIM (Trusted In-Memory) container manager. Image + Name are the
+   * minimum fields the user must set before /dev/tim's Start button
+   * unlocks. Restart-required.
+   */
+  timImage: string;
+  timName: string;
+  timDataDir: string;
+
+  /**
+   * P2P router (TCP driver). ListenAddr blank = no listener bound;
+   * /dev/p2p surfaces this as empty state. PeerAddrs = newline-separated
+   * bootstrap peers. Restart-required.
+   */
+  p2pListenAddr: string;
+  p2pPeerAddrs: string;
+  p2pNodeId: string;
 }
 
 export const DEFAULT_SETTINGS: CoreSettings = {
@@ -63,6 +90,14 @@ export const DEFAULT_SETTINGS: CoreSettings = {
   terminalSshPort: 9876,
   theme: 'lethean',
   language: 'en',
+  chatApiUrl: '',
+  chatStorePath: '',
+  timImage: '',
+  timName: '',
+  timDataDir: '',
+  p2pListenAddr: '',
+  p2pPeerAddrs: '',
+  p2pNodeId: '',
 };
 
 /**
@@ -124,5 +159,59 @@ export class SettingsStore {
     this.settings.set({ ...DEFAULT_SETTINGS });
     this.dirty.set(true);
     this.saveMessage.set(null);
+  }
+
+  /**
+   * Apply a snapshot returned by /internal/ide-config GET — the body
+   * shape mirrors the Go cfg.Ide.{Chat,TIM,P2P} structs, with
+   * snake_case keys per YAML convention. We fold them into the
+   * camelCase settings fields here so the UI binds normally.
+   */
+  hydrateIdeConfig(ide: Record<string, any>): void {
+    const chat = (ide['chat'] || {}) as Record<string, any>;
+    const tim = (ide['tim'] || {}) as Record<string, any>;
+    const p2p = (ide['p2p'] || {}) as Record<string, any>;
+    this.settings.update((s) => ({
+      ...s,
+      chatApiUrl: typeof chat['api_url'] === 'string' ? chat['api_url'] : s.chatApiUrl,
+      chatStorePath: typeof chat['store_path'] === 'string' ? chat['store_path'] : s.chatStorePath,
+      timImage: typeof tim['image'] === 'string' ? tim['image'] : s.timImage,
+      timName: typeof tim['name'] === 'string' ? tim['name'] : s.timName,
+      timDataDir: typeof tim['data_dir'] === 'string' ? tim['data_dir'] : s.timDataDir,
+      p2pListenAddr: typeof p2p['listen_addr'] === 'string' ? p2p['listen_addr'] : s.p2pListenAddr,
+      p2pPeerAddrs: Array.isArray(p2p['peer_addrs']) ? (p2p['peer_addrs'] as string[]).join('\n') : s.p2pPeerAddrs,
+      p2pNodeId: typeof p2p['node_id'] === 'string' ? p2p['node_id'] : s.p2pNodeId,
+    }));
+    // Loaded values are clean by definition.
+    this.dirty.set(false);
+  }
+
+  /**
+   * Build the body to POST to /internal/ide-config. Mirrors the YAML
+   * shape: snake_case keys per top-level subkey, peer_addrs as a real
+   * string array (split + trimmed from the textarea content).
+   */
+  ideConfigPayload(): Record<string, Record<string, unknown>> {
+    const s = this.settings();
+    const peers = s.p2pPeerAddrs
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return {
+      chat: {
+        api_url: s.chatApiUrl,
+        store_path: s.chatStorePath,
+      },
+      tim: {
+        image: s.timImage,
+        name: s.timName,
+        data_dir: s.timDataDir,
+      },
+      p2p: {
+        listen_addr: s.p2pListenAddr,
+        peer_addrs: peers,
+        node_id: s.p2pNodeId,
+      },
+    };
   }
 }

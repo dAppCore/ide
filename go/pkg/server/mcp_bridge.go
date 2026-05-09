@@ -142,6 +142,7 @@ func (b *MCPBridge) OnStartup(ctx context.Context) core.Result {
 	// exist so fixtures have something concrete to "Run" into.
 	mux.HandleFunc("/plugin/", b.handlePluginShell)
 	mux.HandleFunc("/internal/ui-state", b.handleInternalUIState)
+	mux.HandleFunc("/internal/ide-config", b.handleInternalIDEConfig)
 
 	b.mu.Lock()
 	b.httpSrv = &http.Server{
@@ -1012,6 +1013,94 @@ func (b *MCPBridge) handleInternalUIState(w http.ResponseWriter, r *http.Request
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "saved": body})
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// handleInternalIDEConfig reads (GET) or merges (POST) the user's
+// IDE-side config — the bits the gui chat / container / p2p services
+// need at next boot. State lives under "ide.chat", "ide.tim", "ide.p2p"
+// in ~/.core/config.yaml so the next process launch picks them up via
+// config.Load → cfg.Ide.Chat / TIM / P2P → gui.BootstrapWithConfig.
+//
+// Separate from /internal/ui-state because that endpoint replaces the
+// whole "ui" subtree per save; clobbering "ide" the same way would lose
+// every non-UI-managed field (transport / brain / subagent / etc.). We
+// merge per top-level subkey instead — the body shape mirrors what the
+// frontend's settings store wants to expose:
+//
+//	GET  /internal/ide-config            → {"ok": true, "ide": {chat:{...},tim:{...},p2p:{...}}}
+//	POST /internal/ide-config            → body {"chat":{"api_url":"..."},"tim":{...},"p2p":{...}}
+//	                                        merged into ide.chat / tim / p2p; takes
+//	                                        effect on next IDE restart.
+func (b *MCPBridge) handleInternalIDEConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	cfg, err := b.uiConfig()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "ok": false})
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		// Return only the subkeys the UI manages so callers don't see
+		// transport/brain/subagent/etc. by accident.
+		out := map[string]any{}
+		for _, key := range []string{"chat", "tim", "p2p"} {
+			var v map[string]any
+			if r := cfg.Get("ide."+key, &v); r.OK {
+				out[key] = v
+			}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "ide": out})
+
+	case http.MethodPost:
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "ok": false})
+			return
+		}
+		// Per-subkey set so we don't clobber sibling ide.* config the
+		// settings UI has no concept of.
+		saved := map[string]any{}
+		for _, key := range []string{"chat", "tim", "p2p"} {
+			value, ok := body[key]
+			if !ok {
+				continue
+			}
+			if r := cfg.Set("ide."+key, value); !r.OK {
+				w.WriteHeader(http.StatusInternalServerError)
+				msg := "set failed for ide." + key
+				if e, ok := r.Value.(error); ok {
+					msg = e.Error()
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"error": msg, "ok": false})
+				return
+			}
+			saved[key] = value
+		}
+		if r := cfg.Commit(); !r.OK {
+			w.WriteHeader(http.StatusInternalServerError)
+			msg := "commit failed"
+			if e, ok := r.Value.(error); ok {
+				msg = e.Error()
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": msg, "ok": false})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "saved": saved})
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

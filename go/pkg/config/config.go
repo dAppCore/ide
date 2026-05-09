@@ -20,6 +20,8 @@ type Ide struct {
 	Navigate    Navigate    `yaml:"navigate"`
 	Marketplace Marketplace `yaml:"marketplace"`
 	Chat        Chat        `yaml:"chat"`
+	TIM         TIM         `yaml:"tim"`
+	P2P         P2P         `yaml:"p2p"`
 }
 
 type Transport struct {
@@ -320,6 +322,44 @@ func (cfg Chat) WithDefaults() Chat {
 	return cfg
 }
 
+// TIM holds the Trusted In-Memory container manager config.
+//
+// The gui container service uses these to spin up an isolated workload
+// (Apple Containers / Docker / Podman) when the user clicks Start in
+// /dev/tim. Image and Name are the only required fields — when both
+// are blank, Start is disabled in the UI and the service runs as a
+// "no container configured" stub.
+type TIM struct {
+	Image   string   `yaml:"image"`
+	Name    string   `yaml:"name"`
+	DataDir string   `yaml:"data_dir"`
+	Command []string `yaml:"command"`
+}
+
+func (cfg TIM) WithDefaults() TIM {
+	// No defaults — leaving Image/Name blank is the canonical "not
+	// configured" signal that the /dev/tim panel surfaces as the empty
+	// state. DataDir and Command are likewise optional; the container
+	// service falls back to its own defaults when the user starts.
+	return cfg
+}
+
+// P2P holds the peer-to-peer router config (TCP driver).
+//
+// ListenAddr blank means "no listener bound" — the panel surfaces this
+// as empty state. PeerAddrs is a list of bootstrap peers to dial on
+// start; NodeID identifies this instance to the network.
+type P2P struct {
+	ListenAddr string   `yaml:"listen_addr"`
+	PeerAddrs  []string `yaml:"peer_addrs"`
+	NodeID     string   `yaml:"node_id"`
+}
+
+func (cfg P2P) WithDefaults() P2P {
+	// No defaults — same "blank == not configured" rule as TIM.
+	return cfg
+}
+
 type LoaderOptions struct {
 	Medium coreio.Medium
 	Paths  []string
@@ -389,5 +429,7 @@ func (cfg IDEConfig) WithDefaults() IDEConfig {
 	cfg.Ide.Navigate = cfg.Ide.Navigate.WithDefaults()
 	cfg.Ide.Marketplace = cfg.Ide.Marketplace.WithDefaults()
 	cfg.Ide.Chat = cfg.Ide.Chat.WithDefaults()
+	cfg.Ide.TIM = cfg.Ide.TIM.WithDefaults()
+	cfg.Ide.P2P = cfg.Ide.P2P.WithDefaults()
 	return cfg
 }

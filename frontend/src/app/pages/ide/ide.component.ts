@@ -504,6 +504,22 @@ export class IdeComponent implements OnInit, OnDestroy {
       if (ui['settings'] && typeof ui['settings'] === 'object') {
         this.settingsStore.hydrate(ui['settings'] as Record<string, any>);
       }
+
+      // Backend config \u2014 pulled from /internal/ide-config in parallel
+      // with the ui-state load. Hydrate folds chat/tim/p2p subkeys
+      // into the camelCase settings fields so the UI binds normally.
+      // Failure (config file doesn't have ide.* yet) is silent \u2014 the
+      // user will see blank fields and configure them.
+      try {
+        const ideRes = await fetch('http://127.0.0.1:9877/internal/ide-config');
+        const ideData = await ideRes.json();
+        const ide = (ideData?.ide ?? {}) as Record<string, any>;
+        if (Object.keys(ide).length > 0) {
+          this.settingsStore.hydrateIdeConfig(ide);
+        }
+      } catch (e) {
+        console.warn('[ide-config] load failed (likely first run):', e);
+      }
       const s = this.settings();
       this.workspaceStore.setRoot(s.workspaceRoot);
       this.fileEditor.setExplorerPath(s.workspaceRoot);
@@ -566,6 +582,19 @@ export class IdeComponent implements OnInit, OnDestroy {
       body: JSON.stringify(state),
       keepalive: true,
     }).catch((e) => console.warn('[ui-state] save failed:', e));
+
+    // Backend config (chat / TIM / p2p) lives outside the ui.* subtree
+    // because it gets clobbered by the ui-state save on every keystroke
+    // and we'd lose sibling ide.* fields. Send it to the dedicated
+    // /internal/ide-config endpoint which merges per top-level subkey.
+    // Restart-required to take effect — gui.BootstrapWithConfig only
+    // reads at boot.
+    fetch('http://127.0.0.1:9877/internal/ide-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.settingsStore.ideConfigPayload()),
+      keepalive: true,
+    }).catch((e) => console.warn('[ide-config] save failed:', e));
   }
 
   // --- Settings round-trip ---

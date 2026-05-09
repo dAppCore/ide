@@ -170,6 +170,77 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
           </label>
         </div>
 
+        <div class="settings-group">
+          <h3 class="settings-group-title">AI / Chat (restart required)</h3>
+          <p class="settings-group-hint">Tells the gui chat service where to find your local LLM. Lemma plugs in here. Default is http://localhost:8090; point at any compatible HTTP endpoint (Ollama on :11434, Vi sidecar, etc.).</p>
+          <label class="settings-row stacked">
+            <span class="settings-label">Chat API URL <span class="settings-hint">(blank = http://localhost:8090)</span></span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().chatApiUrl"
+                   placeholder="http://localhost:8090"
+                   (input)="updateStr('chatApiUrl', $any($event.target).value)" />
+          </label>
+          <label class="settings-row stacked">
+            <span class="settings-label">Chat store path <span class="settings-hint">(blank = ~/.core/gui/chat.db)</span></span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().chatStorePath"
+                   placeholder="~/.core/gui/chat.db"
+                   (input)="updateStr('chatStorePath', $any($event.target).value)" />
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3 class="settings-group-title">TIM container (restart required)</h3>
+          <p class="settings-group-hint">Trusted In-Memory container manager. Image + Name unlock /dev/tim's Start button. Runs via the host runtime detected at /dev/tim (Apple Containers / Docker / Podman).</p>
+          <label class="settings-row stacked">
+            <span class="settings-label">TIM image</span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().timImage"
+                   placeholder="alpine:latest"
+                   (input)="updateStr('timImage', $any($event.target).value)" />
+          </label>
+          <label class="settings-row stacked">
+            <span class="settings-label">TIM container name</span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().timName"
+                   placeholder="core-tim"
+                   (input)="updateStr('timName', $any($event.target).value)" />
+          </label>
+          <label class="settings-row stacked">
+            <span class="settings-label">TIM data directory <span class="settings-hint">(blank = container default)</span></span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().timDataDir"
+                   placeholder="/var/lib/tim"
+                   (input)="updateStr('timDataDir', $any($event.target).value)" />
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3 class="settings-group-title">P2P (restart required)</h3>
+          <p class="settings-group-hint">Peer-to-peer router (TCP driver). Listen address must be set for /dev/p2p's Publish to work. Bootstrap peers (one per line) get dialed at start.</p>
+          <label class="settings-row stacked">
+            <span class="settings-label">Listen address <span class="settings-hint">(blank = no listener bound)</span></span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().p2pListenAddr"
+                   placeholder="127.0.0.1:9100"
+                   (input)="updateStr('p2pListenAddr', $any($event.target).value)" />
+          </label>
+          <label class="settings-row stacked">
+            <span class="settings-label">Bootstrap peers <span class="settings-hint">(one per line)</span></span>
+            <textarea class="settings-input textarea" rows="4"
+                      [value]="store.settings().p2pPeerAddrs"
+                      placeholder="10.0.0.1:9100&#10;10.0.0.2:9100"
+                      (input)="updateStr('p2pPeerAddrs', $any($event.target).value)"></textarea>
+          </label>
+          <label class="settings-row stacked">
+            <span class="settings-label">Node ID <span class="settings-hint">(blank = auto-assigned)</span></span>
+            <input type="text" class="settings-input"
+                   [value]="store.settings().p2pNodeId"
+                   placeholder="(auto)"
+                   (input)="updateStr('p2pNodeId', $any($event.target).value)" />
+          </label>
+        </div>
+
       </div>
     </section>
   `,
