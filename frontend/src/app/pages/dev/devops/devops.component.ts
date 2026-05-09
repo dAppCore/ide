@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
@@ -56,27 +57,27 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
 @Component({
   selector: 'dev-devops',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block dvo-block">
       <div class="block-header dvo-header">
-        <h2 class="block-title">DevOps</h2>
-        <span class="editorial subtitle">Secret scanning + Ansible playbooks · Surface over <code>core/go-devops</code>.</span>
+        <h2 class="block-title">{{ 'devops.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'devops.subtitle.prefix' | translate }} <code>core/go-devops</code>.</span>
       </div>
       <div class="dvo-toolbar">
         <div class="dvo-tabs">
           <button class="dvo-tab" [class.active]="devopsTab() === 'secrets'" (click)="devopsTab.set('secrets')">
-            Secrets <span class="dvo-tab-count">{{ devopsFindings().length || '—' }}</span>
+            {{ 'devops.tab.secrets' | translate }} <span class="dvo-tab-count">{{ devopsFindings().length || '—' }}</span>
           </button>
           <button class="dvo-tab" [class.active]="devopsTab() === 'playbooks'" (click)="devopsTab.set('playbooks'); ensurePlaybooksLoaded()">
-            Playbooks <span class="dvo-tab-count">{{ devopsPlaybooks().length }}</span>
+            {{ 'devops.tab.playbooks' | translate }} <span class="dvo-tab-count">{{ devopsPlaybooks().length }}</span>
           </button>
         </div>
         @if (devopsTab() === 'playbooks') {
           @if (playbooksCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="playbooksCacheAge() > 600" (click)="loadDevopsPlaybooks(true)" title="Click to force re-scan">● cached {{ formatCacheAge(playbooksCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="playbooksCacheAge() > 600" (click)="loadDevopsPlaybooks(true)" [title]="'devops.tooltip.force-rescan' | translate">● {{ 'devops.cache.cached' | translate }} {{ formatCacheAge(playbooksCacheAge()) }}</span>
           } @else if (devopsPlaybooks().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'devops.tooltip.just-scanned' | translate">● {{ 'devops.cache.fresh' | translate }}</span>
           }
         }
       </div>
@@ -85,12 +86,12 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
         @if (devopsTab() === 'secrets') {
           <div class="dvo-scan-controls">
             <select class="dvo-input" [value]="devopsScanner()" (change)="devopsScanner.set($any($event.target).value)">
-              <option value="regex">regex (built-in, no deps)</option>
-              <option value="gitleaks">gitleaks (~150 patterns, requires binary)</option>
+              <option value="regex">regex ({{ 'devops.option.regex-detail' | translate }})</option>
+              <option value="gitleaks">gitleaks ({{ 'devops.option.gitleaks-detail' | translate }})</option>
             </select>
-            <span class="dvo-target">target: <code>{{ workspace.root() }}</code></span>
+            <span class="dvo-target">{{ 'devops.label.target' | translate }} <code>{{ workspace.root() }}</code></span>
             <button class="btn btn-primary btn-sm" (click)="runDevopsSecretScan()" [disabled]="devopsScanRunning()">
-              @if (devopsScanRunning()) { <span>scanning…</span> } @else { <span>Scan</span> }
+              @if (devopsScanRunning()) { <span>{{ 'devops.status.scanning' | translate }}</span> } @else { <span>{{ 'devops.button.scan' | translate }}</span> }
             </button>
           </div>
           @if (devopsScanError(); as err) {
@@ -112,17 +113,17 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
               </button>
             }
             @if (devopsFindings().length === 0 && !devopsScanRunning() && !devopsScanError()) {
-              <div class="dvo-empty">No scan run yet — click Scan.</div>
+              <div class="dvo-empty">{{ 'devops.empty.no-scan' | translate }}</div>
             }
           </div>
         } @else {
           @if (playbooksScan.firstLoad()) {
             <dev-skeleton kind="rows" [count]="6" />
           } @else if (devopsPlaybooks().length === 0) {
-            <div class="dvo-empty">No playbooks found in ~/Code/DevOps/playbooks/ or core/go-devops/playbooks/.</div>
+            <div class="dvo-empty">{{ 'devops.empty.no-playbooks' | translate }}</div>
           } @else {
             <table class="dvo-table">
-              <thead><tr><th>name</th><th>description</th><th>size</th><th>root</th></tr></thead>
+              <thead><tr><th>{{ 'devops.column.name' | translate }}</th><th>{{ 'devops.column.description' | translate }}</th><th>{{ 'devops.column.size' | translate }}</th><th>{{ 'devops.column.root' | translate }}</th></tr></thead>
               <tbody>
                 @for (p of devopsPlaybooks(); track p.path) {
                   <tr class="dvo-row" (click)="openPlaybook(p)">
