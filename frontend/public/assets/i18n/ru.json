@@ -64,5 +64,17 @@
   "containers.cap.subsecond-start": "<1 с начало",
   "containers.section.running": "Запуск контейнеров",
   "containers.empty.none-running": "Ничего не работает.",
-  "containers.section.logs": "Журналы"
+  "containers.section.logs": "Журналы",
+  "control-panel.section.briefs": "Сводки",
+  "control-panel.status.done": "ГОТОВО",
+  "control-panel.section.sites": "Сайты",
+  "control-panel.label.watched": "смотрел",
+  "control-panel.label.green": "зеленый",
+  "control-panel.column.domain": "Домен",
+  "control-panel.column.stack": "Стек",
+  "control-panel.column.uptime": "Время работы",
+  "control-panel.column.response": "Ответ",
+  "control-panel.column.deploy": "Развертывание",
+  "control-panel.section.activity": "Деятельность",
+  "control-panel.subtitle.last-hours": "последние несколько часов"
 }

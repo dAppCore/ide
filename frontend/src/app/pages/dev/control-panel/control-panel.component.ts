@@ -2,6 +2,7 @@
 
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { UpperCasePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '../../../lib/vi.types';
 
 /**
@@ -13,12 +14,12 @@ import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '
 @Component({
   selector: 'dev-control-panel',
   standalone: true,
-  imports: [UpperCasePipe],
+  imports: [UpperCasePipe, TranslatePipe],
   template: `
     <!-- Brief grid -->
     <section class="block">
       <div class="block-header">
-        <h2 class="block-title">Briefs</h2>
+        <h2 class="block-title">{{ 'control-panel.section.briefs' | translate }}</h2>
         <span class="editorial subtitle">{{ briefSubtitle() }}</span>
       </div>
       <div class="brief-grid">
@@ -30,7 +31,7 @@ import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '
                 <span class="tone-dot"></span>
                 <span class="brief-time">{{ brief.time }}</span>
                 @if (brief.done) {
-                  <span class="brief-done">DONE</span>
+                  <span class="brief-done">{{ 'control-panel.status.done' | translate }}</span>
                 }
               </div>
               <h3 class="brief-title">{{ brief.title }}</h3>
@@ -54,16 +55,16 @@ import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '
     <!-- Sites table -->
     <section class="block">
       <div class="block-header">
-        <h2 class="block-title">Sites</h2>
-        <span class="editorial subtitle">{{ vi().watching }} watched · {{ greenCount() }} green</span>
+        <h2 class="block-title">{{ 'control-panel.section.sites' | translate }}</h2>
+        <span class="editorial subtitle">{{ vi().watching }} {{ 'control-panel.label.watched' | translate }} · {{ greenCount() }} {{ 'control-panel.label.green' | translate }}</span>
       </div>
       <div class="sites-table">
         <div class="sites-row sites-head">
-          <span>Domain</span>
-          <span>Stack</span>
-          <span>Uptime</span>
-          <span>Response</span>
-          <span>Deploy</span>
+          <span>{{ 'control-panel.column.domain' | translate }}</span>
+          <span>{{ 'control-panel.column.stack' | translate }}</span>
+          <span>{{ 'control-panel.column.uptime' | translate }}</span>
+          <span>{{ 'control-panel.column.response' | translate }}</span>
+          <span>{{ 'control-panel.column.deploy' | translate }}</span>
         </div>
         @for (site of sites(); track site.domain) {
           <div class="sites-row">
@@ -88,8 +89,8 @@ import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '
     <!-- Activity stream -->
     <section class="block">
       <div class="block-header">
-        <h2 class="block-title">Activity</h2>
-        <span class="editorial subtitle">last few hours</span>
+        <h2 class="block-title">{{ 'control-panel.section.activity' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'control-panel.subtitle.last-hours' | translate }}</span>
       </div>
       <div class="activity-list">
         @for (item of activity(); track $index) {

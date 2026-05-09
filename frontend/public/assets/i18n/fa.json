@@ -64,5 +64,17 @@
   "containers.cap.subsecond-start": "شروع <1s",
   "containers.section.running": "کانتینرهای در حال اجرا",
   "containers.empty.none-running": "هیچ چیز در حال اجرا نیست.",
-  "containers.section.logs": "سیاههها"
+  "containers.section.logs": "سیاههها",
+  "control-panel.section.briefs": "خلاصه‌ها",
+  "control-panel.status.done": "انجام شد",
+  "control-panel.section.sites": "سایت ها",
+  "control-panel.label.watched": "تماشا کرد",
+  "control-panel.label.green": "سبز",
+  "control-panel.column.domain": "دامنه",
+  "control-panel.column.stack": "پشته",
+  "control-panel.column.uptime": "آپتایم",
+  "control-panel.column.response": "پاسخ",
+  "control-panel.column.deploy": "مستقر کنید",
+  "control-panel.section.activity": "فعالیت",
+  "control-panel.subtitle.last-hours": "چند ساعت گذشته"
 }

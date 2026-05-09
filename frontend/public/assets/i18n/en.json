@@ -64,5 +64,17 @@
   "containers.cap.subsecond-start": "<1s start",
   "containers.section.running": "Running containers",
   "containers.empty.none-running": "Nothing running.",
-  "containers.section.logs": "Logs"
+  "containers.section.logs": "Logs",
+  "control-panel.section.briefs": "Briefs",
+  "control-panel.status.done": "DONE",
+  "control-panel.section.sites": "Sites",
+  "control-panel.label.watched": "watched",
+  "control-panel.label.green": "green",
+  "control-panel.column.domain": "Domain",
+  "control-panel.column.stack": "Stack",
+  "control-panel.column.uptime": "Uptime",
+  "control-panel.column.response": "Response",
+  "control-panel.column.deploy": "Deploy",
+  "control-panel.section.activity": "Activity",
+  "control-panel.subtitle.last-hours": "last few hours"
 }

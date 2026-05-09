@@ -64,5 +64,17 @@
   "containers.cap.subsecond-start": "<1秒启动",
   "containers.section.running": "运行容器",
   "containers.empty.none-running": "没有运行。",
-  "containers.section.logs": "日志"
+  "containers.section.logs": "日志",
+  "control-panel.section.briefs": "简报",
+  "control-panel.status.done": "完成",
+  "control-panel.section.sites": "站点",
+  "control-panel.label.watched": "看过",
+  "control-panel.label.green": "绿色",
+  "control-panel.column.domain": "域名",
+  "control-panel.column.stack": "堆栈",
+  "control-panel.column.uptime": "正常运行时间",
+  "control-panel.column.response": "回应",
+  "control-panel.column.deploy": "部署",
+  "control-panel.section.activity": "活动",
+  "control-panel.subtitle.last-hours": "最后几个小时"
 }

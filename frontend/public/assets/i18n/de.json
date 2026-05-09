@@ -64,5 +64,17 @@
   "containers.cap.subsecond-start": "<1s Start",
   "containers.section.running": "Laufende Container",
   "containers.empty.none-running": "Nichts läuft.",
-  "containers.section.logs": "Protokolle"
+  "containers.section.logs": "Protokolle",
+  "control-panel.section.briefs": "Kurzmeldungen",
+  "control-panel.status.done": "FERTIG",
+  "control-panel.section.sites": "Websites",
+  "control-panel.label.watched": "beobachtet",
+  "control-panel.label.green": "grün",
+  "control-panel.column.domain": "Domäne",
+  "control-panel.column.stack": "Stapel",
+  "control-panel.column.uptime": "Betriebszeit",
+  "control-panel.column.response": "Antwort",
+  "control-panel.column.deploy": "Bereitstellen",
+  "control-panel.section.activity": "Aktivität",
+  "control-panel.subtitle.last-hours": "letzten paar Stunden"
 }
