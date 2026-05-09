@@ -109,7 +109,7 @@ interface ChatConversation {
                   <div class="chat-msg-head">
                     <span class="chat-msg-role">{{ m.role }}</span>
                     @if (m.model) { <span class="chat-msg-model">{{ m.model }}</span> }
-                    <span class="chat-msg-time">{{ m.created_at?.slice(11, 19) }}</span>
+                    <span class="chat-msg-time">{{ m.created_at.slice(11, 19) }}</span>
                   </div>
                   <div class="chat-msg-content">{{ m.content }}</div>
                 </div>

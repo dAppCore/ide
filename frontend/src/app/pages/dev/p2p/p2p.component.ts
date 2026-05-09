@@ -102,7 +102,7 @@ interface P2PState {
                         {{ p.connected ? ('p2p.status.connected' | translate) : ('p2p.status.disconnected' | translate) }}
                       </span>
                     </td>
-                    <td><code>{{ p.seen_at?.slice(11, 19) }}</code></td>
+                    <td><code>{{ p.seen_at.slice(11, 19) }}</code></td>
                   </tr>
                 }
               </tbody>
