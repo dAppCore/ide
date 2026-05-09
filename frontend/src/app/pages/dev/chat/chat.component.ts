@@ -94,7 +94,7 @@ interface ChatConversation {
                       [class.active]="selectedConversationId() === c.id"
                       (click)="loadConversation(c.id)">
                 <span class="chat-conv-title">{{ c.title || 'untitled' }}</span>
-                <span class="chat-conv-meta">{{ c.model }} · {{ c.updated_at?.slice(0, 10) }}</span>
+                <span class="chat-conv-meta">{{ c.model }} · {{ c.updated_at.slice(0, 10) }}</span>
               </button>
             }
           </aside>

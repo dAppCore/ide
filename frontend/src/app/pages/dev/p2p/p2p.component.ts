@@ -2,21 +2,14 @@
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
+import * as P2PBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/p2pbridge';
+import { P2PStateOutput } from '../../../../../bindings/dappco.re/go/ide/pkg/server/models';
 import { NotificationService } from '../../../services/notification.service';
 
-interface P2PPeer {
-  id: string;
-  topic: string;
-  connected: boolean;
-  seen_at: string;
-}
-
-interface P2PState {
-  node_id?: string;
-  listen_addr?: string;
-  peers?: P2PPeer[];
-}
+// First panel migrated to typed wails bindings — replaces the HTTP
+// callBridge round-trip with a direct goroutine call. Generated TS
+// lives in frontend/bindings/dappco.re/go/ide/pkg/server/p2pbridge.ts;
+// regenerate with `task generate:bindings` after Go-side method changes.
 
 /**
  * P2P panel — gui p2p service surface. Shows the local peer node ID +
@@ -28,8 +21,11 @@ interface P2PState {
  * Publish is silently no-op. Tell the user to set p2p.listen_addr in
  * /dev/settings rather than letting the panel pretend to work.
  *
- * TODO(snider/wails): replace callBridge('p2p_*') with a p2pBridge
- * wails service for streamed peer events.
+ * Migrated 2026-05-09 from callBridge('p2p_*') to the typed
+ * P2PBridge wails binding — direct goroutine calls instead of HTTP
+ * round-trips. First panel in the wails-binding sweep; rest follow
+ * the same pattern (struct in pkg/server, app.RegisterService in
+ * gui.go, wails3 generate bindings, panel imports + uses).
  */
 @Component({
   selector: 'dev-p2p',
@@ -170,7 +166,7 @@ interface P2PState {
 export class P2PComponent implements OnInit {
   private readonly notify = inject(NotificationService);
 
-  readonly state = signal<P2PState | null>(null);
+  readonly state = signal<P2PStateOutput | null>(null);
   readonly loading = signal(false);
   readonly probeError = signal<string | null>(null);
 
@@ -189,8 +185,8 @@ export class P2PComponent implements OnInit {
     this.loading.set(true);
     this.probeError.set(null);
     try {
-      const v = await callBridge<{ state?: P2PState }>('p2p_state', {});
-      this.state.set(v?.state || null);
+      const v = await P2PBridge.State();
+      this.state.set(v);
     } catch (e) {
       this.probeError.set(e instanceof Error ? e.message : String(e));
     } finally {
@@ -217,15 +213,16 @@ export class P2PComponent implements OnInit {
     }
 
     try {
-      const v = await callBridge<{ success?: boolean }>('p2p_publish', {
+      const v = await P2PBridge.Publish({
         topic: this.topic().trim(),
         route: this.route().trim(),
+        sender_id: '',
         payload,
       });
       this.notify.notify({
-        message: v?.success ? 'Frame published' : 'Publish returned (no transport)',
-        variant: v?.success ? 'success' : 'warning',
-        icon: v?.success ? 'check' : 'triangle-exclamation',
+        message: v.success ? 'Frame published' : 'Publish returned (no transport)',
+        variant: v.success ? 'success' : 'warning',
+        icon: v.success ? 'check' : 'triangle-exclamation',
       });
       void this.refresh();
     } catch (e) {

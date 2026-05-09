@@ -5,6 +5,121 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class P2PPeer {
+    "id": string;
+    "topic": string;
+    "connected": boolean;
+    "seen_at": string;
+
+    /** Creates a new P2PPeer instance. */
+    constructor($$source: Partial<P2PPeer> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("topic" in $$source)) {
+            this["topic"] = "";
+        }
+        if (!("connected" in $$source)) {
+            this["connected"] = false;
+        }
+        if (!("seen_at" in $$source)) {
+            this["seen_at"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new P2PPeer instance from a string or object.
+     */
+    static createFrom($$source: any = {}): P2PPeer {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new P2PPeer($$parsedSource as Partial<P2PPeer>);
+    }
+}
+
+/**
+ * P2PPublishInput matches the existing tools_p2p.go P2PPublishInput
+ * so the FE doesn't need to rename anything.
+ */
+export class P2PPublishInput {
+    "topic": string;
+    "route"?: string;
+    "sender_id"?: string;
+    "payload"?: { [_ in string]?: any };
+
+    /** Creates a new P2PPublishInput instance. */
+    constructor($$source: Partial<P2PPublishInput> = {}) {
+        if (!("topic" in $$source)) {
+            this["topic"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new P2PPublishInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): P2PPublishInput {
+        const $$createField3_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("payload" in $$parsedSource) {
+            $$parsedSource["payload"] = $$createField3_0($$parsedSource["payload"]);
+        }
+        return new P2PPublishInput($$parsedSource as Partial<P2PPublishInput>);
+    }
+}
+
+export class P2PPublishOutput {
+    "success": boolean;
+
+    /** Creates a new P2PPublishOutput instance. */
+    constructor($$source: Partial<P2PPublishOutput> = {}) {
+        if (!("success" in $$source)) {
+            this["success"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new P2PPublishOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): P2PPublishOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new P2PPublishOutput($$parsedSource as Partial<P2PPublishOutput>);
+    }
+}
+
+/**
+ * P2PStateOutput mirrors the gui p2p.State payload that the
+ * /dev/p2p panel binds. Field names are JSON-tagged to match the
+ * existing callBridge contract so the swap is transparent.
+ */
+export class P2PStateOutput {
+    "node_id"?: string;
+    "listen_addr"?: string;
+    "peers"?: P2PPeer[];
+
+    /** Creates a new P2PStateOutput instance. */
+    constructor($$source: Partial<P2PStateOutput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new P2PStateOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): P2PStateOutput {
+        const $$createField2_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("peers" in $$parsedSource) {
+            $$parsedSource["peers"] = $$createField2_0($$parsedSource["peers"]);
+        }
+        return new P2PStateOutput($$parsedSource as Partial<P2PStateOutput>);
+    }
+}
+
 export class chatBridgeToolCall {
     "name": string;
     "arguments"?: { [_ in string]?: any };
@@ -33,3 +148,5 @@ export class chatBridgeToolCall {
 
 // Private type creation functions
 const $$createType0 = $Create.Map($Create.Any, $Create.Any);
+const $$createType1 = P2PPeer.createFrom;
+const $$createType2 = $Create.Array($$createType1);

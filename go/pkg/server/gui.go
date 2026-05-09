@@ -137,6 +137,7 @@ func (shell *GUIShell) Run(
 	// after server.NewServer. Wails accepts services up until app.Run().
 	app.RegisterService(application.NewService(&chatBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&viBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&p2pBridge{core: coreInstance}))
 
 	// Open the IDE window through window.Service so the manager tracks it
 	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)
