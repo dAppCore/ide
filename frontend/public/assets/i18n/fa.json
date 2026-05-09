@@ -281,5 +281,19 @@
   "plugin.title": "پلاگین",
   "plugin.label.code": "کد",
   "plugin.status.not-installed": "نصب نشده است",
-  "plugin.empty.no-match": "هیچ افزونه نصب شده ای با آن کد مطابقت ندارد. آن را از /dev/marketplace نصب کنید."
+  "plugin.empty.no-match": "هیچ افزونه نصب شده ای با آن کد مطابقت ندارد. آن را از /dev/marketplace نصب کنید.",
+  "welcome.title": "تأیید router-outlet",
+  "welcome.subtitle.prefix": "شما در",
+  "welcome.subtitle.suffix": "- از طریق router-outlet فرزند IdeComponent رندر می‌شود.",
+  "welcome.body": "زمانی که یک مسیر فرزند فعال است، fallback قدیمی @switch مخفی می‌شود. با خارج شدن پنل‌ها از switch به کامپوننت‌های خاص خود، با URL به آن‌ها بروید - مهاجرت سایدبار پس از استخراج تعداد قابل توجهی از پنل‌ها انجام می‌شود.",
+  "terminal.title": "ترمینال",
+  "site.label.uptime": "آپ‌تایم",
+  "site.label.p95": "p95",
+  "site.body.dashboard-roadmap": "داشبورد عملیاتی سرویس در نقشه راه است - ببینید",
+  "site.label.status-stub": "وضعیت: پیش‌نویس",
+  "site.body.planned": "برنامه‌ریزی شده: سری زمانی نرخ خطا / تأخیر، گزارش خطای اخیر، خط زمانی دیپلوی (forge_releases بر اساس سرویس)، اقدامات restart / rollback / scale تحت کنترل tenant.Can.",
+  "site.label.last-deploy": "آخرین دیپلوی:",
+  "site.status.unknown": "سرویس ناشناخته",
+  "site.empty.no-service-prefix": "هیچ سرویسی برای",
+  "site.empty.no-service-suffix": "آن را به snapshot سایت‌ها اضافه کنید یا منتظر اتصال داشبورد ops بمانید (ببینید"
 }

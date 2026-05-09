@@ -281,5 +281,19 @@
   "plugin.title": "插件",
   "plugin.label.code": "代码",
   "plugin.status.not-installed": "未安装。",
-  "plugin.empty.no-match": "没有安装的插件与该代码匹配。从 /dev/marketplace 安装它。"
+  "plugin.empty.no-match": "没有安装的插件与该代码匹配。从 /dev/marketplace 安装它。",
+  "welcome.title": "Router-outlet 验证",
+  "welcome.subtitle.prefix": "您当前位于",
+  "welcome.subtitle.suffix": "- 通过 IdeComponent 的子 router-outlet 渲染。",
+  "welcome.body": "当子路由激活时，旧版 @switch 回退会隐藏。随着面板从 switch 移出到独立组件，请通过 URL 导航 - 一旦提取出足够多的面板，侧边栏迁移将随之而来。",
+  "terminal.title": "终端",
+  "site.label.uptime": "正常运行时间",
+  "site.label.p95": "p95",
+  "site.body.dashboard-roadmap": "服务运营仪表板正在规划中 - 请参阅",
+  "site.label.status-stub": "状态：草稿",
+  "site.body.planned": "计划：错误率 / 延迟时间序列，最近错误日志，部署时间线（按服务透视 forge_releases），由 tenant.Can 控制的重启 / 回滚 / 伸缩操作。",
+  "site.label.last-deploy": "最后部署：",
+  "site.status.unknown": "未知服务",
+  "site.empty.no-service-prefix": "未注册服务：",
+  "site.empty.no-service-suffix": "将其添加到 Sites 快照或等待 ops 仪表板连接（请参阅"
 }

@@ -281,5 +281,19 @@
   "plugin.title": "Plugin",
   "plugin.label.code": "Code",
   "plugin.status.not-installed": "not installed.",
-  "plugin.empty.no-match": "No installed plugin matches that code. Install it from /dev/marketplace."
+  "plugin.empty.no-match": "No installed plugin matches that code. Install it from /dev/marketplace.",
+  "welcome.title": "Router-outlet proof",
+  "welcome.subtitle.prefix": "You are at",
+  "welcome.subtitle.suffix": "- rendering through IdeComponent's child router-outlet.",
+  "welcome.body": "The legacy @switch fallback is hidden whenever a child route is active. As panels move out of the switch into their own components, navigate to them by URL - sidebar migration follows once a critical mass of panels is extracted.",
+  "terminal.title": "Terminal",
+  "site.label.uptime": "uptime",
+  "site.label.p95": "p95",
+  "site.body.dashboard-roadmap": "Service operational dashboard is on the roadmap - see",
+  "site.label.status-stub": "Status: Stub",
+  "site.body.planned": "Planned: time-series error rate / latency, recent error log, deploy timeline (forge_releases pivoted by service), restart / rollback / scale actions gated by tenant.Can.",
+  "site.label.last-deploy": "Last deploy:",
+  "site.status.unknown": "Unknown service",
+  "site.empty.no-service-prefix": "No service registered for",
+  "site.empty.no-service-suffix": "Add it to the Sites snapshot or wait for the ops dashboard wiring (see"
 }

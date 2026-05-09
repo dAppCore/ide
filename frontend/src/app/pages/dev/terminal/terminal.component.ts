@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * Terminal panel — placeholder stub. Real backend lives at
@@ -11,9 +12,10 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'dev-terminal',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section class="block">
-      <h2 class="block-title">Terminal</h2>
+      <h2 class="block-title">{{ 'terminal.title' | translate }}</h2>
       <div class="terminal-output">
         <pre>$ core dev health
 18 repos │ clean │ synced

@@ -281,5 +281,19 @@
   "plugin.title": "Плагин",
   "plugin.label.code": "Код",
   "plugin.status.not-installed": "не установлен.",
-  "plugin.empty.no-match": "Ни один установленный плагин не соответствует этому коду. Установите его из /dev/marketplace."
+  "plugin.empty.no-match": "Ни один установленный плагин не соответствует этому коду. Установите его из /dev/marketplace.",
+  "welcome.title": "Проверка router-outlet",
+  "welcome.subtitle.prefix": "Вы находитесь по адресу",
+  "welcome.subtitle.suffix": "- рендеринг через дочерний router-outlet IdeComponent.",
+  "welcome.body": "Резервный @switch скрывается, когда активен дочерний маршрут. По мере перемещения панелей из switch в собственные компоненты переходите к ним по URL - миграция боковой панели последует, как только будет извлечена критическая масса панелей.",
+  "terminal.title": "Терминал",
+  "site.label.uptime": "доступность",
+  "site.label.p95": "p95",
+  "site.body.dashboard-roadmap": "Операционная панель сервиса в плане - см.",
+  "site.label.status-stub": "Статус: Черновик",
+  "site.body.planned": "Запланировано: временные ряды ошибок / задержки, недавний журнал ошибок, история деплоев (forge_releases по сервису), действия restart / rollback / scale с проверкой прав tenant.Can.",
+  "site.label.last-deploy": "Последний деплой:",
+  "site.status.unknown": "Неизвестный сервис",
+  "site.empty.no-service-prefix": "Нет сервиса для",
+  "site.empty.no-service-suffix": "Добавьте его в снимок Sites или дождитесь подключения панели ops (см."
 }

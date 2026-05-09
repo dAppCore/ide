@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, inject } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SitesStore } from '../../../services/store/sites.store';
@@ -15,6 +16,7 @@ import { SitesStore } from '../../../services/store/sites.store';
 @Component({
   selector: 'dev-site',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     @if (site(); as s) {
       <section class="block">
@@ -23,16 +25,13 @@ import { SitesStore } from '../../../services/store/sites.store';
             <span class="status-dot" [attr.data-status]="s.status"></span>
             {{ s.domain }}
           </h2>
-          <span class="editorial subtitle">{{ s.stack }} · {{ s.uptime }}% uptime · {{ s.response }}ms p95</span>
+          <span class="editorial subtitle">{{ s.stack }} · {{ s.uptime }}% {{ 'site.label.uptime' | translate }} · {{ s.response }}ms {{ 'site.label.p95' | translate }}</span>
         </div>
         <div class="placeholder-pane">
-          <p>Service operational dashboard is on the roadmap — see
-          <code>plans/code/core/ide/RFC.ops-dashboard.md</code> (Status:
-          Stub).</p>
-          <p>Planned: time-series error rate / latency, recent error log,
-          deploy timeline (forge_releases pivoted by service), restart /
-          rollback / scale actions gated by tenant.Can.</p>
-          <p>Last deploy: <code>{{ s.lastDeploy }}</code>
+          <p>{{ 'site.body.dashboard-roadmap' | translate }}
+          <code>plans/code/core/ide/RFC.ops-dashboard.md</code> ({{ 'site.label.status-stub' | translate }}).</p>
+          <p>{{ 'site.body.planned' | translate }}</p>
+          <p>{{ 'site.label.last-deploy' | translate }} <code>{{ s.lastDeploy }}</code>
           @if (s.warn) { · <span class="pill pill-warn">{{ s.warn }}</span> }
           </p>
         </div>
@@ -41,11 +40,10 @@ import { SitesStore } from '../../../services/store/sites.store';
       <section class="block">
         <div class="block-header">
           <h2 class="block-title">{{ domain() }}</h2>
-          <span class="editorial subtitle">Unknown service</span>
+          <span class="editorial subtitle">{{ 'site.status.unknown' | translate }}</span>
         </div>
         <div class="placeholder-pane">
-          <p>No service registered for <code>{{ domain() }}</code>. Add it
-          to the Sites snapshot or wait for the ops dashboard wiring (see
+          <p>{{ 'site.empty.no-service-prefix' | translate }} <code>{{ domain() }}</code>. {{ 'site.empty.no-service-suffix' | translate }}
           <code>plans/code/core/ide/RFC.ops-dashboard.md</code>).</p>
         </div>
       </section>
