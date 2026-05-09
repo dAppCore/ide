@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter, signal, inject, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import type { Site } from '../../lib/vi.types';
 import { ManifestService } from '../../services/manifest.service';
+import { SitesStore } from '../../services/store/sites.store';
 
 /**
  * Sidebar — Vi Control Panel pattern (Lethean-3 native handoff).
@@ -387,11 +387,12 @@ export class SidebarComponent {
   @Input() pluginMenus: { code: string; name: string; menu?: { label: string; icon_svg?: string; subpages?: { label: string; path: string }[] } }[] = [];
   @Output() routeChange = new EventEmitter<string>();
 
-  sites = signal<Site[]>([]);
-
   private readonly manifest = inject(ManifestService);
+  private readonly sitesStore = inject(SitesStore);
+
   readonly developerPanels = this.manifest.developerPanels;
   readonly accountPanels = this.manifest.accountPanels;
+  readonly sites = this.sitesStore.sites;
 
   private readonly sanitizer = inject(DomSanitizer);
   private readonly trustedIconCache = new Map<string, SafeHtml>();
