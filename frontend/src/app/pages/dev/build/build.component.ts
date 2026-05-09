@@ -8,6 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -46,19 +47,19 @@ interface BuildRunResponse {
 @Component({
   selector: 'dev-build',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block build-block">
       <div class="block-header build-header">
         <h2 class="block-title">
-          Build
+          {{ 'build.title' | translate }}
           @if (buildCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="buildCacheAge() > 600" (click)="detectBuild(true)" title="Click to force re-detect">● cached {{ formatCacheAge(buildCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="buildCacheAge() > 600" (click)="detectBuild(true)" [title]="'build.tooltip.force-redetect' | translate">● {{ 'build.cache.cached' | translate }} {{ formatCacheAge(buildCacheAge()) }}</span>
           } @else if (buildDetected()) {
-            <span class="cache-pill cache-fresh" title="Just detected">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'build.tooltip.just-detected' | translate">● {{ 'build.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">Surface over <code>core/go-build</code>. Detects your project, runs the build, streams output.</span>
+        <span class="editorial subtitle">{{ 'build.subtitle.surface' | translate }} <code>core/go-build</code>{{ 'build.subtitle.detects' | translate }}</span>
       </div>
       <div class="build-toolbar">
         <div class="build-meta">
@@ -66,22 +67,22 @@ interface BuildRunResponse {
             <span class="build-type-pill">{{ d.project_type }}</span>
             <code class="build-cmd">{{ d.command }} {{ d.args.join(' ') }}</code>
             @if (!d.core_bin_on_path) {
-              <span class="build-hint">core binary not on PATH — using fallback</span>
+              <span class="build-hint">{{ 'build.hint.core-bin-fallback' | translate }}</span>
             }
           } @else if (detect.firstLoad()) {
             <dev-skeleton kind="detail" />
           } @else {
-            <span class="build-hint">No build config detected.</span>
+            <span class="build-hint">{{ 'build.empty.no-config' | translate }}</span>
           }
         </div>
         <div class="build-actions">
-          <button class="btn btn-ghost btn-sm" (click)="detectBuild(true)" [disabled]="buildRunning()">Re-detect</button>
+          <button class="btn btn-ghost btn-sm" (click)="detectBuild(true)" [disabled]="buildRunning()">{{ 'build.button.redetect' | translate }}</button>
           @if (!buildRunning()) {
             <button class="btn btn-primary btn-sm" (click)="runBuild()" [disabled]="!buildDetected() || buildDetected()?.project_type === 'unknown'">
-              ▸ Build
+              ▸ {{ 'build.button.build' | translate }}
             </button>
           } @else {
-            <button class="btn btn-ghost btn-sm" (click)="cancelBuild()">⏹ Cancel</button>
+            <button class="btn btn-ghost btn-sm" (click)="cancelBuild()">⏹ {{ 'build.button.cancel' | translate }}</button>
           }
         </div>
       </div>
@@ -92,9 +93,9 @@ interface BuildRunResponse {
         @if (buildLog()) {
           <pre>{{ buildLog() }}</pre>
         } @else if (buildRunning()) {
-          <pre class="build-running">building…</pre>
+          <pre class="build-running">{{ 'build.status.building' | translate }}</pre>
         } @else {
-          <pre class="build-empty">Click ▸ Build to start. Output streams here.</pre>
+          <pre class="build-empty">{{ 'build.empty.start' | translate }}</pre>
         }
       </div>
     </section>

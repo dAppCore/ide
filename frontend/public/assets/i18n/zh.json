@@ -16,6 +16,19 @@
   "Networking": "网络",
   "Settings": "设置",
   "Documentation": "文档",
-
-  "settings.appearance.language": "语言"
+  "settings.appearance.language": "语言",
+  "build.title": "构建",
+  "build.tooltip.force-redetect": "点击强制重新检测",
+  "build.tooltip.just-detected": "刚刚检测到",
+  "build.cache.cached": "缓存的",
+  "build.cache.fresh": "新鲜的",
+  "build.subtitle.surface": "表面超过",
+  "build.subtitle.detects": "。检测您的项目，运行构建，流输出。",
+  "build.hint.core-bin-fallback": "核心二进制文件不在 PATH 上 - 使用后备",
+  "build.empty.no-config": "未检测到构建配置。",
+  "build.button.redetect": "重新检测",
+  "build.button.build": "构建",
+  "build.button.cancel": "取消",
+  "build.status.building": "建筑...",
+  "build.empty.start": "单击构建开始。此处输出流。"
 }

@@ -16,6 +16,19 @@
   "Networking": "Networking",
   "Settings": "Settings",
   "Documentation": "Documentation",
-
-  "settings.appearance.language": "Language"
+  "settings.appearance.language": "Language",
+  "build.title": "Build",
+  "build.tooltip.force-redetect": "Click to force re-detect",
+  "build.tooltip.just-detected": "Just detected",
+  "build.cache.cached": "cached",
+  "build.cache.fresh": "fresh",
+  "build.subtitle.surface": "Surface over",
+  "build.subtitle.detects": ". Detects your project, runs the build, streams output.",
+  "build.hint.core-bin-fallback": "core binary not on PATH - using fallback",
+  "build.empty.no-config": "No build config detected.",
+  "build.button.redetect": "Re-detect",
+  "build.button.build": "Build",
+  "build.button.cancel": "Cancel",
+  "build.status.building": "building...",
+  "build.empty.start": "Click Build to start. Output streams here."
 }

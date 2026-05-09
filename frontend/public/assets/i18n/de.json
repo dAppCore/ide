@@ -16,6 +16,19 @@
   "Networking": "Netzwerk",
   "Settings": "Einstellungen",
   "Documentation": "Dokumentation",
-
-  "settings.appearance.language": "Sprache"
+  "settings.appearance.language": "Sprache",
+  "build.title": "Bauen",
+  "build.tooltip.force-redetect": "Klicken Sie, um eine erneute Erkennung zu erzwingen",
+  "build.tooltip.just-detected": "Gerade entdeckt",
+  "build.cache.cached": "zwischengespeichert",
+  "build.cache.fresh": "frisch",
+  "build.subtitle.surface": "Oberfläche vorbei",
+  "build.subtitle.detects": ". Erkennt Ihr Projekt, führt den Build aus und streamt die Ausgabe.",
+  "build.hint.core-bin-fallback": "Kernbinärdatei nicht auf PATH – Fallback wird verwendet",
+  "build.empty.no-config": "Keine Build-Konfiguration erkannt.",
+  "build.button.redetect": "Erneut erkennen",
+  "build.button.build": "Bauen",
+  "build.button.cancel": "Abbrechen",
+  "build.status.building": "Gebäude...",
+  "build.empty.start": "Klicken Sie zum Starten auf „Erstellen“. Ausgabestreams hier."
 }

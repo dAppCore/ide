@@ -16,6 +16,19 @@
   "Networking": "شبکه",
   "Settings": "تنظیمات",
   "Documentation": "مستندات",
-
-  "settings.appearance.language": "زبان"
+  "settings.appearance.language": "زبان",
+  "build.title": "ساخت",
+  "build.tooltip.force-redetect": "برای شناسایی مجدد اجباری کلیک کنید",
+  "build.tooltip.just-detected": "تازه شناسایی شد",
+  "build.cache.cached": "ذخیره شده",
+  "build.cache.fresh": "تازه",
+  "build.subtitle.surface": "سطح روی",
+  "build.subtitle.detects": ". پروژه شما را شناسایی می کند، ساخت را اجرا می کند، خروجی را پخش می کند.",
+  "build.hint.core-bin-fallback": "باینری هسته روی PATH نیست - با استفاده از بازگشت",
+  "build.empty.no-config": "هیچ پیکربندی ساخت شناسایی نشد.",
+  "build.button.redetect": "شناسایی مجدد",
+  "build.button.build": "ساخت",
+  "build.button.cancel": "لغو کنید",
+  "build.status.building": "ساختمان...",
+  "build.empty.start": "برای شروع روی Build کلیک کنید. خروجی جریان در اینجا."
 }

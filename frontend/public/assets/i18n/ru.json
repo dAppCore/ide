@@ -16,6 +16,19 @@
   "Networking": "Сеть",
   "Settings": "Настройки",
   "Documentation": "Документация",
-
-  "settings.appearance.language": "Язык"
+  "settings.appearance.language": "Язык",
+  "build.title": "Построить",
+  "build.tooltip.force-redetect": "Нажмите, чтобы принудительно выполнить повторное обнаружение",
+  "build.tooltip.just-detected": "Только что обнаружено",
+  "build.cache.cached": "кэшированный",
+  "build.cache.fresh": "свежий",
+  "build.subtitle.surface": "Поверхность над",
+  "build.subtitle.detects": ". Обнаруживает ваш проект, запускает сборку, передает потоковые данные.",
+  "build.hint.core-bin-fallback": "основной двоичный файл не в PATH – использование резервного варианта",
+  "build.empty.no-config": "Конфигурация сборки не обнаружена.",
+  "build.button.redetect": "Повторное обнаружение",
+  "build.button.build": "Построить",
+  "build.button.cancel": "Отмена",
+  "build.status.building": "здание...",
+  "build.empty.start": "Нажмите «Создать», чтобы начать. Выходные потоки здесь."
 }
