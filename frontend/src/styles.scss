@@ -22,6 +22,12 @@
 @import "@awesome.me/webawesome-pro/dist/styles/utilities.css";
 @import "@awesome.me/webawesome-pro/dist/styles/color/palettes/vogue.css";
 
+/* tokens.css → WebAwesome theme bridge. Maps our --brand-*, --ink-*,
+   --fg-*, --success-*, etc. onto WA's --wa-color-* / --wa-font-* /
+   --wa-border-radius-* tokens. Apply via class="wa-theme-lethean" on
+   <html> (set in index.html). */
+@import './tokens-wa-bridge.css';
+
 /* FontAwesome Pro — installed as file: dep from ~/Code/vendor-pro/.
    Pro adds the duotone, light, sharp, and brand variants the canonical
    frames use (fa-pickaxe, fa-chart-network etc). */

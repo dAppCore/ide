@@ -1,29 +1,42 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Routes } from '@angular/router';
+import { BlankFrame } from '../frame/blank.frame';
 import { ApplicationFrame } from '../frame/application.frame';
 import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
 
 /**
- * Routes mirror core-gui/cmd/lthn-desktop/frontend/src/app/app.routes.ts.
- * Frames sit at the OUTER level; routes that need the chrome live as
- * children of the empty path mounted on ApplicationFrame. The systray
- * window points at /system-tray (frameless, hidden, attached to the tray
- * icon by pkg/display/tray.go on the canonical core-gui side).
+ * Routing pattern: blank top-level root → frames stub on as children →
+ * secondary layer renders inside whichever frame is mounted.
+ *
+ * - `''` (BlankFrame)         — pass-through router-outlet so every route
+ *                               flows through one consistent root.
+ * - `''/ide` (IdeComponent)   — the IDE owns its full window chrome; no
+ *                               wrap. The existing IdeComponent visual
+ *                               is the canon (darbs co-signed) — don't
+ *                               put a frame around it.
+ * - `''/system-tray`           — frameless 380x480 panel attached to the
+ *   (SystemTrayFrame)            systray icon by core/gui's display.Service.
+ * - `''/app/*`                — children of ApplicationFrame, the shared
+ *   (ApplicationFrame)            chrome for settings / profile / sub-app
+ *                               surfaces once they land.
  */
 export const routes: Routes = [
-  // Systray panel — frameless 380x480, no application chrome.
-  { path: 'system-tray', component: SystemTrayFrame },
-
-  // Main shell. Children inherit header / sidebar / footer.
   {
     path: '',
-    component: ApplicationFrame,
+    component: BlankFrame,
     children: [
-      // Land on the IDE shell as the default route inside the frame.
-      { path: 'ide', component: IdeComponent },
       { path: '', redirectTo: 'ide', pathMatch: 'full' },
+      { path: 'ide', component: IdeComponent },
+      { path: 'system-tray', component: SystemTrayFrame },
+      {
+        path: 'app',
+        component: ApplicationFrame,
+        children: [
+          // Settings / profile / sub-app surfaces mount here.
+        ],
+      },
     ],
   },
 ];
