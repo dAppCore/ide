@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component, computed, inject } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -25,6 +26,7 @@ import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 @Component({
   selector: 'dev-plugin',
   standalone: true,
+  imports: [TranslatePipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     @if (record(); as rec) {
@@ -32,7 +34,7 @@ import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
         <div class="block-header plugin-route-header">
           <h2 class="block-title">{{ rec.menu?.label || rec.name }}</h2>
           <span class="editorial subtitle">
-            Plugin · {{ rec.code }}
+            {{ 'plugin.label.plugin' | translate }} · {{ rec.code }}
             @if (sub()) { · <strong>{{ sub() }}</strong> }
           </span>
         </div>
@@ -48,7 +50,7 @@ import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
                     referrerpolicy="no-referrer"></iframe>
           } @else {
             <div class="placeholder-pane">
-              <p>This plugin doesn't have a runnable surface yet — passive plugin (theme / snippets / tool).</p>
+              <p>{{ 'plugin.empty.passive' | translate }}</p>
             </div>
           }
         </div>
@@ -56,11 +58,11 @@ import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
     } @else {
       <section class="block plugin-route-block">
         <div class="block-header plugin-route-header">
-          <h2 class="block-title">Plugin</h2>
-          <span class="editorial subtitle">Code <code>{{ code() }}</code> not installed.</span>
+          <h2 class="block-title">{{ 'plugin.title' | translate }}</h2>
+          <span class="editorial subtitle">{{ 'plugin.label.code' | translate }} <code>{{ code() }}</code> {{ 'plugin.status.not-installed' | translate }}</span>
         </div>
         <div class="placeholder-pane">
-          <p>No installed plugin matches that code. Install it from /dev/marketplace.</p>
+          <p>{{ 'plugin.empty.no-match' | translate }}</p>
         </div>
       </section>
     }

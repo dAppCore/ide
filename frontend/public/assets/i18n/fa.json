@@ -275,5 +275,11 @@
   "php.hint.click-script-prefix": "روی هر اسکریپت کلیک کنید - اجرا می شود",
   "php.hint.click-script-suffix": "و به صورت خودکار به /process می پرد.",
   "php.status.loading-scripts": "در حال بارگیری اسکریپت ها...",
-  "php.empty.no-project": "هیچ پروژه ای انتخاب نشده است."
+  "php.empty.no-project": "هیچ پروژه ای انتخاب نشده است.",
+  "plugin.label.plugin": "پلاگین",
+  "plugin.empty.passive": "این افزونه هنوز سطح قابل اجرا ندارد - افزونه غیرفعال (موضوع / قطعه / ابزار).",
+  "plugin.title": "پلاگین",
+  "plugin.label.code": "کد",
+  "plugin.status.not-installed": "نصب نشده است",
+  "plugin.empty.no-match": "هیچ افزونه نصب شده ای با آن کد مطابقت ندارد. آن را از /dev/marketplace نصب کنید."
 }

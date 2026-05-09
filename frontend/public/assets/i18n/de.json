@@ -275,5 +275,11 @@
   "php.hint.click-script-prefix": "Klicken Sie auf ein beliebiges Skript – es wird ausgeführt",
   "php.hint.click-script-suffix": "und springt automatisch zu /process.",
   "php.status.loading-scripts": "Skripte werden geladen...",
-  "php.empty.no-project": "Kein Projekt ausgewählt."
+  "php.empty.no-project": "Kein Projekt ausgewählt.",
+  "plugin.label.plugin": "Plugin",
+  "plugin.empty.passive": "Dieses Plugin hat noch keine lauffähige Oberfläche – passives Plugin (Theme/Snippets/Tool).",
+  "plugin.title": "Plugin",
+  "plugin.label.code": "Code",
+  "plugin.status.not-installed": "nicht installiert.",
+  "plugin.empty.no-match": "Kein installiertes Plugin entspricht diesem Code. Installieren Sie es von /dev/marketplace."
 }

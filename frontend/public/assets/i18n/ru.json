@@ -275,5 +275,11 @@
   "php.hint.click-script-prefix": "Нажмите любой скрипт - запустится",
   "php.hint.click-script-suffix": "и автоматически переходит к /process.",
   "php.status.loading-scripts": "Загрузка скриптов...",
-  "php.empty.no-project": "Проект не выбран."
+  "php.empty.no-project": "Проект не выбран.",
+  "plugin.label.plugin": "Плагин",
+  "plugin.empty.passive": "У этого плагина пока нет работоспособной поверхности — пассивный плагин (тема/фрагменты/инструмент).",
+  "plugin.title": "Плагин",
+  "plugin.label.code": "Код",
+  "plugin.status.not-installed": "не установлен.",
+  "plugin.empty.no-match": "Ни один установленный плагин не соответствует этому коду. Установите его из /dev/marketplace."
 }

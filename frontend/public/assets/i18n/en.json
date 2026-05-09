@@ -275,5 +275,11 @@
   "php.hint.click-script-prefix": "Click any script - runs in",
   "php.hint.click-script-suffix": "and auto-jumps to /process.",
   "php.status.loading-scripts": "Loading scripts...",
-  "php.empty.no-project": "No project selected."
+  "php.empty.no-project": "No project selected.",
+  "plugin.label.plugin": "Plugin",
+  "plugin.empty.passive": "This plugin doesn't have a runnable surface yet - passive plugin (theme / snippets / tool).",
+  "plugin.title": "Plugin",
+  "plugin.label.code": "Code",
+  "plugin.status.not-installed": "not installed.",
+  "plugin.empty.no-match": "No installed plugin matches that code. Install it from /dev/marketplace."
 }

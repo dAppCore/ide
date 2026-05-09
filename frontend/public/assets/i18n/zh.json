@@ -275,5 +275,11 @@
   "php.hint.click-script-prefix": "单击任意脚本 - 运行于",
   "php.hint.click-script-suffix": "并自动跳转到/process。",
   "php.status.loading-scripts": "正在加载脚本...",
-  "php.empty.no-project": "没有选择项目。"
+  "php.empty.no-project": "没有选择项目。",
+  "plugin.label.plugin": "插件",
+  "plugin.empty.passive": "This plugin doesn't have a runnable surface yet - passive plugin (theme / snippets / tool).",
+  "plugin.title": "插件",
+  "plugin.label.code": "代码",
+  "plugin.status.not-installed": "未安装。",
+  "plugin.empty.no-match": "没有安装的插件与该代码匹配。从 /dev/marketplace 安装它。"
 }
