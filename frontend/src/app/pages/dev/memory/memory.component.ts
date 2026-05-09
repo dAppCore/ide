@@ -2,6 +2,7 @@
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
@@ -54,23 +55,23 @@ interface MemorySearchResponse {
 @Component({
   selector: 'dev-memory',
   standalone: true,
-  imports: [DecimalPipe, DevSkeleton],
+  imports: [DecimalPipe, DevSkeleton, TranslatePipe],
   template: `
     <section class="block mem-block">
       <div class="block-header mem-header">
         <h2 class="block-title">
-          Memory
+          {{ 'memory.title' | translate }}
           @if (memoryCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="memoryCacheAge() > 600" (click)="loadMemoryEntries(true)" title="Click to force re-scan">● cached {{ formatCacheAge(memoryCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="memoryCacheAge() > 600" (click)="loadMemoryEntries(true)" [title]="'memory.tooltip.force-rescan' | translate">● {{ 'memory.cache.cached' | translate }} {{ formatCacheAge(memoryCacheAge()) }}</span>
           } @else if (memoryEntries().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just scanned">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'memory.tooltip.just-scanned' | translate">● {{ 'memory.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">Auto-memory at <code>{{ memoryDir() || '~/.claude/projects/.../memory/' }}</code> · {{ memoryEntries().length }} entries.</span>
+        <span class="editorial subtitle">{{ 'memory.subtitle.auto-memory-at' | translate }} <code>{{ memoryDir() || '~/.claude/projects/.../memory/' }}</code> · {{ memoryEntries().length }} {{ 'memory.label.entries' | translate }}</span>
       </div>
       @if (memoryRecent().length > 0) {
         <div class="mem-recent-strip">
-          <div class="mem-recent-label">recent · last 7 days</div>
+          <div class="mem-recent-label">{{ 'memory.section.recent' | translate }}</div>
           <div class="mem-recent-row">
             @for (m of memoryRecent(); track m.path) {
               <button class="mem-recent-pill" (click)="openMemoryEntry(m.path)" [title]="m.name + ' · ' + (m.description || '')">
@@ -83,12 +84,12 @@ interface MemorySearchResponse {
         </div>
       }
       <div class="mem-toolbar">
-        <input class="input mem-filter" placeholder="filter (frontmatter) — Enter for full-text…" [value]="memoryFilter()" (input)="memoryFilter.set($any($event.target).value)" (keyup.enter)="runMemorySearch(memoryFilter())" />
+        <input class="input mem-filter" [placeholder]="'memory.placeholder.filter' | translate" [value]="memoryFilter()" (input)="memoryFilter.set($any($event.target).value)" (keyup.enter)="runMemorySearch(memoryFilter())" />
         @if (memorySearchActive()) {
-          <button class="btn btn-ghost btn-sm" (click)="exitMemorySearch()" title="Back to filter mode">× exit search</button>
+          <button class="btn btn-ghost btn-sm" (click)="exitMemorySearch()" [title]="'memory.tooltip.back-filter' | translate">× {{ 'memory.button.exit-search' | translate }}</button>
         }
         <div class="mem-type-pills">
-          <button class="mem-type-pill" [class.active]="memoryTypeFilter() === null" (click)="memoryTypeFilter.set(null)">all <span class="mem-type-count">{{ memoryEntries().length }}</span></button>
+          <button class="mem-type-pill" [class.active]="memoryTypeFilter() === null" (click)="memoryTypeFilter.set(null)">{{ 'memory.tab.all' | translate }} <span class="mem-type-count">{{ memoryEntries().length }}</span></button>
           @for (t of memoryTypeEntries(); track t.type) {
             <button class="mem-type-pill" [class.active]="memoryTypeFilter() === t.type" (click)="memoryTypeFilter.set(t.type)">
               {{ t.type }} <span class="mem-type-count">{{ t.count }}</span>
@@ -96,17 +97,17 @@ interface MemorySearchResponse {
           }
         </div>
         <select class="input mem-sort" [value]="memorySort()" (change)="memorySort.set($any($event.target).value)">
-          <option value="modified">sort: modified</option>
-          <option value="name">sort: name</option>
-          <option value="type">sort: type</option>
+          <option value="modified">{{ 'memory.sort.modified' | translate }}</option>
+          <option value="name">{{ 'memory.sort.name' | translate }}</option>
+          <option value="type">{{ 'memory.sort.type' | translate }}</option>
         </select>
       </div>
       <div class="mem-body">
         @if (memorySearchActive()) {
           @if (memorySearchLoading()) {
-            <div class="mem-empty">Searching memory contents…</div>
+            <div class="mem-empty">{{ 'memory.status.searching' | translate }}</div>
           } @else {
-            <div class="mem-list-summary">{{ memorySearchHits().length }} content matches for "{{ memoryFilter() }}"</div>
+            <div class="mem-list-summary">{{ memorySearchHits().length }} {{ 'memory.label.content-matches-for' | translate }} "{{ memoryFilter() }}"</div>
             @for (h of memorySearchHits(); track $index) {
               <button class="mem-search-hit" (click)="openMemoryEntry(h.path, h.line)" [title]="h.path + ':' + h.line">
                 <div class="mem-search-head">
@@ -123,10 +124,10 @@ interface MemorySearchResponse {
         } @else if (scan.firstLoad()) {
           <dev-skeleton kind="rows" [count]="8" />
         } @else {
-          <div class="mem-list-summary">{{ memoryVisible().length }} matching</div>
+          <div class="mem-list-summary">{{ memoryVisible().length }} {{ 'memory.label.matching' | translate }}</div>
           @for (m of memoryVisible(); track m.path) {
             <button class="mem-row" (click)="openMemoryEntry(m.path)" [title]="m.path">
-              <span class="mem-row-type" [attr.data-type]="m.type || 'untyped'">{{ m.type || 'untyped' }}</span>
+              <span class="mem-row-type" [attr.data-type]="m.type || 'untyped'">{{ m.type || ('memory.type.untyped' | translate) }}</span>
               <div class="mem-row-body">
                 <div class="mem-row-name">{{ m.name }}</div>
                 @if (m.description) {
