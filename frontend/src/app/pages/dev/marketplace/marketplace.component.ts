@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 
 interface MarketModule {
@@ -60,6 +61,7 @@ function pluginNativeTag(code: string): string | null {
   selector: 'dev-marketplace',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [DevSkeleton],
   template: `
     <section class="block market-block">
       <div class="block-header market-header">
@@ -109,6 +111,9 @@ function pluginNativeTag(code: string): string | null {
             </div>
           }
         </div>
+      }
+      @if (searchResource.isLoading() && marketModules().length === 0) {
+        <dev-skeleton kind="cards" [count]="6" />
       }
       <div class="market-grid">
         @for (m of marketModules(); track m.code) {

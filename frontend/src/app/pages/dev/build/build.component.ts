@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 /**
@@ -45,6 +46,7 @@ interface BuildRunResponse {
 @Component({
   selector: 'dev-build',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block build-block">
       <div class="block-header build-header">
@@ -66,8 +68,10 @@ interface BuildRunResponse {
             @if (!d.core_bin_on_path) {
               <span class="build-hint">core binary not on PATH — using fallback</span>
             }
+          } @else if (detect.firstLoad()) {
+            <dev-skeleton kind="detail" />
           } @else {
-            <span class="build-hint">Detecting…</span>
+            <span class="build-hint">No build config detected.</span>
           }
         </div>
         <div class="build-actions">

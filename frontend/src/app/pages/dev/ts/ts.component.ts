@@ -4,6 +4,7 @@ import { Component, computed, inject, linkedSignal, signal } from '@angular/core
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface TSScript {
   name: string;
@@ -45,6 +46,7 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
 @Component({
   selector: 'dev-ts',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block ts-block">
       <div class="block-header ts-header">
@@ -70,6 +72,9 @@ const EMPTY_TS: TSDetectResponse = { projects: [] };
       <div class="ts-body">
         <div class="ts-side">
           <h3>{{ visible().length }} of {{ projects().length }}</h3>
+          @if (scan.firstLoad()) {
+            <dev-skeleton kind="rows" [count]="8" />
+          }
           @for (p of visible(); track p.path) {
             <button class="ts-row"
                     [class.active]="selected()?.path === p.path"

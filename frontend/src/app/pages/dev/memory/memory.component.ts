@@ -5,6 +5,7 @@ import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MemoryEntry {
@@ -53,7 +54,7 @@ interface MemorySearchResponse {
 @Component({
   selector: 'dev-memory',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, DevSkeleton],
   template: `
     <section class="block mem-block">
       <div class="block-header mem-header">
@@ -119,8 +120,8 @@ interface MemorySearchResponse {
               </button>
             }
           }
-        } @else if (memoryLoading() && memoryEntries().length === 0) {
-          <div class="mem-empty">Loading memories…</div>
+        } @else if (scan.firstLoad()) {
+          <dev-skeleton kind="rows" [count]="8" />
         } @else {
           <div class="mem-list-summary">{{ memoryVisible().length }} matching</div>
           @for (m of memoryVisible(); track m.path) {

@@ -3,6 +3,7 @@
 import { Component, computed, resource, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface ContainerRuntime {
   name: string;
@@ -37,6 +38,7 @@ interface ContainerEntry {
 @Component({
   selector: 'dev-containers',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block ctn-block">
       <div class="block-header ctn-header">
@@ -65,6 +67,9 @@ interface ContainerEntry {
       <div class="ctn-body">
         <div class="ctn-section">
           <h3>Runtimes</h3>
+          @if (runtimes.firstLoad()) {
+            <dev-skeleton kind="cards" [count]="5" />
+          }
           <div class="ctn-runtime-grid">
             @for (r of containerRuntimes(); track r.name) {
               <div class="ctn-runtime-card" [class.unavailable]="!r.available">

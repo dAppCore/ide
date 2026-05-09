@@ -3,6 +3,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { SettingsStore } from '../../../services/store/settings.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -40,6 +41,7 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
 @Component({
   selector: 'dev-repos',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block repos-block">
       <div class="block-header repos-header">
@@ -74,6 +76,9 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
       </div>
       @if (reposError(); as err) {
         <div class="repos-error">{{ err }}</div>
+      }
+      @if (scan.firstLoad()) {
+        <dev-skeleton kind="cards" [count]="9" />
       }
       <div class="repos-grid">
         @for (r of reposVisible(); track r.path) {

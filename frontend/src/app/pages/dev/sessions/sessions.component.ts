@@ -12,6 +12,7 @@ import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface SessionProjectsResponse {
@@ -104,7 +105,7 @@ const SESSION_LIVE_CAP = 500;
 @Component({
   selector: 'dev-sessions',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, DevSkeleton],
   template: `
     <section class="block sess-block">
       <div class="block-header sess-header">
@@ -196,6 +197,9 @@ const SESSION_LIVE_CAP = 500;
         } @else {
           <aside class="sess-projects">
             <div class="sess-list-title">Projects ({{ sessionVisible().length }})</div>
+            @if (scan.firstLoad()) {
+              <dev-skeleton kind="rows" [count]="6" />
+            }
             @for (p of sessionVisible(); track p.name) {
               <button class="sess-project-row" [class.active]="sessionSelectedProject() === p.path" (click)="selectSessionProject(p.path)">
                 <div class="sess-project-name" [title]="p.display_path">{{ p.display_path }}</div>

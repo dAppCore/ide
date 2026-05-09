@@ -3,6 +3,7 @@
 import { Component, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface LocaleEntry {
   name: string;
@@ -54,6 +55,7 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
 @Component({
   selector: 'dev-locales',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block i18n-block">
       <div class="block-header i18n-header">
@@ -72,6 +74,9 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
         <div class="i18n-error">{{ err }}</div>
       }
       <div class="i18n-body">
+        @if (scan.firstLoad()) {
+          <dev-skeleton kind="table" [count]="8" />
+        } @else {
         <div class="i18n-matrix">
           <table>
             <thead>
@@ -124,6 +129,7 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
             </div>
             <pre class="i18n-viewer-body">{{ formatLocaleContent(viewContent()) }}</pre>
           </div>
+        }
         }
       </div>
     </section>

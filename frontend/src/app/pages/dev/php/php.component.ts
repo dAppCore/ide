@@ -4,6 +4,7 @@ import { Component, computed, inject, linkedSignal, resource } from '@angular/co
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface PHPProjectSummary {
   path: string;
@@ -62,6 +63,7 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
 @Component({
   selector: 'dev-php',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block php-block">
       <div class="block-header php-header">
@@ -81,8 +83,8 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
       <div class="php-body">
         <div class="php-side">
           <h3>Projects ({{ projects().length }})</h3>
-          @if (scan.loading() && projects().length === 0) {
-            <div class="php-empty">Scanning…</div>
+          @if (scan.firstLoad()) {
+            <dev-skeleton kind="rows" [count]="6" />
           }
           @for (p of projects(); track p.path) {
             <button class="php-row"

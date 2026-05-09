@@ -3,6 +3,7 @@
 import { Component, computed, resource, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface UpdateTool {
   key: string;
@@ -53,6 +54,7 @@ interface SelfUpdateApplyResponse {
 @Component({
   selector: 'dev-updates',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block upd-block">
       <div class="block-header upd-header">
@@ -117,6 +119,9 @@ interface SelfUpdateApplyResponse {
         </button>
       </div>
       <div class="upd-body">
+        @if (toolsResource.isLoading() && updatesTools().length === 0) {
+          <dev-skeleton kind="table" [count]="9" />
+        } @else {
         <table class="upd-table">
           <thead>
             <tr>
@@ -166,6 +171,7 @@ interface SelfUpdateApplyResponse {
             }
           </tbody>
         </table>
+        }
       </div>
     </section>
   `,

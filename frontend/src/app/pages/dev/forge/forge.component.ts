@@ -4,6 +4,7 @@ import { Component, computed, linkedSignal, resource, signal } from '@angular/co
 import { SlicePipe } from '@angular/common';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface ForgeStatus {
   configured: boolean;
@@ -98,7 +99,7 @@ interface ReposResponse {
 @Component({
   selector: 'dev-forge',
   standalone: true,
-  imports: [SlicePipe],
+  imports: [SlicePipe, DevSkeleton],
   template: `
     <section class="block frg-block">
       <div class="block-header frg-header">
@@ -130,6 +131,9 @@ interface ReposResponse {
       <div class="frg-body">
         <div class="frg-orgs-side">
           <h3>Orgs</h3>
+          @if (orgsResource.firstLoad()) {
+            <dev-skeleton kind="rows" [count]="4" />
+          }
           @for (o of forgeOrgs(); track o.name) {
             <button class="frg-org-row" [class.active]="forgeSelectedOrg() === o.name" (click)="loadForgeRepos(o.name)">
               {{ o.name }}

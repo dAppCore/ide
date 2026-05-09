@@ -4,6 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
@@ -55,6 +56,7 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
 @Component({
   selector: 'dev-devops',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block dvo-block">
       <div class="block-header dvo-header">
@@ -114,8 +116,8 @@ const EMPTY_PLAYBOOKS: DevopsPlaybooksResponse = { playbooks: [] };
             }
           </div>
         } @else {
-          @if (devopsPlaybooksLoading()) {
-            <div class="dvo-empty">Loading playbooks…</div>
+          @if (playbooksScan.firstLoad()) {
+            <dev-skeleton kind="rows" [count]="6" />
           } @else if (devopsPlaybooks().length === 0) {
             <div class="dvo-empty">No playbooks found in ~/Code/DevOps/playbooks/ or core/go-devops/playbooks/.</div>
           } @else {

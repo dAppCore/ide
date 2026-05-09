@@ -50,6 +50,13 @@ export interface CachedBridgeResource<T extends CachedBridgeEnvelope> {
   readonly cacheAge: Signal<number>;
   /** True during initial load OR force-refresh reload. */
   readonly loading: Signal<boolean>;
+  /**
+   * True only during the COLD initial load (loading AND stable value is
+   * empty). False once cached data has rendered, even during silent SWR
+   * reloads. Bind skeletons / loading states to this so the UI doesn't
+   * blank during a refresh that has prior data to show.
+   */
+  readonly firstLoad: Signal<boolean>;
   /** First-line error message from the loader, or null. */
   readonly error: Signal<string | null>;
   /** Bump the tick → resource re-runs with force=true. */
@@ -109,6 +116,7 @@ export function cachedBridgeResource<T extends CachedBridgeEnvelope>(
   const loading = computed(
     () => raw.status() === 'loading' || raw.status() === 'reloading',
   );
+  const firstLoad = computed(() => loading() && opts.isEmpty(stable()));
   const error = computed(() => raw.error()?.message ?? null);
 
   // SWR — silent force-refresh after first paint. Must be in injection
@@ -122,6 +130,7 @@ export function cachedBridgeResource<T extends CachedBridgeEnvelope>(
     cacheHit,
     cacheAge,
     loading,
+    firstLoad,
     error,
     refresh: () => tick.update((n) => n + 1),
   };

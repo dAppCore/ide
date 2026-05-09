@@ -4,6 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
 interface MantisIssue {
@@ -54,6 +55,7 @@ type Segment = { kind: 'text' | 'path'; value: string };
 @Component({
   selector: 'dev-mantis',
   standalone: true,
+  imports: [DevSkeleton],
   template: `
     <section class="block mn-block">
       <div class="block-header mn-header">
@@ -94,8 +96,8 @@ type Segment = { kind: 'text' | 'path'; value: string };
       <div class="mn-body">
         <aside class="mn-list">
           <div class="sess-list-title">Issues ({{ mantisVisible().length }})</div>
-          @if (mantisLoading() && mantisIssues().length === 0) {
-            <div class="sess-empty">Loading…</div>
+          @if (scan.firstLoad()) {
+            <dev-skeleton kind="rows" [count]="8" />
           }
           @for (i of mantisVisible(); track i.id) {
             <button class="mn-row" [class.active]="mantisSelected()?.id === i.id" (click)="openMantisIssue(i.id)">
