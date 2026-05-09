@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, computed, resource, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -38,26 +39,26 @@ interface ContainerEntry {
 @Component({
   selector: 'dev-containers',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block ctn-block">
       <div class="block-header ctn-header">
         <h2 class="block-title">
-          Containers
+          {{ 'containers.title' | translate }}
           @if (runtimesCacheHit()) {
-            <span class="cache-pill" [class.cache-stale]="runtimesCacheAge() > 60" (click)="loadContainers(true)" title="Click to force re-probe">● cached {{ formatCacheAge(runtimesCacheAge()) }}</span>
+            <span class="cache-pill" [class.cache-stale]="runtimesCacheAge() > 60" (click)="loadContainers(true)" [title]="'containers.tooltip.force-reprobe' | translate">● {{ 'containers.cache.cached' | translate }} {{ formatCacheAge(runtimesCacheAge()) }}</span>
           } @else if (containerRuntimes().length > 0) {
-            <span class="cache-pill cache-fresh" title="Just probed">● fresh</span>
+            <span class="cache-pill cache-fresh" [title]="'containers.tooltip.just-probed' | translate">● {{ 'containers.cache.fresh' | translate }}</span>
           }
         </h2>
-        <span class="editorial subtitle">Runtimes detected on this host. Surface over <code>core/go-container</code>.</span>
+        <span class="editorial subtitle">{{ 'containers.subtitle.runtimes' | translate }} <code>core/go-container</code>.</span>
       </div>
 
       <div class="ctn-toolbar">
         <button class="btn btn-ghost btn-sm" (click)="loadContainers(true)" [disabled]="containerLoading()">
-          @if (containerLoading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
+          @if (containerLoading()) { <span>{{ 'containers.status.scanning' | translate }}</span> } @else { <span>{{ 'containers.button.rescan' | translate }}</span> }
         </button>
-        <span class="ctn-count">{{ containerList().length }} running · {{ containerRuntimes().length }} runtimes detected</span>
+        <span class="ctn-count">{{ containerList().length }} {{ 'containers.label.running' | translate }} · {{ containerRuntimes().length }} {{ 'containers.label.runtimes-detected' | translate }}</span>
       </div>
 
       @if (containerError(); as err) {
@@ -66,7 +67,7 @@ interface ContainerEntry {
 
       <div class="ctn-body">
         <div class="ctn-section">
-          <h3>Runtimes</h3>
+          <h3>{{ 'containers.section.runtimes' | translate }}</h3>
           @if (runtimes.firstLoad()) {
             <dev-skeleton kind="cards" [count]="5" />
           }
@@ -76,9 +77,9 @@ interface ContainerEntry {
                 <div class="ctn-runtime-head">
                   <span class="ctn-runtime-name">{{ r.name }}</span>
                   @if (r.available) {
-                    <span class="ctn-pill available">available</span>
+                    <span class="ctn-pill available">{{ 'containers.status.available' | translate }}</span>
                   } @else {
-                    <span class="ctn-pill missing">missing</span>
+                    <span class="ctn-pill missing">{{ 'containers.status.missing' | translate }}</span>
                   }
                 </div>
                 <p class="ctn-runtime-desc">{{ r.description }}</p>
@@ -86,12 +87,12 @@ interface ContainerEntry {
                   <code class="ctn-runtime-version">{{ r.version }}</code>
                 }
                 <div class="ctn-caps">
-                  @if (r.hardware_isolated) { <span class="ctn-cap">⚙ hardware</span> }
-                  @if (r.has_network_isolation) { <span class="ctn-cap">⌗ network</span> }
-                  @if (r.has_volume_mounts) { <span class="ctn-cap">▢ mounts</span> }
-                  @if (r.has_gpu) { <span class="ctn-cap">⚡ GPU</span> }
-                  @if (r.has_encryption) { <span class="ctn-cap">🔒 encrypted</span> }
-                  @if (r.sub_second_start) { <span class="ctn-cap">⚡ &lt;1s start</span> }
+                  @if (r.hardware_isolated) { <span class="ctn-cap">⚙ {{ 'containers.cap.hardware' | translate }}</span> }
+                  @if (r.has_network_isolation) { <span class="ctn-cap">⌗ {{ 'containers.cap.network' | translate }}</span> }
+                  @if (r.has_volume_mounts) { <span class="ctn-cap">▢ {{ 'containers.cap.mounts' | translate }}</span> }
+                  @if (r.has_gpu) { <span class="ctn-cap">⚡ {{ 'containers.cap.gpu' | translate }}</span> }
+                  @if (r.has_encryption) { <span class="ctn-cap">🔒 {{ 'containers.cap.encrypted' | translate }}</span> }
+                  @if (r.sub_second_start) { <span class="ctn-cap">⚡ {{ 'containers.cap.subsecond-start' | translate }}</span> }
                 </div>
               </div>
             }
@@ -99,9 +100,9 @@ interface ContainerEntry {
         </div>
 
         <div class="ctn-section">
-          <h3>Running containers</h3>
+          <h3>{{ 'containers.section.running' | translate }}</h3>
           @if (containerList().length === 0) {
-            <div class="ctn-empty">Nothing running.</div>
+            <div class="ctn-empty">{{ 'containers.empty.none-running' | translate }}</div>
           } @else {
             <div class="ctn-list">
               @for (c of containerList(); track c.id) {
@@ -119,7 +120,7 @@ interface ContainerEntry {
 
         @if (containerSelected() && containerLogs()) {
           <div class="ctn-section">
-            <h3>Logs · {{ containerSelected() }}</h3>
+            <h3>{{ 'containers.section.logs' | translate }} · {{ containerSelected() }}</h3>
             <pre class="ctn-logs">{{ containerLogs() }}</pre>
           </div>
         }
