@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { Site } from '../../lib/vi.types';
 
 /**
@@ -39,7 +40,7 @@ import type { Site } from '../../lib/vi.types';
             class="nav-row"
             [class.active]="currentRoute === item.id"
             (click)="routeChange.emit(item.id)">
-            <span class="nav-icon" [innerHTML]="item.iconSvg"></span>
+            <span class="nav-icon" [innerHTML]="trustIcon(item.iconSvg)"></span>
             <span class="nav-label">{{ item.label }}</span>
           </button>
         }
@@ -58,7 +59,7 @@ import type { Site } from '../../lib/vi.types';
                 [class.active]="isPluginActive(p.code)"
                 (click)="routeChange.emit(pluginRouteId(p.code))">
                 @if (p.menu.icon_svg) {
-                  <span class="nav-icon" [innerHTML]="p.menu.icon_svg"></span>
+                  <span class="nav-icon" [innerHTML]="trustIcon(p.menu.icon_svg)"></span>
                 } @else {
                   <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></span>
                 }
@@ -385,6 +386,18 @@ export class SidebarComponent {
   @Output() routeChange = new EventEmitter<string>();
 
   sites = signal<Site[]>([]);
+
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly trustedIconCache = new Map<string, SafeHtml>();
+
+  trustIcon(svg: string): SafeHtml {
+    let trusted = this.trustedIconCache.get(svg);
+    if (!trusted) {
+      trusted = this.sanitizer.bypassSecurityTrustHtml(svg);
+      this.trustedIconCache.set(svg, trusted);
+    }
+    return trusted;
+  }
 
   pluginRouteId(code: string, sub?: string): string {
     return sub ? `plugin:${code}:${sub}` : `plugin:${code}`;

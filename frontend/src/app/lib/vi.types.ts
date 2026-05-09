@@ -65,7 +65,7 @@ export interface ViSnapshot {
  *   }
  */
 export async function loadViData(): Promise<ViSnapshot> {
-  const bridge = await import('@bindings/dappco.re/go/ide/pkg/server/vibridge');
+  const bridge = await import('../../../bindings/dappco.re/go/ide/pkg/server/vibridge');
   const [status, briefs, sites, activity] = await Promise.all([
     bridge.Status(),
     bridge.Briefs(),
