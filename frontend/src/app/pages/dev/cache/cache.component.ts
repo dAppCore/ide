@@ -1,7 +1,8 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
+import { NotificationService } from '../../../services/notification.service';
 
 interface CacheCollection {
   collection: string;
@@ -78,6 +79,8 @@ interface CacheStatusResponse {
   `],
 })
 export class CacheComponent implements OnInit {
+  private readonly notify = inject(NotificationService);
+
   readonly cacheCollections = signal<CacheCollection[]>([]);
   readonly cacheLoading = signal(false);
 
@@ -119,7 +122,13 @@ export class CacheComponent implements OnInit {
   }
 
   async clearCacheCollection(collection: string): Promise<void> {
-    if (!confirm(`Clear cached ${collection}? Next access will re-scan.`)) return;
+    const ok = await this.notify.confirm({
+      title: `Clear ${collection} cache?`,
+      message: 'Next access will re-scan from source.',
+      confirmLabel: 'Clear',
+      variant: 'warning',
+    });
+    if (!ok) return;
     await callBridge('cache_clear', { collection });
     await this.loadCacheStatus();
   }

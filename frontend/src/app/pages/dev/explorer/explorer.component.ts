@@ -403,9 +403,9 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   selectTab(idx: number): void { this.fileEditor.selectTab(idx); }
   closeTab(idx: number, ev?: Event): void {
     ev?.stopPropagation();
-    this.fileEditor.closeTab(idx);
+    void this.fileEditor.closeTab(idx);
   }
-  closeAllTabs(): void { this.fileEditor.closeAllTabs(); }
+  closeAllTabs(): void { void this.fileEditor.closeAllTabs(); }
   onEditorChange(value: string): void { this.fileEditor.onEditorChange(value); }
   onEditorSave(value: string): void { void this.fileEditor.onEditorSave(value); }
   saveActiveTab(): void { this.fileEditor.saveActiveTab(); }

@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
+import { DevNotificationHost } from '../../components/notification/notification-host';
 import { ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
 import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/store/settings.store';
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
@@ -25,7 +26,7 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
 @Component({
   selector: 'app-ide',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, RouterOutlet],
+  imports: [CommonModule, SidebarComponent, RouterOutlet, DevNotificationHost],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   // Default ViewEncapsulation (Emulated). The styles array below
   // carries only the IDE shell — toolbar, status bar, ide-layout,
@@ -96,6 +97,10 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
           }
         </lethean-vi-panel>
       }
+
+      <!-- Notification host — single wa-toast container + reactive
+           wa-dialog for confirms. Replaces native alert/confirm. -->
+      <dev-notification-host></dev-notification-host>
     </div>
   `,
   styles: [`

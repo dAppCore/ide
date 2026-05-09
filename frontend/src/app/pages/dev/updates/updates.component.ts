@@ -1,8 +1,9 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, computed, resource, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import { NotificationService } from '../../../services/notification.service';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface UpdateTool {
@@ -218,6 +219,8 @@ interface SelfUpdateApplyResponse {
   `],
 })
 export class UpdatesComponent {
+  private readonly notify = inject(NotificationService);
+
   // Self-update — DuckDB-cached. SWR via cachedBridgeResource.
   readonly self = cachedBridgeResource<SelfUpdateStatus>({
     tool: 'selfupdate_status',
@@ -277,14 +280,29 @@ export class UpdatesComponent {
   }
 
   async applySelfUpdate(): Promise<void> {
-    if (!confirm('Download and replace core-ide binary in place? You will need to quit and relaunch.')) return;
+    const ok = await this.notify.confirm({
+      title: 'Replace core-ide binary?',
+      message: 'Download and swap the binary in place. You will need to quit and relaunch.',
+      confirmLabel: 'Download + replace',
+      variant: 'warning',
+    });
+    if (!ok) return;
     this.selfUpdateApplying.set(true);
     try {
       const v = await callBridge<SelfUpdateApplyResponse>('selfupdate_apply', {});
-      alert(`Updated to ${v?.updated_to}. Quit and relaunch core-ide.`);
+      this.notify.notify({
+        message: `Updated to ${v?.updated_to}. Quit and relaunch core-ide.`,
+        variant: 'success',
+        icon: 'check',
+        duration: 0,
+      });
       this.self.refresh();
     } catch (e) {
-      alert('Self-update failed: ' + (e instanceof Error ? e.message : String(e)));
+      this.notify.notify({
+        message: 'Self-update failed: ' + (e instanceof Error ? e.message : String(e)),
+        variant: 'danger',
+        icon: 'triangle-exclamation',
+      });
     } finally {
       this.selfUpdateApplying.set(false);
     }

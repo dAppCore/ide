@@ -2,6 +2,7 @@
 
 import { ElementRef, Injectable, computed, inject, signal } from '@angular/core';
 import { callBridgeRaw } from '../../lib/bridge';
+import { NotificationService } from '../notification.service';
 import { WorkspaceStore } from './workspace.store';
 
 export interface OpenFile {
@@ -34,6 +35,7 @@ export interface DirEntry {
 @Injectable({ providedIn: 'root' })
 export class FileEditorStore {
   private readonly workspace = inject(WorkspaceStore);
+  private readonly notify = inject(NotificationService);
 
   readonly currentPath = signal<string>(this.workspace.root());
   readonly dirEntries = signal<DirEntry[]>([]);
@@ -181,12 +183,17 @@ export class FileEditorStore {
     }
   }
 
-  closeTab(idx: number): void {
+  async closeTab(idx: number): Promise<void> {
     const files = this.openFiles();
     const f = files[idx];
     if (!f) return;
     if (f.dirty) {
-      const ok = confirm(`Discard unsaved changes to ${this.basename(f.path)}?`);
+      const ok = await this.notify.confirm({
+        title: 'Discard unsaved changes?',
+        message: `${this.basename(f.path)} has unsaved changes that will be lost.`,
+        confirmLabel: 'Discard',
+        variant: 'danger',
+      });
       if (!ok) return;
     }
     const monacoEl = this.editorRef?.nativeElement as
@@ -207,10 +214,15 @@ export class FileEditorStore {
     this.notifyChange();
   }
 
-  closeAllTabs(): void {
+  async closeAllTabs(): Promise<void> {
     const dirty = this.openFiles().filter((f) => f.dirty);
     if (dirty.length > 0) {
-      const ok = confirm(`Discard unsaved changes in ${dirty.length} file(s)?`);
+      const ok = await this.notify.confirm({
+        title: 'Discard unsaved changes?',
+        message: `${dirty.length} file(s) have unsaved changes that will be lost.`,
+        confirmLabel: 'Discard all',
+        variant: 'danger',
+      });
       if (!ok) return;
     }
     const monacoEl = this.editorRef?.nativeElement as
@@ -247,7 +259,11 @@ export class FileEditorStore {
         ),
       );
     } else {
-      alert(`Save failed: ${(data as any).error || 'unknown'}`);
+      this.notify.notify({
+        message: `Save failed: ${(data as any).error || 'unknown'}`,
+        variant: 'danger',
+        icon: 'triangle-exclamation',
+      });
     }
   }
 
