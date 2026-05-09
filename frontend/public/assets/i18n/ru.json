@@ -179,5 +179,14 @@
   "lint.label.issues": "проблемы",
   "lint.empty.no-issues": "Проблем не обнаружено.",
   "lint.empty.no-filter-match.prefix": "Нет проблем, соответствующих",
-  "lint.empty.no-filter-match.suffix": "фильтр."
+  "lint.empty.no-filter-match.suffix": "фильтр.",
+  "locales.title": "Локали",
+  "locales.subtitle.prefix": "Охват перевода по всему канону. Поверхность над",
+  "locales.label.packages": "пакеты",
+  "locales.label.locales-seen": "просмотренные локали:",
+  "locales.status.scanning": "сканирование...",
+  "locales.button.rescan": "Повторное сканирование",
+  "locales.column.package": "Пакет",
+  "locales.column.en-keys": "ключи",
+  "locales.empty.none": "В рабочей области не найдены локали."
 }

@@ -179,5 +179,14 @@
   "lint.label.issues": "مسائل",
   "lint.empty.no-issues": "مشکلی پیدا نشد.",
   "lint.empty.no-filter-match.prefix": "هیچ مشکلی مطابقت ندارد",
-  "lint.empty.no-filter-match.suffix": "فیلتر"
+  "lint.empty.no-filter-match.suffix": "فیلتر",
+  "locales.title": "محلی‌سازی‌ها",
+  "locales.subtitle.prefix": "پوشش ترجمه در سراسر کانون. سطح روی",
+  "locales.label.packages": "بسته ها",
+  "locales.label.locales-seen": "مناطق دیده شده:",
+  "locales.status.scanning": "اسکن کردن...",
+  "locales.button.rescan": "دوباره اسکن کنید",
+  "locales.column.package": "بسته",
+  "locales.column.en-keys": "کلیدهای en",
+  "locales.empty.none": "هیچ محلی در فضای کاری یافت نشد."
 }

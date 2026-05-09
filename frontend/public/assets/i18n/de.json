@@ -179,5 +179,14 @@
   "lint.label.issues": "Probleme",
   "lint.empty.no-issues": "Keine Probleme gefunden.",
   "lint.empty.no-filter-match.prefix": "Es liegen keine Probleme vor",
-  "lint.empty.no-filter-match.suffix": "Filter."
+  "lint.empty.no-filter-match.suffix": "Filter.",
+  "locales.title": "Lokalisierungen",
+  "locales.subtitle.prefix": "Übersetzungsabdeckung im gesamten Kanon. Oberfläche vorbei",
+  "locales.label.packages": "Pakete",
+  "locales.label.locales-seen": "Gesehene Orte:",
+  "locales.status.scanning": "Scannen...",
+  "locales.button.rescan": "Erneut scannen",
+  "locales.column.package": "Paket",
+  "locales.column.en-keys": "de Schlüssel",
+  "locales.empty.none": "Im Arbeitsbereich wurden keine Gebietsschemata gefunden."
 }

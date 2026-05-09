@@ -1,6 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Component, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
@@ -55,19 +56,19 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
 @Component({
   selector: 'dev-locales',
   standalone: true,
-  imports: [DevSkeleton],
+  imports: [DevSkeleton, TranslatePipe],
   template: `
     <section class="block i18n-block">
       <div class="block-header i18n-header">
-        <h2 class="block-title">Locales</h2>
-        <span class="editorial subtitle">Translation coverage across the canon. Surface over <code>core/go-i18n</code>.</span>
+        <h2 class="block-title">{{ 'locales.title' | translate }}</h2>
+        <span class="editorial subtitle">{{ 'locales.subtitle.prefix' | translate }} <code>core/go-i18n</code>.</span>
       </div>
       <div class="i18n-toolbar">
         <span class="i18n-meta">
-          {{ scan.stable().packages.length }} packages · {{ scan.stable().unique_locales.length }} locales seen: {{ scan.stable().unique_locales.join(', ') || '—' }}
+          {{ scan.stable().packages.length }} {{ 'locales.label.packages' | translate }} · {{ scan.stable().unique_locales.length }} {{ 'locales.label.locales-seen' | translate }} {{ scan.stable().unique_locales.join(', ') || '—' }}
         </span>
         <button class="btn btn-ghost btn-sm" (click)="scan.refresh()" [disabled]="scan.loading()">
-          @if (scan.loading()) { <span>scanning…</span> } @else { <span>Re-scan</span> }
+          @if (scan.loading()) { <span>{{ 'locales.status.scanning' | translate }}</span> } @else { <span>{{ 'locales.button.rescan' | translate }}</span> }
         </button>
       </div>
       @if (scan.error(); as err) {
@@ -81,8 +82,8 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
           <table>
             <thead>
               <tr>
-                <th class="i18n-pkg-col">Package</th>
-                <th class="i18n-baseline-col">en keys</th>
+                <th class="i18n-pkg-col">{{ 'locales.column.package' | translate }}</th>
+                <th class="i18n-baseline-col">{{ 'locales.column.en-keys' | translate }}</th>
                 @for (loc of scan.stable().unique_locales; track loc) {
                   <th>{{ loc }}</th>
                 }
@@ -115,7 +116,7 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
                 </tr>
               }
               @if (scan.stable().packages.length === 0 && !scan.loading()) {
-                <tr><td [attr.colspan]="2 + scan.stable().unique_locales.length" class="i18n-empty">No locales found in workspace.</td></tr>
+                <tr><td [attr.colspan]="2 + scan.stable().unique_locales.length" class="i18n-empty">{{ 'locales.empty.none' | translate }}</td></tr>
               }
             </tbody>
           </table>

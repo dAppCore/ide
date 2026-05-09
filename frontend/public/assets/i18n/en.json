@@ -179,5 +179,14 @@
   "lint.label.issues": "issues",
   "lint.empty.no-issues": "No issues found.",
   "lint.empty.no-filter-match.prefix": "No issues match the",
-  "lint.empty.no-filter-match.suffix": "filter."
+  "lint.empty.no-filter-match.suffix": "filter.",
+  "locales.title": "Locales",
+  "locales.subtitle.prefix": "Translation coverage across the canon. Surface over",
+  "locales.label.packages": "packages",
+  "locales.label.locales-seen": "locales seen:",
+  "locales.status.scanning": "scanning...",
+  "locales.button.rescan": "Re-scan",
+  "locales.column.package": "Package",
+  "locales.column.en-keys": "en keys",
+  "locales.empty.none": "No locales found in workspace."
 }

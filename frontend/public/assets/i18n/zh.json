@@ -179,5 +179,14 @@
   "lint.label.issues": "问题",
   "lint.empty.no-issues": "没有发现问题。",
   "lint.empty.no-filter-match.prefix": "没有符合条件的问题",
-  "lint.empty.no-filter-match.suffix": "过滤器。"
+  "lint.empty.no-filter-match.suffix": "过滤器。",
+  "locales.title": "区域设置",
+  "locales.subtitle.prefix": "整个经典的翻译覆盖范围。表面超过",
+  "locales.label.packages": "包",
+  "locales.label.locales-seen": "看到的语言环境：",
+  "locales.status.scanning": "扫描...",
+  "locales.button.rescan": "重新扫描",
+  "locales.column.package": "套餐",
+  "locales.column.en-keys": "恩键",
+  "locales.empty.none": "在工作区中找不到区域设置。"
 }
