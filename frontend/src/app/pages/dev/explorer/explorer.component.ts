@@ -2,6 +2,7 @@
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
+import { SettingsStore } from '../../../services/store/settings.store';
 
 /**
  * Explorer panel — directory tree + tabs + Monaco editor. Backed by
@@ -9,9 +10,9 @@ import { FileEditorStore } from '../../../services/store/file-editor.store';
  * the same tab list and reveal a line.
  *
  * Editor settings (font-size / tab-size / word-wrap / line-numbers /
- * minimap / render-whitespace) are hard-coded to canonical defaults
- * for now — they'll plumb through an EditorSettingsStore when /dev/settings
- * extracts.
+ * minimap / render-whitespace) bind live to SettingsStore — change
+ * the values in /dev/settings and Monaco re-applies on the next
+ * change-detection tick.
  *
  * Custom elements: <lethean-monaco> is a Lit web component; we register
  * CUSTOM_ELEMENTS_SCHEMA so Angular doesn't complain about the unknown
@@ -113,11 +114,12 @@ import { FileEditorStore } from '../../../services/store/file-editor.store';
                   [attr.language]="f.language"
                   [attr.value]="f.content"
                   theme="vs-dark"
-                  [attr.font-size]="12.5"
-                  [attr.tab-size]="2"
-                  word-wrap="off"
-                  line-numbers="on"
-                  render-whitespace="selection"
+                  [attr.font-size]="settings.settings().editorFontSize"
+                  [attr.tab-size]="settings.settings().editorTabSize"
+                  [attr.word-wrap]="settings.settings().editorWordWrap ? 'on' : 'off'"
+                  [attr.line-numbers]="settings.settings().editorLineNumbers ? 'on' : 'off'"
+                  [attr.minimap]="settings.settings().editorMinimap ? '' : null"
+                  [attr.render-whitespace]="settings.settings().editorRenderWhitespace"
                   (lethean-editor-change)="onEditorChange($any($event).detail.value)"
                   (lethean-editor-save)="onEditorSave($any($event).detail.value)"
                 ></lethean-monaco>
@@ -131,6 +133,7 @@ import { FileEditorStore } from '../../../services/store/file-editor.store';
 })
 export class ExplorerComponent implements OnInit, OnDestroy {
   readonly fileEditor = inject(FileEditorStore);
+  readonly settings = inject(SettingsStore);
 
   @ViewChild('editorRef') editorRef?: ElementRef<HTMLElement>;
 
