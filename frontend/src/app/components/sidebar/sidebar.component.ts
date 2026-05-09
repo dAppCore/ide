@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter, signal, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, inject, computed } from '@angular/core';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { Site } from '../../lib/vi.types';
+import { ManifestService } from '../../services/manifest.service';
 
 /**
  * Sidebar — Vi Control Panel pattern (Lethean-3 native handoff).
@@ -35,12 +36,12 @@ import type { Site } from '../../lib/vi.types';
            later this group hides for non-dev personas. -->
       <div class="nav-group">
         <div class="nav-group-title">Developer</div>
-        @for (item of workspaceItems; track item.id) {
+        @for (item of developerPanels(); track item.id) {
           <button
             class="nav-row"
             [class.active]="currentRoute === item.id"
             (click)="routeChange.emit(item.id)">
-            <span class="nav-icon" [innerHTML]="trustIcon(item.iconSvg)"></span>
+            <span class="nav-icon" [innerHTML]="trustIcon(item.icon)"></span>
             <span class="nav-label">{{ item.label }}</span>
           </button>
         }
@@ -94,14 +95,15 @@ import type { Site } from '../../lib/vi.types';
       <!-- Group: Account -->
       <div class="nav-group">
         <div class="nav-group-title">Account</div>
-        <button class="nav-row" [class.active]="currentRoute === 'billing'" (click)="routeChange.emit('billing')">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></span>
-          <span class="nav-label">Billing</span>
-        </button>
-        <button class="nav-row" [class.active]="currentRoute === 'settings'" (click)="routeChange.emit('settings')">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-          <span class="nav-label">Settings</span>
-        </button>
+        @for (item of accountPanels(); track item.id) {
+          <button
+            class="nav-row"
+            [class.active]="currentRoute === item.id"
+            (click)="routeChange.emit(item.id)">
+            <span class="nav-icon" [innerHTML]="trustIcon(item.icon)"></span>
+            <span class="nav-label">{{ item.label }}</span>
+          </button>
+        }
       </div>
     </nav>
   `,
@@ -387,6 +389,10 @@ export class SidebarComponent {
 
   sites = signal<Site[]>([]);
 
+  private readonly manifest = inject(ManifestService);
+  readonly developerPanels = this.manifest.developerPanels;
+  readonly accountPanels = this.manifest.accountPanels;
+
   private readonly sanitizer = inject(DomSanitizer);
   private readonly trustedIconCache = new Map<string, SafeHtml>();
 
@@ -408,131 +414,4 @@ export class SidebarComponent {
     return r === `plugin:${code}` || r.startsWith(`plugin:${code}:`);
   }
 
-  workspaceItems = [
-    {
-      id: 'dashboard',
-      label: 'Control Panel',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
-    },
-    {
-      id: 'explorer',
-      label: 'Explorer',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>',
-    },
-    {
-      id: 'search',
-      label: 'Search',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>',
-    },
-    {
-      id: 'git',
-      label: 'Source Control',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 8v8M6 12c0 4 5 6 12 6"/></svg>',
-    },
-    {
-      id: 'terminal',
-      label: 'Terminal',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
-    },
-    {
-      id: 'marketplace',
-      label: 'Marketplace',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18l-1.5 9a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7L3 9z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>',
-    },
-    {
-      id: 'forge',
-      label: 'Forge',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 8l-7 4-7-4"/><path d="M5 16l7 4 7-4"/><path d="M5 8v8M19 8v8M12 4v4"/></svg>',
-    },
-    {
-      id: 'tenant',
-      label: 'Tenant',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
-    },
-    {
-      id: 'store',
-      label: 'Store',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="13" width="18" height="6" rx="1"/><line x1="7" y1="6" x2="7.01" y2="6"/><line x1="7" y1="16" x2="7.01" y2="16"/></svg>',
-    },
-    {
-      id: 'data',
-      label: 'Data',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>',
-    },
-    {
-      id: 'locales',
-      label: 'Locales',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-    },
-    {
-      id: 'process',
-      label: 'Processes',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
-    },
-    {
-      id: 'ts',
-      label: 'TypeScript',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 13h2v6m-2-3h2"/><path d="M13 13h4v2h-2c-1 0-2 0-2 1.5S14 18 15 18h2v-1"/></svg>',
-    },
-    {
-      id: 'php',
-      label: 'PHP',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6"/><path d="M7 10v4M9 10v4M9 12h2v-1.5"/><path d="M13 10v4M15 14v-4h1.5l1 1.5-1 1.5H15"/></svg>',
-    },
-    {
-      id: 'devops',
-      label: 'DevOps',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
-    },
-    {
-      id: 'updates',
-      label: 'Updates',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9c-2.4 0-4.6-.9-6.3-2.4"/><path d="M3 12a9 9 0 0 1 9-9c2.4 0 4.6.9 6.3 2.4"/><path d="M21 3v6h-6M3 21v-6h6"/></svg>',
-    },
-    {
-      id: 'sessions',
-      label: 'Sessions',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6"/><path d="M12 22v-2"/><path d="M5 12H3"/><path d="M21 12h-2"/><path d="M7.05 7.05L5.64 5.64"/><path d="M16.95 16.95L18.36 18.36"/><circle cx="12" cy="12" r="4"/></svg>',
-    },
-    {
-      id: 'stream',
-      label: 'Stream',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h6"/><path d="M16 12h6"/><circle cx="12" cy="12" r="4"/><path d="M22 4l-6 6"/><path d="M2 20l6-6"/></svg>',
-    },
-    {
-      id: 'memory',
-      label: 'Memory',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H7a5 5 0 1 1 1.1-9.9"/><path d="M9 10a4 4 0 0 1 8 0v1"/><path d="M11 14h6"/></svg>',
-    },
-    {
-      id: 'mantis',
-      label: 'Tickets',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg>',
-    },
-    {
-      id: 'cache',
-      label: 'Cache',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>',
-    },
-    {
-      id: 'lint',
-      label: 'Lint',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-    },
-    {
-      id: 'containers',
-      label: 'Containers',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="2" y1="11" x2="22" y2="11"/></svg>',
-    },
-    {
-      id: 'build',
-      label: 'Build',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
-    },
-    {
-      id: 'repos',
-      label: 'Repos',
-      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M14 5v6h6"/><circle cx="9" cy="15" r="1.4"/></svg>',
-    },
-  ];
 }

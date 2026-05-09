@@ -10,25 +10,38 @@ import { IdeComponent } from './pages/ide/ide.component';
  * Routing pattern: blank top-level root → frames stub on as children →
  * secondary layer renders inside whichever frame is mounted.
  *
- * - `''` (BlankFrame)         — pass-through router-outlet so every route
- *                               flows through one consistent root.
- * - `''/ide` (IdeComponent)   — the IDE owns its full window chrome; no
- *                               wrap. The existing IdeComponent visual
- *                               is the canon (darbs co-signed) — don't
- *                               put a frame around it.
- * - `''/system-tray`           — frameless 380x480 panel attached to the
- *   (SystemTrayFrame)            systray icon by core/gui's display.Service.
- * - `''/app/*`                — children of ApplicationFrame, the shared
- *   (ApplicationFrame)            chrome for settings / profile / sub-app
- *                               surfaces once they land.
+ * Frame variants (one per persona, mounted at /<persona>):
+ *
+ * - /dev (IdeComponent)          — Developer / advanced view. Current
+ *                                  full-feature IDE — Source Control,
+ *                                  Terminal, Marketplace, Containers,
+ *                                  Repos, etc. The canon (darbs co-signed)
+ *                                  — owns its full window chrome.
+ * - /ide  → /dev (alias)         — Reserved: a future lighter IDE for
+ *                                  non-developer personas will mount
+ *                                  here, displacing the alias.
+ * - /system-tray                 — 380x480 frameless panel attached to
+ *   (SystemTrayFrame)              the systray icon by display.Service.
+ * - /app/* (ApplicationFrame)    — Shared chrome for settings / profile
+ *                                  / sub-app surfaces once they land.
+ *
+ * Future frames (one per persona):
+ *
+ * - /inf  (InferenceFrame)       — AI-trainer persona
+ * - /kw   (KnowledgeWorkerFrame) — memory / notes / docs persona
+ * - /ops  (DevOpsFrame)          — infra-operator persona
+ *
+ * Persona-driven onboarding (project_core_agent_orchestration_doorway.md)
+ * picks which frame to mount based on the user's calibration answers.
  */
 export const routes: Routes = [
   {
     path: '',
     component: BlankFrame,
     children: [
-      { path: '', redirectTo: 'ide', pathMatch: 'full' },
-      { path: 'ide', component: IdeComponent },
+      { path: '', redirectTo: 'dev', pathMatch: 'full' },
+      { path: 'dev', component: IdeComponent },
+      { path: 'ide', redirectTo: 'dev', pathMatch: 'full' },
       { path: 'system-tray', component: SystemTrayFrame },
       {
         path: 'app',
