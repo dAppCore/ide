@@ -1,0 +1,19 @@
+{
+  "app.core.ui.search": "Поиск",
+  "menu.dashboard": "Панель",
+  "menu.mining": "Майнинг",
+  "menu.blockchain": "Блокчейн",
+  "menu.developer": "Разработчик",
+  "menu.claude": "Claude AI",
+  "menu.your-profile": "Профиль",
+  "menu.logout": "Выйти",
+  "menu.hub-client": "Клиент Hub",
+  "menu.hub-server": "Сервер Hub",
+  "menu.hub-developer": "Разработка Hub",
+  "menu.hub-gateway": "Шлюз Hub",
+  "menu.hub-admin": "Админ Hub",
+  "Developer": "Разработчик",
+  "Networking": "Сеть",
+  "Settings": "Настройки",
+  "Documentation": "Документация"
+}

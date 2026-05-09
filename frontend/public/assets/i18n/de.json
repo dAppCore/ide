@@ -1,0 +1,19 @@
+{
+  "app.core.ui.search": "Suchen",
+  "menu.dashboard": "Übersicht",
+  "menu.mining": "Mining",
+  "menu.blockchain": "Blockchain",
+  "menu.developer": "Entwickler",
+  "menu.claude": "Claude AI",
+  "menu.your-profile": "Profil",
+  "menu.logout": "Abmelden",
+  "menu.hub-client": "Client-Hub",
+  "menu.hub-server": "Server-Hub",
+  "menu.hub-developer": "Entwickler-Hub",
+  "menu.hub-gateway": "Gateway-Hub",
+  "menu.hub-admin": "Admin-Hub",
+  "Developer": "Entwickler",
+  "Networking": "Netzwerk",
+  "Settings": "Einstellungen",
+  "Documentation": "Dokumentation"
+}

@@ -1,11 +1,11 @@
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Events } from '@wailsio/runtime';
 
 @Component({
   selector: 'app-tray',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="tray-container">
       <!-- Header -->

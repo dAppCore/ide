@@ -21,6 +21,21 @@
       "@bindings/*": [
         "bindings/*"
       ],
+      "@lthn/ide/*": [
+        "bindings/dappco.re/go/ide/pkg/ide/*"
+      ],
+      "@lthn/docs/*": [
+        "bindings/dappco.re/go/ide/pkg/docs/*"
+      ],
+      "@lthn/core/*": [
+        "bindings/dappco.re/go/ide/pkg/*"
+      ],
+      "@lthn/*": [
+        "bindings/dappco.re/go/ide/pkg/server/*"
+      ],
+      "@lib/*": [
+        "src/app/lib/*"
+      ],
       "@core/gui-ui": [
         "../external/gui/ui/src/index.ts"
       ],

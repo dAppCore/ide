@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { Site } from '../../lib/vi.types';
 
@@ -16,7 +16,7 @@ import type { Site } from '../../lib/vi.types';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <nav class="sidebar">
       <!-- Workspace identity -->

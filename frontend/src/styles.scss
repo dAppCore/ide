@@ -10,6 +10,28 @@
  * runtime via data-brand="hostuk" (Vi purple, hue 305).
  */
 
+@use "tailwindcss";
+
+/* Web Awesome (Pro) — installed as file: dep from ~/Code/vendor-pro/.
+   Provides <wa-page>, <wa-button>, <wa-dialog>, etc plus Tailwind-friendly
+   utility classes (wa-stack, wa-cluster, wa-grid). Pro themes/palettes
+   under premium/vogue. */
+@import "@awesome.me/webawesome-pro/dist/styles/webawesome.css";
+@import "@awesome.me/webawesome-pro/dist/styles/themes/premium.css";
+@import "@awesome.me/webawesome-pro/dist/styles/native.css";
+@import "@awesome.me/webawesome-pro/dist/styles/utilities.css";
+@import "@awesome.me/webawesome-pro/dist/styles/color/palettes/vogue.css";
+
+/* FontAwesome Pro — installed as file: dep from ~/Code/vendor-pro/.
+   Pro adds the duotone, light, sharp, and brand variants the canonical
+   frames use (fa-pickaxe, fa-chart-network etc). */
+@import "@fortawesome/fontawesome-pro-web/css/fontawesome.min.css";
+@import "@fortawesome/fontawesome-pro-web/css/brands.min.css";
+@import "@fortawesome/fontawesome-pro-web/css/regular.min.css";
+@import "@fortawesome/fontawesome-pro-web/css/solid.min.css";
+@import "@fortawesome/fontawesome-pro-web/css/light.min.css";
+@import "@fortawesome/fontawesome-pro-web/css/duotone.min.css";
+
 @import './tokens.css';
 
 * {

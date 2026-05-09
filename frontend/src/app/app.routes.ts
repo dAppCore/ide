@@ -1,32 +1,29 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { Routes } from '@angular/router';
-import {
-  ApplicationFrameComponent,
-  ProviderHostComponent,
-  SystemTrayFrameComponent,
-} from '@core/gui-ui';
+import { ApplicationFrame } from '../frame/application.frame';
+import { SystemTrayFrame } from '../frame/system-tray.frame';
 import { IdeComponent } from './pages/ide/ide.component';
 
+/**
+ * Routes mirror core-gui/cmd/lthn-desktop/frontend/src/app/app.routes.ts.
+ * Frames sit at the OUTER level; routes that need the chrome live as
+ * children of the empty path mounted on ApplicationFrame. The systray
+ * window points at /system-tray (frameless, hidden, attached to the tray
+ * icon by pkg/display/tray.go on the canonical core-gui side).
+ */
 export const routes: Routes = [
-  // Land on the IDE shell at boot. The gui-ui ApplicationFrame still needs
-  // /api/v1/{i18n,providers} + /events backends — wire those before flipping
-  // the default back to ApplicationFrameComponent.
-  { path: '', redirectTo: '/ide', pathMatch: 'full' },
+  // Systray panel — frameless 380x480, no application chrome.
+  { path: 'system-tray', component: SystemTrayFrame },
 
-  // System tray panel — standalone compact UI (380x480 frameless)
-  { path: 'tray', component: SystemTrayFrameComponent },
-
-  // Full IDE layout with sidebar, dashboard, explorer, and terminal panes
-  { path: 'ide', component: IdeComponent },
-
-  // Main application frame with HLCRF layout — kept for /:provider routes.
+  // Main shell. Children inherit header / sidebar / footer.
   {
     path: '',
-    component: ApplicationFrameComponent,
+    component: ApplicationFrame,
     children: [
-      // Dynamic provider rendering via route parameter
-      { path: ':provider', component: ProviderHostComponent },
+      // Land on the IDE shell as the default route inside the frame.
+      { path: 'ide', component: IdeComponent },
+      { path: '', redirectTo: 'ide', pathMatch: 'full' },
     ],
   },
 ];

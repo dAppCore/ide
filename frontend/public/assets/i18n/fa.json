@@ -1,0 +1,19 @@
+{
+  "app.core.ui.search": "جست‌و‌جو",
+  "menu.dashboard": "داشبورد",
+  "menu.mining": "ماینینگ",
+  "menu.blockchain": "بلاک‌چین",
+  "menu.developer": "توسعه‌دهنده",
+  "menu.claude": "Claude AI",
+  "menu.your-profile": "پروفایل",
+  "menu.logout": "خروج",
+  "menu.hub-client": "هاب کلاینت",
+  "menu.hub-server": "هاب سرور",
+  "menu.hub-developer": "هاب توسعه",
+  "menu.hub-gateway": "هاب گذرگاه",
+  "menu.hub-admin": "هاب مدیر",
+  "Developer": "توسعه‌دهنده",
+  "Networking": "شبکه",
+  "Settings": "تنظیمات",
+  "Documentation": "مستندات"
+}

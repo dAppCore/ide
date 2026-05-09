@@ -2,20 +2,47 @@
 
 import {
   ApplicationConfig,
+  importProvidersFrom,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withHashLocation } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { TranslateModule } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 import { routes } from './app.routes';
+import { I18nService } from './services/i18n.service';
 
-// Wails serves static assets from the embedded bundle — there is no SSR, so
-// client hydration is meaningless and Angular logs NG0505 if it's enabled.
-// If we ever add an SSR variant for the web build, restore provideClientHydration.
+/**
+ * App config mirrors core-gui/cmd/lthn-desktop/frontend/src/app/app.config.ts
+ * — hash-location routing (Wails-friendly + matches the Go menu handlers
+ * that build URLs like /#/dev/edit), ngx-translate with the HTTP loader
+ * pulling locale JSONs from /assets/i18n/, and an early-load I18nService.
+ *
+ * Things the canonical config wires that we don't (yet): Monaco module
+ * (we use the AMD loader pattern instead — see lethean-monaco.ts) and
+ * Highcharts (no chart surfaces in core/ide today). StyleManagerService
+ * + APP_INITIALIZER will land when WebAwesome is wired.
+ */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withHashLocation()),
+    provideHttpClient(),
+    importProvidersFrom(
+      TranslateModule.forRoot({ fallbackLang: 'en' }),
+    ),
+    I18nService,
+    ...(isDevMode()
+      ? [
+          provideTranslateHttpLoader({
+            prefix: './assets/i18n/',
+            suffix: '.json',
+          }),
+        ]
+      : []),
   ],
 };

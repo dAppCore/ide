@@ -38,6 +38,13 @@ dev_mode:
       type: background
     - cmd: wails3 build DEV=true
       type: blocking
+    # Wait for vite to be reachable before launching the binary. Without
+    # this the binary's 10-attempt × 500ms retry budget (5s) loses the
+    # race against vite cold-start on first run, FATAL'ing with
+    # "unable to connect to frontend server". wails3 dev's exec path
+    # tokenises by whitespace (no shell), so we delegate to a script.
+    - cmd: build/wait-for-vite.sh
+      type: blocking
     - cmd: wails3 task run
       type: primary
 

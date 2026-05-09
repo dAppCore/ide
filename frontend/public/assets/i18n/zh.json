@@ -1,0 +1,19 @@
+{
+  "app.core.ui.search": "搜索",
+  "menu.dashboard": "仪表板",
+  "menu.mining": "挖矿",
+  "menu.blockchain": "区块链",
+  "menu.developer": "开发者",
+  "menu.claude": "Claude AI",
+  "menu.your-profile": "个人资料",
+  "menu.logout": "登出",
+  "menu.hub-client": "客户端中心",
+  "menu.hub-server": "服务器中心",
+  "menu.hub-developer": "开发者中心",
+  "menu.hub-gateway": "网关中心",
+  "menu.hub-admin": "管理员中心",
+  "Developer": "开发者",
+  "Networking": "网络",
+  "Settings": "设置",
+  "Documentation": "文档"
+}

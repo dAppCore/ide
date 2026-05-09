@@ -26,6 +26,12 @@ import (
 // dev-mode log verbosity, global key bindings (⌘R reload, ⌘⇧R force
 // reload, ⌘⌥I devtools). Frontend asset routing differs in dev vs
 // production via spaFallbackMiddleware below.
+//
+// core/ide lives in the system tray. The Mac option
+// ApplicationShouldTerminateAfterLastWindowClosed is false — closing the
+// IDE window hides it (see WindowClosing hook in pkg/server/gui.go),
+// reopening goes through the tray menu. The systray IS the app; windows
+// are surfaces it spawns.
 func newWailsApp(frontend fs.FS) *application.App {
 	devMode := os.Getenv("FRONTEND_DEVSERVER_URL") != ""
 
@@ -48,7 +54,7 @@ func newWailsApp(frontend fs.FS) *application.App {
 		Assets:      assets,
 		LogLevel:    logLevel,
 		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 		// SingleInstance prevents two core-ide processes racing for the
 		// same MCP bridge port (:9877) and the same window.Service

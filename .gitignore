@@ -30,3 +30,13 @@ htmlcov/
 frontend/test-results/
 frontend/playwright-report/
 frontend/.playwright/
+
+# Pro assets — Web Awesome Pro + FontAwesome Pro are commercial software,
+# never commit. Belt-and-braces: ignore both the install dir and any
+# stray copies, regardless of where they end up in the tree.
+frontend/public/fontawesome-pro/
+frontend/public/webawesome-pro/
+**/fontawesome-pro/
+**/webawesome-pro/
+**/fontawesome-pro-plus-*/
+**/webawesome-zip/

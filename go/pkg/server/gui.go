@@ -10,9 +10,11 @@ import (
 	"time"
 
 	core "dappco.re/go"
+	"dappco.re/go/gui/pkg/systray"
 	"dappco.re/go/gui/pkg/window"
 	vipkg "dappco.re/go/ide/pkg/vi"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 // spaFallbackMiddleware rewrites navigation requests (paths with no file
@@ -155,6 +157,61 @@ func (shell *GUIShell) Run(
 	if !openResult.OK {
 		core.Print(core.Stderr(), "ide.server.GUI: window.open failed: %v\n", openResult.Value)
 	}
+
+	// Hide-on-close: core/ide lives in the systray, the window is a
+	// surface it spawns. Closing the X button hides the window and
+	// cancels the destroy — reopening goes through the tray "Show
+	// Window" menu. cmd/core-ide flips Mac.ApplicationShouldTerminate
+	// AfterLastWindowClosed to false so the process keeps running with
+	// no visible windows.
+	if win, ok := app.Window.GetByName(shell.WindowName); ok && win != nil {
+		win.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+			win.Hide()
+			e.Cancel()
+		})
+	}
+
+	// Configure the systray (created by core/gui systray.Service via
+	// gui.Bootstrap). Set the IDE label, install the menu, subscribe
+	// to click events. The window-name capture is on the closure so
+	// Show/Quit handlers don't depend on shell living past Run.
+	const (
+		trayActionShow = "ide.show_window"
+		trayActionQuit = "ide.quit"
+	)
+	winName := shell.WindowName
+	labelResult := coreInstance.Action("systray.set_label").Run(ctx, core.NewOptions(
+		core.Option{Key: "task", Value: systray.TaskSetTrayLabel{Label: "core-ide"}},
+	))
+	if !labelResult.OK {
+		core.Print(core.Stderr(), "ide.server.GUI: systray.set_label: %v\n", labelResult.Value)
+	}
+	menuResult := coreInstance.Action("systray.set_menu").Run(ctx, core.NewOptions(
+		core.Option{Key: "task", Value: systray.TaskSetTrayMenu{Items: []systray.TrayMenuItem{
+			{Label: "Show core-ide", ActionID: trayActionShow},
+			{Type: "separator"},
+			{Label: "Quit core-ide", ActionID: trayActionQuit},
+		}}},
+	))
+	if !menuResult.OK {
+		core.Print(core.Stderr(), "ide.server.GUI: systray.set_menu: %v\n", menuResult.Value)
+	}
+	coreInstance.RegisterAction(func(_ *core.Core, msg core.Message) core.Result {
+		clicked, ok := msg.(systray.ActionTrayMenuItemClicked)
+		if !ok {
+			return core.Result{OK: true}
+		}
+		switch clicked.ActionID {
+		case trayActionShow:
+			if win, ok := app.Window.GetByName(winName); ok && win != nil {
+				win.Show()
+				win.Focus()
+			}
+		case trayActionQuit:
+			app.Quit()
+		}
+		return core.Result{OK: true}
+	})
 
 	// Restore the saved layout (if any) — done after window.open so the
 	// tracked window is the target. Save layout before quit so positions
