@@ -5,6 +5,7 @@ package main
 import (
 	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -38,9 +39,19 @@ func newWailsApp(frontend fs.FS) *application.App {
 // to "/" so the asset server returns index.html instead of 404 — the
 // standard SPA fallback pattern. Without it, Angular routes (/ide, /library
 // etc.) load empty pages.
+//
+// In dev mode (FRONTEND_DEVSERVER_URL set by `wails3 dev`), the middleware
+// is a passthrough — vite owns its own routing AND the special `/@vite/`,
+// `/@fs/`, `/@id/` URLs (leaf "client", "env" etc. have no dot, would
+// otherwise be rewritten to `/`, breaking ESM imports with the
+// `text/html is not a valid JavaScript MIME type` error).
 func spaFallbackMiddleware(assets fs.FS) application.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if os.Getenv("FRONTEND_DEVSERVER_URL") != "" {
+				next.ServeHTTP(w, r)
+				return
+			}
 			if r.Method != http.MethodGet && r.Method != http.MethodHead {
 				next.ServeHTTP(w, r)
 				return

@@ -1,6 +1,6 @@
-import { Component, Input, Output, EventEmitter, OnInit, PLATFORM_ID, Inject, signal } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
+import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import type { Site } from '../../lib/vi.types';
 
 /**
  * Sidebar — Vi Control Panel pattern (Lethean-3 native handoff).
@@ -27,26 +27,6 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
           <span class="brand-name">Lethean Desktop</span>
           <span class="brand-context">snider · homelab</span>
         </div>
-      </div>
-
-      <!-- Vi presence card -->
-      <div class="vi-presence">
-        <div class="vi-presence-row">
-          <img class="vi-avatar" src="/vi/vi-master.png" alt="Vi" />
-          <div class="vi-presence-text">
-            <span class="vi-status-dot" [class.connected]="vi().connected"></span>
-            <span class="vi-status-line">
-              {{ vi().connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi().latencyMs }}ms
-            </span>
-            <span class="vi-presence-sub">
-              Watching {{ vi().watching }} {{ vi().watching === 1 ? 'site' : 'sites' }}{{ vi().pending > 0 ? ' · ' + vi().pending + ' pending' : '' }}
-            </span>
-          </div>
-        </div>
-        <button class="vi-ask" (click)="onAskVi()">
-          <span class="kbd">⌘K</span>
-          <span class="vi-ask-label">Ask Vi anything</span>
-        </button>
       </div>
 
       <!-- Group: Developer — full feature set, will gate behind a dev-mode
@@ -399,30 +379,12 @@ import { Site, ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
     }
   `]
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent {
   @Input() currentRoute = 'dashboard';
   @Input() pluginMenus: { code: string; name: string; menu?: { label: string; icon_svg?: string; subpages?: { label: string; path: string }[] } }[] = [];
   @Output() routeChange = new EventEmitter<string>();
 
-  private isBrowser: boolean;
-  vi = signal<ViStatus>(emptyViStatus);
   sites = signal<Site[]>([]);
-
-  constructor(@Inject(PLATFORM_ID) platformId: Object) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
-
-  ngOnInit() {
-    if (!this.isBrowser) return;
-    loadViData()
-      .then((snap) => {
-        this.vi.set(snap.status);
-        this.sites.set(snap.sites);
-      })
-      .catch((err) => {
-        console.warn('[vi] sidebar loadViData failed:', err);
-      });
-  }
 
   pluginRouteId(code: string, sub?: string): string {
     return sub ? `plugin:${code}:${sub}` : `plugin:${code}`;
@@ -560,9 +522,4 @@ export class SidebarComponent implements OnInit {
       iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M14 5v6h6"/><circle cx="9" cy="15" r="1.4"/></svg>',
     },
   ];
-
-  onAskVi() {
-    // ⌘K command surface — to be wired to a modal in a follow-up
-    this.routeChange.emit('ask-vi');
-  }
 }

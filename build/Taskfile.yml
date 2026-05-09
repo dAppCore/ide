@@ -5,7 +5,7 @@ tasks:
     summary: Runs `go mod tidy`
     internal: true
     cmds:
-      - cd go && GOWORK=off go mod tidy
+      - cd go && go mod tidy
 
   install:frontend:deps:
     summary: Install frontend dependencies
@@ -53,8 +53,6 @@ tasks:
   generate:bindings:
     label: generate:bindings (BUILD_FLAGS={{.BUILD_FLAGS}})
     summary: Generates bindings for the frontend
-    deps:
-      - task: go:mod:tidy
     sources:
       - "**/*.[jt]s"
       - exclude: frontend/**/*
@@ -65,7 +63,7 @@ tasks:
     generates:
       - frontend/bindings/**/*
     cmds:
-      - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
+      - cd go && wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts -d ../frontend/bindings ./...
 
   generate:icons:
     summary: Generates Windows `.ico` and Mac `.icns` files from an image
