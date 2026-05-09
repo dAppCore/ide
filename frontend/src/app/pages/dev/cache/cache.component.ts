@@ -61,6 +61,21 @@ interface CacheStatusResponse {
       </div>
     </section>
   `,
+  styles: [`
+    /* Cache panel */
+    .ch-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .ch-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .ch-header code { font-size: 10px; }
+    .ch-toolbar { padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .ch-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+    .ch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ch-table th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); border-bottom: 1px solid var(--line-1); }
+    .ch-table td { padding: 8px 10px; border-bottom: 1px solid var(--line-1); vertical-align: middle; }
+    .ch-table td code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); }
+    .ch-stale { background: color-mix(in oklch, #fbbf24 6%, transparent); }
+    .ch-actions-col { width: 120px; text-align: right; }
+    .ch-actions-col .btn { padding: 2px 8px; font-size: 11px; }
+  `],
 })
 export class CacheComponent implements OnInit {
   readonly cacheCollections = signal<CacheCollection[]>([]);

@@ -83,6 +83,62 @@ interface BuildRunResponse {
       </div>
     </section>
   `,
+  styles: [`
+    /* Build panel */
+    .build-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .build-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .build-toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 10px 18px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .build-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .build-type-pill {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brand-200);
+      background: color-mix(in oklch, var(--brand-500) 14%, var(--ink-1));
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+    .build-cmd {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-2);
+      background: var(--ink-2);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .build-hint { font-size: 11px; color: var(--fg-3); font-style: italic; }
+    .build-actions { display: flex; gap: 6px; }
+    .build-error {
+      padding: 10px 18px;
+      color: #f87171;
+      background: color-mix(in oklch, #f87171 8%, var(--ink-2));
+      border-bottom: 1px solid var(--line-1);
+      font-size: 13px;
+    }
+    .build-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      background: var(--ink-0);
+    }
+    .build-log pre {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--fg-2);
+      white-space: pre-wrap;
+      margin: 0;
+    }
+    .build-empty, .build-running { color: var(--fg-3); font-style: italic; }
+  `],
 })
 export class BuildComponent implements OnInit {
   private readonly workspace = inject(WorkspaceStore);

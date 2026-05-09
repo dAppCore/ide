@@ -162,6 +162,177 @@ function pluginNativeTag(code: string): string | null {
       }
     </section>
   `,
+  styles: [`
+    /* Plugin route — full-surface render of an installed plugin's UI */
+    .plugin-route-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .plugin-route-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .plugin-route-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+    .plugin-route-frame { width: 100%; height: 100%; border: none; background: var(--ink-0); }
+    .plugin-route-body .plugin-panel-native { flex: 1; overflow-y: auto; }
+    /* Plugin embedded panel — Angular Render iframe-as-component */
+    .plugin-panel {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+      background: var(--ink-1);
+    }
+    .plugin-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 18px;
+      background: var(--ink-2);
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .plugin-panel-title { font-size: 13px; font-weight: 600; color: var(--fg-1); }
+    .plugin-panel-url { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .plugin-panel-frame {
+      width: 100%;
+      height: 480px;
+      border: none;
+      background: var(--ink-0);
+    }
+    .plugin-panel-native {
+      max-height: 480px;
+      overflow-y: auto;
+      background: var(--ink-0);
+    }
+    .plugin-panel-mode {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brand-200);
+      background: color-mix(in oklch, var(--brand-500) 14%, var(--ink-1));
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    /* Marketplace */
+    .market-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .market-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .market-toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 12px 18px;
+      align-items: center;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .market-search-input,
+    .market-category-select {
+      background: var(--ink-2);
+      border: 1px solid var(--line-2);
+      color: var(--fg-1);
+      padding: 7px 10px;
+      border-radius: var(--r-sm);
+      font-size: 13px;
+    }
+    .market-search-input { flex: 1; }
+    .market-search-input:focus,
+    .market-category-select:focus { border-color: var(--brand-400); outline: none; }
+    .market-error {
+      padding: 10px 18px;
+      color: #f87171;
+      background: color-mix(in oklch, #f87171 8%, var(--ink-2));
+      border-bottom: 1px solid var(--line-1);
+      font-size: 13px;
+    }
+    .market-message {
+      padding: 8px 18px;
+      color: var(--fg-2);
+      background: color-mix(in oklch, var(--brand-500) 8%, var(--ink-2));
+      border-top: 1px solid var(--line-1);
+      font-size: 12px;
+    }
+    .market-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      align-content: start;
+    }
+    .market-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--fg-3);
+      padding: 32px;
+      font-size: 13px;
+    }
+    .market-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line-1);
+      border-radius: var(--r-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .market-card:hover {
+      border-color: var(--brand-400);
+      transform: translateY(-1px);
+    }
+    .market-card.installed { border-color: color-mix(in oklch, var(--brand-500) 60%, var(--line-1)); }
+    .market-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .market-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg-1);
+      margin: 0;
+      line-height: 1.3;
+    }
+    .market-card-cat {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brand-200);
+      background: color-mix(in oklch, var(--brand-500) 12%, var(--ink-1));
+      padding: 2px 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .market-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--fg-3);
+    }
+    .market-card-code { font-family: var(--font-mono); color: var(--fg-2); }
+    .market-card-version { font-family: var(--font-mono); }
+    .market-card-desc {
+      font-size: 12px;
+      color: var(--fg-2);
+      line-height: 1.4;
+    }
+    .market-card-repo {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      word-break: break-all;
+    }
+    .market-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 6px;
+    }
+    .market-card-state {
+      font-size: 11px;
+      color: var(--brand-200);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+  `],
 })
 export class MarketplaceComponent implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);

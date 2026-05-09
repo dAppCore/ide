@@ -130,6 +130,249 @@ import { SettingsStore } from '../../../services/store/settings.store';
       </div>
     </section>
   `,
+  styles: [`
+    /* Explorer — file tree + viewer */
+    .explorer-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .explorer-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--fg-3);
+      flex-wrap: wrap;
+    }
+    .crumb {
+      background: transparent;
+      border: 0;
+      color: var(--brand-200);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font: inherit;
+    }
+    .crumb:hover { background: var(--ink-2); color: var(--brand-100); }
+    .crumb-sep { color: var(--fg-4); }
+    .explorer-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .explorer-grid:not(.has-file) { grid-template-columns: 1fr; }
+    .explorer-tree {
+      border-right: 1px solid var(--line-1);
+      overflow: auto;
+      padding: 6px 0;
+      min-height: 0;
+    }
+    .tree-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+      color: var(--fg-1);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tree-row:hover { background: color-mix(in oklch, var(--brand-500) 10%, var(--ink-2)); }
+    .tree-row.dir { color: var(--brand-200); }
+    .tree-row.file { color: var(--fg-2); }
+    .tree-row.file.active {
+      background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2));
+      color: var(--fg-0);
+    }
+    .tree-row.up { color: var(--fg-3); border-bottom: 1px solid var(--line-1); margin-bottom: 4px; }
+    .tree-row.loading, .tree-row.empty { color: var(--fg-4); font-style: italic; cursor: default; }
+    .tree-row.loading:hover, .tree-row.empty:hover { background: transparent; }
+    .tree-icon { width: 12px; text-align: center; flex-shrink: 0; opacity: 0.7; }
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      align-items: stretch;
+      background: var(--ink-2);
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+      min-height: 30px;
+    }
+    .tab-list {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .tab-list::-webkit-scrollbar { height: 3px; }
+    .tab-list::-webkit-scrollbar-thumb { background: var(--line-2); }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px 6px 12px;
+      border-right: 1px solid var(--line-1);
+      cursor: pointer;
+      max-width: 220px;
+      min-width: 80px;
+      user-select: none;
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      color: var(--fg-2);
+      background: var(--ink-2);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .tab:hover { background: var(--ink-3); color: var(--fg-1); }
+    .tab.active {
+      background: var(--ink-1);
+      color: var(--fg-0);
+      box-shadow: inset 0 2px 0 0 var(--brand-400);
+    }
+    .tab-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tab-dirty {
+      width: 8px;
+      color: var(--brand-300);
+      font-size: 13px;
+      line-height: 1;
+      visibility: hidden;
+      flex-shrink: 0;
+    }
+    .tab-dirty.show { visibility: visible; }
+    .tab-close {
+      width: 16px;
+      height: 16px;
+      background: transparent;
+      border: 0;
+      border-radius: 3px;
+      color: var(--fg-3);
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .tab-close:hover {
+      background: var(--ink-3);
+      color: var(--fg-0);
+    }
+    .tab-close-all {
+      padding: 0 12px;
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--line-1);
+      color: var(--fg-3);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .tab-close-all:hover { color: var(--fg-0); background: var(--ink-3); }
+    .tab-close-all:disabled { opacity: 0.3; cursor: default; }
+    .explorer-viewer {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .viewer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--line-1);
+      background: var(--ink-2);
+      flex-shrink: 0;
+    }
+    .viewer-path {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--fg-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: rtl;
+      text-align: left;
+    }
+    .viewer-lang {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--fg-4);
+      background: var(--ink-3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .viewer-dirty {
+      color: var(--brand-300);
+      font-size: 16px;
+      line-height: 1;
+      margin-right: 4px;
+    }
+    .viewer-save {
+      padding: 3px 10px;
+      background: var(--brand-500);
+      color: var(--fg-0);
+      border: 1px solid var(--brand-400);
+      border-radius: 4px;
+      font: 500 11px / 1 inherit;
+      cursor: pointer;
+    }
+    .viewer-save:hover {
+      background: color-mix(in oklch, var(--brand-500) 90%, white);
+    }
+    .viewer-close {
+      width: 22px;
+      height: 22px;
+      background: transparent;
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      color: var(--fg-3);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .viewer-close:hover { color: var(--fg-0); border-color: var(--line-1); }
+    .viewer-monaco {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+    }
+    .viewer-monaco lethean-monaco {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+    }
+    .viewer-body {
+      flex: 1;
+      margin: 0;
+      padding: 14px 18px;
+      overflow: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--fg-1);
+      background: var(--ink-1);
+      white-space: pre;
+      tab-size: 2;
+      min-height: 0;
+    }
+    .viewer-body code { font: inherit; color: inherit; }
+  `],
 })
 export class ExplorerComponent implements OnInit, OnDestroy {
   readonly fileEditor = inject(FileEditorStore);

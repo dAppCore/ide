@@ -156,6 +156,48 @@ interface PHPDetectResponse {
       </div>
     </section>
   `,
+  styles: [`
+    /* PHP scripts grid (symmetric to TS scripts) */
+    .php-script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 6px 0 14px; }
+    .php-script-card { background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; padding: 8px 10px; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; flex-direction: column; gap: 3px; position: relative; }
+    .php-script-card:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-2)); }
+    .php-script-name { font-size: 12px; font-weight: 600; color: var(--fg-1); font-family: var(--font-mono); }
+    .php-script-lines { position: absolute; top: 6px; right: 8px; font-size: 9px; color: var(--brand-200); font-family: var(--font-mono); }
+    .php-script-cmd { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .php-grid-meta { color: var(--fg-3); font-weight: normal; font-size: 11px; }
+    /* PHP panel */
+    .php-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .php-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .php-error { padding: 8px 18px; color: #f87171; background: color-mix(in oklch, #f87171 8%, var(--ink-2)); border-bottom: 1px solid var(--line-1); font-size: 12px; }
+    .php-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+    .php-side { width: 260px; border-right: 1px solid var(--line-1); padding: 14px 12px; overflow-y: auto; flex-shrink: 0; background: var(--ink-2); }
+    .php-side h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 0 0 8px; }
+    .php-row { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 100%; padding: 8px 10px; background: transparent; border: 1px solid transparent; border-radius: 5px; cursor: pointer; text-align: left; margin-bottom: 4px; }
+    .php-row:hover { background: color-mix(in oklch, var(--brand-500) 6%, var(--ink-1)); }
+    .php-row.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-1)); border-color: var(--brand-400); }
+    .php-name { font-size: 12px; color: var(--fg-1); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .php-tag { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: color-mix(in oklch, #a78bfa 18%, var(--ink-1)); color: #a78bfa; text-transform: uppercase; letter-spacing: 0.04em; }
+    .php-url { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .php-main { flex: 1; padding: 16px 20px; overflow-y: auto; min-width: 0; }
+    .php-empty, .php-empty-pane { color: var(--fg-3); font-style: italic; font-size: 12px; padding: 8px; }
+    .php-empty-pane { padding: 30px; text-align: center; }
+    .php-detail h3 { font-size: 16px; color: var(--fg-1); margin: 0 0 4px; }
+    .php-detail h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 18px 0 8px; }
+    .php-path { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); display: block; margin-bottom: 14px; }
+    .php-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin-bottom: 6px; }
+    .php-cell { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 4px; }
+    .php-cell code { font-family: var(--font-mono); }
+    .php-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); }
+    .php-cell > span:not(.php-label) { font-size: 12px; color: var(--fg-1); }
+    .php-services { display: flex; flex-wrap: wrap; gap: 6px; }
+    .php-service { font-size: 11px; padding: 3px 9px; background: color-mix(in oklch, var(--brand-500) 14%, var(--ink-1)); color: var(--brand-200); border-radius: 999px; font-family: var(--font-mono); }
+    .php-state-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .php-state { font-size: 10px; font-family: var(--font-mono); padding: 3px 8px; border-radius: 4px; background: var(--ink-1); color: var(--fg-3); }
+    .php-state.ok { background: color-mix(in oklch, #34d399 12%, var(--ink-1)); color: #34d399; }
+    .php-state.warn { background: color-mix(in oklch, #fbbf24 12%, var(--ink-1)); color: #fbbf24; }
+    .php-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .php-hint { font-size: 11px; color: var(--fg-3); font-style: italic; margin-top: 8px; }
+  `],
 })
 export class PhpComponent implements OnInit {
   private readonly router = inject(Router);

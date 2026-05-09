@@ -117,6 +117,39 @@ interface SelectedCell {
       </div>
     </section>
   `,
+  styles: [`
+    /* Locales panel */
+    .i18n-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .i18n-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .i18n-toolbar { display: flex; gap: 12px; padding: 10px 18px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .i18n-meta { font-size: 12px; color: var(--fg-3); }
+    .i18n-error { padding: 10px 18px; color: #f87171; background: color-mix(in oklch, #f87171 8%, var(--ink-2)); border-bottom: 1px solid var(--line-1); font-size: 13px; }
+    .i18n-body { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 18px; }
+    .i18n-matrix table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .i18n-matrix th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); border-bottom: 1px solid var(--line-1); }
+    .i18n-matrix td { padding: 7px 10px; border-bottom: 1px solid var(--line-1); }
+    .i18n-pkg-col { min-width: 160px; }
+    .i18n-baseline-col, .i18n-matrix th:not(.i18n-pkg-col):not(.i18n-baseline-col) { text-align: center; min-width: 70px; }
+    .i18n-pkg-name { font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); font-weight: 500; }
+    .i18n-baseline { font-family: var(--font-mono); color: var(--fg-2); text-align: center; }
+    .i18n-cell { font-family: var(--font-mono); text-align: center; cursor: pointer; transition: background 0.15s; }
+    .i18n-cell.present { color: var(--fg-2); }
+    .i18n-cell.present:hover { background: color-mix(in oklch, var(--brand-500) 10%, var(--ink-2)); }
+    .i18n-cell.complete { background: color-mix(in oklch, #34d399 8%, transparent); }
+    .i18n-cell.partial { background: color-mix(in oklch, #fbbf24 8%, transparent); }
+    .i18n-cell.over { background: color-mix(in oklch, #93c5fd 8%, transparent); }
+    .i18n-cell.active { background: color-mix(in oklch, var(--brand-500) 22%, var(--ink-2)) !important; outline: 1px solid var(--brand-400); }
+    .i18n-cell.missing { color: var(--fg-3); cursor: default; opacity: 0.4; }
+    .i18n-cell-keys { font-weight: 500; }
+    .i18n-cell-gap { font-size: 10px; color: #fbbf24; margin-left: 4px; }
+    .i18n-cell-extra { font-size: 10px; color: #93c5fd; margin-left: 4px; }
+    .i18n-empty { text-align: center; color: var(--fg-3); padding: 32px; font-style: italic; }
+    .i18n-viewer { background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 8px; }
+    .i18n-viewer-head { padding: 10px 14px; border-bottom: 1px solid var(--line-1); display: flex; gap: 10px; align-items: center; }
+    .i18n-viewer-title { font-size: 13px; color: var(--fg-1); }
+    .i18n-viewer-path { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-left: auto; }
+    .i18n-viewer-body { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 14px 16px; margin: 0; max-height: 400px; overflow-y: auto; color: var(--fg-2); white-space: pre-wrap; }
+  `],
 })
 export class LocalesComponent implements OnInit {
   readonly i18nPackages = signal<I18nPackage[]>([]);

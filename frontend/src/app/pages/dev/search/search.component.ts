@@ -72,6 +72,83 @@ interface SearchMatch {
       }
     </section>
   `,
+  styles: [`
+    /* Search — workspace ripgrep results */
+    .search-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .search-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .search-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--ink-2);
+      border: 1px solid var(--line-2);
+      border-radius: 5px;
+      padding: 6px 10px;
+      color: var(--fg-0);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--brand-400); }
+    .search-error {
+      padding: 10px 18px;
+      background: color-mix(in oklch, var(--danger-500) 14%, var(--ink-2));
+      color: var(--danger-300);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .search-empty, .search-summary {
+      padding: 10px 18px;
+      color: var(--fg-3);
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+    .search-results {
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 8px;
+      padding: 5px 18px;
+      width: 100%;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid color-mix(in oklch, var(--line-1) 50%, transparent);
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--fg-1);
+      align-items: baseline;
+    }
+    .search-row:hover { background: color-mix(in oklch, var(--brand-500) 8%, var(--ink-2)); }
+    .search-path { color: var(--brand-200); font-weight: 500; }
+    .search-line { color: var(--fg-3); }
+    .search-text {
+      color: var(--fg-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .search-fullpath {
+      color: var(--fg-4);
+      font-size: 10px;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: rtl;
+      text-align: left;
+    }
+  `],
 })
 export class SearchComponent {
   readonly workspace = inject(WorkspaceStore);

@@ -123,6 +123,39 @@ interface StoreFile {
       </div>
     </section>
   `,
+  styles: [`
+    /* Store panel */
+    .str-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .str-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .str-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .str-tabs { display: flex; gap: 4px; }
+    .str-tab { background: var(--ink-2); border: 1px solid var(--line-2); color: var(--fg-2); padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .str-tab.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2)); border-color: var(--brand-400); color: var(--fg-1); }
+    .str-tab-count { font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 999px; background: var(--ink-1); color: var(--fg-3); }
+    .str-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+    .str-side { width: 280px; border-right: 1px solid var(--line-1); padding: 14px 12px; overflow-y: auto; flex-shrink: 0; background: var(--ink-2); }
+    .str-files-side { width: 320px; }
+    .str-side h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 0 0 8px; }
+    .str-row { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 100%; padding: 7px 10px; background: transparent; border: 1px solid transparent; border-radius: 5px; cursor: pointer; text-align: left; margin-bottom: 4px; }
+    .str-row:hover { background: color-mix(in oklch, var(--brand-500) 6%, var(--ink-1)); }
+    .str-row.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-1)); border-color: var(--brand-400); }
+    .str-name { font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); font-weight: 600; }
+    .str-count { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+    .str-file-name { font-family: var(--font-mono); font-size: 11px; color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .str-file-meta { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+    .str-main { flex: 1; padding: 14px 18px; overflow-y: auto; min-width: 0; }
+    .str-empty, .str-empty-pane { color: var(--fg-3); font-style: italic; font-size: 12px; padding: 8px; }
+    .str-empty-pane { padding: 30px; text-align: center; }
+    .str-group-head { font-family: var(--font-mono); font-size: 13px; color: var(--fg-1); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line-1); }
+    .str-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .str-table th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); border-bottom: 1px solid var(--line-1); }
+    .str-table td { padding: 7px 10px; border-bottom: 1px solid var(--line-1); vertical-align: top; }
+    .str-table td code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); word-break: break-all; }
+    .str-actions { width: 50px; text-align: right; }
+    .str-file-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line-1); }
+    .str-file-path { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; }
+    .str-file-preview { font-family: var(--font-mono); font-size: 11px; line-height: 1.5; padding: 12px 14px; margin: 0; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 5px; color: var(--fg-2); white-space: pre-wrap; max-height: 600px; overflow-y: auto; }
+  `],
 })
 export class StoreComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);

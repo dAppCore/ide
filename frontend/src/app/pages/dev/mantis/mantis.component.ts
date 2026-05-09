@@ -163,6 +163,57 @@ type Segment = { kind: 'text' | 'path'; value: string };
       </div>
     </section>
   `,
+  styles: [`
+    /* Mantis panel */
+    .mn-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .mn-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .mn-toolbar { display: flex; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+    .mn-status-pills { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+    .mn-status-pill { background: var(--ink-2); border: 1px solid var(--line-1); color: var(--fg-2); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font: inherit; display: flex; gap: 6px; align-items: center; }
+    .mn-status-pill:hover { border-color: var(--brand-200); }
+    .mn-status-pill.active { background: var(--brand-200); color: var(--ink-1); border-color: var(--brand-200); }
+    .mn-pill-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.7; }
+    .mn-body { display: grid; grid-template-columns: 360px 1fr; gap: 0; flex: 1; min-height: 0; overflow: hidden; }
+    .mn-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .mn-row { width: 100%; padding: 10px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; flex-direction: column; gap: 4px; }
+    .mn-row:hover { background: var(--ink-2); }
+    .mn-row.active { background: var(--ink-2); border-left-color: var(--brand-200); }
+    .mn-row-head { display: flex; gap: 6px; align-items: center; }
+    .mn-id { font-family: var(--font-mono); font-size: 11px; color: var(--brand-200); }
+    .mn-id-large { font-size: 16px; }
+    .mn-status { font-size: 9px; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--ink-1); color: var(--fg-3); }
+    .mn-status[data-status="new"] { background: color-mix(in oklch, #34d399 18%, var(--ink-1)); color: #34d399; }
+    .mn-status[data-status="acknowledged"], .mn-status[data-status="confirmed"] { background: color-mix(in oklch, #93c5fd 18%, var(--ink-1)); color: #93c5fd; }
+    .mn-status[data-status="assigned"] { background: color-mix(in oklch, #fbbf24 18%, var(--ink-1)); color: #fbbf24; }
+    .mn-status[data-status="resolved"], .mn-status[data-status="closed"] { background: color-mix(in oklch, var(--fg-3) 18%, var(--ink-1)); color: var(--fg-3); }
+    .mn-status[data-status="feedback"] { background: color-mix(in oklch, #c4b5fd 18%, var(--ink-1)); color: #c4b5fd; }
+    .mn-project { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .mn-summary { font-size: 12px; color: var(--fg-1); line-height: 1.4; }
+    .mn-meta { font-size: 10px; color: var(--fg-3); display: flex; gap: 8px; }
+    .mn-updated { font-family: var(--font-mono); margin-left: auto; }
+    .mn-detail { overflow-y: auto; padding: 18px; }
+    .mn-detail-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .mn-web-link { color: var(--brand-200); text-decoration: none; font-size: 11px; margin-left: auto; }
+    .mn-web-link:hover { text-decoration: underline; }
+    .mn-detail-summary { font-size: 16px; color: var(--fg-1); margin: 0 0 10px; line-height: 1.4; }
+    .mn-detail-meta { font-size: 11px; color: var(--fg-3); margin-bottom: 16px; }
+    .mn-detail-meta code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); padding: 0 4px; background: var(--ink-2); border-radius: 3px; }
+    .mn-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 14px 0 6px; }
+    .mn-description, .mn-note-text { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); white-space: pre-wrap; word-break: break-word; padding: 10px 12px; background: var(--ink-2); border-radius: 6px; margin: 0; line-height: 1.5; }
+    .mn-path-link { color: var(--brand-200); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--brand-200) 40%, transparent); }
+    .mn-path-link:hover { background: color-mix(in oklch, var(--brand-200) 14%, transparent); text-decoration-color: var(--brand-200); }
+    .mn-note { margin-bottom: 10px; }
+    .mn-note-head { display: flex; gap: 8px; font-size: 10px; color: var(--fg-3); margin-bottom: 4px; }
+    .mn-note-author { color: var(--fg-2); }
+    .mn-note-when { font-family: var(--font-mono); margin-left: auto; }
+    .mn-recent-strip { padding: 10px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
+    .mn-recent-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 6px; }
+    .mn-recent-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .mn-recent-pill { background: var(--ink-1); border: 1px solid var(--line-1); padding: 5px 10px; border-radius: 4px; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .mn-recent-pill:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-1)); }
+    .mn-recent-summary { font-size: 11px; color: var(--fg-1); }
+    .mn-recent-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+  `],
 })
 export class MantisComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);

@@ -133,6 +133,61 @@ const ZERO_COUNTS: LintCounts = {
       </div>
     </section>
   `,
+  styles: [`
+    /* Lint panel */
+    .lint-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .lint-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .lint-toolbar { display: flex; gap: 12px; padding: 10px 18px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .lint-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .lint-chip { background: var(--ink-2); border: 1px solid var(--line-2); color: var(--fg-2); padding: 5px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .lint-chip:hover { border-color: var(--brand-400); }
+    .lint-chip.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2)); border-color: var(--brand-400); color: var(--fg-1); }
+    .lint-chip.critical.active { background: color-mix(in oklch, #f87171 26%, var(--ink-2)); border-color: #f87171; }
+    .lint-chip.high.active { background: color-mix(in oklch, #fbbf24 22%, var(--ink-2)); border-color: #fbbf24; }
+    .lint-chip-count { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); padding: 1px 6px; border-radius: 999px; background: var(--ink-1); }
+    .lint-chip.active .lint-chip-count { color: var(--brand-200); }
+    .lint-error { padding: 10px 18px; color: #f87171; background: color-mix(in oklch, #f87171 8%, var(--ink-2)); border-bottom: 1px solid var(--line-1); font-size: 13px; }
+    .lint-meta { padding: 6px 18px; font-size: 11px; color: var(--fg-3); border-bottom: 1px solid var(--line-1); }
+    .lint-meta code { font-family: var(--font-mono); color: var(--fg-2); }
+    .lint-list { flex: 1; overflow-y: auto; padding: 4px 18px 18px; }
+    .lint-row {
+      display: grid;
+      grid-template-columns: 70px 110px 1fr auto;
+      gap: 12px;
+      align-items: baseline;
+      width: 100%;
+      padding: 7px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: 1px solid var(--line-1);
+      cursor: pointer;
+      text-align: left;
+      font-size: 12px;
+      color: var(--fg-1);
+    }
+    .lint-row:hover { background: color-mix(in oklch, var(--brand-500) 6%, var(--ink-2)); }
+    .lint-severity {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--ink-1);
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
+    }
+    .lint-severity.sev-critical { background: color-mix(in oklch, #f87171 22%, var(--ink-1)); color: #f87171; }
+    .lint-severity.sev-high { background: color-mix(in oklch, #fbbf24 22%, var(--ink-1)); color: #fbbf24; }
+    .lint-severity.sev-medium { background: color-mix(in oklch, #93c5fd 18%, var(--ink-1)); color: #93c5fd; }
+    .lint-severity.sev-low { background: color-mix(in oklch, #34d399 14%, var(--ink-1)); color: #34d399; }
+    .lint-severity.sev-info { background: var(--ink-1); color: var(--fg-3); }
+    .lint-rule { font-family: var(--font-mono); font-size: 11px; color: var(--brand-200); }
+    .lint-title { color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lint-loc { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); white-space: nowrap; }
+    .lint-file { color: var(--fg-2); }
+    .lint-line { color: var(--brand-200); }
+    .lint-empty { padding: 40px; text-align: center; color: var(--fg-3); font-size: 13px; }
+  `],
 })
 export class LintComponent implements OnInit {
   private readonly workspace = inject(WorkspaceStore);

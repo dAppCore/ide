@@ -147,6 +147,46 @@ interface ParsedFrame {
       </div>
     </section>
   `,
+  styles: [`
+    /* Stream panel */
+    .stream-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .stream-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-stat { background: var(--ink-2); padding: 10px 12px; border-radius: 6px; }
+    .stream-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); }
+    .stream-stat-value { font-size: 18px; font-weight: 500; color: var(--fg-1); margin-top: 4px; font-family: var(--font-mono); }
+    .stream-ok { color: #34d399; }
+    .stream-warn { color: #fbbf24; }
+    .stream-body { display: grid; grid-template-columns: 240px 1fr; gap: 0; flex: 1; min-height: 0; overflow: hidden; }
+    .stream-channels { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .stream-list-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); padding: 0 14px 8px; display: flex; justify-content: space-between; align-items: center; }
+    .stream-refresh { padding: 2px 6px; font-size: 11px; }
+    .stream-channel-row { width: 100%; padding: 8px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; justify-content: space-between; align-items: center; }
+    .stream-channel-row:hover { background: var(--ink-2); }
+    .stream-channel-row.active { background: var(--ink-2); border-left-color: var(--brand-200); color: var(--fg-1); }
+    .stream-channel-name { font-size: 12px; font-weight: 500; font-family: var(--font-mono); }
+    .stream-channel-meta { font-size: 10px; color: var(--fg-3); display: flex; gap: 4px; }
+    .stream-empty { padding: 18px; font-size: 12px; color: var(--fg-3); font-style: italic; text-align: center; }
+    .stream-frames { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .stream-frame-list { flex: 1; overflow-y: auto; padding: 0 18px; font-family: var(--font-mono); font-size: 11px; }
+    .stream-frame { padding: 6px 0; border-bottom: 1px solid var(--line-1); display: flex; flex-direction: column; gap: 4px; }
+    .stream-frame-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .stream-frame-time { color: var(--fg-3); font-size: 11px; min-width: 60px; }
+    .stream-frame-bytes { color: var(--brand-200); font-size: 11px; min-width: 40px; text-align: right; }
+    .stream-frame-tag { background: color-mix(in oklch, var(--brand-200) 16%, var(--ink-1)); color: var(--brand-200); font-size: 9px; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stream-frame-toggle { background: var(--ink-1); border: 1px solid var(--line-1); color: var(--fg-3); font-size: 9px; padding: 1px 6px; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); }
+    .stream-frame-toggle:hover { color: var(--fg-1); border-color: var(--brand-200); }
+    .stream-frame-jump { background: transparent; border: 1px solid var(--brand-200); color: var(--brand-200); font-size: 10px; padding: 1px 6px; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); margin-left: auto; }
+    .stream-frame-jump:hover { background: color-mix(in oklch, var(--brand-200) 14%, transparent); }
+    .stream-frame-text { color: var(--fg-2); white-space: pre-wrap; word-break: break-all; font-size: 11px; }
+    .stream-frame-pretty { color: var(--fg-2); white-space: pre; overflow-x: auto; font-size: 10px; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; margin: 0; line-height: 1.4; }
+    .stream-frame-json .stream-frame-time { color: var(--brand-200); }
+    .stream-publish { padding: 14px 18px; border-top: 1px solid var(--line-1); flex-shrink: 0; }
+    .stream-publish-row { display: flex; gap: 8px; align-items: center; }
+    .stream-mode-select { width: 110px; flex-shrink: 0; }
+    .stream-channel-input { width: 160px; flex-shrink: 0; }
+    .stream-frame-input { flex: 1; }
+  `],
 })
 export class StreamComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);

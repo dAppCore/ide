@@ -22,5 +22,20 @@ $ _</pre>
       </div>
     </section>
   `,
+  styles: [`
+    /* Terminal placeholder (existing surface, tokenised) */
+    .terminal-output {
+      background: var(--ink-0);
+      border: 1px solid var(--line-1);
+      border-radius: var(--r-md);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--success-400);
+    }
+    .terminal-output pre {
+      margin: 0;
+    }
+  `],
 })
 export class TerminalComponent {}

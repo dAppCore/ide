@@ -316,6 +316,87 @@ const SESSION_LIVE_CAP = 500;
       </div>
     </section>
   `,
+  styles: [`
+    /* Sessions panel */
+    .sess-tabs { display: flex; gap: 0; padding: 0 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .sess-tab { padding: 8px 14px; background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--fg-2); font: inherit; font-size: 12px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+    .sess-tab:hover { color: var(--fg-1); }
+    .sess-tab.active { color: var(--fg-1); border-bottom-color: var(--brand-200); }
+    .sess-tab-count { font-family: var(--font-mono); font-size: 10px; color: var(--brand-200); background: var(--ink-2); padding: 1px 6px; border-radius: 3px; }
+    .sess-active-mode { grid-template-columns: 320px 1fr !important; }
+    .sess-active-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-active-row { width: 100%; padding: 10px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: block; }
+    .sess-active-row:hover { background: var(--ink-2); }
+    .sess-active-row.active { background: var(--ink-2); border-left-color: var(--brand-200); }
+    .sess-active-head { display: flex; justify-content: space-between; align-items: center; }
+    .sess-active-id { font-family: var(--font-mono); font-size: 11px; color: var(--brand-200); }
+    .sess-active-age { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .sess-active-fresh { color: #34d399; font-weight: 500; }
+    .sess-active-proj { font-size: 11px; color: var(--fg-1); margin-top: 4px; word-break: break-all; }
+    .sess-active-meta { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-top: 2px; }
+    .sess-search-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-search-hit { width: calc(100% - 20px); margin: 4px 10px; padding: 8px 12px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; cursor: pointer; font: inherit; color: var(--fg-2); text-align: left; display: flex; flex-direction: column; gap: 6px; }
+    .sess-search-hit:hover { border-color: var(--brand-200); }
+    .sess-search-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sess-search-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .sess-search-tool { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: color-mix(in oklch, var(--brand-200) 16%, var(--ink-1)); color: var(--brand-200); text-transform: uppercase; letter-spacing: 0.04em; }
+    .sess-search-match { font-family: var(--font-mono); font-size: 10px; color: var(--fg-2); margin: 0; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+    .sess-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sess-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .sess-toolbar { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; align-items: center; }
+    .sess-filter { flex: 1; max-width: 320px; }
+    .sess-body { display: grid; grid-template-columns: 240px 280px 1fr; gap: 0; flex: 1; min-height: 0; overflow: hidden; }
+    .sess-projects, .sess-list { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
+    .sess-list-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); padding: 0 14px 8px; }
+    .sess-spin { color: var(--brand-200); }
+    .sess-empty { padding: 18px; font-size: 12px; color: var(--fg-3); font-style: italic; text-align: center; }
+    .sess-project-row, .sess-row { width: 100%; padding: 8px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: block; }
+    .sess-project-row:hover, .sess-row:hover { background: var(--ink-2); }
+    .sess-project-row.active, .sess-row.active { background: var(--ink-2); border-left-color: var(--brand-200); color: var(--fg-1); }
+    .sess-project-name { font-size: 12px; font-weight: 500; word-break: break-all; }
+    .sess-project-meta { font-size: 10px; color: var(--fg-3); margin-top: 2px; display: flex; gap: 6px; }
+    .sess-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; }
+    .sess-row-id code { font-size: 11px; color: var(--brand-200); }
+    .sess-row-meta { font-size: 10px; color: var(--fg-3); display: flex; flex-direction: column; }
+    .sess-row-size { color: var(--fg-2); font-family: var(--font-mono); }
+    .sess-detail { overflow-y: auto; padding: 18px; }
+    .sess-detail-head { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line-1); }
+    .sess-detail-title { font-size: 13px; }
+    .sess-detail-title code { font-family: var(--font-mono); color: var(--brand-200); }
+    .sess-detail-sub { font-size: 11px; color: var(--fg-3); margin-top: 4px; }
+    .sess-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .sess-stat { background: var(--ink-2); padding: 10px 12px; border-radius: 6px; }
+    .sess-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); }
+    .sess-stat-value { font-size: 18px; font-weight: 500; color: var(--fg-1); margin-top: 4px; font-family: var(--font-mono); }
+    .sess-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 8px; }
+    .sess-tail-note { text-transform: none; letter-spacing: 0; font-style: italic; color: var(--fg-3); }
+    .sess-tools-section { margin-bottom: 18px; }
+    .sess-tools-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sess-tool-pill { display: inline-flex; gap: 6px; align-items: center; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 4px; padding: 3px 8px; font-size: 11px; }
+    .sess-tool-name { color: var(--fg-2); font-family: var(--font-mono); }
+    .sess-tool-count { color: var(--brand-200); font-weight: 500; font-family: var(--font-mono); }
+    .sess-events-section { margin-bottom: 18px; }
+    .sess-events-list { background: var(--ink-2); border-radius: 6px; padding: 8px; max-height: 400px; overflow-y: auto; font-family: var(--font-mono); font-size: 10px; }
+    .sess-event { display: grid; grid-template-columns: 60px 80px 100px 60px 1fr; gap: 6px; padding: 3px 6px; border-bottom: 1px solid var(--line-1); align-items: center; }
+    .sess-event-jumpable { cursor: pointer; }
+    .sess-event-jumpable:hover { background: color-mix(in oklch, var(--brand-200) 10%, transparent); }
+    .sess-event-jumpable .sess-event-input { color: var(--brand-200); }
+    .sess-event-error { background: color-mix(in oklch, #fbbf24 8%, transparent); }
+    .sess-live-toggle { margin-left: auto; padding: 2px 8px; font-size: 10px; }
+    .sess-live-active { background: color-mix(in oklch, #34d399 22%, var(--ink-1)); color: #34d399; border-color: #34d399; }
+    .sess-live-count { font-size: 10px; color: #34d399; font-family: var(--font-mono); margin-left: 6px; }
+    .sess-live-divider { padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #34d399; background: color-mix(in oklch, #34d399 8%, transparent); border-top: 1px solid color-mix(in oklch, #34d399 30%, transparent); border-bottom: 1px solid color-mix(in oklch, #34d399 30%, transparent); }
+    .sess-event-live { background: color-mix(in oklch, #34d399 4%, transparent); border-left: 2px solid #34d399; }
+    .sess-live-pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #34d399; margin-right: 4px; transition: opacity 0.4s ease, transform 0.4s ease; }
+    .sess-live-pulse[data-tick="0"] { opacity: 1; transform: scale(1); }
+    .sess-live-pulse[data-tick="1"] { opacity: 0.4; transform: scale(0.7); }
+    .sess-live-dropped { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-left: 4px; opacity: 0.7; }
+    .sess-event-time { color: var(--fg-3); }
+    .sess-event-type { color: var(--brand-200); }
+    .sess-event-tool { color: var(--fg-2); }
+    .sess-event-dur { color: var(--fg-3); text-align: right; }
+    .sess-event-input { color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  `],
 })
 export class SessionsComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);

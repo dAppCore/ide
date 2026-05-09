@@ -163,6 +163,47 @@ interface SelfUpdateApplyResponse {
       </div>
     </section>
   `,
+  styles: [`
+    /* Updates panel */
+    .self-upd-card { padding: 14px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
+    .self-upd-card--update { background: color-mix(in oklch, #fbbf24 8%, var(--ink-2)); border-bottom-color: color-mix(in oklch, #fbbf24 30%, var(--line-1)); }
+    .self-upd-row { display: flex; align-items: center; gap: 14px; }
+    .self-upd-icon { font-size: 22px; color: var(--brand-200); width: 32px; text-align: center; }
+    .self-upd-card--update .self-upd-icon { color: #fbbf24; }
+    .self-upd-body { flex: 1; min-width: 0; }
+    .self-upd-title { font-size: 14px; font-weight: 600; color: var(--fg-1); }
+    .self-upd-meta { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
+    .self-upd-meta code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); padding: 0 4px; background: var(--ink-1); border-radius: 3px; }
+    .self-upd-meta a { color: var(--brand-200); text-decoration: none; }
+    .self-upd-meta a:hover { text-decoration: underline; }
+    .self-upd-source { opacity: 0.7; }
+    .self-upd-hint { color: var(--fg-3); font-style: italic; }
+    .self-upd-err { color: #fbbf24; font-size: 10px; }
+    .self-upd-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .upd-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .upd-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .upd-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .upd-allgood { color: #34d399; font-size: 12px; }
+    .upd-attn { color: #fbbf24; font-size: 12px; font-weight: 500; }
+    .upd-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+    .upd-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .upd-table th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); border-bottom: 1px solid var(--line-1); }
+    .upd-table td { padding: 8px 10px; border-bottom: 1px solid var(--line-1); vertical-align: middle; }
+    .upd-table td code { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); }
+    .upd-table a { color: var(--brand-200); text-decoration: none; }
+    .upd-table a:hover { text-decoration: underline; }
+    .upd-needs { background: color-mix(in oklch, #fbbf24 6%, transparent); }
+    .upd-name { font-weight: 600; color: var(--fg-1); font-size: 12px; }
+    .upd-desc { font-size: 10px; color: var(--fg-3); margin-top: 2px; }
+    .upd-missing { font-size: 11px; color: var(--fg-3); font-style: italic; }
+    .upd-unknown { color: var(--fg-3); }
+    .upd-pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .upd-pill.ok { background: color-mix(in oklch, #34d399 18%, var(--ink-1)); color: #34d399; }
+    .upd-pill.warn { background: color-mix(in oklch, #fbbf24 18%, var(--ink-1)); color: #fbbf24; }
+    .upd-pill.missing { background: color-mix(in oklch, var(--fg-3) 18%, var(--ink-1)); color: var(--fg-3); }
+    .upd-pill.unknown { background: var(--ink-1); color: var(--fg-3); }
+    .upd-actions-col { width: 50px; text-align: right; }
+  `],
 })
 export class UpdatesComponent implements OnInit {
   readonly updatesTools = signal<UpdateTool[]>([]);

@@ -142,6 +142,56 @@ interface MemorySearchResponse {
       </div>
     </section>
   `,
+  styles: [`
+    /* Memory panel */
+    .mem-recent-strip { padding: 10px 18px; border-bottom: 1px solid var(--line-1); background: var(--ink-2); flex-shrink: 0; }
+    .mem-recent-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin-bottom: 6px; }
+    .mem-recent-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .mem-recent-pill { background: var(--ink-1); border: 1px solid var(--line-1); padding: 5px 10px; border-radius: 4px; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .mem-recent-pill:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 6%, var(--ink-1)); }
+    .mem-recent-type { font-size: 9px; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--ink-2); color: var(--fg-3); }
+    .mem-recent-type[data-type="project"] { background: color-mix(in oklch, #34d399 18%, var(--ink-2)); color: #34d399; }
+    .mem-recent-type[data-type="feedback"] { background: color-mix(in oklch, #fbbf24 18%, var(--ink-2)); color: #fbbf24; }
+    .mem-recent-type[data-type="reference"] { background: color-mix(in oklch, #93c5fd 18%, var(--ink-2)); color: #93c5fd; }
+    .mem-recent-type[data-type="user"] { background: color-mix(in oklch, #c4b5fd 18%, var(--ink-2)); color: #c4b5fd; }
+    .mem-recent-type[data-type="design"] { background: color-mix(in oklch, #fb7185 18%, var(--ink-2)); color: #fb7185; }
+    .mem-recent-name { font-size: 11px; color: var(--fg-1); }
+    .mem-recent-when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .mem-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .mem-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .mem-header code { font-size: 10px; }
+    .mem-toolbar { display: flex; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+    .mem-filter { flex: 0 0 280px; }
+    .mem-sort { flex: 0 0 150px; margin-left: auto; }
+    .mem-type-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mem-type-pill { background: var(--ink-2); border: 1px solid var(--line-1); color: var(--fg-2); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font: inherit; display: flex; gap: 6px; align-items: center; }
+    .mem-type-pill:hover { border-color: var(--brand-200); }
+    .mem-type-pill.active { background: var(--brand-200); color: var(--ink-1); border-color: var(--brand-200); }
+    .mem-type-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.7; }
+    .mem-body { flex: 1; overflow-y: auto; padding: 12px 18px; }
+    .mem-empty { padding: 24px; font-size: 13px; color: var(--fg-3); text-align: center; }
+    .mem-list-summary { font-size: 10px; color: var(--fg-3); padding: 0 4px 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .mem-row { width: 100%; display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; margin-bottom: 6px; cursor: pointer; text-align: left; font: inherit; color: var(--fg-2); }
+    .mem-row:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 4%, var(--ink-2)); }
+    .mem-row-type { background: var(--ink-1); color: var(--fg-3); font-size: 9px; padding: 3px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; text-align: center; align-self: start; margin-top: 2px; }
+    .mem-row-type[data-type="project"] { background: color-mix(in oklch, #34d399 18%, var(--ink-1)); color: #34d399; }
+    .mem-row-type[data-type="feedback"] { background: color-mix(in oklch, #fbbf24 18%, var(--ink-1)); color: #fbbf24; }
+    .mem-row-type[data-type="reference"] { background: color-mix(in oklch, #93c5fd 18%, var(--ink-1)); color: #93c5fd; }
+    .mem-row-type[data-type="user"] { background: color-mix(in oklch, #c4b5fd 18%, var(--ink-1)); color: #c4b5fd; }
+    .mem-row-type[data-type="design"] { background: color-mix(in oklch, #fb7185 18%, var(--ink-1)); color: #fb7185; }
+    .mem-row-body { min-width: 0; }
+    .mem-row-name { font-size: 13px; font-weight: 600; color: var(--fg-1); }
+    .mem-row-desc { font-size: 11px; color: var(--fg-2); margin-top: 4px; line-height: 1.4; }
+    .mem-row-meta { font-size: 10px; color: var(--fg-3); margin-top: 4px; display: flex; gap: 6px; }
+    .mem-row-meta code { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+    .mem-search-hit { width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 6px; margin-bottom: 6px; cursor: pointer; text-align: left; font: inherit; color: var(--fg-2); }
+    .mem-search-hit:hover { border-color: var(--brand-200); background: color-mix(in oklch, var(--brand-200) 4%, var(--ink-2)); }
+    .mem-search-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .mem-search-name { font-size: 12px; font-weight: 600; color: var(--fg-1); }
+    .mem-search-line { color: var(--fg-3); }
+    .mem-search-line code { font-family: var(--font-mono); font-size: 11px; }
+    .mem-search-match { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); margin: 0; padding: 6px 8px; background: var(--ink-1); border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+  `],
 })
 export class MemoryComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);

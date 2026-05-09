@@ -123,6 +123,45 @@ interface OrmBackend {
       </div>
     </section>
   `,
+  styles: [`
+    /* Data panel */
+    .data-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .data-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .data-error { padding: 10px 18px; color: #f87171; background: color-mix(in oklch, #f87171 8%, var(--ink-2)); border-bottom: 1px solid var(--line-1); font-size: 13px; }
+    .data-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+    .data-tables-side { width: 200px; border-right: 1px solid var(--line-1); padding: 14px 12px; overflow-y: auto; flex-shrink: 0; }
+    .data-tables-side h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 0 0 8px; }
+    .data-backend-picker { display: flex; gap: 4px; margin-bottom: 6px; }
+    .data-backend-btn { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; background: var(--ink-2); border: 1px solid var(--line-2); border-radius: 5px; cursor: pointer; text-align: left; }
+    .data-backend-btn:hover { border-color: var(--brand-400); }
+    .data-backend-btn.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2)); border-color: var(--brand-400); }
+    .data-backend-name { font-size: 11px; font-weight: 600; color: var(--fg-1); }
+    .data-backend-meta { font-size: 9px; color: var(--fg-3); }
+    .data-backend-path { font-size: 9px; color: var(--fg-3); margin-bottom: 8px; word-break: break-all; }
+    .data-backend-path code { font-family: var(--font-mono); }
+    .data-table-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 8px 10px; background: transparent; border: 1px solid transparent; border-radius: 6px; cursor: pointer; text-align: left; margin-bottom: 4px; }
+    .data-table-row:hover { background: color-mix(in oklch, var(--brand-500) 6%, var(--ink-2)); }
+    .data-table-row.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2)); border-color: var(--brand-400); }
+    .data-table-name { font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); font-weight: 600; }
+    .data-table-meta { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+    .data-main { flex: 1; padding: 14px 18px; overflow-y: auto; min-width: 0; }
+    .data-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .data-count { font-size: 12px; color: var(--fg-2); }
+    .data-form { background: var(--ink-2); border: 1px solid var(--line-1); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+    .data-form h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); margin: 0 0 10px; }
+    .data-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .data-form-label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--fg-3); }
+    .data-input { background: var(--ink-1); border: 1px solid var(--line-2); color: var(--fg-1); padding: 6px 9px; border-radius: 4px; font-size: 12px; font-family: var(--font-mono); }
+    .data-input:focus { border-color: var(--brand-400); outline: none; }
+    .data-hint { font-size: 10px; color: var(--fg-3); margin-left: 10px; font-style: italic; }
+    .data-grid-wrap { overflow-x: auto; border: 1px solid var(--line-1); border-radius: 8px; }
+    .data-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-grid th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); background: var(--ink-2); border-bottom: 1px solid var(--line-1); }
+    .data-grid td { padding: 7px 10px; border-bottom: 1px solid var(--line-1); }
+    .data-grid td code { font-family: var(--font-mono); color: var(--fg-2); font-size: 11px; }
+    .data-actions-col { width: 40px; text-align: center; }
+    .data-empty { text-align: center; color: var(--fg-3); padding: 32px; font-style: italic; font-size: 13px; }
+  `],
 })
 export class DataComponent implements OnInit {
   readonly ormBackend = signal<OrmBackend>({ current: 'memium', duck_path: '', available: [] });

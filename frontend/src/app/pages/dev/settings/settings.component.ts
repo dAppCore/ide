@@ -141,6 +141,107 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
       </div>
     </section>
   `,
+  styles: [`
+    /* Settings */
+    .settings-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .settings-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .settings-toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 10px 18px;
+      align-items: center;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .settings-saved {
+      font-size: 12px;
+      color: var(--brand-200);
+      background: color-mix(in oklch, var(--brand-500) 10%, var(--ink-2));
+      padding: 4px 10px;
+      border-radius: var(--r-sm);
+    }
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .settings-group {
+      background: var(--ink-2);
+      border: 1px solid var(--line-1);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-group-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg-1);
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+    .settings-group-hint {
+      font-size: 11px;
+      color: var(--fg-3);
+      margin: -4px 0 4px;
+      font-style: italic;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--fg-2);
+    }
+    .settings-row.stacked {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+    }
+    .settings-row.toggle {
+      cursor: pointer;
+    }
+    .settings-row.toggle input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--brand-500);
+    }
+    .settings-label {
+      flex: 1;
+      color: var(--fg-1);
+    }
+    .settings-hint {
+      color: var(--fg-3);
+      font-weight: 400;
+      font-style: italic;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+    .settings-input {
+      background: var(--ink-1);
+      border: 1px solid var(--line-2);
+      color: var(--fg-1);
+      padding: 6px 10px;
+      border-radius: var(--r-sm);
+      font-size: 13px;
+      font-family: var(--font-sans);
+    }
+    .settings-input:focus { border-color: var(--brand-400); outline: none; }
+    .settings-input.num { width: 80px; font-family: var(--font-mono); }
+    .settings-input.textarea {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .settings-row select.settings-input { width: 200px; }
+    .settings-row.stacked input.settings-input,
+    .settings-row.stacked textarea.settings-input { width: 100%; }
+  `],
 })
 export class SettingsComponent {
   readonly store = inject(SettingsStore);

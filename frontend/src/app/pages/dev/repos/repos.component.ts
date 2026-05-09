@@ -99,6 +99,134 @@ type ReposFilter = 'all' | 'dirty' | 'ahead' | 'behind';
       </div>
     </section>
   `,
+  styles: [`
+    /* Repos dashboard */
+    .repos-block { padding: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+    .repos-header { padding: 14px 18px; border-bottom: 1px solid var(--line-1); flex-shrink: 0; }
+    .repos-toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 12px 18px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line-1);
+      flex-shrink: 0;
+    }
+    .repos-filters { display: flex; gap: 6px; }
+    .repos-chip {
+      background: var(--ink-2);
+      border: 1px solid var(--line-2);
+      color: var(--fg-2);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .repos-chip:hover { border-color: var(--brand-400); }
+    .repos-chip.active { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-2)); border-color: var(--brand-400); color: var(--fg-1); }
+    .repos-chip-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: var(--ink-1);
+    }
+    .repos-chip.active .repos-chip-count { color: var(--brand-200); }
+    .repos-error {
+      padding: 10px 18px;
+      color: #f87171;
+      background: color-mix(in oklch, #f87171 8%, var(--ink-2));
+      border-bottom: 1px solid var(--line-1);
+      font-size: 13px;
+    }
+    .repos-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+    .repos-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--fg-3);
+      padding: 32px;
+      font-size: 13px;
+    }
+    .repos-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line-1);
+      border-radius: var(--r-md);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    }
+    .repos-card:hover {
+      border-color: var(--brand-400);
+      transform: translateY(-1px);
+    }
+    .repos-card.dirty { border-color: color-mix(in oklch, #fbbf24 60%, var(--line-1)); }
+    .repos-card.behind { border-color: color-mix(in oklch, #f87171 50%, var(--line-1)); }
+    .repos-card.ahead.dirty { border-color: color-mix(in oklch, #fbbf24 60%, var(--line-1)); }
+    .repos-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .repos-card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg-1);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .repos-card-branch {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      flex-shrink: 0;
+    }
+    .repos-card-state {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--ink-1);
+      color: var(--fg-2);
+    }
+    .badge-staged { background: color-mix(in oklch, #34d399 18%, var(--ink-1)); color: #34d399; }
+    .badge-mod { background: color-mix(in oklch, #fbbf24 18%, var(--ink-1)); color: #fbbf24; }
+    .badge-unt { background: color-mix(in oklch, #93c5fd 18%, var(--ink-1)); color: #93c5fd; }
+    .badge-ahead { background: color-mix(in oklch, var(--brand-500) 18%, var(--ink-1)); color: var(--brand-200); }
+    .badge-behind { background: color-mix(in oklch, #f87171 18%, var(--ink-1)); color: #f87171; }
+    .badge-clean { color: var(--fg-3); }
+    .repos-card-error {
+      font-size: 10px;
+      color: #f87171;
+      font-family: var(--font-mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `],
 })
 export class ReposComponent implements OnInit {
   private readonly settings = inject(SettingsStore);
