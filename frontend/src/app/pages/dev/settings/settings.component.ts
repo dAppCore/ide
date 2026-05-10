@@ -3,6 +3,11 @@
 import { Component, EventEmitter, Output, inject } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SettingsStore, CoreSettings } from '../../../services/store/settings.store';
+import {
+  PluginSettingsField,
+  PluginSettingsSection,
+  SettingsRegistryService,
+} from '../../../services/settings-registry.service';
 
 /**
  * Settings panel — tunes the IDE. Reads + writes via SettingsStore;
@@ -241,6 +246,104 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
           </label>
         </div>
 
+        <!-- Plugin-contributed settings sections.
+             Plugins register via SettingsRegistryService.register(). The
+             IDE just renders the slot — plugins own value persistence
+             (their own keys, their own backend). Built-in IDE sections
+             above stay hardcoded; plugins extend cleanly without IDE
+             shell changes. -->
+        @for (section of registry.ordered(); track section.id) {
+          <div class="settings-group">
+            <h3 class="settings-group-title">
+              {{ section.label }}
+              @if (section.group) {
+                <span class="settings-section-tag">{{ section.group }}</span>
+              }
+            </h3>
+            @if (section.hint) {
+              <p class="settings-group-hint">{{ section.hint }}</p>
+            }
+            @for (field of section.fields; track field.key) {
+              @switch (field.type) {
+                @case ('boolean') {
+                  <label class="settings-row checkbox-row">
+                    <input type="checkbox" class="settings-checkbox"
+                           [checked]="!!field.value()"
+                           (change)="onFieldChange(section, field, $any($event.target).checked)" />
+                    <span class="settings-label">
+                      {{ field.label }}
+                      @if (field.hint) {
+                        <span class="settings-hint">{{ field.hint }}</span>
+                      }
+                    </span>
+                  </label>
+                }
+                @case ('select') {
+                  <label class="settings-row">
+                    <span class="settings-label">
+                      {{ field.label }}
+                      @if (field.hint) {
+                        <span class="settings-hint">{{ field.hint }}</span>
+                      }
+                    </span>
+                    <select class="settings-input"
+                            [value]="$any(field.value())"
+                            (change)="onFieldChange(section, field, $any($event.target).value)">
+                      @for (opt of (field.options || []); track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+                @case ('number') {
+                  <label class="settings-row">
+                    <span class="settings-label">
+                      {{ field.label }}
+                      @if (field.hint) {
+                        <span class="settings-hint">{{ field.hint }}</span>
+                      }
+                    </span>
+                    <input type="number" class="settings-input num"
+                           [min]="field.min ?? null"
+                           [max]="field.max ?? null"
+                           [step]="field.step ?? 1"
+                           [value]="$any(field.value())"
+                           (input)="onFieldChange(section, field, +$any($event.target).value)" />
+                  </label>
+                }
+                @case ('textarea') {
+                  <label class="settings-row stacked">
+                    <span class="settings-label">
+                      {{ field.label }}
+                      @if (field.hint) {
+                        <span class="settings-hint">{{ field.hint }}</span>
+                      }
+                    </span>
+                    <textarea class="settings-input textarea" rows="4"
+                              [placeholder]="field.placeholder || ''"
+                              [value]="$any(field.value())"
+                              (input)="onFieldChange(section, field, $any($event.target).value)"></textarea>
+                  </label>
+                }
+                @default {
+                  <label class="settings-row stacked">
+                    <span class="settings-label">
+                      {{ field.label }}
+                      @if (field.hint) {
+                        <span class="settings-hint">{{ field.hint }}</span>
+                      }
+                    </span>
+                    <input type="text" class="settings-input"
+                           [placeholder]="field.placeholder || ''"
+                           [value]="$any(field.value())"
+                           (input)="onFieldChange(section, field, $any($event.target).value)" />
+                  </label>
+                }
+              }
+            }
+          </div>
+        }
+
       </div>
     </section>
   `,
@@ -344,10 +447,36 @@ import { SettingsStore, CoreSettings } from '../../../services/store/settings.st
     .settings-row select.settings-input { width: 200px; }
     .settings-row.stacked input.settings-input,
     .settings-row.stacked textarea.settings-input { width: 100%; }
+    /* Plugin-contributed sections — visual marker so it's clear which
+       sections come from the IDE built-ins vs registered extensions. */
+    .settings-section-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brand-200);
+      background: color-mix(in oklch, var(--brand-500) 14%, var(--ink-1));
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 8px;
+      vertical-align: middle;
+      font-weight: 500;
+    }
+    .settings-row.checkbox-row {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--brand-500);
+    }
   `],
 })
 export class SettingsComponent {
   readonly store = inject(SettingsStore);
+  readonly registry = inject(SettingsRegistryService);
 
   /** Emitted on Save click; IdeComponent picks up via (activate) on outlet → flushUIState. */
   @Output() requestSave = new EventEmitter<void>();
@@ -360,6 +489,20 @@ export class SettingsComponent {
   }
   updateStr<K extends keyof CoreSettings>(key: K, raw: string): void {
     this.store.update(key, raw as CoreSettings[K]);
+  }
+
+  /** Plugin section field-change handler. The registry doesn't dictate
+   *  persistence — plugins own their config storage. We just call their
+   *  onChange callback per edit. Errors stay on the plugin side. */
+  onFieldChange(
+    section: PluginSettingsSection,
+    field: PluginSettingsField,
+    value: unknown,
+  ): void {
+    if (!section.onChange) return;
+    void Promise.resolve(section.onChange(field.key, value)).catch((e) => {
+      console.warn('[settings-registry] onChange failed', section.id, field.key, e);
+    });
   }
 
   onSave(): void {

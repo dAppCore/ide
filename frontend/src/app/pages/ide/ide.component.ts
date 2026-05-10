@@ -14,6 +14,7 @@ import { I18nService } from '../../services/i18n.service';
 import { FileEditorStore } from '../../services/store/file-editor.store';
 import { CommandRegistryService } from '../../services/command-registry.service';
 import { StatusBarRegistryService } from '../../services/status-bar-registry.service';
+import { SettingsRegistryService } from '../../services/settings-registry.service';
 
 
 /**
@@ -386,6 +387,7 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly commands = inject(CommandRegistryService);
   readonly statusBar = inject(StatusBarRegistryService);
+  readonly settingsRegistry = inject(SettingsRegistryService);
 
   // ViewChild on the palette so the keyboard listener can toggle it.
   @ViewChild('palette') paletteRef?: CommandPaletteComponent;
@@ -501,6 +503,11 @@ export class IdeComponent implements OnInit, OnDestroy {
     // \u2014 Lemma t/s, CoreAgent model id, peer count, etc. go straight
     // into the bottom strip without IDE shell changes.
     this.registerBuiltinStatusBarSlots();
+
+    // Register a demo settings section to prove the SettingsRegistryService
+    // extension surface works end-to-end. Future plugins (CoreAgent,
+    // Lem.Lab, etc.) register their own sections through the same path.
+    this.registerDemoSettingsSection();
 
     // Keyboard shortcuts:
     // - cmd/ctrl + Shift + P: toggle the command palette
@@ -680,6 +687,50 @@ export class IdeComponent implements OnInit, OnDestroy {
         click: () => void this.router.navigate(['/dev/updates']),
       },
     ]);
+  }
+
+  /**
+   * Demo plugin-settings section — proves the SettingsRegistryService
+   * extension surface works end-to-end. Real plugins (CoreAgent,
+   * Lem.Lab, etc.) register their own sections the same way and they
+   * appear in /dev/settings without any IDE shell change.
+   *
+   * The values here surface IDE state read-only as a demo; real plugin
+   * sections wire `value()` to their own state signals and `onChange`
+   * to their own persistence (typically `~/.core/config.yaml` under
+   * their namespace).
+   */
+  private registerDemoSettingsSection(): void {
+    this.settingsRegistry.register({
+      id: 'ide.substrates',
+      label: 'IDE Substrates',
+      group: 'Plugins',
+      order: 1000,
+      hint: 'Live count of plugin extension surfaces in this IDE session — proves the SettingsRegistryService extension path works. Real plugin sections appear here automatically when plugins call SettingsRegistryService.register().',
+      fields: [
+        {
+          key: 'commands.count',
+          type: 'string',
+          label: 'Registered commands',
+          hint: 'palette → cmd+Shift+P',
+          value: () => `${this.commands.commands().length} (${this.commands.enabled().length} enabled)`,
+        },
+        {
+          key: 'statusbar.slots',
+          type: 'string',
+          label: 'Status-bar slots',
+          hint: 'left + right total',
+          value: () => `${this.statusBar.slots().length} slots (${this.statusBar.left().length} left, ${this.statusBar.right().length} right)`,
+        },
+        {
+          key: 'settings.sections',
+          type: 'string',
+          label: 'Settings sections',
+          hint: 'plugin-contributed (excludes IDE built-ins)',
+          value: () => `${this.settingsRegistry.sections().length}`,
+        },
+      ],
+    });
   }
 
   ngOnDestroy() {
