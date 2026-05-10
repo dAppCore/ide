@@ -105,6 +105,19 @@ export const routes: Routes = [
         ],
       },
       { path: 'ide', redirectTo: 'dev', pathMatch: 'full' },
+      // /lab/* — Lab frame for ML / training / inference / research surfaces.
+      // Shares IdeComponent chrome with /dev. First page is /lab/lem
+      // (LEM.Lab training studio); future siblings: /lab/vi (Vi training),
+      // /lab/larql (vindex inspection), /lab/distill (distillation runs).
+      {
+        path: 'lab',
+        component: IdeComponent,
+        children: [
+          { path: '', redirectTo: 'lem', pathMatch: 'full' },
+          { path: 'lem', loadComponent: () => import('./pages/lab/lem/lem.component').then(m => m.LemComponent) },
+          { path: '**', redirectTo: 'lem' },
+        ],
+      },
       { path: 'system-tray', component: SystemTrayFrame },
       {
         path: 'app',

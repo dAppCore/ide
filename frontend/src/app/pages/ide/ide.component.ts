@@ -15,6 +15,7 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
 import { CommandRegistryService } from '../../services/command-registry.service';
 import { StatusBarRegistryService } from '../../services/status-bar-registry.service';
 import { SettingsRegistryService } from '../../services/settings-registry.service';
+import * as LemBridge from '../../../../bindings/dappco.re/go/ide/pkg/server/lemlabbridge';
 
 
 /**
@@ -403,6 +404,12 @@ export class IdeComponent implements OnInit, OnDestroy {
   // briefs/sites/activity load inside ControlPanelComponent.
   readonly vi = signal<ViStatus>(emptyViStatus);
 
+  // LEM.Lab training count — drives the bottom-bar "LEM · N" pill. Refreshed
+  // by a 30s background poll started in ngOnInit so the status reflects
+  // training activity without requiring the /lab/lem page to be open.
+  readonly lemTrainingCount = signal('—');
+  private lemPollTimer?: ReturnType<typeof setInterval>;
+
   // Chat — Cladius lives here. Backend wiring (claude_bridge upstream
   // MCP) lands next iter; for now messages echo locally so the UI is
   // real.
@@ -508,6 +515,17 @@ export class IdeComponent implements OnInit, OnDestroy {
     // extension surface works end-to-end. Future plugins (CoreAgent,
     // Lem.Lab, etc.) register their own sections through the same path.
     this.registerDemoSettingsSection();
+
+    // Register LEM.Lab settings section (auto-refresh interval + default
+    // model). Mirrors the registerDemoSettingsSection shape; lives here
+    // until LemComponent is restructured into a full plugin module.
+    this.registerLemLabSettingsSection();
+
+    // Background poll of LemBridge.GetSnapshot every 30s to keep the
+    // status-bar pill ("LEM · N training") fresh whether or not the
+    // /lab/lem page is open.
+    this.refreshLemTrainingCount();
+    this.lemPollTimer = setInterval(() => this.refreshLemTrainingCount(), 30_000);
 
     // Keyboard shortcuts:
     // - cmd/ctrl + Shift + P: toggle the command palette
@@ -622,6 +640,49 @@ export class IdeComponent implements OnInit, OnDestroy {
       })),
     );
 
+    // LEM.Lab — first /lab/* surface. Open command navigates; ops
+     // commands fire bridge actions directly so users can drive the
+     // training/scoring stack from the palette without opening the
+     // page first.
+    this.commands.register([
+      {
+        id: 'lab.lem.open',
+        label: 'LEM.Lab: Open dashboard',
+        group: 'Lab',
+        run: () => void this.router.navigate(['/lab', 'lem']),
+      },
+      {
+        id: 'lab.lem.refresh',
+        label: 'LEM.Lab: Refresh snapshot',
+        group: 'Lab',
+        run: () => { void LemBridge.Refresh(); },
+      },
+      {
+        id: 'lab.lem.start-stack',
+        label: 'LEM.Lab: Start docker stack',
+        group: 'Lab',
+        run: () => { void LemBridge.StartStack(); },
+      },
+      {
+        id: 'lab.lem.stop-stack',
+        label: 'LEM.Lab: Stop docker stack',
+        group: 'Lab',
+        run: () => { void LemBridge.StopStack(); },
+      },
+      {
+        id: 'lab.lem.start-agent',
+        label: 'LEM.Lab: Start scoring agent',
+        group: 'Lab',
+        run: () => { void LemBridge.StartAgent(); },
+      },
+      {
+        id: 'lab.lem.stop-agent',
+        label: 'LEM.Lab: Stop scoring agent',
+        group: 'Lab',
+        run: () => { void LemBridge.StopAgent(); },
+      },
+    ]);
+
     this.commands.register([
       {
         id: 'ide.refresh-plugins',
@@ -670,6 +731,14 @@ export class IdeComponent implements OnInit, OnDestroy {
         order: 200,
         text: computed(() => '£0.00 / mo'),
         hint: 'Monthly spend (placeholder until tenant.usage wired)',
+      },
+      {
+        id: 'lab.lem.status',
+        side: 'left',
+        order: 300,
+        text: computed(() => `LEM · ${this.lemTrainingCount()}`),
+        click: () => void this.router.navigate(['/lab', 'lem']),
+        hint: 'LEM.Lab — open dashboard',
       },
       {
         id: 'ide.runtime',
@@ -738,8 +807,71 @@ export class IdeComponent implements OnInit, OnDestroy {
     if (this.keyboardListener) {
       document.removeEventListener('keydown', this.keyboardListener);
     }
+    if (this.lemPollTimer) clearInterval(this.lemPollTimer);
     // Best-effort flush of any pending save before component teardown.
     this.flushUIState();
+  }
+
+  private async refreshLemTrainingCount(): Promise<void> {
+    try {
+      const snap = await LemBridge.GetSnapshot();
+      const n = snap?.training?.length ?? 0;
+      this.lemTrainingCount.set(n === 0 ? 'idle' : `${n} training`);
+    } catch {
+      // Bridge unavailable — keep last value, drop to placeholder if
+      // we never saw one.
+      if (this.lemTrainingCount() === '—') this.lemTrainingCount.set('offline');
+    }
+  }
+
+  /**
+   * LEM.Lab settings section — registered through SettingsRegistryService
+   * so it appears at /dev/settings under the "Plugins" group alongside
+   * other plugin-contributed sections. Mirrors the demo section shape.
+   *
+   * Today the fields are read-only / display-only since the LEM.Lab
+   * config sink isn't wired yet (auto-refresh interval is owned by the
+   * LemComponent itself; default model is fixture-shaped). When the
+   * bridge gains a SetConfig method, value() reads from a shared
+   * LemConfigStore and onChange writes back through the bridge.
+   */
+  private registerLemLabSettingsSection(): void {
+    this.settingsRegistry.register({
+      id: 'lab.lem',
+      label: 'LEM.Lab',
+      group: 'Plugins',
+      order: 100,
+      hint: 'Training studio · scoring agent · stack control. Settings are read-only until the LEM.Lab config bridge ships; defaults today live in the page component and the docker compose file.',
+      fields: [
+        {
+          key: 'lem.auto-refresh-ms',
+          type: 'string',
+          label: 'Auto-refresh interval',
+          hint: 'milliseconds between snapshot polls (page-level)',
+          value: () => '10000',
+        },
+        {
+          key: 'lem.default-model',
+          type: 'select',
+          label: 'Default training model',
+          hint: 'pre-selected when starting a new run',
+          value: () => 'gemma4-e2b',
+          options: [
+            { value: 'gemma4-e2b', label: 'Gemma4 E2B' },
+            { value: 'gemma4-e4b', label: 'Gemma4 E4B' },
+            { value: 'lemma-26b',  label: 'Lemma 26B' },
+            { value: 'qwen36-35b', label: 'Qwen 3.6 35B' },
+          ],
+        },
+        {
+          key: 'lem.compose-dir',
+          type: 'string',
+          label: 'Docker compose directory',
+          hint: 'path to docker-compose.yml',
+          value: () => '~/.lem/deploy',
+        },
+      ],
+    });
   }
 
   // --- UI state persistence (POST /internal/ui-state) ---

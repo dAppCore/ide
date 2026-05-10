@@ -48,6 +48,24 @@ import { SitesStore } from '../../services/store/sites.store';
         }
       </div>
 
+      <!-- Group: Lab — ML / training / inference / research surfaces.
+           Shares IdeComponent chrome with /dev. First page is /lab/lem
+           (LEM.Lab training studio); siblings will be /lab/vi, /lab/larql,
+           /lab/distill as the ML stack matures. Hardcoded today; will move
+           to manifest.labPanels once a second entry lands. -->
+      <div class="nav-group">
+        <div class="nav-group-title">Lab</div>
+        @for (item of labPanels; track item.id) {
+          <a
+            class="nav-row"
+            [routerLink]="['/lab', item.route]"
+            routerLinkActive="active">
+            <span class="nav-icon" [innerHTML]="trustIcon(item.icon)"></span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+
       <!-- Group: Plugins — installed marketplace modules that declare a Menu
            extend the IDE frame here. Routes to /dev/plugin/:code(/:sub),
            a real Angular route (replaces the legacy "plugin:code:sub"
@@ -402,6 +420,17 @@ export class SidebarComponent {
   readonly developerPanels = this.manifest.developerPanels;
   readonly accountPanels = this.manifest.accountPanels;
   readonly sites = this.sitesStore.sites;
+
+  // Hardcoded today; will move to manifest.labPanels once a second entry
+  // lands (Vi training, LARQL inspection, distillation runs).
+  readonly labPanels = [
+    {
+      id: 'lab-lem',
+      route: 'lem',
+      label: 'LEM.Lab',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v6l-5 9a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L15 9V3"/><path d="M8 3h8"/><path d="M7 14h10"/></svg>',
+    },
+  ];
 
   private readonly sanitizer = inject(DomSanitizer);
   private readonly trustedIconCache = new Map<string, SafeHtml>();

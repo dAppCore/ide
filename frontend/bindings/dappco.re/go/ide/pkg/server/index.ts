@@ -73,6 +73,15 @@ export {
     I18nViewOutput,
     LangDetectInput,
     LangDetectOutput,
+    LemActionResult,
+    LemAgentStatus,
+    LemContainerStatus,
+    LemGenerationStats,
+    LemModelInfo,
+    LemQueryResult,
+    LemSnapshot,
+    LemStackStatus,
+    LemTrainingRow,
     LintIssue,
     LintRunOutput,
     LocaleEntry,
@@ -169,4 +178,8 @@ export {
     WindowSetTitleInput,
     WindowTitleOutput,
     WindowVisibilityInput
+} from "./models.js";
+
+export type {
+    LemQueryRow
 } from "./models.js";

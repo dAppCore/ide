@@ -1843,6 +1843,393 @@ export class LangDetectOutput {
 }
 
 /**
+ * LemActionResult — uniform success/error envelope for orchestration ops
+ * (StartStack, StopStack, StartAgent, StopAgent).
+ */
+export class LemActionResult {
+    "ok": boolean;
+    "message"?: string;
+    "error"?: string;
+
+    /** Creates a new LemActionResult instance. */
+    constructor($$source: Partial<LemActionResult> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemActionResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemActionResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemActionResult($$parsedSource as Partial<LemActionResult>);
+    }
+}
+
+/**
+ * LemAgentStatus — scoring agent state.
+ * Mirrors LEM/cmd/lem-desktop/dashboard.go:AgentStatus.
+ */
+export class LemAgentStatus {
+    "running": boolean;
+    "currentTask": string;
+    "scored": number;
+    "remaining": number;
+    "lastScore": string;
+
+    /** Creates a new LemAgentStatus instance. */
+    constructor($$source: Partial<LemAgentStatus> = {}) {
+        if (!("running" in $$source)) {
+            this["running"] = false;
+        }
+        if (!("currentTask" in $$source)) {
+            this["currentTask"] = "";
+        }
+        if (!("scored" in $$source)) {
+            this["scored"] = 0;
+        }
+        if (!("remaining" in $$source)) {
+            this["remaining"] = 0;
+        }
+        if (!("lastScore" in $$source)) {
+            this["lastScore"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemAgentStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemAgentStatus {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemAgentStatus($$parsedSource as Partial<LemAgentStatus>);
+    }
+}
+
+/**
+ * LemContainerStatus — single docker compose service state.
+ * Mirrors LEM/cmd/lem-desktop/docker.go:ContainerStatus.
+ */
+export class LemContainerStatus {
+    "name": string;
+    "image": string;
+    "status": string;
+    "health": string;
+    "ports": string;
+    "running": boolean;
+
+    /** Creates a new LemContainerStatus instance. */
+    constructor($$source: Partial<LemContainerStatus> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("image" in $$source)) {
+            this["image"] = "";
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
+        }
+        if (!("health" in $$source)) {
+            this["health"] = "";
+        }
+        if (!("ports" in $$source)) {
+            this["ports"] = "";
+        }
+        if (!("running" in $$source)) {
+            this["running"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemContainerStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemContainerStatus {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemContainerStatus($$parsedSource as Partial<LemContainerStatus>);
+    }
+}
+
+/**
+ * LemGenerationStats — golden set + expansion progress.
+ * Mirrors LEM/cmd/lem-desktop/dashboard.go:GenerationStats.
+ */
+export class LemGenerationStats {
+    "goldenCompleted": number;
+    "goldenTarget": number;
+    "goldenPct": number;
+    "expansionCompleted": number;
+    "expansionTarget": number;
+    "expansionPct": number;
+
+    /** Creates a new LemGenerationStats instance. */
+    constructor($$source: Partial<LemGenerationStats> = {}) {
+        if (!("goldenCompleted" in $$source)) {
+            this["goldenCompleted"] = 0;
+        }
+        if (!("goldenTarget" in $$source)) {
+            this["goldenTarget"] = 0;
+        }
+        if (!("goldenPct" in $$source)) {
+            this["goldenPct"] = 0;
+        }
+        if (!("expansionCompleted" in $$source)) {
+            this["expansionCompleted"] = 0;
+        }
+        if (!("expansionTarget" in $$source)) {
+            this["expansionTarget"] = 0;
+        }
+        if (!("expansionPct" in $$source)) {
+            this["expansionPct"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemGenerationStats instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemGenerationStats {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemGenerationStats($$parsedSource as Partial<LemGenerationStats>);
+    }
+}
+
+/**
+ * LemModelInfo — scoreboard entry.
+ * Mirrors LEM/cmd/lem-desktop/dashboard.go:ModelInfo.
+ */
+export class LemModelInfo {
+    "name": string;
+    "tag": string;
+    "accuracy": number;
+    "iterations": number;
+    "status": string;
+
+    /** Creates a new LemModelInfo instance. */
+    constructor($$source: Partial<LemModelInfo> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("tag" in $$source)) {
+            this["tag"] = "";
+        }
+        if (!("accuracy" in $$source)) {
+            this["accuracy"] = 0;
+        }
+        if (!("iterations" in $$source)) {
+            this["iterations"] = 0;
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemModelInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemModelInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemModelInfo($$parsedSource as Partial<LemModelInfo>);
+    }
+}
+
+/**
+ * LemQueryResult — RunQuery output envelope.
+ */
+export class LemQueryResult {
+    "rows"?: LemQueryRow[];
+    "error"?: string;
+
+    /** Creates a new LemQueryResult instance. */
+    constructor($$source: Partial<LemQueryResult> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemQueryResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemQueryResult {
+        const $$createField0_0 = $$createType31;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("rows" in $$parsedSource) {
+            $$parsedSource["rows"] = $$createField0_0($$parsedSource["rows"]);
+        }
+        return new LemQueryResult($$parsedSource as Partial<LemQueryResult>);
+    }
+}
+
+/**
+ * LemQueryRow — single result row from RunQuery (DuckDB ad-hoc).
+ */
+export type LemQueryRow = { [_ in string]?: any };
+
+/**
+ * LemSnapshot — full dashboard state for the frontend.
+ * Mirrors LEM/cmd/lem-desktop/dashboard.go:DashboardSnapshot, with the
+ * agent + stack fields lifted in (the original split them across services
+ * for tray reasons; the IDE plugin presents them together).
+ */
+export class LemSnapshot {
+    "training": LemTrainingRow[];
+    "generation": LemGenerationStats;
+    "models": LemModelInfo[];
+    "agent": LemAgentStatus;
+    "stack": LemStackStatus;
+    "dbPath": string;
+    "updatedAt": string;
+
+    /** Creates a new LemSnapshot instance. */
+    constructor($$source: Partial<LemSnapshot> = {}) {
+        if (!("training" in $$source)) {
+            this["training"] = [];
+        }
+        if (!("generation" in $$source)) {
+            this["generation"] = (new LemGenerationStats());
+        }
+        if (!("models" in $$source)) {
+            this["models"] = [];
+        }
+        if (!("agent" in $$source)) {
+            this["agent"] = (new LemAgentStatus());
+        }
+        if (!("stack" in $$source)) {
+            this["stack"] = (new LemStackStatus());
+        }
+        if (!("dbPath" in $$source)) {
+            this["dbPath"] = "";
+        }
+        if (!("updatedAt" in $$source)) {
+            this["updatedAt"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemSnapshot instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemSnapshot {
+        const $$createField0_0 = $$createType33;
+        const $$createField1_0 = $$createType34;
+        const $$createField2_0 = $$createType36;
+        const $$createField3_0 = $$createType37;
+        const $$createField4_0 = $$createType38;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("training" in $$parsedSource) {
+            $$parsedSource["training"] = $$createField0_0($$parsedSource["training"]);
+        }
+        if ("generation" in $$parsedSource) {
+            $$parsedSource["generation"] = $$createField1_0($$parsedSource["generation"]);
+        }
+        if ("models" in $$parsedSource) {
+            $$parsedSource["models"] = $$createField2_0($$parsedSource["models"]);
+        }
+        if ("agent" in $$parsedSource) {
+            $$parsedSource["agent"] = $$createField3_0($$parsedSource["agent"]);
+        }
+        if ("stack" in $$parsedSource) {
+            $$parsedSource["stack"] = $$createField4_0($$parsedSource["stack"]);
+        }
+        return new LemSnapshot($$parsedSource as Partial<LemSnapshot>);
+    }
+}
+
+/**
+ * LemStackStatus — docker stack roll-up.
+ * Mirrors LEM/cmd/lem-desktop/docker.go:StackStatus.
+ */
+export class LemStackStatus {
+    "running": boolean;
+    "services": { [_ in string]?: LemContainerStatus };
+    "composeDir": string;
+
+    /** Creates a new LemStackStatus instance. */
+    constructor($$source: Partial<LemStackStatus> = {}) {
+        if (!("running" in $$source)) {
+            this["running"] = false;
+        }
+        if (!("services" in $$source)) {
+            this["services"] = {};
+        }
+        if (!("composeDir" in $$source)) {
+            this["composeDir"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemStackStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemStackStatus {
+        const $$createField1_0 = $$createType40;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("services" in $$parsedSource) {
+            $$parsedSource["services"] = $$createField1_0($$parsedSource["services"]);
+        }
+        return new LemStackStatus($$parsedSource as Partial<LemStackStatus>);
+    }
+}
+
+/**
+ * LemTrainingRow — single model's training progress.
+ * Mirrors LEM/cmd/lem-desktop/dashboard.go:TrainingRow.
+ */
+export class LemTrainingRow {
+    "model": string;
+    "runId": string;
+    "status": string;
+    "iteration": number;
+    "totalIters": number;
+    "pct": number;
+    "loss": number;
+
+    /** Creates a new LemTrainingRow instance. */
+    constructor($$source: Partial<LemTrainingRow> = {}) {
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+        if (!("runId" in $$source)) {
+            this["runId"] = "";
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
+        }
+        if (!("iteration" in $$source)) {
+            this["iteration"] = 0;
+        }
+        if (!("totalIters" in $$source)) {
+            this["totalIters"] = 0;
+        }
+        if (!("pct" in $$source)) {
+            this["pct"] = 0;
+        }
+        if (!("loss" in $$source)) {
+            this["loss"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LemTrainingRow instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LemTrainingRow {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LemTrainingRow($$parsedSource as Partial<LemTrainingRow>);
+    }
+}
+
+/**
  * LintIssue mirrors a single result row from `core-lint lint check --format json`.
  */
 export class LintIssue {
@@ -1930,8 +2317,8 @@ export class LintRunOutput {
      * Creates a new LintRunOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): LintRunOutput {
-        const $$createField1_0 = $$createType31;
-        const $$createField2_0 = $$createType32;
+        const $$createField1_0 = $$createType42;
+        const $$createField2_0 = $$createType43;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("issues" in $$parsedSource) {
             $$parsedSource["issues"] = $$createField1_0($$parsedSource["issues"]);
@@ -2017,7 +2404,7 @@ export class MarketplaceInstalledOutput {
      * Creates a new MarketplaceInstalledOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MarketplaceInstalledOutput {
-        const $$createField1_0 = $$createType34;
+        const $$createField1_0 = $$createType45;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("packages" in $$parsedSource) {
             $$parsedSource["packages"] = $$createField1_0($$parsedSource["packages"]);
@@ -2145,7 +2532,7 @@ export class MarketplaceSearchOutput {
      * Creates a new MarketplaceSearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MarketplaceSearchOutput {
-        const $$createField1_0 = $$createType36;
+        const $$createField1_0 = $$createType47;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("packages" in $$parsedSource) {
             $$parsedSource["packages"] = $$createField1_0($$parsedSource["packages"]);
@@ -2219,7 +2606,7 @@ export class MemoryListOutput {
      * Creates a new MemoryListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MemoryListOutput {
-        const $$createField1_0 = $$createType38;
+        const $$createField1_0 = $$createType49;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("entries" in $$parsedSource) {
             $$parsedSource["entries"] = $$createField1_0($$parsedSource["entries"]);
@@ -2291,7 +2678,7 @@ export class MemorySearchOutput {
      * Creates a new MemorySearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MemorySearchOutput {
-        const $$createField1_0 = $$createType40;
+        const $$createField1_0 = $$createType51;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hits" in $$parsedSource) {
             $$parsedSource["hits"] = $$createField1_0($$parsedSource["hits"]);
@@ -2406,7 +2793,7 @@ export class P2PStateOutput {
      * Creates a new P2PStateOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PStateOutput {
-        const $$createField2_0 = $$createType42;
+        const $$createField2_0 = $$createType53;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("peers" in $$parsedSource) {
             $$parsedSource["peers"] = $$createField2_0($$parsedSource["peers"]);
@@ -2437,7 +2824,7 @@ export class PHPDetectOutput {
      * Creates a new PHPDetectOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPDetectOutput {
-        const $$createField1_0 = $$createType44;
+        const $$createField1_0 = $$createType55;
         const $$createField2_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("projects" in $$parsedSource) {
@@ -2563,7 +2950,7 @@ export class PHPProjectOutput {
      * Creates a new PHPProjectOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPProjectOutput {
-        const $$createField1_0 = $$createType45;
+        const $$createField1_0 = $$createType56;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("detail" in $$parsedSource) {
             $$parsedSource["detail"] = $$createField1_0($$parsedSource["detail"]);
@@ -2727,8 +3114,8 @@ export class PHPScriptsOutput {
      * Creates a new PHPScriptsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPScriptsOutput {
-        const $$createField2_0 = $$createType47;
-        const $$createField3_0 = $$createType47;
+        const $$createField2_0 = $$createType58;
+        const $$createField3_0 = $$createType58;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("composer_scripts" in $$parsedSource) {
             $$parsedSource["composer_scripts"] = $$createField2_0($$parsedSource["composer_scripts"]);
@@ -2823,7 +3210,7 @@ export class ProcessListOutput {
      * Creates a new ProcessListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ProcessListOutput {
-        const $$createField1_0 = $$createType49;
+        const $$createField1_0 = $$createType60;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("processes" in $$parsedSource) {
             $$parsedSource["processes"] = $$createField1_0($$parsedSource["processes"]);
@@ -2932,7 +3319,7 @@ export class ReposStatusOutput {
      * Creates a new ReposStatusOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ReposStatusOutput {
-        const $$createField1_0 = $$createType51;
+        const $$createField1_0 = $$createType62;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("repos" in $$parsedSource) {
             $$parsedSource["repos"] = $$createField1_0($$parsedSource["repos"]);
@@ -3015,7 +3402,7 @@ export class SearchOutput {
      * Creates a new SearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SearchOutput {
-        const $$createField1_0 = $$createType53;
+        const $$createField1_0 = $$createType64;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("matches" in $$parsedSource) {
             $$parsedSource["matches"] = $$createField1_0($$parsedSource["matches"]);
@@ -3131,7 +3518,7 @@ export class SessionActiveOutput {
      * Creates a new SessionActiveOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionActiveOutput {
-        const $$createField1_0 = $$createType55;
+        const $$createField1_0 = $$createType66;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("active" in $$parsedSource) {
             $$parsedSource["active"] = $$createField1_0($$parsedSource["active"]);
@@ -3201,7 +3588,7 @@ export class SessionListOutput {
      * Creates a new SessionListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionListOutput {
-        const $$createField1_0 = $$createType57;
+        const $$createField1_0 = $$createType68;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("sessions" in $$parsedSource) {
             $$parsedSource["sessions"] = $$createField1_0($$parsedSource["sessions"]);
@@ -3282,7 +3669,7 @@ export class SessionProjectsOutput {
      * Creates a new SessionProjectsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionProjectsOutput {
-        const $$createField1_0 = $$createType59;
+        const $$createField1_0 = $$createType70;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("projects" in $$parsedSource) {
             $$parsedSource["projects"] = $$createField1_0($$parsedSource["projects"]);
@@ -3358,7 +3745,7 @@ export class SessionSearchOutput {
      * Creates a new SessionSearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionSearchOutput {
-        const $$createField1_0 = $$createType61;
+        const $$createField1_0 = $$createType72;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hits" in $$parsedSource) {
             $$parsedSource["hits"] = $$createField1_0($$parsedSource["hits"]);
@@ -3466,7 +3853,7 @@ export class SessionTailOutput {
      * Creates a new SessionTailOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionTailOutput {
-        const $$createField1_0 = $$createType63;
+        const $$createField1_0 = $$createType74;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("events" in $$parsedSource) {
             $$parsedSource["events"] = $$createField1_0($$parsedSource["events"]);
@@ -3518,7 +3905,7 @@ export class StreamChannelsOutput {
      * Creates a new StreamChannelsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamChannelsOutput {
-        const $$createField1_0 = $$createType65;
+        const $$createField1_0 = $$createType76;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
             $$parsedSource["channels"] = $$createField1_0($$parsedSource["channels"]);
@@ -3654,7 +4041,7 @@ export class StreamRecentOutput {
      * Creates a new StreamRecentOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamRecentOutput {
-        const $$createField2_0 = $$createType67;
+        const $$createField2_0 = $$createType78;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("frames" in $$parsedSource) {
             $$parsedSource["frames"] = $$createField2_0($$parsedSource["frames"]);
@@ -3685,8 +4072,8 @@ export class StreamStatus {
      * Creates a new StreamStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamStatus {
-        const $$createField4_0 = $$createType32;
-        const $$createField5_0 = $$createType68;
+        const $$createField4_0 = $$createType43;
+        const $$createField5_0 = $$createType79;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("subscriber_counts" in $$parsedSource) {
             $$parsedSource["subscriber_counts"] = $$createField4_0($$parsedSource["subscriber_counts"]);
@@ -3999,7 +4386,7 @@ export class UpdatesRefreshOutput {
      * Creates a new UpdatesRefreshOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): UpdatesRefreshOutput {
-        const $$createField1_0 = $$createType70;
+        const $$createField1_0 = $$createType81;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -4049,7 +4436,7 @@ export class WailsLintCatalogOutput {
      * Creates a new WailsLintCatalogOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): WailsLintCatalogOutput {
-        const $$createField1_0 = $$createType72;
+        const $$createField1_0 = $$createType83;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -4228,7 +4615,7 @@ export class WindowListOutput {
      * Creates a new WindowListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): WindowListOutput {
-        const $$createField1_0 = $$createType74;
+        const $$createField1_0 = $$createType85;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("windows" in $$parsedSource) {
             $$parsedSource["windows"] = $$createField1_0($$parsedSource["windows"]);
@@ -4554,48 +4941,64 @@ const $$createType26 = LocaleEntry.createFrom;
 const $$createType27 = $Create.Array($$createType26);
 const $$createType28 = I18nPackage.createFrom;
 const $$createType29 = $Create.Array($$createType28);
-const $$createType30 = LintIssue.createFrom;
+var $$createType30 = (function $$initCreateType30(...args: any[]): any {
+    if ($$createType30 === $$initCreateType30) {
+        $$createType30 = $$createType14;
+    }
+    return $$createType30(...args);
+});
 const $$createType31 = $Create.Array($$createType30);
-const $$createType32 = $Create.Map($Create.Any, $Create.Any);
-const $$createType33 = MarketplaceInstalledPlugin.createFrom;
-const $$createType34 = $Create.Array($$createType33);
-const $$createType35 = MarketplacePackage.createFrom;
+const $$createType32 = LemTrainingRow.createFrom;
+const $$createType33 = $Create.Array($$createType32);
+const $$createType34 = LemGenerationStats.createFrom;
+const $$createType35 = LemModelInfo.createFrom;
 const $$createType36 = $Create.Array($$createType35);
-const $$createType37 = MemoryEntry.createFrom;
-const $$createType38 = $Create.Array($$createType37);
-const $$createType39 = MemorySearchHit.createFrom;
-const $$createType40 = $Create.Array($$createType39);
-const $$createType41 = P2PPeer.createFrom;
+const $$createType37 = LemAgentStatus.createFrom;
+const $$createType38 = LemStackStatus.createFrom;
+const $$createType39 = LemContainerStatus.createFrom;
+const $$createType40 = $Create.Map($Create.Any, $$createType39);
+const $$createType41 = LintIssue.createFrom;
 const $$createType42 = $Create.Array($$createType41);
-const $$createType43 = PHPProjectSummary.createFrom;
-const $$createType44 = $Create.Array($$createType43);
-const $$createType45 = PHPProjectDetail.createFrom;
-const $$createType46 = PHPScriptItem.createFrom;
+const $$createType43 = $Create.Map($Create.Any, $Create.Any);
+const $$createType44 = MarketplaceInstalledPlugin.createFrom;
+const $$createType45 = $Create.Array($$createType44);
+const $$createType46 = MarketplacePackage.createFrom;
 const $$createType47 = $Create.Array($$createType46);
-const $$createType48 = ProcessListEntry.createFrom;
+const $$createType48 = MemoryEntry.createFrom;
 const $$createType49 = $Create.Array($$createType48);
-const $$createType50 = RepoEntry.createFrom;
+const $$createType50 = MemorySearchHit.createFrom;
 const $$createType51 = $Create.Array($$createType50);
-const $$createType52 = SearchMatch.createFrom;
+const $$createType52 = P2PPeer.createFrom;
 const $$createType53 = $Create.Array($$createType52);
-const $$createType54 = ActiveSession.createFrom;
+const $$createType54 = PHPProjectSummary.createFrom;
 const $$createType55 = $Create.Array($$createType54);
-const $$createType56 = SessionSummary.createFrom;
-const $$createType57 = $Create.Array($$createType56);
-const $$createType58 = SessionProject.createFrom;
-const $$createType59 = $Create.Array($$createType58);
-const $$createType60 = SessionSearchHit.createFrom;
-const $$createType61 = $Create.Array($$createType60);
-const $$createType62 = SessionTailLiveEvent.createFrom;
-const $$createType63 = $Create.Array($$createType62);
-const $$createType64 = StreamChannel.createFrom;
-const $$createType65 = $Create.Array($$createType64);
-const $$createType66 = StreamFrame.createFrom;
-const $$createType67 = $Create.Array($$createType66);
-const $$createType68 = StreamConfig.createFrom;
-const $$createType69 = UpdateTool.createFrom;
+const $$createType56 = PHPProjectDetail.createFrom;
+const $$createType57 = PHPScriptItem.createFrom;
+const $$createType58 = $Create.Array($$createType57);
+const $$createType59 = ProcessListEntry.createFrom;
+const $$createType60 = $Create.Array($$createType59);
+const $$createType61 = RepoEntry.createFrom;
+const $$createType62 = $Create.Array($$createType61);
+const $$createType63 = SearchMatch.createFrom;
+const $$createType64 = $Create.Array($$createType63);
+const $$createType65 = ActiveSession.createFrom;
+const $$createType66 = $Create.Array($$createType65);
+const $$createType67 = SessionSummary.createFrom;
+const $$createType68 = $Create.Array($$createType67);
+const $$createType69 = SessionProject.createFrom;
 const $$createType70 = $Create.Array($$createType69);
-const $$createType71 = WailsLintCatalogEntry.createFrom;
+const $$createType71 = SessionSearchHit.createFrom;
 const $$createType72 = $Create.Array($$createType71);
-const $$createType73 = WindowEntry.createFrom;
+const $$createType73 = SessionTailLiveEvent.createFrom;
 const $$createType74 = $Create.Array($$createType73);
+const $$createType75 = StreamChannel.createFrom;
+const $$createType76 = $Create.Array($$createType75);
+const $$createType77 = StreamFrame.createFrom;
+const $$createType78 = $Create.Array($$createType77);
+const $$createType79 = StreamConfig.createFrom;
+const $$createType80 = UpdateTool.createFrom;
+const $$createType81 = $Create.Array($$createType80);
+const $$createType82 = WailsLintCatalogEntry.createFrom;
+const $$createType83 = $Create.Array($$createType82);
+const $$createType84 = WindowEntry.createFrom;
+const $$createType85 = $Create.Array($$createType84);
