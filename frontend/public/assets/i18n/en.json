@@ -605,5 +605,10 @@
     "label.reconnecting": "reconnecting…",
     "tooltip.live": "SSE connection to /internal/events is open — frames push as they arrive",
     "tooltip.reconnecting": "SSE connection lost — auto-reconnecting"
+  },
+  "palette": {
+    "placeholder": "Type a command, route, or theme…",
+    "hint.keys": "↑↓ select · ↵ run · esc close",
+    "empty.no-match": "No commands match."
   }
 }

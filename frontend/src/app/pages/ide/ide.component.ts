@@ -1,16 +1,18 @@
-import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef } from '@angular/core';
+import { Component, ViewChild, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { DevNotificationHost } from '../../components/notification/notification-host';
+import { CommandPaletteComponent } from '../../components/command-palette/command-palette.component';
 import { ViStatus, emptyViStatus, loadViData } from '../../lib/vi.types';
-import { SettingsStore, DEFAULT_SETTINGS, CoreSettings } from '../../services/store/settings.store';
+import { SettingsStore, DEFAULT_SETTINGS, CoreSettings, ThemeName } from '../../services/store/settings.store';
 import { PluginMenuStore } from '../../services/store/plugin-menu.store';
 import { WorkspaceStore } from '../../services/store/workspace.store';
 import { ThemeService } from '../../services/theme.service';
 import { I18nService } from '../../services/i18n.service';
 import { FileEditorStore } from '../../services/store/file-editor.store';
+import { CommandRegistryService } from '../../services/command-registry.service';
 
 
 /**
@@ -28,7 +30,7 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
 @Component({
   selector: 'app-ide',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, RouterOutlet, DevNotificationHost],
+  imports: [CommonModule, SidebarComponent, RouterOutlet, DevNotificationHost, CommandPaletteComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   // Default ViewEncapsulation (Emulated). The styles array below
   // carries only the IDE shell — toolbar, status bar, ide-layout,
@@ -103,6 +105,7 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
       <!-- Notification host — single wa-toast container + reactive
            wa-dialog for confirms. Replaces native alert/confirm. -->
       <dev-notification-host></dev-notification-host>
+      <command-palette #palette></command-palette>
     </div>
   `,
   styles: [`
@@ -358,6 +361,10 @@ export class IdeComponent implements OnInit, OnDestroy {
   // → ngx-translate.use().
   private readonly i18n = inject(I18nService);
   private readonly fileEditor = inject(FileEditorStore);
+  private readonly commands = inject(CommandRegistryService);
+
+  // ViewChild on the palette so the keyboard listener can toggle it.
+  @ViewChild('palette') paletteRef?: CommandPaletteComponent;
 
   // Active sidebar route id — drives the sidebar [class.active] highlight
   // (for the Sites section, which still uses currentRoute), the toolbar
@@ -459,18 +466,36 @@ export class IdeComponent implements OnInit, OnDestroy {
     // via PluginMenuStore.reload().
     void this.loadPluginMenus();
 
-    // Keyboard shortcuts: \u23181..\u23189 (Ctrl+1..9 elsewhere) jumps to the first
-    // 9 Developer panels in sidebar order. Skips while focus is in a
-    // text input / textarea / contenteditable so we don't fight typing.
+    // Register built-in commands (navigate / theme / language / ide).
+    // Plugins extend this surface via CommandRegistryService.register()
+    // \u2014 every plugin action (CoreAgent "switch model", Lem.Lab "load
+    // checkpoint", etc.) ends up in the same fuzzy-search palette.
+    this.registerBuiltinCommands();
+
+    // Keyboard shortcuts:
+    // - cmd/ctrl + Shift + P: toggle the command palette
+    // - cmd/ctrl + 1..9 (no shift): jump to the first 9 Developer panels
+    //   in sidebar order
+    // Both skip while focus is in a text input / textarea /
+    // contenteditable / monaco editor so we don't fight typing.
     this.keyboardListener = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
-      if (!meta || e.shiftKey || e.altKey) return;
-      if (e.key < '1' || e.key > '9') return;
+      if (!meta || e.altKey) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      if (target?.isContentEditable) return;
-      if (target?.closest('.monaco-editor')) return;
+      const inText = tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable || !!target?.closest('.monaco-editor');
+
+      // Palette toggle \u2014 works even from text inputs (the palette IS a
+      // text input UX, so users expect cmd+Shift+P from anywhere).
+      if (e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        this.paletteRef?.toggle();
+        return;
+      }
+
+      if (e.shiftKey) return;
+      if (inText) return;
+      if (e.key < '1' || e.key > '9') return;
       const idx = parseInt(e.key, 10) - 1;
       const ids = ['explorer', 'search', 'git', 'updates', 'sessions', 'stream', 'memory', 'mantis', 'lint'];
       const route = ids[idx];
@@ -479,6 +504,110 @@ export class IdeComponent implements OnInit, OnDestroy {
       void this.router.navigate(['/dev', route]);
     };
     document.addEventListener('keydown', this.keyboardListener);
+  }
+
+  /**
+   * Built-in commands wired at IDE boot. Three groups:
+   *   - Navigate: every dev route (~30 commands)
+   *   - Theme: 6 WebAwesome theme variants
+   *   - Language: 5 ngx-translate locales
+   *   - IDE: ad-hoc actions (refresh plugins, reload page)
+   *
+   * Plugins extend by injecting CommandRegistryService and calling
+   * register() \u2014 same surface, no palette code change required.
+   */
+  private registerBuiltinCommands(): void {
+    const navTargets: Array<{ route: string; label: string; group?: string }> = [
+      { route: 'control-panel', label: 'Control Panel' },
+      { route: 'explorer', label: 'Explorer' },
+      { route: 'search', label: 'Search' },
+      { route: 'git', label: 'Git' },
+      { route: 'forge', label: 'Forge' },
+      { route: 'mantis', label: 'Mantis' },
+      { route: 'sessions', label: 'Sessions' },
+      { route: 'lint', label: 'Lint' },
+      { route: 'devops', label: 'Devops' },
+      { route: 'memory', label: 'Memory' },
+      { route: 'updates', label: 'Updates' },
+      { route: 'cache', label: 'Cache' },
+      { route: 'stream', label: 'Stream' },
+      { route: 'process', label: 'Process' },
+      { route: 'terminal', label: 'Terminal' },
+      { route: 'build', label: 'Build' },
+      { route: 'repos', label: 'Repos' },
+      { route: 'containers', label: 'Containers' },
+      { route: 'data', label: 'Data' },
+      { route: 'store', label: 'Store' },
+      { route: 'locales', label: 'Locales' },
+      { route: 'tenant', label: 'Tenant' },
+      { route: 'php', label: 'PHP' },
+      { route: 'ts', label: 'TypeScript' },
+      { route: 'chat', label: 'Chat' },
+      { route: 'tim', label: 'TIM' },
+      { route: 'p2p', label: 'P2P' },
+      { route: 'marketplace', label: 'Marketplace' },
+      { route: 'settings', label: 'Settings' },
+    ];
+
+    this.commands.register(
+      navTargets.map((t) => ({
+        id: 'navigate.' + t.route,
+        label: 'Open ' + t.label,
+        group: 'Navigate',
+        run: () => void this.router.navigate(['/dev', t.route]),
+      })),
+    );
+
+    const themes: ThemeName[] = ['lethean', 'default', 'awesome', 'shoelace', 'premium', 'matter'];
+    this.commands.register(
+      themes.map((t) => ({
+        id: 'theme.' + t,
+        label: 'Theme: ' + t.charAt(0).toUpperCase() + t.slice(1),
+        group: 'Theme',
+        run: () => this.settingsStore.update('theme', t),
+      })),
+    );
+
+    const languages: Array<{ code: string; label: string }> = [
+      { code: 'en', label: 'English' },
+      { code: 'de', label: 'Deutsch' },
+      { code: 'fa', label: '\u0641\u0627\u0631\u0633\u06cc' },
+      { code: 'ru', label: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439' },
+      { code: 'zh', label: '\u4e2d\u6587' },
+    ];
+    this.commands.register(
+      languages.map((l) => ({
+        id: 'language.' + l.code,
+        label: 'Language: ' + l.label,
+        group: 'Language',
+        hint: l.code,
+        run: () => this.settingsStore.update('language', l.code),
+      })),
+    );
+
+    this.commands.register([
+      {
+        id: 'ide.refresh-plugins',
+        label: 'Refresh installed plugins',
+        group: 'IDE',
+        run: () => void this.pluginMenuStore.reload(true),
+      },
+      {
+        id: 'ide.reload-page',
+        label: 'Reload IDE',
+        group: 'IDE',
+        hint: 'window.location.reload',
+        run: () => {
+          if (typeof window !== 'undefined') window.location.reload();
+        },
+      },
+      {
+        id: 'ide.toggle-chat',
+        label: this.chatVisible() ? 'Hide chat panel' : 'Show chat panel',
+        group: 'IDE',
+        run: () => this.chatVisible.update((v) => !v),
+      },
+    ]);
   }
 
   ngOnDestroy() {
