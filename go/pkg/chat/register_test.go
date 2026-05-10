@@ -24,11 +24,11 @@ type noopOutput struct{}
 
 func (s stubExecutor) Manifest() []guimcp.ToolDescriptor { return s.manifest }
 func (s stubExecutor) ManifestText() string              { return s.text }
-func (s stubExecutor) CallTool(context.Context, string, map[string]any) (string, CallToolError) {
+func (s stubExecutor) CallTool(context.Context, string, map[string]any) (string, core.Result) {
 	if s.err == nil {
-		return s.output, nil
+		return s.output, core.Ok(nil)
 	}
-	return s.output, s.err
+	return s.output, core.Fail(s.err)
 }
 
 func TestRegister_ExecutorManifest_Good(t *testing.T) {
@@ -48,7 +48,7 @@ func TestRegister_ExecutorManifest_Bad(t *testing.T) {
 		t.Fatal("missing target symbol")
 	}
 	executor := NewExecutor(nil, nil)
-	if _, err := executor.CallTool(nil, "missing", nil); err == nil {
+	if _, result := executor.CallTool(context.Background(), "missing", nil); result.OK {
 		t.Fatal("expected missing tool error")
 	}
 }
@@ -125,9 +125,9 @@ func TestRegister_ExecutorCallTool_Good(t *testing.T) {
 		return nil, output{Message: in.Message}, nil
 	})
 	executor := NewExecutor(nil, svc)
-	got, err := executor.CallTool(context.Background(), "demo_echo", map[string]any{"message": "hello"})
-	if err != nil {
-		t.Fatalf("call tool: %v", err)
+	got, result := executor.CallTool(context.Background(), "demo_echo", map[string]any{"message": "hello"})
+	if !result.OK {
+		t.Fatalf("call tool: %#v", result.Value)
 	}
 	if got != `{"message":"hello"}` {
 		t.Fatalf("unexpected call tool output %q", got)
