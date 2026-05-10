@@ -3,6 +3,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
+import * as CacheBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/cachebridge';
 import { NotificationService } from '../../../services/notification.service';
 
 interface CacheCollection {
@@ -12,16 +13,13 @@ interface CacheCollection {
   age_seconds: number;
 }
 
-interface CacheStatusResponse {
-  collections: CacheCollection[];
-}
-
 /**
  * Cache panel — DuckDB-backed app state at ~/.core/ide-cache.db.
  *
- * TODO(snider/wails): swap callBridge('cache_status') etc. for a
- * cacheBridge wails service. The cache lives in core/store; one Go
- * file with Status / Refresh / Clear methods would expose it cleanly.
+ * Migrated 2026-05-10 to typed CacheBridge wails binding for the
+ * cache_status / cache_clear methods. The per-collection refreshers
+ * still go via callBridge since they each call a different bridge
+ * (memory_list, php_detect, etc.) which live in their own bridges.
  */
 @Component({
   selector: 'dev-cache',
@@ -104,8 +102,14 @@ export class CacheComponent implements OnInit {
   async loadCacheStatus(): Promise<void> {
     this.cacheLoading.set(true);
     try {
-      const v = await callBridge<CacheStatusResponse>('cache_status', {});
-      this.cacheCollections.set(v?.collections || []);
+      const v = await CacheBridge.Status();
+      const collections = (v.collections || []).map((c) => ({
+        collection: c.collection,
+        last_full_scan: c.last_full_scan || '',
+        item_count: c.item_count,
+        age_seconds: c.age_seconds,
+      }));
+      this.cacheCollections.set(collections);
     } catch {
       // tolerate; user retries via the refresh button
     } finally {
@@ -118,7 +122,7 @@ export class CacheComponent implements OnInit {
     if (refresher) {
       await callBridge(refresher.tool, refresher.params);
     } else {
-      await callBridge('cache_clear', { collection });
+      await CacheBridge.Clear({ collection });
     }
     await this.loadCacheStatus();
   }
@@ -131,7 +135,7 @@ export class CacheComponent implements OnInit {
       variant: 'warning',
     });
     if (!ok) return;
-    await callBridge('cache_clear', { collection });
+    await CacheBridge.Clear({ collection });
     await this.loadCacheStatus();
   }
 }

@@ -2,8 +2,8 @@
 
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as UpdatesBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/updatesbridge';
 import { NotificationService } from '../../../services/notification.service';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
@@ -48,10 +48,8 @@ interface SelfUpdateApplyResponse {
 /**
  * Updates panel — core-ide self-update + tool version tracking surface.
  *
- * TODO(snider/wails): swap callBridge('updates_refresh' /
- * 'selfupdate_status' / 'selfupdate_apply') for an updateBridge wails
- * service. core/go-update already exposes the right shape — wrapping
- * it as a wails service is one Go file.
+ * Migrated 2026-05-10 to typed UpdatesBridge wails binding for the
+ * updates_refresh / selfupdate_status / selfupdate_apply methods.
  */
 @Component({
   selector: 'dev-updates',
@@ -225,7 +223,23 @@ export class UpdatesComponent {
 
   // Self-update — DuckDB-cached. SWR via cachedBridgeResource.
   readonly self = cachedBridgeResource<SelfUpdateStatus>({
-    tool: 'selfupdate_status',
+    loader: () =>
+      UpdatesBridge.SelfUpdateStatus().then((v) => ({
+        current_version: v.current_version || '',
+        repo_url: v.repo_url || '',
+        channel: v.channel || '',
+        platform: v.platform || '',
+        configured: v.configured,
+        checked: v.checked,
+        owner: v.owner,
+        repo: v.repo,
+        latest_version: v.latest_version,
+        release_url: v.release_url,
+        update_available: v.update_available,
+        error: v.status_error,
+        cache_hit: v.cache_hit,
+        cache_age_s: v.cache_age_s,
+      })),
     emptyValue: { current_version: '', repo_url: '', channel: '', platform: '', configured: false, checked: false },
     isEmpty: (v) => !v.checked,
   });
@@ -234,7 +248,21 @@ export class UpdatesComponent {
   // wrap in a resource purely for reactivity / signal access.
   readonly toolsResource = resource<UpdateTool[], void>({
     defaultValue: [],
-    loader: () => callBridge<UpdatesRefreshResponse>('updates_refresh', {}).then((v) => v?.tools || []),
+    loader: () =>
+      UpdatesBridge.Refresh({}).then((v) =>
+        (v.tools || []).map((t) => ({
+          key: t.key,
+          name: t.name,
+          description: t.description,
+          installed: t.installed,
+          local_version: t.local_version,
+          latest_version: t.latest_version,
+          latest_url: t.latest_url,
+          up_to_date: t.up_to_date,
+          github_repo: t.github_repo,
+          error: t.error,
+        })),
+      ),
   });
 
   readonly updatesTools = computed(() => this.toolsResource.value() ?? []);
@@ -260,11 +288,9 @@ export class UpdatesComponent {
    *  rest; we just need to merge results. */
   async refreshUpdate(key: string): Promise<void> {
     try {
-      const v = await callBridge<UpdatesRefreshResponse>('updates_refresh', { key });
-      const fresh = v?.tools || [];
+      await UpdatesBridge.Refresh({ key });
       // Trigger a full reload so the resource value updates with the merge.
       this.toolsResource.reload();
-      void fresh; // results merged via the reload above
     } catch {
       // ignore
     }
@@ -292,9 +318,9 @@ export class UpdatesComponent {
     if (!ok) return;
     this.selfUpdateApplying.set(true);
     try {
-      const v = await callBridge<SelfUpdateApplyResponse>('selfupdate_apply', {});
+      const v = await UpdatesBridge.SelfUpdateApply();
       this.notify.notify({
-        message: this.t.instant('updates.notify.success', { version: v?.updated_to }),
+        message: this.t.instant('updates.notify.success', { version: v.updated_to }),
         variant: 'success',
         icon: 'check',
         duration: 0,

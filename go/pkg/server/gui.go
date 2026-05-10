@@ -149,6 +149,11 @@ func (shell *GUIShell) Run(
 	app.RegisterService(application.NewService(&streamBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&memoryBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&devopsBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&cacheBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&marketplaceBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&phpBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&updatesBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&containersBridge{core: coreInstance}))
 
 	// Open the IDE window through window.Service so the manager tracks it
 	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)

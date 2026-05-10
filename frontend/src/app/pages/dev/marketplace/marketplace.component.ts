@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as MarketplaceBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/marketplacebridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 
@@ -55,8 +56,10 @@ function pluginNativeTag(code: string): string | null {
  *   - Frame:  iframe panel inside the IDE (origin-sandboxed).
  *   - Window: detached window via window_open (separate frame).
  *
- * TODO(snider/wails): swap callBridge('pkg_*') + 'window_open' for
- * marketplaceBridge / windowBridge wails services.
+ * Migrated 2026-05-10 to typed MarketplaceBridge wails binding for the
+ * pkg_search / pkg_installed / pkg_install / pkg_remove methods.
+ * window_open still goes via callBridge — it's part of the broader
+ * window_* surface (35+ tools) that needs its own dedicated bridge sweep.
  */
 @Component({
   selector: 'dev-marketplace',
@@ -358,18 +361,36 @@ export class MarketplaceComponent {
     defaultValue: [],
     params: () => ({ query: this.marketQuery(), category: this.marketCategory() }),
     loader: ({ params }) =>
-      callBridge<{ packages?: MarketModule[] }>('pkg_search', params).then((v) => v?.packages || []),
+      MarketplaceBridge.Search(params).then((v) =>
+        (v.packages || []).map((p) => ({
+          code: p.code,
+          name: p.name,
+          version: p.version,
+          repo: p.repo,
+          category: p.category,
+          entrypoint: p.entrypoint,
+          description: p.description,
+        })),
+      ),
   });
 
   // Installed — DuckDB-cached server-side. SWR via cachedBridgeResource.
-  // Wrap the raw {packages} so it satisfies CachedBridgeEnvelope (which
-  // expects optional cache_hit/cache_age_s — server adds them at runtime).
   readonly installedResource = cachedBridgeResource<{
     packages: InstalledPlugin[];
     cache_hit?: boolean;
     cache_age_s?: number;
   }>({
-    tool: 'pkg_installed',
+    loader: () =>
+      MarketplaceBridge.Installed().then((v) => ({
+        packages: (v.packages || []).map((p) => ({
+          code: p.code,
+          name: p.name,
+          version: p.version,
+          entry_point: p.entry_point,
+        })),
+        cache_hit: v.cache_hit,
+        cache_age_s: v.cache_age_s,
+      })),
     emptyValue: { packages: [] },
     isEmpty: (v) => v.packages.length === 0,
   });
@@ -488,7 +509,7 @@ export class MarketplaceComponent {
     this.marketBusy.set(code);
     this.marketMessage.set(null);
     try {
-      await callBridge('pkg_install', { code });
+      await MarketplaceBridge.Install({ code });
       this.marketMessage.set(`Installed ${code} — added to your sidebar.`);
       await Promise.all([this.loadMarketplace(), this.pluginMenus.reload()]);
     } catch (e) {
@@ -502,7 +523,7 @@ export class MarketplaceComponent {
     this.marketBusy.set(code);
     this.marketMessage.set(null);
     try {
-      await callBridge('pkg_remove', { code });
+      await MarketplaceBridge.Remove({ code });
       this.marketMessage.set(`Removed ${code}`);
       await Promise.all([this.loadMarketplace(), this.pluginMenus.reload()]);
       // If the user was on this plugin's route, redirect home.

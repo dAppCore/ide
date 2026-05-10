@@ -2,8 +2,8 @@
 
 import { Component, computed, resource, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as ContainersBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/containersbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface ContainerRuntime {
@@ -33,8 +33,8 @@ interface ContainerEntry {
  * Containers panel — runtimes detected on this host. Surface over
  * core/go-container.
  *
- * TODO(snider/wails): swap callBridge('container_*') for a
- * containerBridge wails service.
+ * Migrated 2026-05-10 to typed ContainersBridge wails binding for the
+ * container_detect / container_list / container_logs methods.
  */
 @Component({
   selector: 'dev-containers',
@@ -164,7 +164,24 @@ interface ContainerEntry {
 export class ContainersComponent {
   // Runtimes (cached server-side). Reactive SWR via cachedBridgeResource.
   readonly runtimes = cachedBridgeResource<{ runtimes: ContainerRuntime[]; cache_hit?: boolean; cache_age_s?: number }>({
-    tool: 'container_detect',
+    loader: ({ force }) =>
+      ContainersBridge.Detect({ force }).then((v) => ({
+        runtimes: (v.runtimes || []).map((r) => ({
+          name: r.name,
+          available: r.available,
+          version: r.version,
+          path: r.path,
+          description: r.description,
+          has_gpu: r.has_gpu,
+          has_network_isolation: r.has_network_isolation,
+          has_volume_mounts: r.has_volume_mounts,
+          has_encryption: r.has_encryption,
+          hardware_isolated: r.hardware_isolated,
+          sub_second_start: r.sub_second_start,
+        })),
+        cache_hit: v.cache_hit,
+        cache_age_s: v.cache_age_s,
+      })),
     emptyValue: { runtimes: [] },
     isEmpty: (v) => v.runtimes.length === 0,
   });
@@ -174,7 +191,17 @@ export class ContainersComponent {
   // the runtimes detect.
   readonly list = resource<{ containers: ContainerEntry[] }, void>({
     defaultValue: { containers: [] },
-    loader: () => callBridge<{ containers?: ContainerEntry[] }>('container_list', {}).then((v) => ({ containers: v?.containers || [] })),
+    loader: () =>
+      ContainersBridge.List({}).then((v) => ({
+        containers: (v.containers || []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          image: c.image,
+          status: c.status,
+          runtime: c.runtime,
+          created: c.created,
+        })),
+      })),
   });
 
   readonly containerRuntimes = computed(() => this.runtimes.stable().runtimes);
@@ -203,8 +230,8 @@ export class ContainersComponent {
     this.containerSelected.set(id);
     this.containerLogs.set('Loading…');
     try {
-      const v = await callBridge<{ logs?: string }>('container_logs', { id, runtime, tail: 200 });
-      this.containerLogs.set(v?.logs || '(no output)');
+      const v = await ContainersBridge.Logs({ id, runtime, tail: 200 });
+      this.containerLogs.set(v.logs || '(no output)');
     } catch (e) {
       this.containerLogs.set('Error: ' + (e instanceof Error ? e.message : String(e)));
     }

@@ -3,8 +3,8 @@
 import { Component, computed, inject, linkedSignal, resource } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as PhpBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/phpbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface PHPProjectSummary {
@@ -58,8 +58,8 @@ const EMPTY_PHP: PHPDetectResponse = { projects: [] };
  * detail + scripts resources auto-fetch when selected changes. No
  * manual sequencing, no effect()s — pure reactive flow.
  *
- * TODO(snider/wails): swap callBridge('php_*') for a phpBridge wails
- * service.
+ * Migrated 2026-05-10 to typed PhpBridge wails binding for the
+ * php_detect / php_project / php_scripts / php_run methods.
  */
 @Component({
   selector: 'dev-php',
@@ -214,7 +214,19 @@ export class PhpComponent {
   private readonly router = inject(Router);
 
   readonly scan = cachedBridgeResource<PHPDetectResponse>({
-    tool: 'php_detect',
+    loader: () =>
+      PhpBridge.Detect().then((v) => ({
+        projects: (v.projects || []).map((p) => ({
+          path: p.path,
+          name: p.name,
+          app_name: p.app_name,
+          app_url: p.app_url,
+          package_mgr: p.package_mgr,
+          frankenphp: p.frankenphp,
+        })),
+        cache_hit: v.cache_hit,
+        cache_age_s: v.cache_age_s,
+      })),
     emptyValue: EMPTY_PHP,
     isEmpty: (v) => v.projects.length === 0,
   });
@@ -238,14 +250,53 @@ export class PhpComponent {
     defaultValue: null,
     params: () => this.selected(),
     loader: ({ params }) =>
-      params ? callBridge<PHPProjectDetail>('php_project', { path: params }) : Promise.resolve(null),
+      params
+        ? PhpBridge.Project({ path: params }).then((r) => {
+            const d = r.detail;
+            return {
+              path: d.path,
+              name: d.name,
+              app_name: d.app_name,
+              app_url: d.app_url,
+              domain: d.domain,
+              package_mgr: d.package_mgr,
+              frankenphp: d.frankenphp,
+              services: d.services || [],
+              has_env: d.has_env,
+              has_env_example: d.has_env_example,
+              has_vendor: d.has_vendor,
+              has_composer_lock: d.has_composer_lock,
+              has_node_modules: d.has_node_modules,
+              has_package_lock: d.has_package_lock,
+            };
+          })
+        : Promise.resolve(null),
   });
 
   readonly scripts = resource<PHPScripts | null, string | null>({
     defaultValue: null,
     params: () => this.selected(),
     loader: ({ params }) =>
-      params ? callBridge<PHPScripts>('php_scripts', { path: params }) : Promise.resolve(null),
+      params
+        ? PhpBridge.Scripts({ path: params }).then((r) => ({
+            composer_scripts: (r.composer_scripts || []).map((s) => ({
+              name: s.name,
+              command: s.command,
+              lines: s.lines,
+              source: s.source,
+              artisan_args: s.artisan_args,
+            })),
+            artisan_scripts: (r.artisan_scripts || []).map((s) => ({
+              name: s.name,
+              command: s.command,
+              lines: s.lines,
+              source: s.source,
+              artisan_args: s.artisan_args,
+            })),
+            has_artisan: r.has_artisan,
+            has_composer: r.has_composer,
+          }))
+        : Promise.resolve(null),
   });
 
   async runPHPScript(
@@ -254,7 +305,13 @@ export class PhpComponent {
     extra: { name?: string; args?: string[]; command?: string },
   ): Promise<void> {
     try {
-      await callBridge('php_run', { path, mode, ...extra });
+      await PhpBridge.Run({
+        path,
+        mode,
+        name: extra.name || '',
+        args: extra.args || [],
+        command: extra.command || '',
+      });
       void this.router.navigate(['/dev/process']);
     } catch {
       // ignore
