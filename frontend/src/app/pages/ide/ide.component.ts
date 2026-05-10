@@ -1,4 +1,4 @@
-import { Component, ViewChild, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef } from '@angular/core';
+import { Component, ViewChild, computed, signal, OnInit, OnDestroy, PLATFORM_ID, Inject, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -13,6 +13,7 @@ import { ThemeService } from '../../services/theme.service';
 import { I18nService } from '../../services/i18n.service';
 import { FileEditorStore } from '../../services/store/file-editor.store';
 import { CommandRegistryService } from '../../services/command-registry.service';
+import { StatusBarRegistryService } from '../../services/status-bar-registry.service';
 
 
 /**
@@ -64,22 +65,34 @@ import { CommandRegistryService } from '../../services/command-registry.service'
           <router-outlet (activate)="onOutletActivate($event)" />
         </div>
 
-        <!-- Status bar (per Lethean-3 native handoff: 22px tall, mono, Vi state) -->
+        <!-- Status bar (per Lethean-3 native handoff: 22px tall, mono, Vi state).
+             Vi pill stays inline (IDE-built-in, framework-special). All other
+             slots render through StatusBarRegistryService — built-in or plugin
+             contributed, same render path. -->
         <div class="status-bar num">
           <div class="status-left">
             <span class="status-item">
               <span class="vi-status-dot" [class.connected]="vi().connected"></span>
               {{ vi().connected ? 'Vi connected' : 'Vi reconnecting…' }} · {{ vi().latencyMs }}ms
             </span>
-            <span class="status-sep">·</span>
-            <span class="status-item">{{ vi().watching }} sites</span>
-            <span class="status-sep">·</span>
-            <span class="status-item">£0.00 / mo</span>
+            @for (slot of statusBar.left(); track slot.id) {
+              <span class="status-sep">·</span>
+              @if (slot.click) {
+                <button class="status-item status-clickable" [class]="'tone-' + (slot.tone || 'default')" [title]="slot.hint || ''" (click)="slot.click!()">{{ slot.text() }}</button>
+              } @else {
+                <span class="status-item" [class]="'tone-' + (slot.tone || 'default')" [title]="slot.hint || ''">{{ slot.text() }}</span>
+              }
+            }
           </div>
           <div class="status-right">
-            <span class="status-item">core-ide v0.1.0</span>
-            <span class="status-sep">·</span>
-            <span class="status-item">WebView2 · 124.0</span>
+            @for (slot of statusBar.right(); track slot.id; let first = $first) {
+              @if (!first) { <span class="status-sep">·</span> }
+              @if (slot.click) {
+                <button class="status-item status-clickable" [class]="'tone-' + (slot.tone || 'default')" [title]="slot.hint || ''" (click)="slot.click!()">{{ slot.text() }}</button>
+              } @else {
+                <span class="status-item" [class]="'tone-' + (slot.tone || 'default')" [title]="slot.hint || ''">{{ slot.text() }}</span>
+              }
+            }
           </div>
         </div>
       </div>
@@ -293,7 +306,17 @@ import { CommandRegistryService } from '../../services/command-registry.service'
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font: inherit;
+      padding: 0;
     }
+    .status-clickable { cursor: pointer; }
+    .status-clickable:hover { color: var(--fg-1); }
+    .tone-ok { color: var(--success-400); }
+    .tone-warn { color: var(--warning-400); }
+    .tone-danger { color: var(--danger-400); }
     .status-sep {
       color: var(--fg-4);
     }
@@ -362,6 +385,7 @@ export class IdeComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly fileEditor = inject(FileEditorStore);
   private readonly commands = inject(CommandRegistryService);
+  readonly statusBar = inject(StatusBarRegistryService);
 
   // ViewChild on the palette so the keyboard listener can toggle it.
   @ViewChild('palette') paletteRef?: CommandPaletteComponent;
@@ -471,6 +495,12 @@ export class IdeComponent implements OnInit, OnDestroy {
     // \u2014 every plugin action (CoreAgent "switch model", Lem.Lab "load
     // checkpoint", etc.) ends up in the same fuzzy-search palette.
     this.registerBuiltinCommands();
+
+    // Register built-in status-bar slots (sites / spend / version /
+    // runtime). Plugins add slots via StatusBarRegistryService.register()
+    // \u2014 Lemma t/s, CoreAgent model id, peer count, etc. go straight
+    // into the bottom strip without IDE shell changes.
+    this.registerBuiltinStatusBarSlots();
 
     // Keyboard shortcuts:
     // - cmd/ctrl + Shift + P: toggle the command palette
@@ -606,6 +636,48 @@ export class IdeComponent implements OnInit, OnDestroy {
         label: this.chatVisible() ? 'Hide chat panel' : 'Show chat panel',
         group: 'IDE',
         run: () => this.chatVisible.update((v) => !v),
+      },
+    ]);
+  }
+
+  /**
+   * Built-in status-bar slots wired at IDE boot.
+   *   - left: sites count, monthly spend
+   *   - right: runtime, version
+   * Plugin slots (Lemma, CoreAgent, etc.) register through the same
+   * service and merge into the same render path.
+   */
+  private registerBuiltinStatusBarSlots(): void {
+    this.statusBar.register([
+      {
+        id: 'ide.sites',
+        side: 'left',
+        order: 100,
+        text: computed(() => `${this.vi().watching} sites`),
+        click: () => void this.router.navigate(['/dev/repos']),
+        hint: 'Watched sites — open Repos panel',
+      },
+      {
+        id: 'ide.spend',
+        side: 'left',
+        order: 200,
+        text: computed(() => '£0.00 / mo'),
+        hint: 'Monthly spend (placeholder until tenant.usage wired)',
+      },
+      {
+        id: 'ide.runtime',
+        side: 'right',
+        order: 100,
+        text: computed(() => 'WebView2 · 124.0'),
+        hint: 'WebView runtime',
+      },
+      {
+        id: 'ide.version',
+        side: 'right',
+        order: 200,
+        text: computed(() => 'core-ide v0.1.0'),
+        hint: 'Build version — open Updates panel',
+        click: () => void this.router.navigate(['/dev/updates']),
       },
     ]);
   }
