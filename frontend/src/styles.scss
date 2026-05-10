@@ -21,6 +21,11 @@
 @import "@awesome.me/webawesome-pro/dist/styles/utilities.css";
 @import "@awesome.me/webawesome-pro/dist/styles/color/palettes/vogue.css";
 
+/* xterm.js — viewport sizing, scrollbar, helper textarea positioning. Without
+   this stylesheet the .xterm-viewport doesn't constrain its height and the
+   rendered scrollback rows stretch the page vertically. */
+@import "xterm/css/xterm.css";
+
 /* Selectable themes — `lethean` (canon, defined by tokens-wa-bridge.css)
    is the polished default. The others are stock WA themes for users
    who want to taste alternatives — left in their as-shipped form per

@@ -144,6 +144,11 @@ func (b *MCPBridge) OnStartup(ctx context.Context) core.Result {
 	mux.HandleFunc("/internal/ui-state", b.handleInternalUIState)
 	mux.HandleFunc("/internal/ide-config", b.handleInternalIDEConfig)
 	mux.HandleFunc("/internal/events", b.handleInternalEvents)
+	// Terminal byte-stream WebSocket — keeps keystroke + PTY-output firehose
+	// off the JSON Wails channel. Path is /terminal/ws/{sid}; the sid is
+	// allocated by terminalBridge.OpenSession. See terminal_session.go for
+	// the shared session model both this WS and SSH (terminal_ssh.go) feed.
+	mux.HandleFunc("/terminal/ws/", b.handleTerminalWS)
 
 	// Wire the core ACTION broadcaster into the Stream Hub so every
 	// dispatched action shows up on the "actions" channel and is

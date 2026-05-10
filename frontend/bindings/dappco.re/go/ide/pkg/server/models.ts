@@ -3527,6 +3527,42 @@ export class SessionActiveOutput {
     }
 }
 
+/**
+ * SessionInfo is the externally-visible (Wails-serialisable) view of a session.
+ */
+export class SessionInfo {
+    "id": string;
+    "host": string;
+    "shell": string;
+    "cwd": string;
+
+    /** Creates a new SessionInfo instance. */
+    constructor($$source: Partial<SessionInfo> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("host" in $$source)) {
+            this["host"] = "";
+        }
+        if (!("shell" in $$source)) {
+            this["shell"] = "";
+        }
+        if (!("cwd" in $$source)) {
+            this["cwd"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SessionInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SessionInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SessionInfo($$parsedSource as Partial<SessionInfo>);
+    }
+}
+
 export class SessionInspectInput {
     "path": string;
     "limit"?: number;
@@ -4307,6 +4343,115 @@ export class TenantWorkspaceInput {
     }
 }
 
+/**
+ * TerminalActionResult is the uniform success/error envelope for control ops.
+ */
+export class TerminalActionResult {
+    "ok": boolean;
+    "error"?: string;
+
+    /** Creates a new TerminalActionResult instance. */
+    constructor($$source: Partial<TerminalActionResult> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TerminalActionResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TerminalActionResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TerminalActionResult($$parsedSource as Partial<TerminalActionResult>);
+    }
+}
+
+/**
+ * TerminalOpenInput configures a new session. Empty fields fall back to
+ * session defaults: $SHELL or /bin/zsh, $HOME or workspace root, xterm-256color.
+ */
+export class TerminalOpenInput {
+    "shell"?: string;
+    "cwd"?: string;
+    "term"?: string;
+    "cols"?: number;
+    "rows"?: number;
+
+    /** Creates a new TerminalOpenInput instance. */
+    constructor($$source: Partial<TerminalOpenInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TerminalOpenInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TerminalOpenInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TerminalOpenInput($$parsedSource as Partial<TerminalOpenInput>);
+    }
+}
+
+/**
+ * TerminalOpenResult carries the new session's metadata back to the FE.
+ */
+export class TerminalOpenResult {
+    "ok": boolean;
+    "id"?: string;
+    "host"?: string;
+    "shell"?: string;
+    "cwd"?: string;
+    "wsUrl"?: string;
+    "error"?: string;
+
+    /** Creates a new TerminalOpenResult instance. */
+    constructor($$source: Partial<TerminalOpenResult> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TerminalOpenResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TerminalOpenResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TerminalOpenResult($$parsedSource as Partial<TerminalOpenResult>);
+    }
+}
+
+/**
+ * TerminalSessionsResult lists current sessions.
+ */
+export class TerminalSessionsResult {
+    "sessions": SessionInfo[];
+
+    /** Creates a new TerminalSessionsResult instance. */
+    constructor($$source: Partial<TerminalSessionsResult> = {}) {
+        if (!("sessions" in $$source)) {
+            this["sessions"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TerminalSessionsResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TerminalSessionsResult {
+        const $$createField0_0 = $$createType81;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("sessions" in $$parsedSource) {
+            $$parsedSource["sessions"] = $$createField0_0($$parsedSource["sessions"]);
+        }
+        return new TerminalSessionsResult($$parsedSource as Partial<TerminalSessionsResult>);
+    }
+}
+
 export class UpdateTool {
     "key": string;
     "name": string;
@@ -4386,7 +4531,7 @@ export class UpdatesRefreshOutput {
      * Creates a new UpdatesRefreshOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): UpdatesRefreshOutput {
-        const $$createField1_0 = $$createType81;
+        const $$createField1_0 = $$createType83;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -4436,7 +4581,7 @@ export class WailsLintCatalogOutput {
      * Creates a new WailsLintCatalogOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): WailsLintCatalogOutput {
-        const $$createField1_0 = $$createType83;
+        const $$createField1_0 = $$createType85;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -4615,7 +4760,7 @@ export class WindowListOutput {
      * Creates a new WindowListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): WindowListOutput {
-        const $$createField1_0 = $$createType85;
+        const $$createField1_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("windows" in $$parsedSource) {
             $$parsedSource["windows"] = $$createField1_0($$parsedSource["windows"]);
@@ -4996,9 +5141,11 @@ const $$createType76 = $Create.Array($$createType75);
 const $$createType77 = StreamFrame.createFrom;
 const $$createType78 = $Create.Array($$createType77);
 const $$createType79 = StreamConfig.createFrom;
-const $$createType80 = UpdateTool.createFrom;
+const $$createType80 = SessionInfo.createFrom;
 const $$createType81 = $Create.Array($$createType80);
-const $$createType82 = WailsLintCatalogEntry.createFrom;
+const $$createType82 = UpdateTool.createFrom;
 const $$createType83 = $Create.Array($$createType82);
-const $$createType84 = WindowEntry.createFrom;
+const $$createType84 = WailsLintCatalogEntry.createFrom;
 const $$createType85 = $Create.Array($$createType84);
+const $$createType86 = WindowEntry.createFrom;
+const $$createType87 = $Create.Array($$createType86);
