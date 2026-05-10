@@ -218,20 +218,26 @@ func composeRuntimeMode(
 		guiExecutor.Attach(guiSubsystem, mcpService)
 	}
 	if enableGUI && config.BoolValue(cfg.Ide.Chat.Enabled, true) {
+		// gui.BootstrapWithConfig already registered a chat service via
+		// core.WithService(chat.Register(...)) at core construction time —
+		// but with no ToolExecutor wired (the executor depends on mcpService
+		// which only exists after this point). Calling chat.Register again
+		// here returns a fresh Service whose c.Action(...) closures capture
+		// the right executor; since Action.Set is overwrite semantics, the
+		// new handlers replace the Bootstrap's executor-less ones.
+		//
+		// We do NOT call c.RegisterService("chat", ...) — that would
+		// collide with the Bootstrap registration and crash. Nothing
+		// looks up the chat service by name (greppped 2026-05-10), so
+		// the stale Bootstrap service in the registry is harmless; the
+		// runtime only invokes the actions, and those now have the
+		// right executor.
 		result := chatpkg.NewRegister(cfg.Ide.Chat, chatExecutor(cfg.Ide.Chat, guiExecutor, mcpService))(c)
 		if !result.OK {
 			if err, ok := result.Value.(error); ok {
 				return nil, err
 			}
 			return nil, core.E("ide.server.Compose", "register chat", nil)
-		}
-		if result.Value != nil {
-			if registerErr := c.RegisterService("chat", result.Value); !registerErr.OK {
-				if err, ok := registerErr.Value.(error); ok {
-					return nil, err
-				}
-				return nil, core.E("ide.server.Compose", "register chat service", nil)
-			}
 		}
 	}
 
