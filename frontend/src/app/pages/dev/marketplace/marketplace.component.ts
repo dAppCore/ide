@@ -35,19 +35,6 @@ interface EmbeddedPlugin {
   tag?: string;
 }
 
-/**
- * Native-element registry — hardcoded today, will read from plugin
- * manifests in v2 once `pkg_menus` exposes `native_tag` (PluginMenuStore
- * already carries the field; the marketplace flow predates it).
- */
-function pluginNativeTag(code: string): string | null {
-  switch (code) {
-    case 'vi':
-      return 'lethean-vi-plugin';
-    default:
-      return null;
-  }
-}
 
 /**
  * Marketplace panel — package browse / install / remove via core/scm
@@ -444,8 +431,17 @@ export class MarketplaceComponent {
     return null;
   }
 
+  /** A plugin advertises a native mount point via the `native_tag` field on
+   *  its manifest, surfaced through PluginMenuStore (pkg_menus). When set,
+   *  marketplace renders a "⚡ Native" Run button that mounts the registered
+   *  custom element in the same JS context as the IDE.
+   */
   hasNativeMode(code: string): boolean {
-    return pluginNativeTag(code) !== null;
+    return !!this.pluginNativeTag(code);
+  }
+
+  pluginNativeTag(code: string): string | null {
+    return this.pluginMenus.byCode(code)?.native_tag || null;
   }
 
   async runPlugin(code: string): Promise<void> {
@@ -482,7 +478,7 @@ export class MarketplaceComponent {
     const installed = this.marketInstalled().find((p) => p.code === code);
     if (!installed) return;
     const title = installed.name || code;
-    const tag = pluginNativeTag(code);
+    const tag = this.pluginNativeTag(code);
     if (!tag) {
       this.mutationError.set(`No native element registered for plugin: ${code}`);
       return;
