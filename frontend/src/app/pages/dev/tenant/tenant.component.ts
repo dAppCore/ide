@@ -2,7 +2,7 @@
 
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
+import * as TenantBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/tenantbridge';
 
 interface TenantStatus {
   registered: boolean;
@@ -33,8 +33,10 @@ interface TenantCanResult {
  * PHP-API consumer with local cache. Workspace lookup, authenticated
  * user fetch, entitlement check (Can).
  *
- * TODO(snider/wails): swap callBridge('tenant_*') for a tenantBridge
- * wails service.
+ * Migrated 2026-05-10 to typed TenantBridge wails binding for the
+ * tenant_status / tenant_workspace / tenant_user / tenant_can methods.
+ * Workspace + User payloads pass through as map[string]any since the
+ * tenant struct shapes are still in flux; rendered as JSON for now.
  */
 @Component({
   selector: 'dev-tenant',
@@ -178,8 +180,14 @@ export class TenantComponent implements OnInit {
 
   async loadTenantStatus(): Promise<void> {
     try {
-      const v = await callBridge<TenantStatus>('tenant_status', {});
-      this.tenantStatus.set(v);
+      const v = await TenantBridge.Status();
+      this.tenantStatus.set({
+        registered: v.registered,
+        online: v.online,
+        api_url: v.api_url || '',
+        api_token_set: v.api_token_set,
+        hint: v.hint || '',
+      });
     } catch {
       // ignore — let user retry
     }
@@ -191,8 +199,8 @@ export class TenantComponent implements OnInit {
     this.tenantWorkspaceError.set(null);
     this.tenantWorkspaceResult.set(null);
     try {
-      const v = await callBridge<any>('tenant_workspace', { slug });
-      this.tenantWorkspaceResult.set(v);
+      const v = await TenantBridge.Workspace({ slug });
+      this.tenantWorkspaceResult.set(v.value || null);
     } catch (e) {
       this.tenantWorkspaceError.set(this.t.instant('tenant.error.workspace-lookup') + ': ' + (e instanceof Error ? e.message : String(e)));
     }
@@ -201,8 +209,8 @@ export class TenantComponent implements OnInit {
   async tenantLookupUser(force: boolean = false): Promise<void> {
     this.tenantUserResult.set(null);
     try {
-      const v = await callBridge<any>('tenant_user', { force });
-      this.tenantUserResult.set(v);
+      const v = await TenantBridge.User({ force });
+      this.tenantUserResult.set(v.value || null);
     } catch (e) {
       this.tenantUserResult.set({ error: this.t.instant('tenant.error.user-lookup') + ': ' + (e instanceof Error ? e.message : String(e)) });
     }
@@ -221,12 +229,20 @@ export class TenantComponent implements OnInit {
     this.tenantCanError.set(null);
     this.tenantCanResult.set(null);
     try {
-      const v = await callBridge<TenantCanResult>('tenant_can', {
+      const v = await TenantBridge.Can({
         workspace_slug: form.workspace,
         feature: form.feature,
         quantity: form.quantity,
       });
-      this.tenantCanResult.set(v);
+      this.tenantCanResult.set({
+        allowed: v.allowed,
+        reason: v.reason || '',
+        feature: v.feature || form.feature,
+        workspace: v.workspace || form.workspace,
+        used: v.used,
+        limit: v.limit,
+        remaining: v.remaining,
+      });
     } catch (e) {
       this.tenantCanError.set(this.t.instant('tenant.error.entitlement-check') + ': ' + (e instanceof Error ? e.message : String(e)));
     }

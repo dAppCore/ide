@@ -2,7 +2,7 @@
 
 import { Component, OnInit, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
+import * as DataBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/databridge';
 
 interface OrmTable {
   name: string;
@@ -21,8 +21,9 @@ interface OrmBackend {
 /**
  * Data panel — live ORM bridge over core/orm. Memium / DuckDB backed.
  *
- * TODO(snider/wails): swap callBridge('orm_*') for an ormBridge wails
- * service.
+ * Migrated 2026-05-10 to typed DataBridge wails binding for the
+ * orm_tables / orm_backend / orm_get / orm_count / orm_save /
+ * orm_delete methods.
  */
 @Component({
   selector: 'dev-data',
@@ -184,11 +185,21 @@ export class DataComponent implements OnInit {
     this.ormError.set(null);
     try {
       const [tables, backend] = await Promise.all([
-        callBridge<{ tables?: OrmTable[] }>('orm_tables', {}),
-        callBridge<OrmBackend>('orm_backend', {}),
+        DataBridge.Tables(),
+        DataBridge.Backend({}),
       ]);
-      if (backend) this.ormBackend.set(backend);
-      const list = tables?.tables || [];
+      this.ormBackend.set({
+        current: backend.current || 'memium',
+        duck_path: backend.duck_path || '',
+        available: backend.available || [],
+      });
+      const list = (tables.tables || []).map((t) => ({
+        name: t.name,
+        pk: t.pk || [],
+        fields: t.fields || [],
+        medium: t.medium,
+        backend: t.backend,
+      }));
       this.ormTables.set(list);
       if (list.length > 0 && !this.ormSelectedTable()) {
         this.ormSelectedTable.set(list[0].name);
@@ -204,10 +215,22 @@ export class DataComponent implements OnInit {
   async switchOrmBackend(name: string): Promise<void> {
     this.ormError.set(null);
     try {
-      const v = await callBridge<OrmBackend>('orm_backend', { name });
-      if (v) this.ormBackend.set({ ...this.ormBackend(), current: v.current, duck_path: v.duck_path });
-      const tables = await callBridge<{ tables?: OrmTable[] }>('orm_tables', {});
-      this.ormTables.set(tables?.tables || []);
+      const v = await DataBridge.Backend({ name });
+      this.ormBackend.set({
+        ...this.ormBackend(),
+        current: v.current || this.ormBackend().current,
+        duck_path: v.duck_path || '',
+      });
+      const tables = await DataBridge.Tables();
+      this.ormTables.set(
+        (tables.tables || []).map((t) => ({
+          name: t.name,
+          pk: t.pk || [],
+          fields: t.fields || [],
+          medium: t.medium,
+          backend: t.backend,
+        })),
+      );
       await this.refreshOrmRows();
     } catch (e) {
       this.ormError.set('switch failed: ' + (e instanceof Error ? e.message : String(e)));
@@ -219,11 +242,11 @@ export class DataComponent implements OnInit {
     if (!table) return;
     try {
       const [rows, count] = await Promise.all([
-        callBridge<Record<string, any>[]>('orm_get', { table, limit: 100 }),
-        callBridge<number>('orm_count', { table }),
+        DataBridge.Get({ table, limit: 100 }),
+        DataBridge.Count({ table }),
       ]);
-      this.ormRows.set(Array.isArray(rows) ? rows : []);
-      this.ormCount.set(typeof count === 'number' ? count : 0);
+      this.ormRows.set(rows.rows || []);
+      this.ormCount.set(count.count || 0);
     } catch (e) {
       this.ormError.set('orm_get failed: ' + (e instanceof Error ? e.message : String(e)));
     }
@@ -256,7 +279,7 @@ export class DataComponent implements OnInit {
       else row[k] = v;
     }
     try {
-      await callBridge('orm_save', { table, row });
+      await DataBridge.Save({ table, row });
       this.ormDraftRow.set({});
       await this.refreshOrmRows();
     } catch (e) {
@@ -278,7 +301,7 @@ export class DataComponent implements OnInit {
     if (!tableSpec) return;
     const pkField = tableSpec.pk[0];
     try {
-      await callBridge('orm_delete', { table, field: pkField, value: row[pkField] });
+      await DataBridge.Delete({ table, field: pkField, value: row[pkField] });
       await this.refreshOrmRows();
     } catch (e) {
       this.ormError.set('delete failed: ' + (e instanceof Error ? e.message : String(e)));

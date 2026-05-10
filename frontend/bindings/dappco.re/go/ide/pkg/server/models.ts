@@ -809,6 +809,298 @@ export class ContainerRuntime {
     }
 }
 
+export class DataBackendInput {
+    "name"?: string;
+
+    /** Creates a new DataBackendInput instance. */
+    constructor($$source: Partial<DataBackendInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataBackendInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataBackendInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataBackendInput($$parsedSource as Partial<DataBackendInput>);
+    }
+}
+
+export class DataBackendOutput {
+    "ok": boolean;
+    "current"?: string;
+    "duck_path"?: string;
+    "available"?: string[];
+    "error"?: string;
+
+    /** Creates a new DataBackendOutput instance. */
+    constructor($$source: Partial<DataBackendOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataBackendOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataBackendOutput {
+        const $$createField3_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("available" in $$parsedSource) {
+            $$parsedSource["available"] = $$createField3_0($$parsedSource["available"]);
+        }
+        return new DataBackendOutput($$parsedSource as Partial<DataBackendOutput>);
+    }
+}
+
+export class DataCountInput {
+    "table": string;
+
+    /** Creates a new DataCountInput instance. */
+    constructor($$source: Partial<DataCountInput> = {}) {
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataCountInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataCountInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataCountInput($$parsedSource as Partial<DataCountInput>);
+    }
+}
+
+export class DataCountOutput {
+    "ok": boolean;
+    "count"?: number;
+    "error"?: string;
+
+    /** Creates a new DataCountOutput instance. */
+    constructor($$source: Partial<DataCountOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataCountOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataCountOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataCountOutput($$parsedSource as Partial<DataCountOutput>);
+    }
+}
+
+export class DataDeleteInput {
+    "table": string;
+    "field": string;
+    "value": any;
+
+    /** Creates a new DataDeleteInput instance. */
+    constructor($$source: Partial<DataDeleteInput> = {}) {
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("field" in $$source)) {
+            this["field"] = "";
+        }
+        if (!("value" in $$source)) {
+            this["value"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataDeleteInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataDeleteInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataDeleteInput($$parsedSource as Partial<DataDeleteInput>);
+    }
+}
+
+export class DataGetInput {
+    "table": string;
+    "limit"?: number;
+
+    /** Creates a new DataGetInput instance. */
+    constructor($$source: Partial<DataGetInput> = {}) {
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataGetInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataGetInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataGetInput($$parsedSource as Partial<DataGetInput>);
+    }
+}
+
+export class DataMutationOutput {
+    "ok": boolean;
+    "error"?: string;
+
+    /** Creates a new DataMutationOutput instance. */
+    constructor($$source: Partial<DataMutationOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataMutationOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataMutationOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DataMutationOutput($$parsedSource as Partial<DataMutationOutput>);
+    }
+}
+
+export class DataRowsOutput {
+    "ok": boolean;
+    "rows"?: { [_ in string]?: any }[];
+    "error"?: string;
+
+    /** Creates a new DataRowsOutput instance. */
+    constructor($$source: Partial<DataRowsOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataRowsOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataRowsOutput {
+        const $$createField1_0 = $$createType15;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("rows" in $$parsedSource) {
+            $$parsedSource["rows"] = $$createField1_0($$parsedSource["rows"]);
+        }
+        return new DataRowsOutput($$parsedSource as Partial<DataRowsOutput>);
+    }
+}
+
+export class DataSaveInput {
+    "table": string;
+    "row": { [_ in string]?: any };
+
+    /** Creates a new DataSaveInput instance. */
+    constructor($$source: Partial<DataSaveInput> = {}) {
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("row" in $$source)) {
+            this["row"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataSaveInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataSaveInput {
+        const $$createField1_0 = $$createType14;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("row" in $$parsedSource) {
+            $$parsedSource["row"] = $$createField1_0($$parsedSource["row"]);
+        }
+        return new DataSaveInput($$parsedSource as Partial<DataSaveInput>);
+    }
+}
+
+export class DataTable {
+    "name": string;
+    "pk": string[];
+    "fields": string[];
+    "medium": string;
+    "backend": string;
+
+    /** Creates a new DataTable instance. */
+    constructor($$source: Partial<DataTable> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("pk" in $$source)) {
+            this["pk"] = [];
+        }
+        if (!("fields" in $$source)) {
+            this["fields"] = [];
+        }
+        if (!("medium" in $$source)) {
+            this["medium"] = "";
+        }
+        if (!("backend" in $$source)) {
+            this["backend"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataTable instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataTable {
+        const $$createField1_0 = $$createType0;
+        const $$createField2_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("pk" in $$parsedSource) {
+            $$parsedSource["pk"] = $$createField1_0($$parsedSource["pk"]);
+        }
+        if ("fields" in $$parsedSource) {
+            $$parsedSource["fields"] = $$createField2_0($$parsedSource["fields"]);
+        }
+        return new DataTable($$parsedSource as Partial<DataTable>);
+    }
+}
+
+export class DataTablesOutput {
+    "ok": boolean;
+    "tables"?: DataTable[];
+    "error"?: string;
+
+    /** Creates a new DataTablesOutput instance. */
+    constructor($$source: Partial<DataTablesOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DataTablesOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DataTablesOutput {
+        const $$createField1_0 = $$createType17;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("tables" in $$parsedSource) {
+            $$parsedSource["tables"] = $$createField1_0($$parsedSource["tables"]);
+        }
+        return new DataTablesOutput($$parsedSource as Partial<DataTablesOutput>);
+    }
+}
+
 export class DevopsPlaybookEntry {
     "name": string;
     "path"?: string;
@@ -857,7 +1149,7 @@ export class DevopsPlaybooksOutput {
      * Creates a new DevopsPlaybooksOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): DevopsPlaybooksOutput {
-        const $$createField1_0 = $$createType15;
+        const $$createField1_0 = $$createType19;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("playbooks" in $$parsedSource) {
             $$parsedSource["playbooks"] = $$createField1_0($$parsedSource["playbooks"]);
@@ -927,7 +1219,7 @@ export class DevopsScanOutput {
      * Creates a new DevopsScanOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): DevopsScanOutput {
-        const $$createField1_0 = $$createType17;
+        const $$createField1_0 = $$createType21;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("findings" in $$parsedSource) {
             $$parsedSource["findings"] = $$createField1_0($$parsedSource["findings"]);
@@ -1003,7 +1295,7 @@ export class DirListOutput {
      * Creates a new DirListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): DirListOutput {
-        const $$createField2_0 = $$createType19;
+        const $$createField2_0 = $$createType23;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("entries" in $$parsedSource) {
             $$parsedSource["entries"] = $$createField2_0($$parsedSource["entries"]);
@@ -1340,7 +1632,7 @@ export class GitStatusOutput {
      * Creates a new GitStatusOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): GitStatusOutput {
-        const $$createField1_0 = $$createType21;
+        const $$createField1_0 = $$createType25;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("entries" in $$parsedSource) {
             $$parsedSource["entries"] = $$createField1_0($$parsedSource["entries"]);
@@ -1375,6 +1667,134 @@ export class GitUnstageInput {
             $$parsedSource["files"] = $$createField1_0($$parsedSource["files"]);
         }
         return new GitUnstageInput($$parsedSource as Partial<GitUnstageInput>);
+    }
+}
+
+export class I18nPackage {
+    "code": string;
+    "path": string;
+    "has_english": boolean;
+    "baseline_keys": number;
+    "locales"?: LocaleEntry[];
+
+    /** Creates a new I18nPackage instance. */
+    constructor($$source: Partial<I18nPackage> = {}) {
+        if (!("code" in $$source)) {
+            this["code"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("has_english" in $$source)) {
+            this["has_english"] = false;
+        }
+        if (!("baseline_keys" in $$source)) {
+            this["baseline_keys"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new I18nPackage instance from a string or object.
+     */
+    static createFrom($$source: any = {}): I18nPackage {
+        const $$createField4_0 = $$createType27;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("locales" in $$parsedSource) {
+            $$parsedSource["locales"] = $$createField4_0($$parsedSource["locales"]);
+        }
+        return new I18nPackage($$parsedSource as Partial<I18nPackage>);
+    }
+}
+
+export class I18nScanOutput {
+    "ok": boolean;
+    "packages"?: I18nPackage[];
+    "unique_locales"?: string[];
+    "roots"?: string[];
+    "total"?: number;
+    "cache_hit"?: boolean;
+    "cache_age_s"?: number;
+    "error"?: string;
+
+    /** Creates a new I18nScanOutput instance. */
+    constructor($$source: Partial<I18nScanOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new I18nScanOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): I18nScanOutput {
+        const $$createField1_0 = $$createType29;
+        const $$createField2_0 = $$createType0;
+        const $$createField3_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("packages" in $$parsedSource) {
+            $$parsedSource["packages"] = $$createField1_0($$parsedSource["packages"]);
+        }
+        if ("unique_locales" in $$parsedSource) {
+            $$parsedSource["unique_locales"] = $$createField2_0($$parsedSource["unique_locales"]);
+        }
+        if ("roots" in $$parsedSource) {
+            $$parsedSource["roots"] = $$createField3_0($$parsedSource["roots"]);
+        }
+        return new I18nScanOutput($$parsedSource as Partial<I18nScanOutput>);
+    }
+}
+
+export class I18nViewInput {
+    "path": string;
+
+    /** Creates a new I18nViewInput instance. */
+    constructor($$source: Partial<I18nViewInput> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new I18nViewInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): I18nViewInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new I18nViewInput($$parsedSource as Partial<I18nViewInput>);
+    }
+}
+
+export class I18nViewOutput {
+    "ok": boolean;
+    "path"?: string;
+    "content"?: { [_ in string]?: any };
+    "keys"?: number;
+    "error"?: string;
+
+    /** Creates a new I18nViewOutput instance. */
+    constructor($$source: Partial<I18nViewOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new I18nViewOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): I18nViewOutput {
+        const $$createField2_0 = $$createType14;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("content" in $$parsedSource) {
+            $$parsedSource["content"] = $$createField2_0($$parsedSource["content"]);
+        }
+        return new I18nViewOutput($$parsedSource as Partial<I18nViewOutput>);
     }
 }
 
@@ -1510,8 +1930,8 @@ export class LintRunOutput {
      * Creates a new LintRunOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): LintRunOutput {
-        const $$createField1_0 = $$createType23;
-        const $$createField2_0 = $$createType24;
+        const $$createField1_0 = $$createType31;
+        const $$createField2_0 = $$createType32;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("issues" in $$parsedSource) {
             $$parsedSource["issues"] = $$createField1_0($$parsedSource["issues"]);
@@ -1520,6 +1940,39 @@ export class LintRunOutput {
             $$parsedSource["counts"] = $$createField2_0($$parsedSource["counts"]);
         }
         return new LintRunOutput($$parsedSource as Partial<LintRunOutput>);
+    }
+}
+
+export class LocaleEntry {
+    "name": string;
+    "path": string;
+    "keys": number;
+    "missing_vs_en": number;
+
+    /** Creates a new LocaleEntry instance. */
+    constructor($$source: Partial<LocaleEntry> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("keys" in $$source)) {
+            this["keys"] = 0;
+        }
+        if (!("missing_vs_en" in $$source)) {
+            this["missing_vs_en"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LocaleEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LocaleEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LocaleEntry($$parsedSource as Partial<LocaleEntry>);
     }
 }
 
@@ -1564,7 +2017,7 @@ export class MarketplaceInstalledOutput {
      * Creates a new MarketplaceInstalledOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MarketplaceInstalledOutput {
-        const $$createField1_0 = $$createType26;
+        const $$createField1_0 = $$createType34;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("packages" in $$parsedSource) {
             $$parsedSource["packages"] = $$createField1_0($$parsedSource["packages"]);
@@ -1692,7 +2145,7 @@ export class MarketplaceSearchOutput {
      * Creates a new MarketplaceSearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MarketplaceSearchOutput {
-        const $$createField1_0 = $$createType28;
+        const $$createField1_0 = $$createType36;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("packages" in $$parsedSource) {
             $$parsedSource["packages"] = $$createField1_0($$parsedSource["packages"]);
@@ -1766,7 +2219,7 @@ export class MemoryListOutput {
      * Creates a new MemoryListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MemoryListOutput {
-        const $$createField1_0 = $$createType30;
+        const $$createField1_0 = $$createType38;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("entries" in $$parsedSource) {
             $$parsedSource["entries"] = $$createField1_0($$parsedSource["entries"]);
@@ -1838,7 +2291,7 @@ export class MemorySearchOutput {
      * Creates a new MemorySearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): MemorySearchOutput {
-        const $$createField1_0 = $$createType32;
+        const $$createField1_0 = $$createType40;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hits" in $$parsedSource) {
             $$parsedSource["hits"] = $$createField1_0($$parsedSource["hits"]);
@@ -1903,7 +2356,7 @@ export class P2PPublishInput {
      * Creates a new P2PPublishInput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PPublishInput {
-        const $$createField3_0 = $$createType33;
+        const $$createField3_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("payload" in $$parsedSource) {
             $$parsedSource["payload"] = $$createField3_0($$parsedSource["payload"]);
@@ -1953,7 +2406,7 @@ export class P2PStateOutput {
      * Creates a new P2PStateOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): P2PStateOutput {
-        const $$createField2_0 = $$createType35;
+        const $$createField2_0 = $$createType42;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("peers" in $$parsedSource) {
             $$parsedSource["peers"] = $$createField2_0($$parsedSource["peers"]);
@@ -1984,7 +2437,7 @@ export class PHPDetectOutput {
      * Creates a new PHPDetectOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPDetectOutput {
-        const $$createField1_0 = $$createType37;
+        const $$createField1_0 = $$createType44;
         const $$createField2_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("projects" in $$parsedSource) {
@@ -2110,7 +2563,7 @@ export class PHPProjectOutput {
      * Creates a new PHPProjectOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPProjectOutput {
-        const $$createField1_0 = $$createType38;
+        const $$createField1_0 = $$createType45;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("detail" in $$parsedSource) {
             $$parsedSource["detail"] = $$createField1_0($$parsedSource["detail"]);
@@ -2274,8 +2727,8 @@ export class PHPScriptsOutput {
      * Creates a new PHPScriptsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): PHPScriptsOutput {
-        const $$createField2_0 = $$createType40;
-        const $$createField3_0 = $$createType40;
+        const $$createField2_0 = $$createType47;
+        const $$createField3_0 = $$createType47;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("composer_scripts" in $$parsedSource) {
             $$parsedSource["composer_scripts"] = $$createField2_0($$parsedSource["composer_scripts"]);
@@ -2370,7 +2823,7 @@ export class ProcessListOutput {
      * Creates a new ProcessListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ProcessListOutput {
-        const $$createField1_0 = $$createType42;
+        const $$createField1_0 = $$createType49;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("processes" in $$parsedSource) {
             $$parsedSource["processes"] = $$createField1_0($$parsedSource["processes"]);
@@ -2479,7 +2932,7 @@ export class ReposStatusOutput {
      * Creates a new ReposStatusOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): ReposStatusOutput {
-        const $$createField1_0 = $$createType44;
+        const $$createField1_0 = $$createType51;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("repos" in $$parsedSource) {
             $$parsedSource["repos"] = $$createField1_0($$parsedSource["repos"]);
@@ -2562,7 +3015,7 @@ export class SearchOutput {
      * Creates a new SearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SearchOutput {
-        const $$createField1_0 = $$createType46;
+        const $$createField1_0 = $$createType53;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("matches" in $$parsedSource) {
             $$parsedSource["matches"] = $$createField1_0($$parsedSource["matches"]);
@@ -2678,7 +3131,7 @@ export class SessionActiveOutput {
      * Creates a new SessionActiveOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionActiveOutput {
-        const $$createField1_0 = $$createType48;
+        const $$createField1_0 = $$createType55;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("active" in $$parsedSource) {
             $$parsedSource["active"] = $$createField1_0($$parsedSource["active"]);
@@ -2748,7 +3201,7 @@ export class SessionListOutput {
      * Creates a new SessionListOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionListOutput {
-        const $$createField1_0 = $$createType50;
+        const $$createField1_0 = $$createType57;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("sessions" in $$parsedSource) {
             $$parsedSource["sessions"] = $$createField1_0($$parsedSource["sessions"]);
@@ -2829,7 +3282,7 @@ export class SessionProjectsOutput {
      * Creates a new SessionProjectsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionProjectsOutput {
-        const $$createField1_0 = $$createType52;
+        const $$createField1_0 = $$createType59;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("projects" in $$parsedSource) {
             $$parsedSource["projects"] = $$createField1_0($$parsedSource["projects"]);
@@ -2905,7 +3358,7 @@ export class SessionSearchOutput {
      * Creates a new SessionSearchOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionSearchOutput {
-        const $$createField1_0 = $$createType54;
+        const $$createField1_0 = $$createType61;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hits" in $$parsedSource) {
             $$parsedSource["hits"] = $$createField1_0($$parsedSource["hits"]);
@@ -3013,7 +3466,7 @@ export class SessionTailOutput {
      * Creates a new SessionTailOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): SessionTailOutput {
-        const $$createField1_0 = $$createType56;
+        const $$createField1_0 = $$createType63;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("events" in $$parsedSource) {
             $$parsedSource["events"] = $$createField1_0($$parsedSource["events"]);
@@ -3065,7 +3518,7 @@ export class StreamChannelsOutput {
      * Creates a new StreamChannelsOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamChannelsOutput {
-        const $$createField1_0 = $$createType58;
+        const $$createField1_0 = $$createType65;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
             $$parsedSource["channels"] = $$createField1_0($$parsedSource["channels"]);
@@ -3201,7 +3654,7 @@ export class StreamRecentOutput {
      * Creates a new StreamRecentOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamRecentOutput {
-        const $$createField2_0 = $$createType60;
+        const $$createField2_0 = $$createType67;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("frames" in $$parsedSource) {
             $$parsedSource["frames"] = $$createField2_0($$parsedSource["frames"]);
@@ -3232,8 +3685,8 @@ export class StreamStatus {
      * Creates a new StreamStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): StreamStatus {
-        const $$createField4_0 = $$createType24;
-        const $$createField5_0 = $$createType61;
+        const $$createField4_0 = $$createType32;
+        const $$createField5_0 = $$createType68;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("subscriber_counts" in $$parsedSource) {
             $$parsedSource["subscriber_counts"] = $$createField4_0($$parsedSource["subscriber_counts"]);
@@ -3300,6 +3753,170 @@ export class TIMStateOutput {
             $$parsedSource["command"] = $$createField5_0($$parsedSource["command"]);
         }
         return new TIMStateOutput($$parsedSource as Partial<TIMStateOutput>);
+    }
+}
+
+export class TenantCanInput {
+    "workspace_uuid"?: string;
+    "workspace_slug"?: string;
+    "feature": string;
+    "quantity"?: number;
+
+    /** Creates a new TenantCanInput instance. */
+    constructor($$source: Partial<TenantCanInput> = {}) {
+        if (!("feature" in $$source)) {
+            this["feature"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantCanInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantCanInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TenantCanInput($$parsedSource as Partial<TenantCanInput>);
+    }
+}
+
+export class TenantCanOutput {
+    "ok": boolean;
+    "allowed": boolean;
+    "reason"?: string;
+    "feature"?: string;
+    "quantity"?: number;
+    "workspace"?: string;
+    "used"?: number;
+    "limit"?: number;
+    "remaining"?: number;
+    "error"?: string;
+
+    /** Creates a new TenantCanOutput instance. */
+    constructor($$source: Partial<TenantCanOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+        if (!("allowed" in $$source)) {
+            this["allowed"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantCanOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantCanOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TenantCanOutput($$parsedSource as Partial<TenantCanOutput>);
+    }
+}
+
+/**
+ * TenantPayloadOutput passes the Workspace / User / Usage struct shapes
+ * through verbatim — the panel renders them via JSON.stringify and v2
+ * will introduce concrete shapes once tenant_*'s contracts are stable.
+ */
+export class TenantPayloadOutput {
+    "ok": boolean;
+    "value"?: { [_ in string]?: any };
+    "error"?: string;
+
+    /** Creates a new TenantPayloadOutput instance. */
+    constructor($$source: Partial<TenantPayloadOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantPayloadOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantPayloadOutput {
+        const $$createField1_0 = $$createType14;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("value" in $$parsedSource) {
+            $$parsedSource["value"] = $$createField1_0($$parsedSource["value"]);
+        }
+        return new TenantPayloadOutput($$parsedSource as Partial<TenantPayloadOutput>);
+    }
+}
+
+export class TenantStatusOutput {
+    "ok": boolean;
+    "registered": boolean;
+    "online": boolean;
+    "api_url"?: string;
+    "api_token_set": boolean;
+    "hint"?: string;
+    "error"?: string;
+
+    /** Creates a new TenantStatusOutput instance. */
+    constructor($$source: Partial<TenantStatusOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+        if (!("registered" in $$source)) {
+            this["registered"] = false;
+        }
+        if (!("online" in $$source)) {
+            this["online"] = false;
+        }
+        if (!("api_token_set" in $$source)) {
+            this["api_token_set"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantStatusOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantStatusOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TenantStatusOutput($$parsedSource as Partial<TenantStatusOutput>);
+    }
+}
+
+export class TenantUserInput {
+    "force"?: boolean;
+
+    /** Creates a new TenantUserInput instance. */
+    constructor($$source: Partial<TenantUserInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantUserInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantUserInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TenantUserInput($$parsedSource as Partial<TenantUserInput>);
+    }
+}
+
+export class TenantWorkspaceInput {
+    "slug"?: string;
+    "uuid"?: string;
+    "id"?: number;
+    "subdomain"?: string;
+
+    /** Creates a new TenantWorkspaceInput instance. */
+    constructor($$source: Partial<TenantWorkspaceInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TenantWorkspaceInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TenantWorkspaceInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TenantWorkspaceInput($$parsedSource as Partial<TenantWorkspaceInput>);
     }
 }
 
@@ -3382,7 +3999,7 @@ export class UpdatesRefreshOutput {
      * Creates a new UpdatesRefreshOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): UpdatesRefreshOutput {
-        const $$createField1_0 = $$createType63;
+        const $$createField1_0 = $$createType70;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -3432,7 +4049,7 @@ export class WailsLintCatalogOutput {
      * Creates a new WailsLintCatalogOutput instance from a string or object.
      */
     static createFrom($$source: any = {}): WailsLintCatalogOutput {
-        const $$createField1_0 = $$createType65;
+        const $$createField1_0 = $$createType72;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("tools" in $$parsedSource) {
             $$parsedSource["tools"] = $$createField1_0($$parsedSource["tools"]);
@@ -3479,7 +4096,7 @@ export class chatBridgeToolCall {
      * Creates a new chatBridgeToolCall instance from a string or object.
      */
     static createFrom($$source: any = {}): chatBridgeToolCall {
-        const $$createField1_0 = $$createType33;
+        const $$createField1_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("arguments" in $$parsedSource) {
             $$parsedSource["arguments"] = $$createField1_0($$parsedSource["arguments"]);
@@ -3503,55 +4120,62 @@ const $$createType10 = ContainerRuntime.createFrom;
 const $$createType11 = $Create.Array($$createType10);
 const $$createType12 = ContainerEntry.createFrom;
 const $$createType13 = $Create.Array($$createType12);
-const $$createType14 = DevopsPlaybookEntry.createFrom;
+const $$createType14 = $Create.Map($Create.Any, $Create.Any);
 const $$createType15 = $Create.Array($$createType14);
-const $$createType16 = DevopsScanFinding.createFrom;
+const $$createType16 = DataTable.createFrom;
 const $$createType17 = $Create.Array($$createType16);
-const $$createType18 = DirEntry.createFrom;
+const $$createType18 = DevopsPlaybookEntry.createFrom;
 const $$createType19 = $Create.Array($$createType18);
-const $$createType20 = GitEntry.createFrom;
+const $$createType20 = DevopsScanFinding.createFrom;
 const $$createType21 = $Create.Array($$createType20);
-const $$createType22 = LintIssue.createFrom;
+const $$createType22 = DirEntry.createFrom;
 const $$createType23 = $Create.Array($$createType22);
-const $$createType24 = $Create.Map($Create.Any, $Create.Any);
-const $$createType25 = MarketplaceInstalledPlugin.createFrom;
-const $$createType26 = $Create.Array($$createType25);
-const $$createType27 = MarketplacePackage.createFrom;
-const $$createType28 = $Create.Array($$createType27);
-const $$createType29 = MemoryEntry.createFrom;
-const $$createType30 = $Create.Array($$createType29);
-const $$createType31 = MemorySearchHit.createFrom;
-const $$createType32 = $Create.Array($$createType31);
-const $$createType33 = $Create.Map($Create.Any, $Create.Any);
-const $$createType34 = P2PPeer.createFrom;
-const $$createType35 = $Create.Array($$createType34);
-const $$createType36 = PHPProjectSummary.createFrom;
-const $$createType37 = $Create.Array($$createType36);
-const $$createType38 = PHPProjectDetail.createFrom;
-const $$createType39 = PHPScriptItem.createFrom;
+const $$createType24 = GitEntry.createFrom;
+const $$createType25 = $Create.Array($$createType24);
+const $$createType26 = LocaleEntry.createFrom;
+const $$createType27 = $Create.Array($$createType26);
+const $$createType28 = I18nPackage.createFrom;
+const $$createType29 = $Create.Array($$createType28);
+const $$createType30 = LintIssue.createFrom;
+const $$createType31 = $Create.Array($$createType30);
+const $$createType32 = $Create.Map($Create.Any, $Create.Any);
+const $$createType33 = MarketplaceInstalledPlugin.createFrom;
+const $$createType34 = $Create.Array($$createType33);
+const $$createType35 = MarketplacePackage.createFrom;
+const $$createType36 = $Create.Array($$createType35);
+const $$createType37 = MemoryEntry.createFrom;
+const $$createType38 = $Create.Array($$createType37);
+const $$createType39 = MemorySearchHit.createFrom;
 const $$createType40 = $Create.Array($$createType39);
-const $$createType41 = ProcessListEntry.createFrom;
+const $$createType41 = P2PPeer.createFrom;
 const $$createType42 = $Create.Array($$createType41);
-const $$createType43 = RepoEntry.createFrom;
+const $$createType43 = PHPProjectSummary.createFrom;
 const $$createType44 = $Create.Array($$createType43);
-const $$createType45 = SearchMatch.createFrom;
-const $$createType46 = $Create.Array($$createType45);
-const $$createType47 = ActiveSession.createFrom;
-const $$createType48 = $Create.Array($$createType47);
-const $$createType49 = SessionSummary.createFrom;
-const $$createType50 = $Create.Array($$createType49);
-const $$createType51 = SessionProject.createFrom;
-const $$createType52 = $Create.Array($$createType51);
-const $$createType53 = SessionSearchHit.createFrom;
-const $$createType54 = $Create.Array($$createType53);
-const $$createType55 = SessionTailLiveEvent.createFrom;
-const $$createType56 = $Create.Array($$createType55);
-const $$createType57 = StreamChannel.createFrom;
-const $$createType58 = $Create.Array($$createType57);
-const $$createType59 = StreamFrame.createFrom;
-const $$createType60 = $Create.Array($$createType59);
-const $$createType61 = StreamConfig.createFrom;
-const $$createType62 = UpdateTool.createFrom;
+const $$createType45 = PHPProjectDetail.createFrom;
+const $$createType46 = PHPScriptItem.createFrom;
+const $$createType47 = $Create.Array($$createType46);
+const $$createType48 = ProcessListEntry.createFrom;
+const $$createType49 = $Create.Array($$createType48);
+const $$createType50 = RepoEntry.createFrom;
+const $$createType51 = $Create.Array($$createType50);
+const $$createType52 = SearchMatch.createFrom;
+const $$createType53 = $Create.Array($$createType52);
+const $$createType54 = ActiveSession.createFrom;
+const $$createType55 = $Create.Array($$createType54);
+const $$createType56 = SessionSummary.createFrom;
+const $$createType57 = $Create.Array($$createType56);
+const $$createType58 = SessionProject.createFrom;
+const $$createType59 = $Create.Array($$createType58);
+const $$createType60 = SessionSearchHit.createFrom;
+const $$createType61 = $Create.Array($$createType60);
+const $$createType62 = SessionTailLiveEvent.createFrom;
 const $$createType63 = $Create.Array($$createType62);
-const $$createType64 = WailsLintCatalogEntry.createFrom;
+const $$createType64 = StreamChannel.createFrom;
 const $$createType65 = $Create.Array($$createType64);
+const $$createType66 = StreamFrame.createFrom;
+const $$createType67 = $Create.Array($$createType66);
+const $$createType68 = StreamConfig.createFrom;
+const $$createType69 = UpdateTool.createFrom;
+const $$createType70 = $Create.Array($$createType69);
+const $$createType71 = WailsLintCatalogEntry.createFrom;
+const $$createType72 = $Create.Array($$createType71);

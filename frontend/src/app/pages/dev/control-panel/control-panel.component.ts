@@ -8,8 +8,9 @@ import { ActivityItem, Brief, Site, ViStatus, emptyViStatus, loadViData } from '
 /**
  * Control Panel — the dashboard. Vi briefs + sites + activity.
  *
- * TODO(snider/wails): swap loadViData() (which reads JSON fixtures) for
- * a viBridge wails service that streams snapshot updates.
+ * Already on viBridge wails binding via lib/vi.types.loadViData() —
+ * vibridge.{Status,Briefs,Sites,Activity}() in parallel. The streaming
+ * snapshot upgrade (push instead of pull) is a separate enhancement.
  */
 @Component({
   selector: 'dev-control-panel',

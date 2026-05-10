@@ -154,6 +154,9 @@ func (shell *GUIShell) Run(
 	app.RegisterService(application.NewService(&phpBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&updatesBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&containersBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&dataBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&localesBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&tenantBridge{core: coreInstance}))
 
 	// Open the IDE window through window.Service so the manager tracks it
 	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)

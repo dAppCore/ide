@@ -2,8 +2,8 @@
 
 import { Component, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
+import * as LocalesBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/localesbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface LocaleEntry {
@@ -50,8 +50,8 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
  * imperative `loadX().then(loadX(true,true))` chain with Angular's
  * canonical reactive primitives.
  *
- * TODO(snider/wails): swap callBridge('i18n_*') for an i18nBridge
- * wails service.
+ * Migrated 2026-05-10 to typed LocalesBridge wails binding for the
+ * i18n_scan / i18n_view methods.
  */
 @Component({
   selector: 'dev-locales',
@@ -171,7 +171,24 @@ const EMPTY_SCAN: I18nScanResponse = { packages: [], unique_locales: [] };
 })
 export class LocalesComponent {
   readonly scan = cachedBridgeResource<I18nScanResponse>({
-    tool: 'i18n_scan',
+    loader: () =>
+      LocalesBridge.Scan().then((v) => ({
+        packages: (v.packages || []).map((p) => ({
+          code: p.code,
+          path: p.path,
+          has_english: p.has_english,
+          baseline_keys: p.baseline_keys,
+          locales: (p.locales || []).map((l) => ({
+            name: l.name,
+            path: l.path,
+            keys: l.keys,
+            missing_vs_en: l.missing_vs_en,
+          })),
+        })),
+        unique_locales: v.unique_locales || [],
+        cache_hit: v.cache_hit,
+        cache_age_s: v.cache_age_s,
+      })),
     emptyValue: EMPTY_SCAN,
     isEmpty: (v) => v.packages.length === 0,
   });
@@ -185,8 +202,8 @@ export class LocalesComponent {
     this.selectedCell.set({ pkg, locale, path });
     this.viewContent.set('Loading…');
     try {
-      const v = await callBridge<I18nViewResponse>('i18n_view', { path });
-      this.viewContent.set(v?.content);
+      const v = await LocalesBridge.View({ path });
+      this.viewContent.set(v.content);
     } catch (e) {
       this.viewContent.set('Error: ' + (e instanceof Error ? e.message : String(e)));
     }
