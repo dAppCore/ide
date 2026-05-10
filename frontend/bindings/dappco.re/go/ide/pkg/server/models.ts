@@ -4079,6 +4079,424 @@ export class WailsLintRunInput {
     }
 }
 
+export class WindowAlwaysOnTopInput {
+    "window"?: string;
+    "on": boolean;
+
+    /** Creates a new WindowAlwaysOnTopInput instance. */
+    constructor($$source: Partial<WindowAlwaysOnTopInput> = {}) {
+        if (!("on" in $$source)) {
+            this["on"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowAlwaysOnTopInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowAlwaysOnTopInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowAlwaysOnTopInput($$parsedSource as Partial<WindowAlwaysOnTopInput>);
+    }
+}
+
+export class WindowEntry {
+    "name": string;
+    "title"?: string;
+    "x"?: number;
+    "y"?: number;
+    "width"?: number;
+    "height"?: number;
+    "focused"?: boolean;
+    "maximised"?: boolean;
+
+    /** Creates a new WindowEntry instance. */
+    constructor($$source: Partial<WindowEntry> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowEntry instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowEntry {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowEntry($$parsedSource as Partial<WindowEntry>);
+    }
+}
+
+export class WindowFocusedOutput {
+    "ok": boolean;
+    "window"?: string;
+    "focused": boolean;
+    "error"?: string;
+
+    /** Creates a new WindowFocusedOutput instance. */
+    constructor($$source: Partial<WindowFocusedOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+        if (!("focused" in $$source)) {
+            this["focused"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowFocusedOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowFocusedOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowFocusedOutput($$parsedSource as Partial<WindowFocusedOutput>);
+    }
+}
+
+export class WindowFullscreenInput {
+    "window"?: string;
+    "fullscreen": boolean;
+
+    /** Creates a new WindowFullscreenInput instance. */
+    constructor($$source: Partial<WindowFullscreenInput> = {}) {
+        if (!("fullscreen" in $$source)) {
+            this["fullscreen"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowFullscreenInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowFullscreenInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowFullscreenInput($$parsedSource as Partial<WindowFullscreenInput>);
+    }
+}
+
+export class WindowInfoOutput {
+    "ok": boolean;
+    "name"?: string;
+    "title"?: string;
+    "x"?: number;
+    "y"?: number;
+    "width"?: number;
+    "height"?: number;
+    "opacity"?: number;
+    "maximised"?: boolean;
+    "focused"?: boolean;
+    "error"?: string;
+
+    /** Creates a new WindowInfoOutput instance. */
+    constructor($$source: Partial<WindowInfoOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowInfoOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowInfoOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowInfoOutput($$parsedSource as Partial<WindowInfoOutput>);
+    }
+}
+
+export class WindowListOutput {
+    "ok": boolean;
+    "windows"?: WindowEntry[];
+    "count"?: number;
+    "error"?: string;
+
+    /** Creates a new WindowListOutput instance. */
+    constructor($$source: Partial<WindowListOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowListOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowListOutput {
+        const $$createField1_0 = $$createType74;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("windows" in $$parsedSource) {
+            $$parsedSource["windows"] = $$createField1_0($$parsedSource["windows"]);
+        }
+        return new WindowListOutput($$parsedSource as Partial<WindowListOutput>);
+    }
+}
+
+/**
+ * WindowMutationOutput covers all the {ok, window, …reflective fields}
+ * shapes of the window controllers. Each field is independently optional;
+ * the caller usually only cares about OK + Error + the field they set.
+ */
+export class WindowMutationOutput {
+    "ok": boolean;
+    "window"?: string;
+    "x"?: number;
+    "y"?: number;
+    "width"?: number;
+    "height"?: number;
+    "title"?: string;
+    "visible"?: boolean;
+    "always_on_top"?: boolean;
+    "fullscreen"?: boolean;
+    "closed"?: string;
+    "restored"?: string;
+    "focused"?: string;
+    "note"?: string;
+    "error"?: string;
+
+    /** Creates a new WindowMutationOutput instance. */
+    constructor($$source: Partial<WindowMutationOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowMutationOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowMutationOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowMutationOutput($$parsedSource as Partial<WindowMutationOutput>);
+    }
+}
+
+export class WindowNameInput {
+    "window"?: string;
+
+    /** Creates a new WindowNameInput instance. */
+    constructor($$source: Partial<WindowNameInput> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowNameInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowNameInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowNameInput($$parsedSource as Partial<WindowNameInput>);
+    }
+}
+
+export class WindowOpenInput {
+    "name": string;
+    "title"?: string;
+    "url"?: string;
+    "html"?: string;
+    "width"?: number;
+    "height"?: number;
+    "x"?: number;
+    "y"?: number;
+
+    /** Creates a new WindowOpenInput instance. */
+    constructor($$source: Partial<WindowOpenInput> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowOpenInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowOpenInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowOpenInput($$parsedSource as Partial<WindowOpenInput>);
+    }
+}
+
+export class WindowOpenOutput {
+    "ok": boolean;
+    "window"?: string;
+    "url"?: string;
+    "width"?: number;
+    "height"?: number;
+    "error"?: string;
+
+    /** Creates a new WindowOpenOutput instance. */
+    constructor($$source: Partial<WindowOpenOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowOpenOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowOpenOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowOpenOutput($$parsedSource as Partial<WindowOpenOutput>);
+    }
+}
+
+export class WindowSetBoundsInput {
+    "window"?: string;
+    "x": number;
+    "y": number;
+    "width"?: number;
+    "height"?: number;
+
+    /** Creates a new WindowSetBoundsInput instance. */
+    constructor($$source: Partial<WindowSetBoundsInput> = {}) {
+        if (!("x" in $$source)) {
+            this["x"] = 0;
+        }
+        if (!("y" in $$source)) {
+            this["y"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowSetBoundsInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowSetBoundsInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowSetBoundsInput($$parsedSource as Partial<WindowSetBoundsInput>);
+    }
+}
+
+export class WindowSetPositionInput {
+    "window"?: string;
+    "x": number;
+    "y": number;
+
+    /** Creates a new WindowSetPositionInput instance. */
+    constructor($$source: Partial<WindowSetPositionInput> = {}) {
+        if (!("x" in $$source)) {
+            this["x"] = 0;
+        }
+        if (!("y" in $$source)) {
+            this["y"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowSetPositionInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowSetPositionInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowSetPositionInput($$parsedSource as Partial<WindowSetPositionInput>);
+    }
+}
+
+export class WindowSetSizeInput {
+    "window"?: string;
+    "width": number;
+    "height": number;
+
+    /** Creates a new WindowSetSizeInput instance. */
+    constructor($$source: Partial<WindowSetSizeInput> = {}) {
+        if (!("width" in $$source)) {
+            this["width"] = 0;
+        }
+        if (!("height" in $$source)) {
+            this["height"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowSetSizeInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowSetSizeInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowSetSizeInput($$parsedSource as Partial<WindowSetSizeInput>);
+    }
+}
+
+export class WindowSetTitleInput {
+    "window"?: string;
+    "title": string;
+
+    /** Creates a new WindowSetTitleInput instance. */
+    constructor($$source: Partial<WindowSetTitleInput> = {}) {
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowSetTitleInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowSetTitleInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowSetTitleInput($$parsedSource as Partial<WindowSetTitleInput>);
+    }
+}
+
+export class WindowTitleOutput {
+    "ok": boolean;
+    "name"?: string;
+    "title"?: string;
+    "error"?: string;
+
+    /** Creates a new WindowTitleOutput instance. */
+    constructor($$source: Partial<WindowTitleOutput> = {}) {
+        if (!("ok" in $$source)) {
+            this["ok"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowTitleOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowTitleOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowTitleOutput($$parsedSource as Partial<WindowTitleOutput>);
+    }
+}
+
+export class WindowVisibilityInput {
+    "window"?: string;
+    "visible": boolean;
+
+    /** Creates a new WindowVisibilityInput instance. */
+    constructor($$source: Partial<WindowVisibilityInput> = {}) {
+        if (!("visible" in $$source)) {
+            this["visible"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WindowVisibilityInput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WindowVisibilityInput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WindowVisibilityInput($$parsedSource as Partial<WindowVisibilityInput>);
+    }
+}
+
 export class chatBridgeToolCall {
     "name": string;
     "arguments"?: { [_ in string]?: any };
@@ -4179,3 +4597,5 @@ const $$createType69 = UpdateTool.createFrom;
 const $$createType70 = $Create.Array($$createType69);
 const $$createType71 = WailsLintCatalogEntry.createFrom;
 const $$createType72 = $Create.Array($$createType71);
+const $$createType73 = WindowEntry.createFrom;
+const $$createType74 = $Create.Array($$createType73);

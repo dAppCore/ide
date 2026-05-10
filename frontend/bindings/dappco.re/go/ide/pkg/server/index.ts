@@ -152,5 +152,21 @@ export {
     UpdatesRefreshOutput,
     WailsLintCatalogEntry,
     WailsLintCatalogOutput,
-    WailsLintRunInput
+    WailsLintRunInput,
+    WindowAlwaysOnTopInput,
+    WindowEntry,
+    WindowFocusedOutput,
+    WindowFullscreenInput,
+    WindowInfoOutput,
+    WindowListOutput,
+    WindowMutationOutput,
+    WindowNameInput,
+    WindowOpenInput,
+    WindowOpenOutput,
+    WindowSetBoundsInput,
+    WindowSetPositionInput,
+    WindowSetSizeInput,
+    WindowSetTitleInput,
+    WindowTitleOutput,
+    WindowVisibilityInput
 } from "./models.js";

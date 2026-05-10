@@ -4,9 +4,9 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component, computed, inject, resource, signal }
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { callBridge } from '../../../lib/bridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import * as MarketplaceBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/marketplacebridge';
+import * as WindowBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/windowbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 
@@ -57,9 +57,9 @@ function pluginNativeTag(code: string): string | null {
  *   - Window: detached window via window_open (separate frame).
  *
  * Migrated 2026-05-10 to typed MarketplaceBridge wails binding for the
- * pkg_search / pkg_installed / pkg_install / pkg_remove methods.
- * window_open still goes via callBridge — it's part of the broader
- * window_* surface (35+ tools) that needs its own dedicated bridge sweep.
+ * pkg_search / pkg_installed / pkg_install / pkg_remove methods, then
+ * window_open via WindowBridge.Open in the same session — last
+ * callBridge usage in this panel.
  */
 @Component({
   selector: 'dev-marketplace',
@@ -454,7 +454,7 @@ export class MarketplaceComponent {
     const installed = this.marketInstalled().find((p) => p.code === code);
     const title = installed?.name || code;
     try {
-      await callBridge('window_open', {
+      await WindowBridge.Open({
         name: 'plugin-' + code,
         title,
         url,

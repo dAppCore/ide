@@ -157,6 +157,7 @@ func (shell *GUIShell) Run(
 	app.RegisterService(application.NewService(&dataBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&localesBridge{core: coreInstance}))
 	app.RegisterService(application.NewService(&tenantBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&windowBridge{core: coreInstance}))
 
 	// Open the IDE window through window.Service so the manager tracks it
 	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)
