@@ -1,10 +1,11 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import * as StreamBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/streambridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
+import { StreamEventsService } from '../../../services/stream-events.service';
 
 interface StreamStatus {
   running: boolean;
@@ -39,13 +40,11 @@ interface ParsedFrame {
  * with channel browser, frame list, and a publish form.
  *
  * Migrated 2026-05-09 to typed StreamBridge wails binding.
- * was: TODO(snider/wails): swap callBridge('stream_*') for a streamBridge
- * wails service. The Hub already exposes a clean interface in core/
- * stream — wrapping it as wails services is straightforward.
  *
- * TODO: openStreamFramePath currently no-ops. The IdeComponent legacy
- * version routes through openSearchResult to open the file in Monaco.
- * Move to a shared FileEditorService when Search extracts.
+ * Push-side updates 2026-05-10: subscribes to StreamEventsService
+ * (SSE on /internal/events) so frames on the actions channel land
+ * in the recent-frames list without polling. The poll-side reload
+ * still works for any channel + on demand.
  */
 @Component({
   selector: 'dev-stream',
@@ -102,6 +101,12 @@ interface ParsedFrame {
         <main class="stream-frames">
           <div class="stream-list-title">
             {{ 'stream.heading.frames' | translate }} {{ streamSelectedChannel() ? '· ' + streamSelectedChannel() : '· ' + ('stream.label.broadcast' | translate) }}
+            <span class="stream-live-pill" [class.live]="streamEvents.connected()" [title]="streamEvents.connected() ? ('stream.tooltip.live' | translate) : ('stream.tooltip.reconnecting' | translate)">
+              ● {{ streamEvents.connected() ? ('stream.label.live' | translate) : ('stream.label.reconnecting' | translate) }}
+              @if (streamEvents.eventCount(); as n) {
+                · {{ n }}
+              }
+            </span>
             <button class="btn btn-ghost btn-sm stream-refresh" (click)="loadStream()" [disabled]="streamLoading()">↻</button>
           </div>
           @if (streamFrames().length === 0) {
@@ -164,6 +169,8 @@ interface ParsedFrame {
     .stream-channels { border-right: 1px solid var(--line-1); overflow-y: auto; padding: 10px 0; }
     .stream-list-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); padding: 0 14px 8px; display: flex; justify-content: space-between; align-items: center; }
     .stream-refresh { padding: 2px 6px; font-size: 11px; }
+    .stream-live-pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--ink-1); color: var(--fg-3); margin-left: auto; margin-right: 6px; opacity: 0.7; }
+    .stream-live-pill.live { background: color-mix(in oklch, #34d399 18%, var(--ink-1)); color: #34d399; opacity: 1; }
     .stream-channel-row { width: 100%; padding: 8px 14px; background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; color: var(--fg-2); font: inherit; display: flex; justify-content: space-between; align-items: center; }
     .stream-channel-row:hover { background: var(--ink-2); }
     .stream-channel-row.active { background: var(--ink-2); border-left-color: var(--brand-200); color: var(--fg-1); }
@@ -193,6 +200,7 @@ interface ParsedFrame {
 })
 export class StreamComponent implements OnInit {
   private readonly fileEditor = inject(FileEditorStore);
+  readonly streamEvents = inject(StreamEventsService);
   private readonly router = inject(Router);
   private readonly t = inject(TranslateService);
 
@@ -207,7 +215,39 @@ export class StreamComponent implements OnInit {
   readonly streamLoading = signal(false);
   readonly streamFrameRawMode = signal<Set<number>>(new Set());
 
+  /** Last event count we already absorbed into streamFrames — guards
+   *  against re-firing the effect when the selected channel changes
+   *  but no new SSE frame has arrived since.
+   */
+  private absorbedEventCount = 0;
+
+  constructor() {
+    // Push-side: when the SSE service receives a new envelope on the
+    // currently-selected channel, prepend it to streamFrames so the
+    // panel stays live without polling.
+    effect(() => {
+      const env = this.streamEvents.latest();
+      const count = this.streamEvents.eventCount();
+      if (!env || count === this.absorbedEventCount) return;
+      this.absorbedEventCount = count;
+      const selected = this.streamSelectedChannel();
+      // Broadcasts (selected===null) currently aren't part of the SSE
+      // stream — only the "actions" channel is auto-published. Match
+      // by exact channel for now; ?topics= filtering lands later.
+      if (selected !== env.channel) return;
+      const text = JSON.stringify(env);
+      const synth: StreamFrame = {
+        channel: env.channel,
+        timestamp: env.ts,
+        frame_text: text,
+        frame_bytes: text.length,
+      };
+      this.streamFrames.update((list) => [synth, ...list].slice(0, 200));
+    });
+  }
+
   ngOnInit(): void {
+    this.streamEvents.connect();
     void this.loadStream();
   }
 

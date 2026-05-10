@@ -599,5 +599,11 @@
   "p2p.empty.no-bridge.body": "Couldn't reach the gui p2p service. Make sure core-ide is running with the gui Bootstrap wired.",
   "p2p.placeholder.topic": "topic (e.g. test.broadcast)",
   "p2p.placeholder.route": "route (optional)",
-  "p2p.placeholder.payload": "payload JSON (optional, must be object)"
+  "p2p.placeholder.payload": "payload JSON (optional, must be object)",
+  "stream": {
+    "label.live": "live",
+    "label.reconnecting": "reconnecting…",
+    "tooltip.live": "SSE connection to /internal/events is open — frames push as they arrive",
+    "tooltip.reconnecting": "SSE connection lost — auto-reconnecting"
+  }
 }
