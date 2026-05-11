@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	core "dappco.re/go"
+	"dappco.re/go/ide/pkg/tasks"
 	"dappco.re/go/orm"
 )
 
@@ -137,10 +138,12 @@ func asError(r core.Result) error {
 }
 
 // ideOrmSchemas lists the table schemas the IDE's local Memium hosts.
-// Intentionally tiny for v1 — Note is the demo. Real consumers add their
-// own schemas via orm.RegisterSchema + their own Medium.
+// Demo `note` table stays for the /data panel walkthrough; tasks adds
+// the issues + notes tables Cladius uses for local-first task tracking
+// (no GitHub anti-bot exposure). Real consumers add their own schemas
+// via orm.RegisterSchema + their own Medium.
 func ideOrmSchemas() []orm.Schema {
-	return []orm.Schema{
+	schemas := []orm.Schema{
 		orm.Define(func(b *orm.Builder) {
 			b.Name("note")
 			b.PK("id")
@@ -150,4 +153,5 @@ func ideOrmSchemas() []orm.Schema {
 			b.String("created_at")
 		}),
 	}
+	return append(schemas, tasks.Schemas()...)
 }
