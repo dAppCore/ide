@@ -710,7 +710,22 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "cache_debug":
 		return b.toolCacheDebug(ctx, params)
 
-	// Mantis ticket browser — read-only over tasks.lthn.sh REST API.
+	// Local tasks — pkg/tasks DuckDB-backed task store. Primary panel
+	// source: Cladius-creatable, no GitHub anti-bot exposure.
+	case "tasks_list":
+		return b.toolTasksList(ctx, params)
+	case "tasks_view":
+		return b.toolTasksView(ctx, params)
+	case "tasks_create":
+		return b.toolTasksCreate(ctx, params)
+	case "tasks_add_note":
+		return b.toolTasksAddNote(ctx, params)
+	case "tasks_close":
+		return b.toolTasksClose(ctx, params)
+
+	// Mantis remote connector — read-only over tasks.lthn.sh REST API.
+	// Use tasks_* for local first-class storage; mantis_* is for team
+	// enrichment / sync from the canonical remote tracker.
 	case "mantis_list":
 		return b.toolMantisList(ctx, params)
 	case "mantis_view":

@@ -8,8 +8,11 @@ import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 
+// MantisIssue is the row shape rendered by the panel. id is now string |
+// number — local tasks use 12-char strings; remote mantis tickets use
+// integers. Both render fine in the template.
 interface MantisIssue {
-  id: number;
+  id: number | string;
   summary: string;
   status: string;
   project: string;
@@ -225,8 +228,11 @@ export class MantisComponent {
   private readonly fileEditor = inject(FileEditorStore);
   private readonly router = inject(Router);
 
+  // Local tasks panel — primary state from pkg/tasks (DuckDB via go-orm).
+  // Mantis stays available as a separate "remote connector" via mantis_*
+  // tools; this panel renders the local-first store.
   readonly scan = cachedBridgeResource<MantisListResponse>({
-    tool: 'mantis_list',
+    tool: 'tasks_list',
     emptyValue: EMPTY_MANTIS,
     isEmpty: (v) => v.issues.length === 0,
   });
@@ -271,10 +277,10 @@ export class MantisComponent {
       .sort((a, b) => b.count - a.count);
   });
 
-  async openMantisIssue(id: number): Promise<void> {
+  async openMantisIssue(id: number | string): Promise<void> {
     this.mantisInspectLoading.set(true);
     try {
-      const v = await callBridge<MantisIssueDetail>('mantis_view', { id });
+      const v = await callBridge<MantisIssueDetail>('tasks_view', { id });
       this.mantisSelected.set(v);
     } finally {
       this.mantisInspectLoading.set(false);
