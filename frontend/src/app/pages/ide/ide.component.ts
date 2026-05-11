@@ -552,7 +552,7 @@ export class IdeComponent implements OnInit, OnDestroy {
       if (inText) return;
       if (e.key < '1' || e.key > '9') return;
       const idx = parseInt(e.key, 10) - 1;
-      const ids = ['explorer', 'search', 'git', 'updates', 'sessions', 'stream', 'memory', 'mantis', 'lint'];
+      const ids = ['explorer', 'search', 'git', 'updates', 'sessions', 'stream', 'memory', 'tasks', 'lint'];
       const route = ids[idx];
       if (!route) return;
       e.preventDefault();
@@ -578,7 +578,7 @@ export class IdeComponent implements OnInit, OnDestroy {
       { route: 'search', label: 'Search' },
       { route: 'git', label: 'Git' },
       { route: 'forge', label: 'Forge' },
-      { route: 'mantis', label: 'Mantis' },
+      { route: 'tasks', label: 'Tasks' },
       { route: 'sessions', label: 'Sessions' },
       { route: 'lint', label: 'Lint' },
       { route: 'devops', label: 'Devops' },

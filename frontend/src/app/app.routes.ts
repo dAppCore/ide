@@ -64,7 +64,7 @@ export const routes: Routes = [
           { path: 'containers',    loadComponent: () => import('./pages/dev/containers/containers.component').then(m => m.ContainersComponent) },
           { path: 'updates',       loadComponent: () => import('./pages/dev/updates/updates.component').then(m => m.UpdatesComponent) },
           { path: 'memory',        loadComponent: () => import('./pages/dev/memory/memory.component').then(m => m.MemoryComponent) },
-          { path: 'mantis',        loadComponent: () => import('./pages/dev/mantis/mantis.component').then(m => m.MantisComponent) },
+          { path: 'tasks',         loadComponent: () => import('./pages/dev/mantis/mantis.component').then(m => m.MantisComponent) },
           { path: 'ts',            loadComponent: () => import('./pages/dev/ts/ts.component').then(m => m.TsComponent) },
           { path: 'php',           loadComponent: () => import('./pages/dev/php/php.component').then(m => m.PhpComponent) },
           { path: 'devops',        loadComponent: () => import('./pages/dev/devops/devops.component').then(m => m.DevopsComponent) },

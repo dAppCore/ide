@@ -203,8 +203,11 @@ func (shell *GUIShell) Run(
 		trayActionQuit = "ide.quit"
 	)
 	winName := shell.WindowName
+	// Empty Label = icon-only systray (macOS shows EITHER icon OR text,
+	// not both). The menu items below still say "core-ide" because those
+	// are the dropdown rows, not the menu-bar label.
 	labelResult := coreInstance.Action("systray.set_label").Run(ctx, core.NewOptions(
-		core.Option{Key: "task", Value: systray.TaskSetTrayLabel{Label: "core-ide"}},
+		core.Option{Key: "task", Value: systray.TaskSetTrayLabel{Label: ""}},
 	))
 	if !labelResult.OK {
 		core.Print(core.Stderr(), "ide.server.GUI: systray.set_label: %v\n", labelResult.Value)
