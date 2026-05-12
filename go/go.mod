@@ -16,7 +16,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/modelcontextprotocol/go-sdk v1.5.0
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.83
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.90
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -34,6 +34,7 @@ require (
 	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/ollama/ollama v0.18.1 // indirect
 	github.com/qdrant/go-client v1.17.1 // indirect
+	github.com/wailsapp/wails/webview2 v1.0.24 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
