@@ -47,7 +47,7 @@ require (
 )
 
 require (
-	dappco.re/go v0.9.0
+	dappco.re/go v0.10.3
 	dappco.re/go/devops v0.0.0
 	dappco.re/go/forge v0.0.0
 	dappco.re/go/log v0.9.0 // indirect
