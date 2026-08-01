@@ -15,9 +15,9 @@ func TestHistory_Load_Good(t *testing.T) {
 	if _targetName == "" {
 		t.Fatal("missing target symbol")
 	}
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	defer storeInstance.Close()
 
@@ -46,17 +46,17 @@ func TestHistory_Load_Bad(t *testing.T) {
 	if _targetName == "" {
 		t.Fatal("missing target symbol")
 	}
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	defer storeInstance.Close()
 
-	if err := storeInstance.Set(historyEventsGroup("ws-1"), historyEventKey(1), "{"); err != nil {
-		t.Fatalf("seed malformed event: %v", err)
+	if seedResult := storeInstance.Set(historyEventsGroup("ws-1"), historyEventKey(1), "{"); !seedResult.OK {
+		t.Fatalf("seed malformed event: %v", seedResult)
 	}
-	if err := storeInstance.Set(historyWorkspaceGroup, "ws-1", "{"); err != nil {
-		t.Fatalf("seed malformed workspace: %v", err)
+	if seedResult := storeInstance.Set(historyWorkspaceGroup, "ws-1", "{"); !seedResult.OK {
+		t.Fatalf("seed malformed workspace: %v", seedResult)
 	}
 
 	subsystem := NewWithHistory(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "", storeInstance)
@@ -69,9 +69,9 @@ func TestHistory_Load_Bad(t *testing.T) {
 }
 
 func TestHistory_Load_UglyDeletesPrunedWorkspace(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	defer storeInstance.Close()
 
@@ -96,9 +96,9 @@ func TestHistory_Load_UglyDeletesPrunedWorkspace(t *testing.T) {
 }
 
 func TestHistory_Save_UglyDeletesOverflowEvents(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	defer storeInstance.Close()
 
@@ -108,7 +108,7 @@ func TestHistory_Save_UglyDeletesOverflowEvents(t *testing.T) {
 		subsystem.appendEvent("ws-1", Event{Type: "progress", Message: "event-" + strconv.Itoa(i), CreatedAt: base.Add(time.Duration(i) * time.Second)})
 	}
 
-	if _, err := storeInstance.Get(historyEventsGroup("ws-1"), historyEventKey(1)); err == nil {
+	if _, getResult := storeInstance.Get(historyEventsGroup("ws-1"), historyEventKey(1)); getResult.OK {
 		t.Fatal("expected overflow event to be deleted from persistent history")
 	}
 	restored := NewWithHistory(config.IDEConfig{}.WithDefaults().Ide.Subagent, nil, "", storeInstance)

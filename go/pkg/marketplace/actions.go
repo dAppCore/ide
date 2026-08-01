@@ -31,4 +31,20 @@ func (s *Subsystem) registerActions(c *core.Core) {
 		out, err := s.install(ctx, input)
 		return core.ResultOf(out, err)
 	})
+	c.Action("ide.pkg.installed", func(ctx context.Context, _ core.Options) core.Result {
+		out, err := s.installed(ctx)
+		return core.ResultOf(out, err)
+	})
+	c.Action("ide.pkg.remove", func(ctx context.Context, opts core.Options) core.Result {
+		input, err := decode[RemoveInput](opts)
+		if err != nil {
+			return core.Fail(err)
+		}
+		out, err := s.remove(ctx, input)
+		return core.ResultOf(out, err)
+	})
+	c.Action("ide.pkg.menus", func(ctx context.Context, _ core.Options) core.Result {
+		out, err := s.menus(ctx)
+		return core.ResultOf(out, err)
+	})
 }

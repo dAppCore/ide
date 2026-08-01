@@ -2,11 +2,26 @@
 
 # Agent Notes
 
-This repository builds the Core IDE runtime. It is a Go module that exposes the
-same capabilities through Core actions, MCP tools, and the optional GUI shell.
-The active packages live under `pkg/`: workspace inspection, OpenBrain memory,
-subagent relay, navigation, marketplace installation, chat integration, and the
-server transports that compose them.
+This repository builds **Lethean Desktop's IDE component** — the binary that
+ships as Lethean Desktop, the umbrella native product across Darwin / Linux /
+Windows / iOS / iPadOS. The plan that defines what Lethean Desktop is, what
+it composes, how the Vi Control Panel shell wraps the IDE surface, and where
+the design system flows from lives in the canonical plans tree at
+`plans/project/lthn/desktop/RFC.md` (`forge.lthn.sh/core/plans`). **If a
+capability isn't defined in the plans tree, it isn't real.** This binary owns
+composition (which packages get pulled in, how they wire at boot, how Vi
+surfaces them), not the implementation of each capability — capabilities are
+spec'd in their canonical homes per the desktop RFC §4 service composition map.
+
+Default brand: Lethean (cool indigo, hue 270). Vi (Violet) is the shell spine,
+not a chat widget — calm presence, raven on the tower, surfacing what matters.
+See `plans/ops/hostuk/website/_design/lethean-3/uploads/mascot-raven.md` for
+character canon.
+
+It is a Go module that exposes the same capabilities through Core actions, MCP
+tools, and the optional GUI shell. The active packages live under `pkg/`:
+workspace inspection, OpenBrain memory, subagent relay, navigation, marketplace
+installation, chat integration, and the server transports that compose them.
 
 Use `dappco.re/go` primitives in new Go code. Direct imports of stdlib helper
 packages such as `fmt`, `errors`, `strings`, `path/filepath`, `os`, `log`,

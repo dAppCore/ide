@@ -20,6 +20,7 @@ import (
 	navigatepkg "dappco.re/go/ide/pkg/navigate"
 	storepkg "dappco.re/go/ide/pkg/store"
 	subagentpkg "dappco.re/go/ide/pkg/subagent"
+	vipkg "dappco.re/go/ide/pkg/vi"
 	workspacepkg "dappco.re/go/ide/pkg/workspace"
 )
 
@@ -30,6 +31,7 @@ type Server struct {
 	transport Transport
 	relay     RelayTransport
 	gui       *GUIShell
+	terminal  *TerminalServer
 	authToken string
 }
 
@@ -40,6 +42,7 @@ type runtimeParts struct {
 	transport Transport
 	relay     RelayTransport
 	gui       *GUIShell
+	terminal  *TerminalServer
 	authToken string
 }
 
@@ -58,6 +61,7 @@ func NewServer(
 		transport: parts.transport,
 		relay:     parts.relay,
 		gui:       parts.gui,
+		terminal:  parts.terminal,
 		authToken: parts.authToken,
 	}, nil
 }
@@ -98,6 +102,10 @@ func composeRuntimeMode(
 	var guiShell *GUIShell
 	if enableGUI {
 		guiShell = NewGUIShell()
+		guiShell.Frontend = options.Frontend
+		// options.WailsApp is opaque (any) — gui.go does the wails type
+		// assertion. We just hand the reference through.
+		guiShell.SetWailsApp(options.WailsApp)
 	}
 
 	services := []core.CoreOption{
@@ -130,7 +138,13 @@ func composeRuntimeMode(
 		core.WithName("marketplace", func(_ *core.Core) core.Result {
 			return core.Ok(marketplacepkg.New(cfg.Ide.Marketplace))
 		}),
+		core.WithService(vipkg.Register),
+		core.WithName("mcp_bridge", RegisterMCPBridge(MCPBridgeOptions{})),
 	}
+	// gui.Bootstrap(app) is built by the cmd entrypoint — it carries window /
+	// display / webview / etc. with the wails app reference attached. Library
+	// code here treats it as opaque CoreOptions.
+	services = append(services, options.GUIServices...)
 	services = append(services, options.extraCoreOptions...)
 	services = append(services, core.WithName("mcp", registerMCP(options, mode)))
 	if enableGUI {
@@ -181,6 +195,20 @@ func composeRuntimeMode(
 	navigateService.RegisterActions(c)
 	marketplaceService.RegisterActions(c)
 
+	// Register orm.Service + mount an in-memory Memium for the IDE's
+	// own data. v1 demo: a single `note` table backed by Memium so the
+	// /data panel has something concrete to query. Real consumers will
+	// mount a duckdb/postgres/borg medium under "default" instead.
+	if result := registerOrmService(c); !result.OK {
+		core.Print(core.Stderr(), "ide.server.Compose: orm registration warning: %v\n", result.Value)
+	}
+	// Register tenant.Service for the /tenant panel. Operates in offline
+	// mode (cache-only, no client) when no tenant.api_url + api_token are
+	// configured — UI surfaces the status honestly.
+	if result := registerTenantService(c); !result.OK {
+		core.Print(core.Stderr(), "ide.server.Compose: tenant registration warning: %v\n", result.Value)
+	}
+
 	mcpService, ok := core.ServiceFor[*coremcp.Service](c, "mcp")
 	if !ok {
 		return nil, core.E("ide.server.Compose", "mcp service not registered", nil)
@@ -190,20 +218,26 @@ func composeRuntimeMode(
 		guiExecutor.Attach(guiSubsystem, mcpService)
 	}
 	if enableGUI && config.BoolValue(cfg.Ide.Chat.Enabled, true) {
+		// gui.BootstrapWithConfig already registered a chat service via
+		// core.WithService(chat.Register(...)) at core construction time —
+		// but with no ToolExecutor wired (the executor depends on mcpService
+		// which only exists after this point). Calling chat.Register again
+		// here returns a fresh Service whose c.Action(...) closures capture
+		// the right executor; since Action.Set is overwrite semantics, the
+		// new handlers replace the Bootstrap's executor-less ones.
+		//
+		// We do NOT call c.RegisterService("chat", ...) — that would
+		// collide with the Bootstrap registration and crash. Nothing
+		// looks up the chat service by name (greppped 2026-05-10), so
+		// the stale Bootstrap service in the registry is harmless; the
+		// runtime only invokes the actions, and those now have the
+		// right executor.
 		result := chatpkg.NewRegister(cfg.Ide.Chat, chatExecutor(cfg.Ide.Chat, guiExecutor, mcpService))(c)
 		if !result.OK {
 			if err, ok := result.Value.(error); ok {
 				return nil, err
 			}
 			return nil, core.E("ide.server.Compose", "register chat", nil)
-		}
-		if result.Value != nil {
-			if registerErr := c.RegisterService("chat", result.Value); !registerErr.OK {
-				if err, ok := registerErr.Value.(error); ok {
-					return nil, err
-				}
-				return nil, core.E("ide.server.Compose", "register chat service", nil)
-			}
 		}
 	}
 
@@ -223,6 +257,11 @@ func composeRuntimeMode(
 	if enableGUI && (transport.Mode == "" || transport.Mode == "stdio") && !options.PreferConfiguredTransport {
 		transport = Transport{Mode: "gui"}
 	}
+	var term *TerminalServer
+	if enableGUI {
+		term = NewTerminalServer()
+	}
+
 	return &runtimeParts{
 		core:      c,
 		mcp:       mcpService,
@@ -230,6 +269,7 @@ func composeRuntimeMode(
 		transport: transport,
 		relay:     SelectRelayTransport(cfg, authToken, hub.Handler()),
 		gui:       guiShell,
+		terminal:  term,
 		authToken: authToken,
 	}, nil
 }
@@ -258,8 +298,22 @@ func (s *Server) Run(
 		return core.E("ide.server.Run", "service startup failed", nil)
 	}
 	defer func() {
-		_ = s.core.ServiceShutdown(context.Background())
+		if r := s.core.ServiceShutdown(context.Background()); !r.OK {
+			_ = r
+		}
 	}()
+
+	// Embedded SSH server — exposes the user's shell on 127.0.0.1:9876.
+	// Runs only in GUI mode; MCP/HTTP transports skip it. Lifetime is
+	// scoped to the server.Run call so it goes down on Ctrl+C / quit.
+	if s.terminal != nil {
+		if err := s.terminal.Start(); err != nil {
+			core.Print(core.Stderr(), "ide.server.Run: terminal SSH start failed: %v\n", err)
+		} else {
+			core.Print(core.Stderr(), "ide.server.Run: terminal SSH listening on %s\n", s.terminal.Addr)
+		}
+		defer func() { _ = s.terminal.Stop() }()
+	}
 
 	var relayServer *http.Server
 	if s.relay.Enabled {

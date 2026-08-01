@@ -1,3 +1,0 @@
-[submodule "internal/wails3"]
-	path = internal/wails3
-	url = https://github.com/wailsapp/wails.git

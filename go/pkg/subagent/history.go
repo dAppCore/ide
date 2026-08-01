@@ -65,8 +65,8 @@ func (h *historyStore) load() (map[string][]Event, map[string]int, map[string]ag
 	if h == nil || h.store == nil {
 		return events, eventSeq, agentic
 	}
-	workspaceEntries, err := h.store.GetAll(historyWorkspaceGroup)
-	if err == nil {
+	workspaceEntries, result := h.store.GetAll(historyWorkspaceGroup)
+	if result.OK {
 		for workspaceID, raw := range workspaceEntries {
 			workspaceID, err := normalizeWorkspaceID(workspaceID)
 			if err != nil || workspaceID == "" {
@@ -84,8 +84,8 @@ func (h *historyStore) load() (map[string][]Event, map[string]int, map[string]ag
 			}
 		}
 	}
-	groups, err := h.store.Groups(historyEventsGroupBase)
-	if err != nil {
+	groups, result := h.store.Groups(historyEventsGroupBase)
+	if !result.OK {
 		return events, eventSeq, agentic
 	}
 	for _, group := range groups {
@@ -94,8 +94,8 @@ func (h *historyStore) load() (map[string][]Event, map[string]int, map[string]ag
 		if err != nil || workspaceID == "" {
 			continue
 		}
-		entries, err := h.store.GetAll(group)
-		if err != nil {
+		entries, getResult := h.store.GetAll(group)
+		if !getResult.OK {
 			continue
 		}
 		workspaceEvents := make([]Event, 0, len(entries))
@@ -126,8 +126,8 @@ func (h *historyStore) saveEvent(workspaceID string, event Event) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" || event.Cursor <= 0 {
 		return
 	}
-	if err := h.store.Set(historyEventsGroup(workspaceID), historyEventKey(event.Cursor), core.JSONMarshalString(event)); err != nil {
-		core.Warn("ide.subagent.history save event", "workspace", workspaceID, "err", err)
+	if result := h.store.Set(historyEventsGroup(workspaceID), historyEventKey(event.Cursor), core.JSONMarshalString(event)); !result.OK {
+		core.Warn("ide.subagent.history save event", "workspace", workspaceID, "err", result)
 	}
 }
 
@@ -135,8 +135,8 @@ func (h *historyStore) deleteEvent(workspaceID string, cursor int) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" || cursor <= 0 {
 		return
 	}
-	if err := h.store.Delete(historyEventsGroup(workspaceID), historyEventKey(cursor)); err != nil {
-		core.Warn("ide.subagent.history delete event", "workspace", workspaceID, "cursor", cursor, "err", err)
+	if result := h.store.Delete(historyEventsGroup(workspaceID), historyEventKey(cursor)); !result.OK {
+		core.Warn("ide.subagent.history delete event", "workspace", workspaceID, "cursor", cursor, "err", result)
 	}
 }
 
@@ -145,8 +145,8 @@ func (h *historyStore) saveWorkspace(workspaceID string, seq int, ref agenticWor
 		return
 	}
 	record := historyWorkspaceRecord{EventSeq: seq, Agentic: ref}
-	if err := h.store.Set(historyWorkspaceGroup, workspaceID, core.JSONMarshalString(record)); err != nil {
-		core.Warn("ide.subagent.history save workspace", "workspace", workspaceID, "err", err)
+	if result := h.store.Set(historyWorkspaceGroup, workspaceID, core.JSONMarshalString(record)); !result.OK {
+		core.Warn("ide.subagent.history save workspace", "workspace", workspaceID, "err", result)
 	}
 }
 
@@ -154,11 +154,11 @@ func (h *historyStore) deleteWorkspace(workspaceID string) {
 	if h == nil || h.store == nil || core.Trim(workspaceID) == "" {
 		return
 	}
-	if err := h.store.DeleteGroup(historyEventsGroup(workspaceID)); err != nil {
-		core.Warn("ide.subagent.history delete workspace events", "workspace", workspaceID, "err", err)
+	if result := h.store.DeleteGroup(historyEventsGroup(workspaceID)); !result.OK {
+		core.Warn("ide.subagent.history delete workspace events", "workspace", workspaceID, "err", result)
 	}
-	if err := h.store.Delete(historyWorkspaceGroup, workspaceID); err != nil {
-		core.Warn("ide.subagent.history delete workspace", "workspace", workspaceID, "err", err)
+	if result := h.store.Delete(historyWorkspaceGroup, workspaceID); !result.OK {
+		core.Warn("ide.subagent.history delete workspace", "workspace", workspaceID, "err", result)
 	}
 }
 

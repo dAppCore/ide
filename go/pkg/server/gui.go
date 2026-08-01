@@ -4,16 +4,67 @@ package server
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
+	"strings"
+	"time"
 
 	core "dappco.re/go"
+	"dappco.re/go/gui/pkg/systray"
+	"dappco.re/go/gui/pkg/window"
+	vipkg "dappco.re/go/ide/pkg/vi"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
+
+// spaFallbackMiddleware rewrites navigation requests (paths with no file
+// extension, e.g. /ide, /library, /account) to "/" so the asset server serves
+// index.html instead of returning 404. Without this, Wails AssetFileServerFS
+// 404s on every Angular SPA route — webview_navigate then leaves the user with
+// an empty Wails page.
+func spaFallbackMiddleware(assets fs.FS) application.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet && r.Method != http.MethodHead {
+				next.ServeHTTP(w, r)
+				return
+			}
+			path := strings.TrimPrefix(r.URL.Path, "/")
+			if path == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			lastSlash := strings.LastIndex(path, "/")
+			leaf := path[lastSlash+1:]
+			if strings.Contains(leaf, ".") {
+				// Has an extension (.js, .css, .png) — let asset server handle the 404.
+				next.ServeHTTP(w, r)
+				return
+			}
+			if f, err := assets.Open(path); err == nil {
+				_ = f.Close()
+				next.ServeHTTP(w, r)
+				return
+			}
+			r2 := r.Clone(r.Context())
+			r2.URL.Path = "/"
+			next.ServeHTTP(w, r2)
+		})
+	}
+}
 
 type GUIShell struct {
 	WindowName string
 	WindowURL  string
 	Title      string
+	// Frontend is the bundled web assets served to the webview. When nil,
+	// the GUI falls back to Wails alpha demo assets (so go test still runs).
+	Frontend fs.FS
+	// App is the pre-constructed wails application supplied by the cmd
+	// entrypoint. When non-nil, GUIShell.Run uses it directly instead of
+	// constructing one. Lets cmd/core-ide own the single wails import in
+	// core/ide and pass the app reference through gui.Bootstrap into Core.
+	App *application.App
 }
 
 type chatBridge struct {
@@ -25,12 +76,32 @@ type chatBridgeToolCall struct {
 	Arguments map[string]any `json:"arguments,omitempty"`
 }
 
+// viBridge exposes the vi.Service to the Wails frontend. Methods here generate
+// TypeScript bindings the Angular Vi Control Panel calls — Status / Briefs /
+// Sites / Activity. Per the desktop convergence RFC §1.3, "expect data to come
+// from the Go side via Wails bindings."
+type viBridge struct {
+	core *core.Core
+}
+
 // NewGUIShell records the Wails window shape used by default GUI mode.
 func NewGUIShell() *GUIShell {
 	return &GUIShell{
 		WindowName: "core-ide-chat",
 		WindowURL:  "/",
 		Title:      "core/ide",
+	}
+}
+
+// SetWailsApp accepts an opaque wails app reference (kept opaque at the
+// pkg/server boundary) and stores it. This is the lone wails-aware setter
+// in pkg/server; it's how cmd/core-ide threads the constructed app through.
+func (shell *GUIShell) SetWailsApp(app any) {
+	if app == nil {
+		return
+	}
+	if a, ok := app.(*application.App); ok {
+		shell.App = a
 	}
 }
 
@@ -41,30 +112,160 @@ func (shell *GUIShell) Run(
 	if shell == nil {
 		return core.E("ide.server.GUI", "gui shell is nil", nil)
 	}
-	app := application.New(application.Options{
-		Name:        "core-ide",
-		Description: "Core IDE chat shell",
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
-		},
-		Assets: application.AssetOptions{
-			Handler: http.HandlerFunc(serveChatShellAsset),
-		},
-		Services: []application.Service{
-			application.NewService(&chatBridge{core: coreInstance}),
-		},
+	app := shell.App
+	if app == nil {
+		// Fallback path for legacy callers / tests — construct the app
+		// here. cmd/core-ide builds it explicitly and threads it through.
+		assets := application.AlphaAssets
+		if shell.Frontend != nil {
+			assets = application.AssetOptions{
+				Handler:    application.AssetFileServerFS(shell.Frontend),
+				Middleware: spaFallbackMiddleware(shell.Frontend),
+			}
+		}
+		app = application.New(application.Options{
+			Name:        "core-ide",
+			Description: "Core IDE chat shell",
+			Mac: application.MacOptions{
+				ApplicationShouldTerminateAfterLastWindowClosed: true,
+			},
+			Assets: assets,
+		})
+	}
+	// Wails-side services that bridge JS calls to Core. Registered late
+	// because they need the constructed coreInstance, which only exists
+	// after server.NewServer. Wails accepts services up until app.Run().
+	app.RegisterService(application.NewService(&chatBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&viBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&p2pBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&timBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&searchBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&fileBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&gitBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&buildBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&reposBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&lintBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&sessionBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&streamBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&memoryBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&devopsBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&cacheBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&marketplaceBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&phpBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&updatesBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&containersBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&dataBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&localesBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&tenantBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&windowBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&lemlabBridge{core: coreInstance}))
+	app.RegisterService(application.NewService(&terminalBridge{core: coreInstance}))
+
+	// Open the IDE window through window.Service so the manager tracks it
+	// (taskOpenWindow → trackWindow). Direct app.Window.NewWithOptions(...)
+	// would bypass tracking and break save_layout / restore_layout.
+	openResult := coreInstance.Action("window.open").Run(ctx, core.NewOptions(
+		core.Option{Key: "task", Value: window.TaskOpenWindow{
+			Window: &window.Window{
+				Name:      shell.WindowName,
+				Title:     shell.Title,
+				URL:       shell.WindowURL,
+				Width:     1180,
+				Height:    780,
+				MinWidth:  720,
+				MinHeight: 520,
+			},
+		}},
+	))
+	if !openResult.OK {
+		core.Print(core.Stderr(), "ide.server.GUI: window.open failed: %v\n", openResult.Value)
+	}
+
+	// Hide-on-close: core/ide lives in the systray, the window is a
+	// surface it spawns. Closing the X button hides the window and
+	// cancels the destroy — reopening goes through the tray "Show
+	// Window" menu. cmd/core-ide flips Mac.ApplicationShouldTerminate
+	// AfterLastWindowClosed to false so the process keeps running with
+	// no visible windows.
+	if win, ok := app.Window.GetByName(shell.WindowName); ok && win != nil {
+		win.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+			win.Hide()
+			e.Cancel()
+		})
+	}
+
+	// Configure the systray (created by core/gui systray.Service via
+	// gui.Bootstrap). Set the IDE label, install the menu, subscribe
+	// to click events. The window-name capture is on the closure so
+	// Show/Quit handlers don't depend on shell living past Run.
+	const (
+		trayActionShow = "ide.show_window"
+		trayActionQuit = "ide.quit"
+	)
+	winName := shell.WindowName
+	// Empty Label = icon-only systray (macOS shows EITHER icon OR text,
+	// not both). The menu items below still say "core-ide" because those
+	// are the dropdown rows, not the menu-bar label.
+	labelResult := coreInstance.Action("systray.set_label").Run(ctx, core.NewOptions(
+		core.Option{Key: "task", Value: systray.TaskSetTrayLabel{Label: ""}},
+	))
+	if !labelResult.OK {
+		core.Print(core.Stderr(), "ide.server.GUI: systray.set_label: %v\n", labelResult.Value)
+	}
+	menuResult := coreInstance.Action("systray.set_menu").Run(ctx, core.NewOptions(
+		core.Option{Key: "task", Value: systray.TaskSetTrayMenu{Items: []systray.TrayMenuItem{
+			{Label: "Show core-ide", ActionID: trayActionShow},
+			{Type: "separator"},
+			{Label: "Quit core-ide", ActionID: trayActionQuit},
+		}}},
+	))
+	if !menuResult.OK {
+		core.Print(core.Stderr(), "ide.server.GUI: systray.set_menu: %v\n", menuResult.Value)
+	}
+	coreInstance.RegisterAction(func(_ *core.Core, msg core.Message) core.Result {
+		clicked, ok := msg.(systray.ActionTrayMenuItemClicked)
+		if !ok {
+			return core.Result{OK: true}
+		}
+		switch clicked.ActionID {
+		case trayActionShow:
+			if win, ok := app.Window.GetByName(winName); ok && win != nil {
+				win.Show()
+				win.Focus()
+			}
+		case trayActionQuit:
+			app.Quit()
+		}
+		return core.Result{OK: true}
 	})
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Name:      shell.WindowName,
-		Title:     shell.Title,
-		URL:       shell.WindowURL,
-		Width:     1180,
-		Height:    780,
-		MinWidth:  720,
-		MinHeight: 520,
-	})
+
+	// Restore the saved layout (if any) — done after window.open so the
+	// tracked window is the target. Save layout before quit so positions
+	// carry across restarts. Storage is core/gui window.Service's
+	// LayoutManager → DIR_CONFIG/Core/layouts.json.
+	go func() {
+		// Wait for the wails window to initialise before restoring; without
+		// this the SetPosition/SetSize calls race with wails's own startup.
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(500 * time.Millisecond):
+		}
+		result := coreInstance.Action("window.restore_layout").Run(ctx, core.NewOptions(
+			core.Option{Key: "task", Value: window.TaskRestoreLayout{Name: "default"}},
+		))
+		if !result.OK {
+			core.Print(core.Stderr(), "ide.server.GUI: restore_layout: %v\n", result.Value)
+		}
+	}()
 	go func() {
 		<-ctx.Done()
+		result := coreInstance.Action("window.save_layout").Run(context.Background(), core.NewOptions(
+			core.Option{Key: "task", Value: window.TaskSaveLayout{Name: "default"}},
+		))
+		if !result.OK {
+			core.Print(core.Stderr(), "ide.server.GUI: save_layout failed: %v\n", result.Value)
+		}
 		app.Quit()
 	}()
 	return app.Run()
@@ -117,6 +318,74 @@ func (bridge *chatBridge) CallTool(
 	return text, nil
 }
 
+// Status returns the live Vi presence state (connected, latency, watching, pending).
+//
+//	const status = await ViBridge.Status();
+func (bridge *viBridge) Status(
+	ctx context.Context,
+) (vipkg.ViStatus, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return vipkg.ViStatus{}, err
+	}
+	return svc.Status(), nil
+}
+
+// Briefs returns the current brief feed — what Vi has surfaced for attention.
+//
+//	const briefs = await ViBridge.Briefs();
+func (bridge *viBridge) Briefs(
+	ctx context.Context,
+) ([]vipkg.Brief, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Briefs(), nil
+}
+
+// Sites returns the watched-site list with status / uptime / response.
+//
+//	const sites = await ViBridge.Sites();
+func (bridge *viBridge) Sites(
+	ctx context.Context,
+) ([]vipkg.Site, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Sites(), nil
+}
+
+// Activity returns the activity feed — Vi's narration interleaved with the
+// operator's recent actions.
+//
+//	const activity = await ViBridge.Activity();
+func (bridge *viBridge) Activity(
+	ctx context.Context,
+) ([]vipkg.ActivityItem, error) {
+	_ = ctx
+	svc, err := bridge.service()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Activity(), nil
+}
+
+func (bridge *viBridge) service() (*vipkg.Service, error) {
+	if bridge == nil || bridge.core == nil {
+		return nil, core.E("ide.server.GUI.Vi", "core is nil", nil)
+	}
+	svc, ok := core.ServiceFor[*vipkg.Service](bridge.core, "vi")
+	if !ok || svc == nil {
+		return nil, core.E("ide.server.GUI.Vi", "vi service not registered", nil)
+	}
+	return svc, nil
+}
+
 func resultError(
 	scope string,
 	value any,
@@ -126,47 +395,3 @@ func resultError(
 	}
 	return core.E(scope, "action failed", nil)
 }
-
-func serveChatShellAsset(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(chatShellHTML))
-}
-
-const chatShellHTML = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>core/ide</title>
-  <script type="module" src="/wails/runtime.js"></script>
-  <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #101418; color: #eef3f7; }
-    main { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
-    header, footer { padding: 16px 22px; border-color: #26313a; }
-    header { border-bottom: 1px solid #26313a; }
-    footer { border-top: 1px solid #26313a; color: #91a1ad; }
-    section { padding: 22px; }
-    h1 { margin: 0; font-size: 18px; font-weight: 650; }
-    p { margin: 8px 0 0; line-height: 1.45; color: #b8c4ce; }
-  </style>
-</head>
-<body>
-  <main>
-    <header><h1>core/ide</h1><p>Chat service and MCP tools are mounted in the same Core runtime.</p></header>
-    <section id="chat-root"></section>
-    <footer id="tool-count">Loading tools...</footer>
-  </main>
-  <script type="module">
-    const footer = document.getElementById('tool-count');
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const services = window.runtime?.Services;
-        const tools = services?.chatBridge?.Tools ? await services.chatBridge.Tools() : [];
-        footer.textContent = String(tools && tools.length ? tools.length : 0) + ' tools available';
-      } catch (error) {
-        footer.textContent = 'Chat bridge unavailable';
-      }
-    });
-  </script>
-</body>
-</html>`

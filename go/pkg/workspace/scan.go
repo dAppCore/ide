@@ -211,7 +211,7 @@ func readLimitedContent(
 		return "", err
 	}
 	defer func() {
-		_ = file.Close()
+		if cerr := file.Close(); cerr != nil { _ = cerr }
 	}()
 	raw, err := goio.ReadAll(goio.LimitReader(file, maxBytes+1))
 	if err != nil {
@@ -330,7 +330,7 @@ func logWorkspacePathRejection(rejection workspacePathRejection) {
 		return
 	}
 	c := core.New()
-	_ = c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root")
+	if r := c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root"); !r.OK { _ = r }
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {

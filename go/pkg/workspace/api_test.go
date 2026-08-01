@@ -130,8 +130,9 @@ func ensureProcessDefault(t *testing.T) {
 	if !ok || svc == nil {
 		t.Fatal("expected process service")
 	}
-	if err := process.SetDefault(svc); err != nil {
-		t.Fatalf("set default process service: %v", err)
+	// Mantis #1215: SetDefault now returns core.Result (not error).
+	if r := process.SetDefault(svc); !r.OK {
+		t.Fatalf("set default process service: %v", r.Error())
 	}
 }
 

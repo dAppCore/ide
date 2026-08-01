@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Host UK · Design system & e-commerce</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  html, body { margin: 0; background: #0c0b10; color: #e7e5ee; font-family: "Geist", system-ui, sans-serif; }
+  body { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="animations.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="landing.jsx"></script>
+<script type="text/babel" src="cart-checkout.jsx"></script>
+<script type="text/babel" src="dashboard.jsx"></script>
+<script type="text/babel" src="mobile.jsx"></script>
+<script type="text/babel" src="control-panel.jsx"></script>
+<script type="text/babel" src="ask-vi.jsx"></script>
+<script type="text/babel" src="provisioning.jsx"></script>
+<script type="text/babel" src="pricing.jsx"></script>
+<script type="text/babel" src="onboarding.jsx"></script>
+<script type="text/babel" src="status-errors.jsx"></script>
+<script type="text/babel" src="emails-invoice.jsx"></script>
+<script type="text/babel" src="macos-window.jsx"></script>
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+<script type="text/babel" src="lethean-landing.jsx"></script>
+<script type="text/babel" src="native-shells.jsx"></script>
+<script type="text/babel" src="splash-icons.jsx"></script>
+<script type="text/babel" src="native-profiles.jsx"></script>
+<script type="text/babel" src="marketing-shared.jsx"></script>
+<script type="text/babel" src="products-set1.jsx"></script>
+<script type="text/babel" src="products-set2.jsx"></script>
+<script type="text/babel" src="help-blog-changelog.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "brand": "hostuk",
+  "viPanelOpen": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const brand = tweaks.brand || "hostuk";
+  const viPanelOpen = tweaks.viPanelOpen !== false;
+
+  return (
+    <>
+      <DesignCanvas defaultZoom={0.55}>
+        <DCSection id="marketing" title={`${brand === "hostuk" ? "Host UK" : brand === "lethean" ? "Lethean" : "OFM"} — marketing`} subtitle="Hero, product family, pricing, trust, footer">
+          <DCArtboard id="landing" label="01 · Landing · host.uk.com" width={1280} height={1700}>
+            <HostLanding brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="commerce" title="order.host.uk.com — e-commerce flow" subtitle="Cart → checkout → confirmation">
+          <DCArtboard id="cart" label="02 · Basket" width={1280} height={1100}>
+            <CartView brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="checkout" label="03 · Checkout" width={1280} height={1280}>
+            <CheckoutView brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="confirm" label="04 · Confirmation" width={1280} height={900}>
+            <ConfirmView brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="account" title="Account dashboard" subtitle="Subscriptions · invoices · payment methods · usage">
+          <DCArtboard id="dashboard" label="05 · Account overview" width={1280} height={900}>
+            <AccountDashboard brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="mobile" title="Mobile checkout" subtitle="Same brand, touch density, safe-area aware">
+          <DCArtboard id="m-checkout" label="06 · iOS · Pay" width={420} height={900}>
+            <IOSDevice width={402} height={874} dark={true}>
+              <MobileCheckout brand={brand} />
+            </IOSDevice>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="vi-product" title="Vi as product — control.host.uk.com" subtitle="The differentiator: Vi is the spine of the panel, not a chat widget">
+          <DCArtboard id="control-panel" label={`07 · Vi Control Panel${viPanelOpen ? " · Vi open" : ""}`} width={1440} height={960}>
+            <ControlPanel brand={brand} viOpen={viPanelOpen} viDocked={true} />
+          </DCArtboard>
+          <DCArtboard id="ask-vi" label="08 · Ask Vi · ⌘K command surface" width={1280} height={760}>
+            <AskVi brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="native-profiles" title="Native platform profiles" subtitle="Wails on Darwin · native iOS · native iPadOS · same brand DNA, platform-correct chrome">
+          <DCArtboard id="native-ref" label="N0 · Profiles reference · the rule" width={1280} height={1900}>
+            <NativeProfilesReference brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="darwin-control" label="N1 · Darwin · Vi Control Panel · Wails window" width={1320} height={860}>
+            <DarwinWindowFrame width={1280} height={820}>
+              <ControlPanelDarwin brand={brand} title="Control Panel" />
+            </DarwinWindowFrame>
+          </DCArtboard>
+          <DCArtboard id="ios-control" label="N2 · iOS · Vi Control Panel · large title + tab bar" width={424} height={896}>
+            <IOSDeviceFrame width={402} height={874}>
+              <ControlPanelIOS brand={brand} />
+            </IOSDeviceFrame>
+          </DCArtboard>
+          <DCArtboard id="ipad-control" label="N3 · iPadOS · Vi Control Panel · 3-column split" width={1200} height={840}>
+            <IPadDeviceFrame width={1180} height={820}>
+              <ControlPanelIPad brand={brand} />
+            </IPadDeviceFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="provisioning" title="The provisioning moment" subtitle="Animated · 12s loop · scrub or play">
+          <DCArtboard id="provisioning" label="09 · Going live · animated" width={1280} height={800}>
+            <Provisioning brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="pricing" title="Pricing" subtitle="Plain pricing, comparison, FAQ, Vi plan-picker">
+          <DCArtboard id="pricing" label="10 · Pricing · host.uk.com/pricing" width={1280} height={2200}>
+            <PricingPage brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="onboarding" title="Onboarding — first 10 minutes" subtitle="Vi-led: empty state → conversation → first win">
+          <DCArtboard id="onboarding-empty" label="11 · Empty control panel · it's just us" width={1440} height={900}>
+            <EmptyControlPanel brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="onboarding-chat" label="12 · Vi-led setup conversation" width={1280} height={920}>
+            <OnboardingChat brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="onboarding-win" label="13 · First win — your site is live" width={1280} height={900}>
+            <FirstWin brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="status-errors" title="When things go wrong" subtitle="Public status · honest narration · error grid">
+          <DCArtboard id="status" label="14 · Public status · status.host.uk.com" width={1280} height={1500}>
+            <StatusPage brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="errors" label="15 · Error states · 404 · 500 · billing · site down" width={1280} height={1100}>
+            <ErrorStatesGrid brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="comms" title="Transactional comms" subtitle="Email templates · printable invoice">
+          <DCArtboard id="emails" label="16 · Email templates · 6 transactional moments" width={1440} height={1700}>
+            <EmailGrid brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="invoice" label="17 · Invoice · A4 print · VAT itemised" width={920} height={1280}>
+            <InvoicePDF brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="lethean" title="Lethean — sibling brand, same hand" subtitle="lthn.ai · confident-technical voice · dark + light variants">
+          <DCArtboard id="lethean-dark" label="18 · Lethean landing · dark" width={1440} height={2400}>
+            <LetheanLanding mode="dark" />
+          </DCArtboard>
+          <DCArtboard id="lethean-light" label="19 · Lethean landing · light" width={1440} height={2400}>
+            <LetheanLanding mode="light" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="native" title="Cross-device — same Account, four surfaces" subtitle="Proves the system holds across desktop / iOS / Android / web">
+          <DCArtboard id="native-desktop" label="20 · Lethean Desktop · Wails · Linear-density" width={1280} height={820}>
+            <DesktopAccountFrame brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="native-web" label="21 · Same screen · web mode · browser tab" width={1280} height={820}>
+            <WebAccountFrame brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="native-ios" label="22 · iOS · safe areas · tab bar" width={420} height={900}>
+            <IOSAccountFrame brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="native-android" label="23 · Android · bespoke · gesture nav" width={420} height={900}>
+            <AndroidAccountFrame brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="native-empty" label="24 · Empty state · same Vi, every device" width={1280} height={520}>
+            <EmptyAccountState surface="desktop" brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="splash" title="Splash · launch screens · app icons" subtitle="What appears before our app appears">
+          <DCArtboard id="icons" label="25 · App icon family · 3 brands × 4 sizes · macOS dock" width={1280} height={720}>
+            <IconShowcase />
+          </DCArtboard>
+          <DCArtboard id="ios-splash" label="26 · iOS launch screen" width={420} height={900}>
+            <IOSSplash brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="android-splash" label="27 · Android splash" width={420} height={900}>
+            <AndroidSplash brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="product-pages" title="Product family · 7 marketing surfaces" subtitle="Each product gets its own page, structurally tailored — spec-sheet, live preview, charts, timeline, calendar, widget showroom, inbox-mock">
+          <DCArtboard id="product-hosting" label="28 · host.uk.com/hosting · spec-sheet led" width={1280} height={2400}>
+            <ProductHosting brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-link" label="29 · link.host.uk.com · live-preview led" width={1280} height={2400}>
+            <ProductLink brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-analytics" label="30 · analytics.host.uk.com · charts-led" width={1280} height={2400}>
+            <ProductAnalytics brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-notify" label="31 · notify.host.uk.com · timeline-led" width={1280} height={2400}>
+            <ProductNotify brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-social" label="32 · social.host.uk.com · calendar-led" width={1280} height={2400}>
+            <ProductSocial brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-trust" label="33 · trust.host.uk.com · widget-showroom" width={1280} height={2400}>
+            <ProductTrust brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="product-mail" label="34 · mail.host.org.mx · inbox-mock led" width={1280} height={2400}>
+            <ProductMail brand={brand} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="content-system" title="Content system · help, journal, changelog" subtitle="Shared chrome, three different content registers — utility, editorial, engineering">
+          <DCArtboard id="help-home" label="35 · help.host.uk.com · home" width={1280} height={1500}>
+            <HelpCentreHome brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="help-article" label="36 · Help article · long-form template" width={1280} height={2200}>
+            <HelpArticle brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="help-search" label="37 · Help search · Vi answer + ranked results" width={1280} height={1300}>
+            <HelpSearchResults brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="blog" label="38 · blog.host.uk.com · editorial journal" width={1280} height={2000}>
+            <BlogIndex brand={brand} />
+          </DCArtboard>
+          <DCArtboard id="changelog" label="39 · changelog.host.uk.com · mono-led" width={1280} height={2000}>
+            <ChangelogPage brand={brand} />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Brand">
+          <TweakRadio
+            label="Active brand"
+            value={brand}
+            onChange={(v) => setTweak("brand", v)}
+            options={[
+              { value: "hostuk", label: "Host UK" },
+              { value: "lethean", label: "Lethean" },
+              { value: "ofm", label: "OFM" },
+            ]}
+          />
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 8, lineHeight: 1.45 }}>
+            Single palette, brand-variant accents. Host UK = Vi purple, Lethean = cool indigo, OFM slot = warm amber (placeholder until next week's pass).
+          </div>
+        </TweakSection>
+        <TweakSection title="Vi control panel">
+          <TweakToggle
+            label="Vi conversation docked"
+            value={viPanelOpen}
+            onChange={(v) => setTweak("viPanelOpen", v)}
+          />
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 8, lineHeight: 1.45 }}>
+            Off → 2-column panel. On → 3-column with Vi conversation docked right.
+          </div>
+        </TweakSection>
+        <TweakSection title="System">
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+            Dark-only · oklch tokens · Geist + Geist Mono + Instrument Serif (italic for editorial) · 8px base radius · GBP everywhere.
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

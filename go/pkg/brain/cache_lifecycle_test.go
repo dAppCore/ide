@@ -115,9 +115,9 @@ func TestCache_Invalidate_Good_ForgetClearsRelevantKeys(t *testing.T) {
 
 func newLifecycleCache(t *testing.T, ttl time.Duration) *Cache {
 	t.Helper()
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	return NewCache(storeInstance, "ide.brain.cache", ttl, true)
 }
@@ -139,10 +139,10 @@ func newInvalidationSubsystem(t *testing.T) (*Subsystem, *int, func()) {
 			http.NotFound(w, r)
 		}
 	}))
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
 		server.Close()
-		t.Fatalf("store: %v", err)
+		t.Fatalf("store: %v", openResult)
 	}
 	subsystem := New(config.Brain{Endpoint: server.URL, Key: "secret", AgentID: "agent"}.WithDefaults(), coreio.NewMemoryMedium(), storeInstance, nil, nil)
 	return subsystem, &recallCalls, server.Close

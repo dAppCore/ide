@@ -2,7 +2,16 @@
 
 # core/ide
 
-> Lethean IDE — Wails frontend + Go binary; mounts agent + scm + workspace
+> **Lethean Desktop's IDE — the compile target.** Wails frontend + Go binary; mounts agent + scm + workspace. The default brand is Lethean (cool indigo, hue 270); Host UK customers can flip the brand at runtime via `[data-brand="hostuk"]`.
+
+## What this binary IS
+
+`core/ide` compiles to the binary that ships as **Lethean Desktop** — the native umbrella product across Darwin / Linux / Windows / iOS / iPadOS. The plan that defines what Lethean Desktop is, what it composes, how the platform profiles work, and where the design system comes from lives in the canonical plans tree:
+
+- **Plan:** [`plans/project/lthn/desktop/RFC.md`](https://forge.lthn.sh/core/plans/src/branch/main/project/lthn/desktop/RFC.md) — Lethean Desktop convergence + service composition + Vi Control Panel as the spine
+- **Design system:** [`plans/ops/hostuk/website/_design/lethean-3/`](https://forge.lthn.sh/core/plans/src/branch/main/ops/hostuk/website/_design/lethean-3/) — Lethean-3 unified design drop, Wails Darwin / iOS / iPadOS native profiles, Vi mascot canon
+- **Vi Control Panel pattern:** the spine of the desktop shell (per the native handoff README in the design drop). Same logical component tree across web (`control.host.uk.com`) + native (this binary). Brand swap via `[data-brand]`, platform swap via `[data-platform]`.
+- **Service composition rule:** if a capability isn't defined in the plans tree, it isn't real. This binary owns the *composition* (which packages it pulls in, how they wire at boot, how Vi surfaces them); the *implementation* of each capability lives in its canonical home (blockchain, mining, encryption, etc.).
 
 [![CI](https://github.com/dappcore/ide/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/dappcore/ide/actions/workflows/ci.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=alert_status)](https://sonarcloud.io/dashboard?id=dappcore_ide)

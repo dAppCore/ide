@@ -31,8 +31,8 @@ func (c *Cache) Get(ctx context.Context, key string) (RecallOutput, bool) {
 	if c == nil || c.store == nil || !c.enabled {
 		return RecallOutput{}, false
 	}
-	raw, err := c.store.Get(c.namespace, key)
-	if err != nil {
+	raw, result := c.store.Get(c.namespace, key)
+	if !result.OK {
 		return RecallOutput{}, false
 	}
 	var output RecallOutput

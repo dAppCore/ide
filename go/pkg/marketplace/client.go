@@ -15,6 +15,11 @@ import (
 	"dappco.re/go/ide/pkg/config"
 )
 
+const (
+	installModulesDir   = "modules"
+	installModuleEntry  = "module.json"
+)
+
 type Client struct {
 	cfg        config.Marketplace
 	httpClient *http.Client
@@ -40,6 +45,9 @@ func (c *Client) Search(
 	ctx context.Context,
 	input SearchInput,
 ) (SearchOutput, error) {
+	if core.Trim(c.cfg.Endpoint) == "" {
+		return SearchOutput{Query: input.Query, Category: input.Category, Packages: fixtureSearch(input)}, nil
+	}
 	path := c.cfg.APIPath
 	query := url.Values{}
 	if input.Query != "" {
@@ -51,7 +59,7 @@ func (c *Client) Search(
 	if len(query) > 0 {
 		path = core.Concat(path, "?", query.Encode())
 	}
-	var packages []scmmarketplace.Module
+	var packages []IdeModule
 	if err := c.get(ctx, path, &packages); err != nil {
 		return SearchOutput{}, err
 	}
@@ -65,11 +73,78 @@ func (c *Client) Info(
 	if core.Trim(input.Code) == "" {
 		return InfoOutput{}, core.E("ide.marketplace.info", "code is required", nil)
 	}
-	var pkg scmmarketplace.Module
+	if core.Trim(c.cfg.Endpoint) == "" {
+		mod, ok := fixtureFind(input.Code)
+		if !ok {
+			return InfoOutput{}, core.E("ide.marketplace.info", core.Concat("module not found in fixture: ", input.Code), nil)
+		}
+		return InfoOutput{Package: mod}, nil
+	}
+	var pkg IdeModule
 	if err := c.get(ctx, core.Concat(c.cfg.APIPath, "/", url.PathEscape(input.Code)), &pkg); err != nil {
 		return InfoOutput{}, err
 	}
 	return InfoOutput{Package: pkg}, nil
+}
+
+// Installed lists modules previously installed via this client.
+// Returns an empty slice when nothing has been installed yet.
+func (c *Client) Installed(
+	ctx context.Context,
+) (InstalledOutput, error) {
+	if ctx != nil {
+		if err := ctx.Err(); err != nil {
+			return InstalledOutput{}, err
+		}
+	}
+	medium, err := c.installerMedium()
+	if err != nil {
+		return InstalledOutput{}, err
+	}
+	if !medium.IsDir("modules") {
+		return InstalledOutput{Packages: []scmmarketplace.InstalledModule{}}, nil
+	}
+	installer := scmmarketplace.NewInstaller(medium, "modules", nil)
+	mods, err := installer.Installed()
+	if err != nil {
+		return InstalledOutput{}, core.E("ide.marketplace.installed", "list installed modules", err)
+	}
+	if mods == nil {
+		mods = []scmmarketplace.InstalledModule{}
+	}
+	return InstalledOutput{Packages: mods}, nil
+}
+
+// Remove uninstalls a module from the local install medium. Idempotent —
+// removing a module that isn't installed is not an error.
+func (c *Client) Remove(
+	_ context.Context,
+	input RemoveInput,
+) (RemoveOutput, error) {
+	if core.Trim(input.Code) == "" {
+		return RemoveOutput{}, core.E("ide.marketplace.remove", "code is required", nil)
+	}
+	medium, err := c.installerMedium()
+	if err != nil {
+		return RemoveOutput{}, err
+	}
+	installer := scmmarketplace.NewInstaller(medium, "modules", nil)
+	if err := installer.Remove(input.Code); err != nil {
+		return RemoveOutput{}, core.E("ide.marketplace.remove", "remove module", err)
+	}
+	return RemoveOutput{Removed: true, Code: input.Code}, nil
+}
+
+// installerMedium picks the configured medium when present, otherwise falls
+// back to the default sandboxed install location under ~/.core/ide/marketplace.
+func (c *Client) installerMedium() (
+	coreio.Medium,
+	error,
+) {
+	if c.medium != nil {
+		return c.medium, nil
+	}
+	return defaultInstallMedium()
 }
 
 func (c *Client) Install(
@@ -108,20 +183,74 @@ func (c *Client) installViaGoSCM(
 	if err != nil {
 		return InstallOutput{}, err
 	}
-	medium := c.medium
-	if medium == nil {
-		var mediumErr error
-		medium, mediumErr = defaultInstallMedium()
-		if mediumErr != nil {
-			return InstallOutput{}, mediumErr
-		}
+	medium, err := c.installerMedium()
+	if err != nil {
+		return InstallOutput{}, err
 	}
-	installer := scmmarketplace.NewInstaller(medium, "modules", nil)
-	if err := installer.Install(ctx, info.Package); err != nil {
+	if isUnsignedModule(info.Package.Module) {
+		if err := writeUnsignedInstalledModule(medium, info.Package); err != nil {
+			return InstallOutput{}, core.E("ide.marketplace.install", "install module", err)
+		}
+		c.recordInstall(input.Code)
+		return InstallOutput{Installed: true, Code: input.Code}, nil
+	}
+	installer := scmmarketplace.NewInstaller(medium, installModulesDir, nil)
+	if err := installer.Install(ctx, info.Package.Module); err != nil {
 		return InstallOutput{}, core.E("ide.marketplace.install", "install module", err)
 	}
 	c.recordInstall(input.Code)
 	return InstallOutput{Installed: true, Code: input.Code}, nil
+}
+
+// isUnsignedModule reports whether a module entry has no signature material,
+// indicating a dev fixture or an internally-published unsigned package. The
+// upstream Installer rejects these; we accept them by writing the install
+// entry directly. Signed marketplace modules still go through Installer
+// (which calls manifest.Verify with the embedded ed25519 public key).
+func isUnsignedModule(mod scmmarketplace.Module) bool {
+	return core.Trim(mod.Sign) == "" && core.Trim(mod.SignKey) == ""
+}
+
+// writeUnsignedInstalledModule mirrors the on-disk shape produced by
+// scmmarketplace.Installer.Install, minus signature verification. The
+// upstream InstalledModule.EntryPoint field is repurposed to carry the
+// runtime URL ("http(s)://..." or our /plugin/<code>/ proxy path) when the
+// module declares one — installed-list rendering treats EntryPoint as the
+// "Run" target whenever it parses as a URL.
+func writeUnsignedInstalledModule(medium coreio.Medium, mod IdeModule) error {
+	if medium == nil {
+		return core.E("ide.marketplace.install", "medium is required", nil)
+	}
+	entryPoint := core.Trim(mod.Entrypoint)
+	if entryPoint == "" {
+		entryPoint = "core.json"
+	}
+	entry := scmmarketplace.InstalledModule{
+		Code:        mod.Code,
+		Name:        mod.Name,
+		Version:     versionOrLatest(mod.Version),
+		Repo:        mod.Repo,
+		EntryPoint:  entryPoint,
+		SignKey:     mod.SignKey,
+		InstalledAt: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	marshalResult := core.JSONMarshalIndent(entry, "", "  ")
+	if !marshalResult.OK {
+		return core.E("ide.marketplace.install", "encode module entry", nil)
+	}
+	dir := core.PathJoin(installModulesDir, mod.Code)
+	if err := medium.EnsureDir(dir); err != nil {
+		return core.E("ide.marketplace.install", "ensure module directory", err)
+	}
+	path := core.PathJoin(dir, installModuleEntry)
+	return medium.Write(path, string(marshalResult.Value.([]byte)))
+}
+
+func versionOrLatest(version string) string {
+	if v := core.Trim(version); v != "" {
+		return v
+	}
+	return "latest"
 }
 
 func (c *Client) recordInstall(code string) {
@@ -177,7 +306,7 @@ func (c *Client) request(
 		return core.E("ide.marketplace.request", "request failed", err)
 	}
 	defer func() {
-		_ = response.Body.Close()
+		if cerr := response.Body.Close(); cerr != nil { _ = cerr }
 	}()
 	if response.StatusCode >= http.StatusBadRequest {
 		return core.E("ide.marketplace.request", core.Concat("upstream returned ", response.Status), nil)

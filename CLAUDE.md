@@ -2,6 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Identity — what this binary IS
+
+`core/ide` is the **Lethean Desktop** compile target. The umbrella native product across Darwin / Linux / Windows / iOS / iPadOS ships as the binary built from this repo. The plan that defines what Lethean Desktop composes, how its Vi Control Panel shell wraps the IDE surface, and how the design system flows in lives in the canonical plans tree at `plans/project/lthn/desktop/RFC.md`.
+
+Default brand: **Lethean** (cool indigo, hue 270). Host UK customers can flip via `[data-brand="hostuk"]` at runtime — the design system supports both.
+
+## Where the truth lives
+
+If a capability isn't defined in the plans tree (`forge.lthn.sh/core/plans`), it isn't real. This binary owns *composition* — which packages get pulled in, how they wire at boot, how Vi surfaces them — not the *implementation* of each capability. Capabilities are spec'd in their canonical homes:
+
+| Capability | Canonical spec |
+|------------|----------------|
+| Lethean Desktop convergence + product framing | `plans/project/lthn/desktop/RFC.md` |
+| Visual system + native profiles + Vi Control Panel | `plans/ops/hostuk/website/_design/lethean-3/` (canonical) + `plans/ops/lthn/website/lthn.ai/design/` (Lethean subset) |
+| Native chrome rules (Wails Darwin / iOS / iPadOS) | `plans/ops/hostuk/website/_design/lethean-3/design_handoff_native_profiles/README.md` |
+| Vi (Violet) mascot canon | `plans/ops/hostuk/website/_design/lethean-3/uploads/mascot-raven.md` + `mascot-voice-samples.md` |
+| Brand voice | `plans/ops/hostuk/website/_design/lethean-3/uploads/BRAND-VOICE.md` |
+| Blockchain / Mining / Encryption / Filesystem | `plans/project/lthn/{blockchain,mining}/RFC.md` + `plans/code/snider/enchantrix/` + `plans/code/core/go/io/` |
+| CoreGUI / CoreTS / CoreApp / core/agent / core/mcp | `plans/code/core/{gui,ts,app,agent,mcp}/` |
+
+When in doubt about how something should look / behave / compose, **read the plan first**.
+
+## Vi (Violet) — character canon
+
+Vi is the spine of the Control Panel (not a chat widget). Created by a Lethean community member; Host UK is the Lethean community company so Vi belongs to both naturally.
+
+> *The chill chick — a raven watching the tower for people, letting them know when the weather is changing or trouble is at the gates.*
+
+Calm presence, not interruption. Surfaces what matters; doesn't perform. Italic Instrument Serif "*Quiet night.*" style is the conversational moment, used **sparingly** (one phrase per surface max). Don't write Vi copy that fights the chill-chick-raven character.
+
+## Display modes — runtime-switchable, fully customisable
+
+ClientHub (default) / ServerHub / GatewayHub / DeveloperHub / AdminHub. Same binary, runtime-switchable, fully customisable. Modes are surface compositions over the same underlying services. Users can flip without restart, enable/disable surfaces, reorder, define custom modes (`[data-mode="custom-foo"]`). State persists per-user via `core/config`.
+
 ## Build & Development Commands
 
 ```bash

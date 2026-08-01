@@ -10,9 +10,9 @@ import (
 )
 
 func TestCache_Get_Good(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute, true)
 	expected := RecallOutput{Success: true, Count: 1}
@@ -85,9 +85,9 @@ func repeatString(value string, count int) string {
 }
 
 func TestCache_Get_Bad(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	cache := NewCache(storeInstance, "ide.brain.cache", time.Millisecond, true)
 	_ = cache.Set(context.Background(), "key", RecallOutput{Success: true})
@@ -98,9 +98,9 @@ func TestCache_Get_Bad(t *testing.T) {
 }
 
 func TestCache_Get_Ugly(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute, true)
 	done := make(chan struct{})
@@ -117,9 +117,9 @@ func TestCache_Get_Ugly(t *testing.T) {
 }
 
 func TestCache_Clear_Good(t *testing.T) {
-	storeInstance, err := storelib.New(":memory:")
-	if err != nil {
-		t.Fatalf("store: %v", err)
+	storeInstance, openResult := storelib.New(":memory:")
+	if !openResult.OK {
+		t.Fatalf("store: %v", openResult)
 	}
 	cache := NewCache(storeInstance, "ide.brain.cache", time.Minute, true)
 	if err := cache.Set(context.Background(), "key", RecallOutput{Count: 1}); err != nil {

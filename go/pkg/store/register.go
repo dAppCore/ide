@@ -18,9 +18,9 @@ func Register(c *core.Core) core.Result {
 	if err := coreio.Local.EnsureDir(core.PathDir(path)); err != nil {
 		return core.Fail(err)
 	}
-	storeInstance, err := storelib.New(path)
-	if err != nil {
-		return core.Fail(err)
+	storeInstance, result := storelib.New(path)
+	if !result.OK {
+		return result
 	}
 	svc := &Service{
 		ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{}),
@@ -51,8 +51,8 @@ func (s *Service) OnShutdown(context.Context) core.Result {
 	if s == nil || s.Store == nil {
 		return core.Ok(nil)
 	}
-	if err := s.Store.Close(); err != nil {
-		return core.Fail(err)
+	if result := s.Store.Close(); !result.OK {
+		return result
 	}
 	return core.Ok(nil)
 }
@@ -68,8 +68,8 @@ func (s *Service) registerQueries(c *core.Core) {
 			return core.Ok(s.snapshot())
 		case core.HasPrefix(name, "store.get_namespace:"):
 			namespace := core.TrimPrefix(name, "store.get_namespace:")
-			entries, err := s.Store.GetAll(namespace)
-			if err != nil {
+			entries, getResult := s.Store.GetAll(namespace)
+			if !getResult.OK {
 				return core.Fail(nil)
 			}
 			return core.Ok(map[string]any{"namespace": namespace, "entries": entries})
@@ -84,14 +84,14 @@ func (s *Service) snapshot() map[string]any {
 	if s == nil || s.Store == nil {
 		return out
 	}
-	namespaces, err := s.Store.Groups()
-	if err != nil {
+	namespaces, groupsResult := s.Store.Groups()
+	if !groupsResult.OK {
 		return out
 	}
 	items := make([]map[string]any, 0, len(namespaces))
 	for _, namespace := range namespaces {
-		entries, groupErr := s.Store.GetAll(namespace)
-		if groupErr != nil {
+		entries, groupResult := s.Store.GetAll(namespace)
+		if !groupResult.OK {
 			continue
 		}
 		recent := make([]string, 0, len(entries))
