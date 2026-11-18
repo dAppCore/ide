@@ -1,12 +1,12 @@
 package config
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"syscall"
 	"testing"
 	"time"
 
-	coreio "dappco.re/go/io"
+	coreio "github.com/dappcore/go-io/go"
 )
 
 func TestConfig_Load_Good(t *testing.T) {

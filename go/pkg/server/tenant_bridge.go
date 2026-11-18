@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/tenant"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-tenant/go"
 )
 
 // tenant_* bridge tools surface core/go-tenant's Service to the /tenant
@@ -51,11 +51,11 @@ func (b *MCPBridge) toolTenantStatus(_ context.Context, _ map[string]any) map[st
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"registered": true,
-			"online":     online,
-			"api_url":    apiURL,
+			"registered":    true,
+			"online":        online,
+			"api_url":       apiURL,
 			"api_token_set": apiToken != "",
-			"hint":       tenantHint(online),
+			"hint":          tenantHint(online),
 		},
 	}
 }

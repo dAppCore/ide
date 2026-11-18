@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // buildBridge — typed wails wrapper over MCPBridge build_/process_
@@ -21,16 +21,16 @@ type BuildDetectInput struct {
 }
 
 type BuildDetectOutput struct {
-	OK          bool     `json:"ok"`
-	Path        string   `json:"path,omitempty"`
-	Tool        string   `json:"tool,omitempty"`
-	Source      string   `json:"source,omitempty"`
-	Command     string   `json:"command,omitempty"`
-	Args        []string `json:"args,omitempty"`
-	Frameworks  []string `json:"frameworks,omitempty"`
-	CacheHit    bool     `json:"cache_hit,omitempty"`
-	CacheAgeS   int      `json:"cache_age_s,omitempty"`
-	Error       string   `json:"error,omitempty"`
+	OK         bool     `json:"ok"`
+	Path       string   `json:"path,omitempty"`
+	Tool       string   `json:"tool,omitempty"`
+	Source     string   `json:"source,omitempty"`
+	Command    string   `json:"command,omitempty"`
+	Args       []string `json:"args,omitempty"`
+	Frameworks []string `json:"frameworks,omitempty"`
+	CacheHit   bool     `json:"cache_hit,omitempty"`
+	CacheAgeS  int      `json:"cache_age_s,omitempty"`
+	Error      string   `json:"error,omitempty"`
 }
 
 type BuildRunInput struct {

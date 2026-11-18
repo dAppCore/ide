@@ -3,7 +3,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { callBridge } from '../../../lib/bridge';
-import * as CacheBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/cachebridge';
+import * as CacheBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/cachebridge';
 import { NotificationService } from '../../../services/notification.service';
 
 interface CacheCollection {

@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 	"testing"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type conclaveIdentity struct {

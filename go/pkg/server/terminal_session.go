@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
 	"github.com/creack/pty"
+	core "github.com/dappcore/go"
 )
 
 // Default ring buffer cap per terminal session — ~10MB of scrollback so a page

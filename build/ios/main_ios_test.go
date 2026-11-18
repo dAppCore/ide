@@ -2,7 +2,7 @@
 
 package main
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func TestMainIos_WailsIOSMain_Good(t *core.T) {
 	fn := WailsIOSMain

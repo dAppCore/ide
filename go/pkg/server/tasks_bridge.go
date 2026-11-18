@@ -6,8 +6,8 @@ import (
 	"context"
 	"time"
 
-	"dappco.re/go/ide/pkg/tasks"
-	"dappco.re/go/orm"
+	"github.com/dappcore/ide/go/pkg/tasks"
+	"github.com/dappcore/orm/go"
 )
 
 // tasks_* bridge tools — surfaces the local-first task system from

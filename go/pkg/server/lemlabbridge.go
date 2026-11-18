@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // lemlabBridge — Wails wrapper for the LEM.Lab training studio plugin.

@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	core "dappco.re/go"
-	gui_chat "dappco.re/go/gui/pkg/chat"
-	guimcp "dappco.re/go/gui/pkg/mcp"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	gui_chat "github.com/dappcore/gui/go/pkg/chat"
+	guimcp "github.com/dappcore/gui/go/pkg/mcp"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	chatpkg "dappco.re/go/ide/pkg/chat"
-	"dappco.re/go/ide/pkg/config"
+	chatpkg "github.com/dappcore/ide/go/pkg/chat"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestServer_Compose_Good(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestRegister_AI_Good(t *testing.T) {

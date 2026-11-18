@@ -2,8 +2,8 @@
 
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import * as TIMBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/timbridge';
-import { TIMStateOutput } from '../../../../../bindings/dappco.re/go/ide/pkg/server/models';
+import * as TIMBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/timbridge';
+import { TIMStateOutput } from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/models';
 import { NotificationService } from '../../../services/notification.service';
 
 // Migrated 2026-05-09 from callBridge('tim_*' / 'container_*') to typed

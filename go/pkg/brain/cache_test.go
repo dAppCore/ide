@@ -2,15 +2,16 @@ package brain
 
 import (
 	"context"
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"testing"
 	"time"
 
-	storelib "dappco.re/go/store"
+	storelib "github.com/dappcore/go-store/go"
 )
 
 func TestCache_Get_Good(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -85,7 +86,8 @@ func repeatString(value string, count int) string {
 }
 
 func TestCache_Get_Bad(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -98,7 +100,8 @@ func TestCache_Get_Bad(t *testing.T) {
 }
 
 func TestCache_Get_Ugly(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -117,7 +120,8 @@ func TestCache_Get_Ugly(t *testing.T) {
 }
 
 func TestCache_Clear_Good(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}

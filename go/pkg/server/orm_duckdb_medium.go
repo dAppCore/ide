@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/orm"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/orm/go"
 
 	// duckdb driver — same dep go-store already pulls in transitively.
-	_ "github.com/marcboeker/go-duckdb"
+	_ "github.com/duckdb/duckdb-go/v2"
 )
 
 // duckDBMedium implements orm.Medium against a DuckDB *sql.DB connection.

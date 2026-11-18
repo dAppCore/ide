@@ -1,6 +1,6 @@
 package workspace
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func shouldIgnorePath(root, path string, ignores []string) bool {
 	if len(ignores) == 0 {

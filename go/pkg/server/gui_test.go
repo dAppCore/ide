@@ -1,6 +1,6 @@
 package server
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func TestGui_NewGUIShell_Good(t *core.T) {
 	subject := any(NewGUIShell)

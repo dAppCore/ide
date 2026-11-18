@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	storelib "dappco.re/go/store"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	storelib "github.com/dappcore/go-store/go"
 )
 
 type Service struct {
@@ -18,10 +18,11 @@ func Register(c *core.Core) core.Result {
 	if err := coreio.Local.EnsureDir(core.PathDir(path)); err != nil {
 		return core.Fail(err)
 	}
-	storeInstance, result := storelib.New(path)
+	result := storelib.New(path)
 	if !result.OK {
 		return result
 	}
+	storeInstance := result.Value.(*storelib.Store)
 	svc := &Service{
 		ServiceRuntime: core.NewServiceRuntime[struct{}](c, struct{}{}),
 		Store:          storeInstance,

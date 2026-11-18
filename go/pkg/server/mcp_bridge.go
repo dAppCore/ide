@@ -12,13 +12,13 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	cfgpkg "dappco.re/go/config"
-	"dappco.re/go/gui/pkg/display"
-	"dappco.re/go/gui/pkg/webview"
-	"dappco.re/go/gui/pkg/window"
-	coreio "dappco.re/go/io"
-	"dappco.re/go/process"
+	cfgpkg "github.com/dappcore/config/go"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	"github.com/dappcore/go-process/go"
+	"github.com/dappcore/gui/go/pkg/display"
+	"github.com/dappcore/gui/go/pkg/webview"
+	"github.com/dappcore/gui/go/pkg/window"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -67,7 +67,7 @@ type MCPBridge struct {
 
 	// uiCfg persists user UI preferences (chat panel open/closed, last
 	// route, open tabs, etc.) so the IDE comes back the way it was left.
-	// Backed by dappco.re/go/config — default path ~/.core/config.yaml,
+	// Backed by github.com/dappcore/config/go — default path ~/.core/config.yaml,
 	// keys live under the "ui.*" namespace.
 	uiCfgMu sync.Mutex
 	uiCfg   *cfgpkg.Config
@@ -268,15 +268,15 @@ func (b *MCPBridge) handleCall(w http.ResponseWriter, r *http.Request) {
 // Tools whose own implementation publishes / reads from the Stream Hub
 // — auto-publishing them would cause feedback loops or pointless noise.
 var bridgeAutoPublishSkip = map[string]bool{
-	"stream_status":         true,
-	"stream_channels":       true,
-	"stream_recent":         true,
-	"stream_publish":        true,
-	"webview_console":       true,
-	"webview_errors":        true,
-	"webview_eval":          true,
-	"webview_screenshot":    true,
-	"webview_dom_tree":      true,
+	"stream_status":      true,
+	"stream_channels":    true,
+	"stream_recent":      true,
+	"stream_publish":     true,
+	"webview_console":    true,
+	"webview_errors":     true,
+	"webview_eval":       true,
+	"webview_screenshot": true,
+	"webview_dom_tree":   true,
 }
 
 // publishBridgeEvent fires a JSON frame onto bridge.<tool> and a wildcard
@@ -669,13 +669,13 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "updates_refresh":
 		return b.toolUpdatesRefresh(ctx, params)
 
-	// Self-update — wraps dappco.re/go/update for the IDE binary itself.
+	// Self-update — wraps github.com/dappcore/go-update/go for the IDE binary itself.
 	case "selfupdate_status":
 		return b.toolSelfUpdateStatus(ctx, params)
 	case "selfupdate_apply":
 		return b.toolSelfUpdateApply(ctx, params)
 
-	// Sessions panel — wraps dappco.re/go/session for Claude Code transcripts.
+	// Sessions panel — wraps github.com/dappcore/go-session/go for Claude Code transcripts.
 	case "session_projects_list":
 		return b.toolSessionProjectsList(ctx, params)
 	case "session_list":
@@ -735,7 +735,7 @@ func (b *MCPBridge) dispatchTool(ctx context.Context, tool string, params map[st
 	case "forge_releases":
 		return b.toolForgeReleases(ctx, params)
 
-	// Stream panel — wraps dappco.re/go/stream Hub for in-process pub/sub.
+	// Stream panel — wraps github.com/dappcore/go-stream/go Hub for in-process pub/sub.
 	case "stream_status":
 		return b.toolStreamStatus(ctx, params)
 	case "stream_channels":
@@ -1144,7 +1144,7 @@ func (b *MCPBridge) handleInternalIDEConfig(w http.ResponseWriter, r *http.Reque
 //	const es = new EventSource('http://127.0.0.1:9877/internal/events');
 //	es.onmessage = (ev) => {
 //	    const env = JSON.parse(ev.data);
-//	    // env.type    e.g. "dappco.re/go/gui/pkg/lifecycle.ActionDidBecomeActive"
+//	    // env.type    e.g. "github.com/dappcore/gui/go/pkg/lifecycle.ActionDidBecomeActive"
 //	    // env.ts      RFC3339Nano
 //	    // env.data    original message payload
 //	};
@@ -1471,11 +1471,12 @@ func (b *MCPBridge) toolProcessOutput(params map[string]any) map[string]any {
 // to a clear error if rg isn't on PATH so the frontend can prompt the user.
 //
 // Params:
-//   query        (string, required) — pattern (regex by default, see literal)
-//   path         (string, required) — workspace root
-//   max_results  (int, default 200)
-//   literal      (bool, default true)  — when true, use --fixed-strings
-//   ignore_case  (bool, default true)
+//
+//	query        (string, required) — pattern (regex by default, see literal)
+//	path         (string, required) — workspace root
+//	max_results  (int, default 200)
+//	literal      (bool, default true)  — when true, use --fixed-strings
+//	ignore_case  (bool, default true)
 //
 // Returns: {ok, matches: [{path, line, text}], count, truncated}.
 func (b *MCPBridge) toolWorkspaceSearch(ctx context.Context, params map[string]any) map[string]any {
@@ -1557,13 +1558,13 @@ func (b *MCPBridge) toolWorkspaceSearch(ctx context.Context, params map[string]a
 //  1. THIS file (mcp_bridge.go git_*)         — per-file, per-repo, editor-
 //     time. Wraps `git` via process.Service. Backs the Source Control panel.
 //
-//  2. dappco.re/go/git AND dappco.re/go/scm/git  — multi-repo aggregate
+//  2. github.com/dappcore/go-git/go AND github.com/dappcore/go-scm/go/git  — multi-repo aggregate
 //     dashboard. Status returns {Modified, Untracked, Staged, Ahead, Behind}
 //     per repo across many repos. Push/Pull single + multi. Used for "18
 //     Core repos: which need attention?". Bridge could expose this via
 //     c.QUERY(git.QueryStatus{...}) for a future dashboard surface.
 //
-//  3. dappco.re/go/scm (core/go-scm)          — Lethean's full content
+//  3. github.com/dappcore/go-scm/go (core/go-scm)          — Lethean's full content
 //     framework. Sub-packages: marketplace (Index/Discovery/Builder),
 //     plugin (manifest/registry/runtime), manifest (signed packages),
 //     collect (ingest from bitcointalk/github/papers/market), repos
@@ -1927,48 +1928,48 @@ func (b *MCPBridge) toolWindowFocused(params map[string]any) map[string]any {
 // Lang — static extension → language map.
 
 var langByExt = map[string]string{
-	".go":   "go",
-	".ts":   "typescript",
-	".tsx":  "typescript",
-	".js":   "javascript",
-	".jsx":  "javascript",
-	".mjs":  "javascript",
-	".py":   "python",
-	".rs":   "rust",
-	".rb":   "ruby",
-	".php":  "php",
-	".java": "java",
-	".kt":   "kotlin",
-	".swift": "swift",
-	".c":    "c",
-	".cc":   "cpp",
-	".cpp":  "cpp",
-	".cxx":  "cpp",
-	".h":    "c",
-	".hpp":  "cpp",
-	".cs":   "csharp",
-	".sh":   "bash",
-	".zsh":  "bash",
-	".bash": "bash",
-	".sql":  "sql",
-	".html": "html",
-	".htm":  "html",
-	".css":  "css",
-	".scss": "scss",
-	".sass": "sass",
-	".less": "less",
-	".md":   "markdown",
-	".markdown": "markdown",
-	".json": "json",
-	".yaml": "yaml",
-	".yml":  "yaml",
-	".toml": "toml",
-	".xml":  "xml",
-	".svg":  "svg",
+	".go":         "go",
+	".ts":         "typescript",
+	".tsx":        "typescript",
+	".js":         "javascript",
+	".jsx":        "javascript",
+	".mjs":        "javascript",
+	".py":         "python",
+	".rs":         "rust",
+	".rb":         "ruby",
+	".php":        "php",
+	".java":       "java",
+	".kt":         "kotlin",
+	".swift":      "swift",
+	".c":          "c",
+	".cc":         "cpp",
+	".cpp":        "cpp",
+	".cxx":        "cpp",
+	".h":          "c",
+	".hpp":        "cpp",
+	".cs":         "csharp",
+	".sh":         "bash",
+	".zsh":        "bash",
+	".bash":       "bash",
+	".sql":        "sql",
+	".html":       "html",
+	".htm":        "html",
+	".css":        "css",
+	".scss":       "scss",
+	".sass":       "sass",
+	".less":       "less",
+	".md":         "markdown",
+	".markdown":   "markdown",
+	".json":       "json",
+	".yaml":       "yaml",
+	".yml":        "yaml",
+	".toml":       "toml",
+	".xml":        "xml",
+	".svg":        "svg",
 	".dockerfile": "dockerfile",
-	".lua":  "lua",
-	".vue":  "vue",
-	".svelte": "svelte",
+	".lua":        "lua",
+	".vue":        "vue",
+	".svelte":     "svelte",
 }
 
 func (b *MCPBridge) toolLangDetect(params map[string]any) map[string]any {

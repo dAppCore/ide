@@ -6,8 +6,8 @@ import (
 	"context"
 	"syscall"
 
-	core "dappco.re/go"
-	"dappco.re/go/process"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-process/go"
 )
 
 // process_* extra bridge tools that wrap parts of go-process the IDE
@@ -29,13 +29,13 @@ func (b *MCPBridge) toolProcessManagedList(_ context.Context, _ map[string]any) 
 	for _, p := range procs {
 		info := p.Info()
 		row := map[string]any{
-			"id":         p.ID,
-			"command":    p.Command,
-			"args":       p.Args,
-			"dir":        p.Dir,
-			"status":     string(p.Status),
-			"started_at": p.StartedAt,
-			"exit_code":  p.ExitCode,
+			"id":          p.ID,
+			"command":     p.Command,
+			"args":        p.Args,
+			"dir":         p.Dir,
+			"status":      string(p.Status),
+			"started_at":  p.StartedAt,
+			"exit_code":   p.ExitCode,
 			"duration_ms": p.Duration.Milliseconds(),
 			"pid":         info.PID,
 		}

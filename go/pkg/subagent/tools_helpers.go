@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"time"
 
-	core "dappco.re/go"
-	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-ws/go"
+	mcpagentic "github.com/dappcore/mcp/go/pkg/mcp/agentic"
 	"github.com/gorilla/websocket"
 )
 
@@ -151,7 +151,9 @@ func (s *Subsystem) watchRelay(ctx context.Context, workspaceID string, timeout 
 		return nil, false, false, false
 	}
 	defer func() {
-		if cerr := conn.Close(); cerr != nil { _ = cerr }
+		if cerr := conn.Close(); cerr != nil {
+			_ = cerr
+		}
 	}()
 
 	for _, channel := range []string{statusChannel(workspaceID), progressChannel(workspaceID), questionChannel(workspaceID), answerChannel(workspaceID)} {

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/marcboeker/go-duckdb"
+	_ "github.com/duckdb/duckdb-go/v2"
 )
 
 // cache_* — DuckDB-backed application state cache. Snider's nudge:

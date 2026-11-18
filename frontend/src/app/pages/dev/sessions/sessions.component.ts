@@ -11,7 +11,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import * as SessionBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/sessionbridge';
+import * as SessionBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/sessionbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';

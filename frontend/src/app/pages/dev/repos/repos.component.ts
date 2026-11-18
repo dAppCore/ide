@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as ReposBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/reposbridge';
+import * as ReposBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/reposbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { SettingsStore } from '../../../services/store/settings.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';

@@ -1,6 +1,6 @@
 package config
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func TestOverrides_IDEConfig_Merge_Good(t *core.T) {
 	subject := any((*IDEConfig).Merge)

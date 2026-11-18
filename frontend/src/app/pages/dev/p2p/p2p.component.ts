@@ -2,13 +2,13 @@
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import * as P2PBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/p2pbridge';
-import { P2PStateOutput } from '../../../../../bindings/dappco.re/go/ide/pkg/server/models';
+import * as P2PBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/p2pbridge';
+import { P2PStateOutput } from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/models';
 import { NotificationService } from '../../../services/notification.service';
 
 // First panel migrated to typed wails bindings — replaces the HTTP
 // callBridge round-trip with a direct goroutine call. Generated TS
-// lives in frontend/bindings/dappco.re/go/ide/pkg/server/p2pbridge.ts;
+// lives in frontend/bindings/github.com/dappcore/ide/go/pkg/server/p2pbridge.ts;
 // regenerate with `task generate:bindings` after Go-side method changes.
 
 /**

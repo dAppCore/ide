@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/tasks"
-	"dappco.re/go/orm"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/ide/go/pkg/tasks"
+	"github.com/dappcore/orm/go"
 )
 
 // ormBackendState tracks which Medium is currently mounted under
@@ -17,12 +17,12 @@ import (
 // /data panel's backend picker flips between Memium (in-mem, lost on
 // restart) and DuckDB (persistent).
 type ormBackendState struct {
-	mu         sync.Mutex
-	current    string // "memium" | "duckdb"
-	memium     *orm.Memium
-	duck       *duckDBMedium
-	duckPath   string
-	core       *core.Core
+	mu       sync.Mutex
+	current  string // "memium" | "duckdb"
+	memium   *orm.Memium
+	duck     *duckDBMedium
+	duckPath string
+	core     *core.Core
 }
 
 var ormBackend = &ormBackendState{current: "memium"}

@@ -1,6 +1,6 @@
 package server
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func ExampleNewServer() {
 	_ = any(NewServer)

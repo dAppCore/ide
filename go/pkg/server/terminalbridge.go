@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // terminalBridge — Wails bridge for the in-IDE terminal pane's control plane.

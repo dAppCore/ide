@@ -5,8 +5,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as MarketplaceBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/marketplacebridge';
-import * as WindowBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/windowbridge';
+import * as MarketplaceBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/marketplacebridge';
+import * as WindowBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/windowbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { PluginMenuStore } from '../../../services/store/plugin-menu.store';
 

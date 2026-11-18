@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	scmgit "dappco.re/go/scm/git"
+	scmgit "github.com/dappcore/go-scm/go/git"
 )
 
 // repos_status surfaces the multi-repo dashboard. Different abstraction layer

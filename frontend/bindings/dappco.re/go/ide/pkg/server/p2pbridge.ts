@@ -14,7 +14,7 @@
  *   2. typed methods that wrap c.Action(...) and unwrap Result
  *   3. registered in cmd/core-ide/wails_boot.go via app.RegisterService
  *   4. wails3 generate bindings emits the matching TS into
- *      frontend/bindings/dappco.re/go/ide/pkg/server/p2pbridge.ts
+ *      frontend/bindings/github.com/dappcore/ide/go/pkg/server/p2pbridge.ts
  *   5. panel imports + calls the typed binding instead of callBridge
  * @module
  */

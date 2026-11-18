@@ -5,13 +5,13 @@ import (
 	"syscall"
 	"testing"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	"dappco.re/go/process"
-	command "dappco.re/go/process/exec"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	"github.com/dappcore/go-process/go"
+	command "github.com/dappcore/go-process/go/exec"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestWorkspace_Scan_Good(t *testing.T) {

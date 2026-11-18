@@ -4,7 +4,7 @@ import { Component, computed, inject, linkedSignal, resource } from '@angular/co
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as PhpBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/phpbridge';
+import * as PhpBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/phpbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface PHPProjectSummary {

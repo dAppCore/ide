@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	core "dappco.re/go"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 	"github.com/gin-gonic/gin"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 const (

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/gui/pkg/systray"
-	"dappco.re/go/gui/pkg/window"
-	vipkg "dappco.re/go/ide/pkg/vi"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/gui/go/pkg/systray"
+	"github.com/dappcore/gui/go/pkg/window"
+	vipkg "github.com/dappcore/ide/go/pkg/vi"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 )

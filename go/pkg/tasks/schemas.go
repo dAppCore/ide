@@ -2,7 +2,7 @@
 
 package tasks
 
-import "dappco.re/go/orm"
+import "github.com/dappcore/orm/go"
 
 // Schemas returns the orm schemas for the tasks subsystem. Called by
 // the IDE's orm_init.go during boot so the issues + notes tables get

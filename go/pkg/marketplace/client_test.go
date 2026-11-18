@@ -8,12 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	core "dappco.re/go"
-	aipkg "dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/config"
-	coreio "dappco.re/go/io"
-	"dappco.re/go/scm/manifest"
-	scmmarketplace "dappco.re/go/scm/marketplace"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	"github.com/dappcore/go-scm/go/manifest"
+	scmmarketplace "github.com/dappcore/go-scm/go/marketplace"
+	aipkg "github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestClient_Info_Good(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	updater "dappco.re/go/update"
+	updater "github.com/dappcore/go-update/go"
 )
 
-// selfupdate_* bridge tools — surfaces dappco.re/go/update for the
+// selfupdate_* bridge tools — surfaces github.com/dappcore/go-update/go for the
 // IDE binary itself. Different from the updates_* tools (which track
 // shelf-tools like docker / node / go) — this is the "Update core-ide"
 // header card on the /updates panel.
@@ -27,8 +27,10 @@ import (
 const defaultIDEUpdateRepoURL = "https://github.com/lethean/core-ide"
 
 // coreIDEVersion is overridable at build time via:
-//   go build -ldflags "-X dappco.re/go/ide/pkg/server.coreIDEVersion=v0.1.0" ./cmd/core-ide
-// When unset, falls back to the dappco.re/go/update package's own version
+//
+//	go build -ldflags "-X github.com/dappcore/ide/go/pkg/server.coreIDEVersion=v0.1.0" ./cmd/core-ide
+//
+// When unset, falls back to the github.com/dappcore/go-update/go package's own version
 // (currently 1.2.3) — surfaces as "1.2.3 (dev)" until real releases ship.
 var coreIDEVersion = ""
 
@@ -193,10 +195,10 @@ func (b *MCPBridge) toolSelfUpdateApply(_ context.Context, _ map[string]any) map
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"updated_to":   r.TagName,
-			"download_url": dl.Value.(string),
+			"updated_to":       r.TagName,
+			"download_url":     dl.Value.(string),
 			"restart_required": true,
-			"message": "Update applied. Quit and relaunch core-ide to run the new binary.",
+			"message":          "Update applied. Quit and relaunch core-ide to run the new binary.",
 		},
 	}
 }

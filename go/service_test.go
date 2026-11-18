@@ -1,7 +1,7 @@
 package ide
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestService_NewService_Good(t *core.T) {
@@ -135,4 +135,3 @@ func TestService_Service_OnShutdown_Ugly(t *core.T) {
 		t.FailNow()
 	}
 }
-

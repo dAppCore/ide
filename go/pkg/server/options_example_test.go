@@ -1,6 +1,6 @@
 package server
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func ExampleOptions_Register() {
 	_ = any((*Options).Register)

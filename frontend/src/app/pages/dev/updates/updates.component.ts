@@ -3,7 +3,7 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as UpdatesBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/updatesbridge';
+import * as UpdatesBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/updatesbridge';
 import { NotificationService } from '../../../services/notification.service';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 

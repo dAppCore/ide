@@ -3,13 +3,13 @@ package marketplace
 import (
 	"context"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	scmmarketplace "dappco.re/go/scm/marketplace"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	scmmarketplace "github.com/dappcore/go-scm/go/marketplace"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	aipkg "dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/config"
+	aipkg "github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type Subsystem struct {

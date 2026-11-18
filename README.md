@@ -21,7 +21,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=dappcore_ide)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=code_smells)](https://sonarcloud.io/dashboard?id=dappcore_ide)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=dappcore_ide&metric=ncloc)](https://sonarcloud.io/dashboard?id=dappcore_ide)
-[![Go Reference](https://pkg.go.dev/badge/dappco.re/go/ide.svg)](https://pkg.go.dev/dappco.re/go/ide)
+[![Go Reference](https://pkg.go.dev/badge/github.com/dappcore/ide/go.svg)](https://pkg.go.dev/github.com/dappcore/ide/go)
 [![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](https://eupl.eu/1.2/en/)
 
 

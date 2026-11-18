@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"reflect"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func (s *Subsystem) resolveStore(

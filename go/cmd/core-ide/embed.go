@@ -6,7 +6,7 @@ import (
 	"embed"
 	"io/fs"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // frontendDist is the embedded frontend bundle. Populated at build time via

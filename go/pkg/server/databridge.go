@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // dataBridge — typed wails wrapper over MCPBridge orm_* tools (Memium /

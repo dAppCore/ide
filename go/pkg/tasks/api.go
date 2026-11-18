@@ -5,8 +5,8 @@ package tasks
 import (
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/orm"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/orm/go"
 )
 
 // idLength is the random-string length of generated IDs. 12 chars from

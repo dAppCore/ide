@@ -4,12 +4,12 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	storelib "dappco.re/go/store"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	storelib "github.com/dappcore/go-store/go"
+	"github.com/dappcore/go-ws/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type Subsystem struct {

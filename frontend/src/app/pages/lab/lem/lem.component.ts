@@ -2,7 +2,7 @@
 
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import * as LemBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/lemlabbridge';
+import * as LemBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/lemlabbridge';
 import type {
   LemAgentStatus,
   LemContainerStatus,
@@ -11,7 +11,7 @@ import type {
   LemSnapshot,
   LemStackStatus,
   LemTrainingRow,
-} from '../../../../../bindings/dappco.re/go/ide/pkg/server/models';
+} from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/models';
 
 const REFRESH_MS = 10_000;
 

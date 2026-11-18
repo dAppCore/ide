@@ -1,7 +1,7 @@
 // SPDX-Licence-Identifier: EUPL-1.2
 
 import { ElementRef, Injectable, computed, inject, signal } from '@angular/core';
-import * as FileBridge from '../../../../bindings/dappco.re/go/ide/pkg/server/filebridge';
+import * as FileBridge from '../../../../bindings/github.com/dappcore/ide/go/pkg/server/filebridge';
 import { NotificationService } from '../notification.service';
 import { WorkspaceStore } from './workspace.store';
 

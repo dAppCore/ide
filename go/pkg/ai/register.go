@@ -6,8 +6,8 @@ import (
 	"time"
 	"unicode"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
 )
 
 type Event struct {
@@ -159,7 +159,9 @@ func Record(
 		return core.E("ide.ai.Record", "open metrics file", err)
 	}
 	defer func() {
-		if cerr := file.Close(); cerr != nil { _ = cerr }
+		if cerr := file.Close(); cerr != nil {
+			_ = cerr
+		}
 	}()
 	if _, err := file.Write([]byte(core.Concat(core.JSONMarshalString(event), "\n"))); err != nil {
 		return core.E("ide.ai.Record", "write metrics file", err)

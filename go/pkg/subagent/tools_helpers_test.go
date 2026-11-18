@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-ws/go"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestTools_State_Good(t *testing.T) {

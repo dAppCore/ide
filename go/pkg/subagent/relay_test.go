@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/config"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-ws/go"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type testAuthenticator struct{}

@@ -24,8 +24,8 @@ package ide
 import (
 	"context"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/workspace"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/ide/go/pkg/workspace"
 )
 
 // IdeConfig configures the ide service. Empty config gives the default

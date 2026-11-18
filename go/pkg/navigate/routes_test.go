@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	"dappco.re/go/ide/pkg/config"
-	storepkg "dappco.re/go/ide/pkg/store"
+	"github.com/dappcore/ide/go/pkg/config"
+	storepkg "github.com/dappcore/ide/go/pkg/store"
 )
 
 func TestRoutes_Resolve_Good(t *testing.T) {

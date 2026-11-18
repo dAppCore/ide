@@ -3,10 +3,10 @@ package server
 import (
 	"io/fs"
 
-	coreio "dappco.re/go/io"
+	coreio "github.com/dappcore/go-io/go"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/config"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type Options struct {

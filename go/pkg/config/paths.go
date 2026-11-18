@@ -1,6 +1,6 @@
 package config
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 // paths := resolveIDEConfigPaths("")
 // core.Println(paths) // [~/.core/ide.yaml ./ .core/ide.yaml]

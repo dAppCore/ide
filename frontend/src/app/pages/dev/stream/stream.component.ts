@@ -3,7 +3,7 @@
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import * as StreamBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/streambridge';
+import * as StreamBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/streambridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { StreamEventsService } from '../../../services/stream-events.service';
 

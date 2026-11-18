@@ -2,13 +2,13 @@ package brain
 
 import (
 	"context"
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestHTTPClient_DoJSON_Good(t *testing.T) {

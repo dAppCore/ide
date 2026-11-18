@@ -23,7 +23,7 @@ tools, and the optional GUI shell. The active packages live under `pkg/`:
 workspace inspection, OpenBrain memory, subagent relay, navigation, marketplace
 installation, chat integration, and the server transports that compose them.
 
-Use `dappco.re/go` primitives in new Go code. Direct imports of stdlib helper
+Use `github.com/dappcore/go` primitives in new Go code. Direct imports of stdlib helper
 packages such as `fmt`, `errors`, `strings`, `path/filepath`, `os`, `log`,
 `encoding/json`, and `bytes` are not part of this repository's current style;
 the Core wrapper package provides the formatting, error wrapping, string,

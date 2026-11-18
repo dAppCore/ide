@@ -5,7 +5,7 @@ description: Internal architecture of Core IDE — runtime composition, MCP serv
 
 # Architecture
 
-Core IDE is a single Go binary at `dappco.re/go/ide` that composes a Core ecosystem runtime, an embedded MCP server, an optional Wails GUI shell, and a transport layer that exposes everything through stdio MCP, HTTP MCP, or the GUI's in-process chat surface.
+Core IDE is a single Go binary at `github.com/dappcore/ide/go` that composes a Core ecosystem runtime, an embedded MCP server, an optional Wails GUI shell, and a transport layer that exposes everything through stdio MCP, HTTP MCP, or the GUI's in-process chat surface.
 
 > **Identity:** This binary IS Lethean Desktop's IDE component. The plan that defines what Lethean Desktop is + how the Vi Control Panel chrome wraps the IDE surface lives at `plans/project/lthn/desktop/RFC.md`. Sections of the design (Vi Control Panel chrome, Lethean-3 token adoption) are designed but not yet integrated into the Angular frontend — the RFC §9 evolution-path table tracks what's shipped vs. planned.
 
@@ -218,9 +218,9 @@ import('@wailsio/runtime').then(({ Events }) => {
 
 ## 7. Persistence (`pkg/store/`)
 
-Backed by `dappco.re/go/store` — SQLite KV + DuckDB workspace buffer. Workspace state, navigation history, subagent event log all persist through this layer.
+Backed by `github.com/dappcore/go-store/go` — SQLite KV + DuckDB workspace buffer. Workspace state, navigation history, subagent event log all persist through this layer.
 
-Storage backend is pluggable via `coreio.Medium` injected on `Options` — Local, S3, Cube, in-memory all valid (per `dappco.re/go/io` Medium pattern). Default: Local Medium under XDG paths.
+Storage backend is pluggable via `coreio.Medium` injected on `Options` — Local, S3, Cube, in-memory all valid (per `github.com/dappcore/go-io/go` Medium pattern). Default: Local Medium under XDG paths.
 
 ### App-state cache (`~/.core/ide-cache.db`)
 
@@ -290,11 +290,11 @@ The Conclave wrapper is what enforces this — without it, each transport would 
 | Lethean Desktop product framing | `plans/project/lthn/desktop/RFC.md` |
 | Visual system + brand variants + native platform profiles | `plans/ops/hostuk/website/_design/lethean-3/` |
 | Vi Control Panel chrome adoption (planned) | RFC §9 evolution-path table — designed, not yet integrated |
-| `core/agent` (consumed for subagent dispatch) | `dappco.re/go/agent` |
-| `core/mcp` (MCP service framework) | `dappco.re/go/mcp` |
-| `core/gui` (Wails wrapper) | `dappco.re/go/gui` |
-| `core/store` (persistence) | `dappco.re/go/store` |
-| `core/io` (Medium pattern) | `dappco.re/go/io` |
+| `core/agent` (consumed for subagent dispatch) | `github.com/dappcore/agent/go` |
+| `core/mcp` (MCP service framework) | `github.com/dappcore/mcp/go` |
+| `core/gui` (Wails wrapper) | `github.com/dappcore/gui/go` |
+| `core/store` (persistence) | `github.com/dappcore/go-store/go` |
+| `core/io` (Medium pattern) | `github.com/dappcore/go-io/go` |
 | Pre-AI prototyping repo (`forge.lthn.ai/Snider/desktop`) | NOT a source of truth — see "if not in plans, not real" rule |
 
 ## 12. Port summary
@@ -331,7 +331,7 @@ End-to-end smoke at `tests/smoke/run-end-to-end.sh` builds `/tmp/core-ide`, veri
 Per `plans/CLAUDE.md` §"Recent ide work":
 
 - Workspace mode (`go vet ./...`) — CLEAN
-- CI mode (`GOWORK=off go vet ./...`) — blocked on tag bumps for `dappco.re/go/store` (needs tag at SHA `d17ad7b` or later) and `dappco.re/go/gui` (needs tag at SHA `68f33e0` for wails3 alpha.83 `WebviewWindow` API parity)
+- CI mode (`GOWORK=off go vet ./...`) — blocked on tag bumps for `github.com/dappcore/go-store/go` (needs tag at SHA `d17ad7b` or later) and `github.com/dappcore/gui/go` (needs tag at SHA `68f33e0` for wails3 alpha.83 `WebviewWindow` API parity)
 - Recent commits: `0fcd4c6` wails3 alpha.83 + dev-mode working window; `7e0a698` finish core.Result cascade (Mantis #1341); `709c1e0` result-discards 9→0 (Mantis #1336); `94ab118` ax7 triplets + Example* gaps for service.go (Mantis #1336); `dc2e554` add canonical Service for Core registration (Mantis #1336)
 
 ## 15. Out of scope here

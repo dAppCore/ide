@@ -5,9 +5,9 @@ package tasks_test
 import (
 	"testing"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/tasks"
-	"dappco.re/go/orm"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/ide/go/pkg/tasks"
+	"github.com/dappcore/orm/go"
 )
 
 // newTestCore returns a *core.Core with orm registered + a fresh Memium

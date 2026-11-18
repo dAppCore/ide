@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import * as BuildBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/buildbridge';
+import * as BuildBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/buildbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { WorkspaceStore } from '../../../services/store/workspace.store';

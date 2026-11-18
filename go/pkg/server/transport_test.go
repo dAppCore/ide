@@ -1,11 +1,11 @@
 package server
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"net/http"
 	"testing"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestTransport_Select_Good(t *testing.T) {

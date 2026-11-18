@@ -1,6 +1,6 @@
 package brain
 
-import brainpkg "dappco.re/go/mcp/pkg/mcp/brain"
+import brainpkg "github.com/dappcore/mcp/go/pkg/mcp/brain"
 
 type (
 	RememberInput  = brainpkg.RememberInput

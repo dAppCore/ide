@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	storelib "dappco.re/go/store"
+	storelib "github.com/dappcore/go-store/go"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestHistory_Load_Good(t *testing.T) {
@@ -15,7 +15,8 @@ func TestHistory_Load_Good(t *testing.T) {
 	if _targetName == "" {
 		t.Fatal("missing target symbol")
 	}
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -46,7 +47,8 @@ func TestHistory_Load_Bad(t *testing.T) {
 	if _targetName == "" {
 		t.Fatal("missing target symbol")
 	}
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -69,7 +71,8 @@ func TestHistory_Load_Bad(t *testing.T) {
 }
 
 func TestHistory_Load_UglyDeletesPrunedWorkspace(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -96,7 +99,8 @@ func TestHistory_Load_UglyDeletesPrunedWorkspace(t *testing.T) {
 }
 
 func TestHistory_Save_UglyDeletesOverflowEvents(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}

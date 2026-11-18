@@ -121,7 +121,7 @@ brain:
 ## Go Module Layout (new)
 
 Go sources now live under `go/` and keep the module path unchanged:
-`dappco.re/go/ide`. From repo root:
+`github.com/dappcore/ide/go`. From repo root:
 - `go/` is the module root (contains `go.mod`, `go.sum`, `cmd/`, `pkg/`, `tests/`, `third_party/`)
 - `frontend/`, `icons/`, `build/`, `dist/`, `bin/`, and `workspace/` remain at root
 - `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to root `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs`

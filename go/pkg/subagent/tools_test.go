@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"dappco.re/go/ide/pkg/config"
-	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
-	"dappco.re/go/ws"
+	"github.com/dappcore/go-ws/go"
+	"github.com/dappcore/ide/go/pkg/config"
+	mcpagentic "github.com/dappcore/mcp/go/pkg/mcp/agentic"
 )
 
 func TestTools_Guide_Good(t *testing.T) {
