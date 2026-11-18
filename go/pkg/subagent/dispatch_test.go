@@ -2,14 +2,14 @@ package subagent
 
 import (
 	"context"
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"testing"
 
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
-	"dappco.re/go/ws"
+	"github.com/dappcore/go-ws/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
+	mcpagentic "github.com/dappcore/mcp/go/pkg/mcp/agentic"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestDispatch_Guided_Good(t *testing.T) {

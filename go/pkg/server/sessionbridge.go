@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // sessionBridge — typed wails wrapper over MCPBridge session_* tools.
@@ -66,14 +66,14 @@ type SessionEvent struct {
 }
 
 type SessionAnalytics struct {
-	DurationSeconds        int                `json:"duration_seconds,omitempty"`
-	ActiveSeconds          int                `json:"active_seconds,omitempty"`
-	EventCount             int                `json:"event_count,omitempty"`
-	EstimatedInputTokens   int                `json:"estimated_input_tokens,omitempty"`
-	EstimatedOutputTokens  int                `json:"estimated_output_tokens,omitempty"`
-	SuccessRate            float64            `json:"success_rate,omitempty"`
-	ToolCounts             map[string]int     `json:"tool_counts,omitempty"`
-	AvgLatencyMs           map[string]float64 `json:"avg_latency_ms,omitempty"`
+	DurationSeconds       int                `json:"duration_seconds,omitempty"`
+	ActiveSeconds         int                `json:"active_seconds,omitempty"`
+	EventCount            int                `json:"event_count,omitempty"`
+	EstimatedInputTokens  int                `json:"estimated_input_tokens,omitempty"`
+	EstimatedOutputTokens int                `json:"estimated_output_tokens,omitempty"`
+	SuccessRate           float64            `json:"success_rate,omitempty"`
+	ToolCounts            map[string]int     `json:"tool_counts,omitempty"`
+	AvgLatencyMs          map[string]float64 `json:"avg_latency_ms,omitempty"`
 }
 
 type SessionInspectOutput struct {

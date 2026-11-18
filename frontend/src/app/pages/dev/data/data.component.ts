@@ -2,7 +2,7 @@
 
 import { Component, OnInit, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import * as DataBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/databridge';
+import * as DataBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/databridge';
 
 interface OrmTable {
   name: string;

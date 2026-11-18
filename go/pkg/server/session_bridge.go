@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	sess "dappco.re/go/session"
+	sess "github.com/dappcore/go-session/go"
 )
 
-// session_* bridge tools — surfaces dappco.re/go/session for the
+// session_* bridge tools — surfaces github.com/dappcore/go-session/go for the
 // /sessions panel under Developer. Walks ~/.claude/projects/* (one
 // directory per encoded cwd Claude Code has been invoked from), lists
 // the JSONL transcripts inside, parses them on demand into events +
@@ -35,9 +35,9 @@ func claudeProjectsRoot() string {
 }
 
 type sessionProjectEntry struct {
-	Name         string `json:"name"`            // encoded cwd, e.g. -Users-snider-Code-host-uk-core
-	DisplayPath  string `json:"display_path"`    // best-effort decoded path
-	Path         string `json:"path"`            // full path to the project dir
+	Name         string `json:"name"`         // encoded cwd, e.g. -Users-snider-Code-host-uk-core
+	DisplayPath  string `json:"display_path"` // best-effort decoded path
+	Path         string `json:"path"`         // full path to the project dir
 	SessionCount int    `json:"session_count"`
 	LatestAt     string `json:"latest_at,omitempty"`
 }
@@ -212,13 +212,13 @@ func (b *MCPBridge) toolSessionInspect(_ context.Context, params map[string]any)
 	events := make([]map[string]any, 0, len(tail))
 	for _, e := range tail {
 		events = append(events, map[string]any{
-			"timestamp": e.Timestamp.UTC().Format(time.RFC3339),
-			"type":      e.Type,
-			"tool":      e.Tool,
-			"input":     truncateForUI(e.Input, 200),
-			"success":   e.Success,
+			"timestamp":   e.Timestamp.UTC().Format(time.RFC3339),
+			"type":        e.Type,
+			"tool":        e.Tool,
+			"input":       truncateForUI(e.Input, 200),
+			"success":     e.Success,
 			"duration_ms": e.Duration.Milliseconds(),
-			"error":     e.ErrorMsg,
+			"error":       e.ErrorMsg,
 		})
 	}
 
@@ -242,14 +242,14 @@ func (b *MCPBridge) toolSessionInspect(_ context.Context, params map[string]any)
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"id":            parsed.Session.ID,
-			"path":          parsed.Session.Path,
-			"start":         parsed.Session.StartTime.UTC().Format(time.RFC3339),
-			"end":           parsed.Session.EndTime.UTC().Format(time.RFC3339),
-			"total_events":  totalEvents,
-			"event_tail":    events,
-			"tail_offset":   start,
-			"analytics":     stats,
+			"id":           parsed.Session.ID,
+			"path":         parsed.Session.Path,
+			"start":        parsed.Session.StartTime.UTC().Format(time.RFC3339),
+			"end":          parsed.Session.EndTime.UTC().Format(time.RFC3339),
+			"total_events": totalEvents,
+			"event_tail":   events,
+			"tail_offset":  start,
+			"analytics":    stats,
 		},
 	}
 }

@@ -15,7 +15,7 @@ import (
 // i18n_* bridge tools — IDE surface over core/go-i18n.
 //
 // Today (v1) walks the workspace looking for locales/ directories and
-// returns per-package × per-locale coverage. v2 will import dappco.re/go/i18n
+// returns per-package × per-locale coverage. v2 will import github.com/dappcore/go-i18n/go
 // directly to call its catalog/grammar surface (live MessageID lookup,
 // grammar-aware preview, GrammarImprint reversal — see RFC.md).
 //
@@ -24,19 +24,19 @@ import (
 // underlying impl when the package gains a public Go API.
 
 type LocaleInfo struct {
-	Name        string `json:"name"`     // "en", "fr", "ja", etc.
-	Path        string `json:"path"`     // absolute path to the JSON file
-	Keys        int    `json:"keys"`     // total leaf keys (recursive)
+	Name        string `json:"name"` // "en", "fr", "ja", etc.
+	Path        string `json:"path"` // absolute path to the JSON file
+	Keys        int    `json:"keys"` // total leaf keys (recursive)
 	MissingVsEn int    `json:"missing_vs_en"`
 	SizeBytes   int64  `json:"size_bytes"`
 }
 
 type LocalePackage struct {
-	Code        string       `json:"code"`        // package short name (e.g. "go-build")
-	Path        string       `json:"path"`        // absolute path to the locales/ directory
-	HasEnglish  bool         `json:"has_english"`
-	BaselineKeys int         `json:"baseline_keys"` // key count of en.json (or first locale)
-	Locales     []LocaleInfo `json:"locales"`
+	Code         string       `json:"code"` // package short name (e.g. "go-build")
+	Path         string       `json:"path"` // absolute path to the locales/ directory
+	HasEnglish   bool         `json:"has_english"`
+	BaselineKeys int          `json:"baseline_keys"` // key count of en.json (or first locale)
+	Locales      []LocaleInfo `json:"locales"`
 }
 
 type LocaleScanOutput struct {

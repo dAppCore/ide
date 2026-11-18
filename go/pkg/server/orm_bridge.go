@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // orm_* bridge tools — IDE surface over the canonical core/orm Bridge +

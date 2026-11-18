@@ -126,7 +126,7 @@ export class SettingsStore {
   /**
    * Replace the in-memory settings with a fresh snapshot. Called by
    * IdeComponent.loadUIState() at boot. Tolerates camelCase OR
-   * lowercase keys because dappco.re/go/config lowercases YAML.
+   * lowercase keys because github.com/dappcore/config/go lowercases YAML.
    */
   hydrate(loaded: Record<string, any>): void {
     const merged: Record<string, any> = { ...DEFAULT_SETTINGS };

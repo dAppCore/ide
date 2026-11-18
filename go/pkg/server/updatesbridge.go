@@ -3,7 +3,7 @@
 package server
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // updatesBridge — typed wails wrapper over MCPBridge updates_* +

@@ -23,33 +23,33 @@ The sidebar (`frontend/src/app/components/sidebar/sidebar.component.ts`) groups 
 |-------|---------|-----------------|--------------|
 | `/files` | File explorer + Monaco editor with tabs | `dir_list` / `file_read` / Monaco direct | `mcp_bridge.go` |
 | `/search` | Workspace search via ripgrep | `workspace_search` | `mcp_bridge.go` |
-| `/scm` | Source control (status / diff / stage / commit) | `dappco.re/go/scm` | `mcp_bridge.go` |
+| `/scm` | Source control (status / diff / stage / commit) | `github.com/dappcore/go-scm/go` | `mcp_bridge.go` |
 | `/build` | Build detection + spawn | `pkg/server/build_bridge.go` | `build_bridge.go` |
 | `/lint` | Lint orchestration + click-to-jump | go-lint | `lint_bridge.go` |
 | `/locales` | i18n locale package inventory | `i18n_bridge.go` | `i18n_bridge.go` |
 | `/marketplace` | Plugin marketplace | `pkg_*` (marketplace package) | `pkg_bridge.go` |
-| `/repos` | Multi-repo status dashboard | `dappco.re/go/scm` Status | `repos_bridge.go` |
+| `/repos` | Multi-repo status dashboard | `github.com/dappcore/go-scm/go` Status | `repos_bridge.go` |
 | `/containers` | Docker / LinuxKit / QEMU detection | `docker ps` + `linuxkit version` | `container_bridge.go` |
-| `/process` | Spawned process supervisor + daemons | `dappco.re/go/process` | `process_bridge.go` |
-| `/orm` | DuckDB workspace buffer inspector | `dappco.re/go/orm` + `DuckDBMedium` | `orm_bridge.go`, `orm_init.go`, `orm_duckdb_medium.go` |
-| `/store` | Go-store KV inspector | `dappco.re/go/store` | `store_bridge.go` |
-| `/tenant` | Workspace + user context | `dappco.re/go/tenant` Service | `tenant_bridge.go`, `tenant_init.go` |
-| `/forge` | Forgejo client (orgs / repos / issues / PRs / releases) | `dappco.re/go/forge` | `forge_bridge.go` |
-| `/devops` | Secret scanning (regex + gitleaks) + Ansible playbooks | `dappco.re/go/devops` devkit | `devops_bridge.go` |
-| `/php` | Laravel project discovery + composer scripts + canonical artisan | `dappco.re/go/php` | `php_bridge.go` |
+| `/process` | Spawned process supervisor + daemons | `github.com/dappcore/go-process/go` | `process_bridge.go` |
+| `/orm` | DuckDB workspace buffer inspector | `github.com/dappcore/orm/go` + `DuckDBMedium` | `orm_bridge.go`, `orm_init.go`, `orm_duckdb_medium.go` |
+| `/store` | Go-store KV inspector | `github.com/dappcore/go-store/go` | `store_bridge.go` |
+| `/tenant` | Workspace + user context | `github.com/dappcore/go-tenant/go` Service | `tenant_bridge.go`, `tenant_init.go` |
+| `/forge` | Forgejo client (orgs / repos / issues / PRs / releases) | `github.com/dappcore/go-forge/go` | `forge_bridge.go` |
+| `/devops` | Secret scanning (regex + gitleaks) + Ansible playbooks | `github.com/dappcore/go-devops/go` devkit | `devops_bridge.go` |
+| `/php` | Laravel project discovery + composer scripts + canonical artisan | `github.com/dappcore/php/go` | `php_bridge.go` |
 | `/ts` | TypeScript / Deno project discovery + scripts | filesystem walk + manifest parse | `ts_bridge.go` |
-| `/sessions` | Claude Code transcript inspector (Browse / Active / Search tabs + Live tail) | `dappco.re/go/session` + custom JSONL tail | `session_bridge.go` |
-| `/stream` | go-stream Hub inspector + live activity feed | `dappco.re/go/stream` | `stream_bridge.go` |
+| `/sessions` | Claude Code transcript inspector (Browse / Active / Search tabs + Live tail) | `github.com/dappcore/go-session/go` + custom JSONL tail | `session_bridge.go` |
+| `/stream` | go-stream Hub inspector + live activity feed | `github.com/dappcore/go-stream/go` | `stream_bridge.go` |
 | `/memory` | Cladius's auto-memory browser + full-text search | `~/.claude/projects/*/memory/*.md` | `memory_bridge.go` |
 | `/mantis` | tasks.lthn.sh ticket browser | Mantis REST API | `mantis_bridge.go` |
-| `/updates` | Tool version tracking + IDE self-update | PATH probe + GitHub Releases + `dappco.re/go/update` | `updates_bridge.go`, `selfupdate_bridge.go` |
+| `/updates` | Tool version tracking + IDE self-update | PATH probe + GitHub Releases + `github.com/dappcore/go-update/go` | `updates_bridge.go`, `selfupdate_bridge.go` |
 | `/cache` | DuckDB cache state + ops controls | `pkg/server/cache_bridge.go` | `cache_bridge.go` |
 
 The frontend lives in a single Angular component at `frontend/src/app/pages/ide/ide.component.ts`. Each panel is one `@case` in a route switch; signals back state.
 
 ## Pattern 1 — Direct-import lanes
 
-For canonical `core/*` packages with a Service / actions surface, the bridge imports the package directly and forwards to its API. Examples: `forge_bridge.go` constructs a `forge.Forge` client and forwards `f.Releases.ListReleasesPage(ctx, owner, repo, opts)`. `tenant_bridge.go` registers `dappco.re/go/tenant.Service` against the IDE's Core and routes through `c.Action("tenant.workspace_get")`.
+For canonical `core/*` packages with a Service / actions surface, the bridge imports the package directly and forwards to its API. Examples: `forge_bridge.go` constructs a `forge.Forge` client and forwards `f.Releases.ListReleasesPage(ctx, owner, repo, opts)`. `tenant_bridge.go` registers `github.com/dappcore/go-tenant/go.Service` against the IDE's Core and routes through `c.Action("tenant.workspace_get")`.
 
 The MCP bridge tool is a thin translator from `map[string]any` params → typed package calls → `map[string]any` response.
 
@@ -138,7 +138,7 @@ The plumbing each panel rests on:
 - Wails 3 GUI shell composition — see [architecture.md](architecture.md) §6
 - MCP transport selection — [architecture.md](architecture.md) §5
 - Conclave parity — [architecture.md](architecture.md) §3
-- Process supervisor + daemon registry — `dappco.re/go/process` + the canonical RFC at `plans/code/core/process/RFC.md`
+- Process supervisor + daemon registry — `github.com/dappcore/go-process/go` + the canonical RFC at `plans/code/core/process/RFC.md`
 - Frontend state persistence — `feedback_ui_state_persistence_pattern.md` memory
 
 ## Frontend hot-reload

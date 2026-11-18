@@ -3,7 +3,7 @@ package navigate
 import (
 	"testing"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestDecode_Navigate_Good(t *testing.T) {

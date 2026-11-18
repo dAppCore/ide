@@ -3,7 +3,7 @@
 package server
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // localesBridge — typed wails wrapper over MCPBridge i18n_* tools
@@ -13,10 +13,10 @@ type localesBridge struct {
 }
 
 type LocaleEntry struct {
-	Name         string `json:"name"`
-	Path         string `json:"path"`
-	Keys         int    `json:"keys"`
-	MissingVsEN  int    `json:"missing_vs_en"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Keys        int    `json:"keys"`
+	MissingVsEN int    `json:"missing_vs_en"`
 }
 
 type I18nPackage struct {

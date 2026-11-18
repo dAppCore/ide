@@ -1,6 +1,6 @@
 package ai
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func ExampleRegister() {
 	_ = any(Register)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestRegister_Store_Good(t *testing.T) {

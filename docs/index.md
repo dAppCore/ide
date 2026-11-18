@@ -34,7 +34,7 @@ Wildcard binds (`:9880`, `0.0.0.0:9880`) are rejected; HTTP transport requires a
 - Go 1.26+
 - Node.js 22+ and npm
 - [Wails 3 CLI](https://v3alpha.wails.io/) (`wails3`) — currently tracking alpha.83
-- The dappcore Go workspace (the module consumes `dappco.re/go/*` packages via workspace mode)
+- The dappcore Go workspace (the module consumes `github.com/dappcore/*` packages via workspace mode)
 
 ### Development
 
@@ -107,7 +107,7 @@ See **[panels.md](panels.md)** for the full panel inventory and **[cache-archite
 | `pkg/subagent/` | Subagent relay (history, dispatch, paged event watch) |
 | `pkg/workspace/` | Workspace inspection + management |
 
-The Go module root is `go/`. Module path: `dappco.re/go/ide`. From the repo root, `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to the root copies.
+The Go module root is `go/`. Module path: `github.com/dappcore/ide/go`. From the repo root, `go/README.md`, `go/CLAUDE.md`, `go/AGENTS.md`, and `go/docs` are symlinks back to the root copies.
 
 `pkg/server/` has grown a set of `<area>_bridge.go` files (one per Developer panel) — see **[panels.md](panels.md)** for the full list and the bridge-naming convention.
 

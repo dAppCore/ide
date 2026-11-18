@@ -5,12 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	core "dappco.re/go"
-	gui "dappco.re/go/gui"
+	core "github.com/dappcore/go"
+	gui "github.com/dappcore/gui/go"
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"dappco.re/go/ide/pkg/config"
-	"dappco.re/go/ide/pkg/server"
+	"github.com/dappcore/ide/go/pkg/config"
+	"github.com/dappcore/ide/go/pkg/server"
 )
 
 type runtimeFlags struct {

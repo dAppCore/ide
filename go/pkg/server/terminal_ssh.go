@@ -7,8 +7,8 @@ import (
 	"io"
 	"net"
 
-	core "dappco.re/go"
 	"github.com/charmbracelet/ssh"
+	core "github.com/dappcore/go"
 )
 
 // TerminalServer is an embedded SSH server that exposes the user's shell

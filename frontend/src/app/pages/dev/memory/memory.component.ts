@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import * as MemoryBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/memorybridge';
+import * as MemoryBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/memorybridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';

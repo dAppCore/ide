@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // fileBridge — typed wails wrapper over MCPBridge file_/dir_/lang_

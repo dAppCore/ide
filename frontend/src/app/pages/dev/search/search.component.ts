@@ -3,7 +3,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import * as SearchBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/searchbridge';
+import * as SearchBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/searchbridge';
 import { FileEditorStore } from '../../../services/store/file-editor.store';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 

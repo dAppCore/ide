@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go"
-	guimcp "dappco.re/go/gui/pkg/mcp"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	guimcp "github.com/dappcore/gui/go/pkg/mcp"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 type stubExecutor struct {

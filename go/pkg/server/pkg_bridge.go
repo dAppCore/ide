@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // pkg_* bridge tools dispatch into the marketplace.Subsystem via the Core

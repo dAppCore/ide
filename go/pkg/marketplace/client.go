@@ -7,17 +7,17 @@ import (
 	"net/url"
 	"time"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	scmmarketplace "dappco.re/go/scm/marketplace"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	scmmarketplace "github.com/dappcore/go-scm/go/marketplace"
 
-	"dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 const (
-	installModulesDir   = "modules"
-	installModuleEntry  = "module.json"
+	installModulesDir  = "modules"
+	installModuleEntry = "module.json"
 )
 
 type Client struct {
@@ -306,7 +306,9 @@ func (c *Client) request(
 		return core.E("ide.marketplace.request", "request failed", err)
 	}
 	defer func() {
-		if cerr := response.Body.Close(); cerr != nil { _ = cerr }
+		if cerr := response.Body.Close(); cerr != nil {
+			_ = cerr
+		}
 	}()
 	if response.StatusCode >= http.StatusBadRequest {
 		return core.E("ide.marketplace.request", core.Concat("upstream returned ", response.Status), nil)
@@ -348,6 +350,11 @@ func defaultInstallMedium() (
 		return nil, core.E("ide.marketplace.install", "home directory unavailable", nil)
 	}
 	sandboxRoot := core.JoinPath(home, ".core", "ide", "marketplace")
+	// NewSandboxed opens its root with os.Root, which needs the directory to
+	// exist. On a fresh install it doesn't yet.
+	if err := coreio.Local.EnsureDir(sandboxRoot); err != nil {
+		return nil, core.E("ide.marketplace.install", "create install directory", err)
+	}
 	medium, err := coreio.NewSandboxed(sandboxRoot)
 	if err != nil {
 		return nil, core.E("ide.marketplace.install", "create sandboxed install medium", err)

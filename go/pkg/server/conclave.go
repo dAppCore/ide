@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"unsafe"
 
-	core "dappco.re/go"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	"dappco.re/go/process"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-process/go"
+	"github.com/dappcore/go-ws/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

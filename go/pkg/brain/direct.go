@@ -5,10 +5,10 @@ import (
 	"net/http" // Note: AX-6 - OpenBrain direct mode owns a specific HTTP client boundary; RFC permits specific clients.
 	"time"     // Note: AX-6 - brain output contracts expose time.Time timestamps; no core clock primitive exists.
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 
-	ai "dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/workspace"
+	ai "github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/workspace"
 )
 
 const (

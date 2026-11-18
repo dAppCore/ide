@@ -3,7 +3,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import * as DevopsBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/devopsbridge';
+import * as DevopsBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/devopsbridge';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 import { FileEditorStore } from '../../../services/store/file-editor.store';

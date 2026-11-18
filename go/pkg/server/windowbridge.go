@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // windowBridge — typed wails wrapper over MCPBridge window_* tools.
@@ -87,35 +87,35 @@ type WindowFullscreenInput struct {
 // shapes of the window controllers. Each field is independently optional;
 // the caller usually only cares about OK + Error + the field they set.
 type WindowMutationOutput struct {
-	OK           bool   `json:"ok"`
-	Window       string `json:"window,omitempty"`
-	X            int    `json:"x,omitempty"`
-	Y            int    `json:"y,omitempty"`
-	Width        int    `json:"width,omitempty"`
-	Height       int    `json:"height,omitempty"`
-	Title        string `json:"title,omitempty"`
-	Visible      bool   `json:"visible,omitempty"`
-	AlwaysOnTop  bool   `json:"always_on_top,omitempty"`
-	Fullscreen   bool   `json:"fullscreen,omitempty"`
-	Closed       string `json:"closed,omitempty"`
-	Restored     string `json:"restored,omitempty"`
-	Focused      string `json:"focused,omitempty"`
-	Note         string `json:"note,omitempty"`
-	Error        string `json:"error,omitempty"`
+	OK          bool   `json:"ok"`
+	Window      string `json:"window,omitempty"`
+	X           int    `json:"x,omitempty"`
+	Y           int    `json:"y,omitempty"`
+	Width       int    `json:"width,omitempty"`
+	Height      int    `json:"height,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Visible     bool   `json:"visible,omitempty"`
+	AlwaysOnTop bool   `json:"always_on_top,omitempty"`
+	Fullscreen  bool   `json:"fullscreen,omitempty"`
+	Closed      string `json:"closed,omitempty"`
+	Restored    string `json:"restored,omitempty"`
+	Focused     string `json:"focused,omitempty"`
+	Note        string `json:"note,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 type WindowInfoOutput struct {
-	OK        bool   `json:"ok"`
-	Name      string `json:"name,omitempty"`
-	Title     string `json:"title,omitempty"`
-	X         int    `json:"x,omitempty"`
-	Y         int    `json:"y,omitempty"`
-	Width     int    `json:"width,omitempty"`
-	Height    int    `json:"height,omitempty"`
+	OK        bool    `json:"ok"`
+	Name      string  `json:"name,omitempty"`
+	Title     string  `json:"title,omitempty"`
+	X         int     `json:"x,omitempty"`
+	Y         int     `json:"y,omitempty"`
+	Width     int     `json:"width,omitempty"`
+	Height    int     `json:"height,omitempty"`
 	Opacity   float64 `json:"opacity,omitempty"`
-	Maximised bool   `json:"maximised,omitempty"`
-	Focused   bool   `json:"focused,omitempty"`
-	Error     string `json:"error,omitempty"`
+	Maximised bool    `json:"maximised,omitempty"`
+	Focused   bool    `json:"focused,omitempty"`
+	Error     string  `json:"error,omitempty"`
 }
 
 type WindowFocusedOutput struct {

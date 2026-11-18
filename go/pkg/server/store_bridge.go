@@ -9,10 +9,10 @@ import (
 	"sort"
 	"strings"
 
-	core "dappco.re/go"
-	storelib "dappco.re/go/store"
+	core "github.com/dappcore/go"
+	storelib "github.com/dappcore/go-store/go"
 
-	storepkg "dappco.re/go/ide/pkg/store"
+	storepkg "github.com/dappcore/ide/go/pkg/store"
 )
 
 // store_* bridge tools surface the IDE's already-mounted go-store Service.

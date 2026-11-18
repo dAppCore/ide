@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 const maxErrorBodyBytes = 4096
@@ -129,7 +129,9 @@ func (client *openBrainHTTPClient) doOnce(
 		})
 	}
 	defer func() {
-		if cerr := response.Body.Close(); cerr != nil { _ = cerr }
+		if cerr := response.Body.Close(); cerr != nil {
+			_ = cerr
+		}
 	}()
 	raw, err := readOpenBrainBody(response.Body)
 	if err != nil {

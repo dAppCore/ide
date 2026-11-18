@@ -4,12 +4,12 @@ import (
 	"context"
 	"sort"
 
-	core "dappco.re/go"
-	gui_chat "dappco.re/go/gui/pkg/chat"
-	guimcp "dappco.re/go/gui/pkg/mcp"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	gui_chat "github.com/dappcore/gui/go/pkg/chat"
+	guimcp "github.com/dappcore/gui/go/pkg/mcp"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 // ToolExecutor is the local (IDE-side) executor contract. CallTool returns a
@@ -104,7 +104,7 @@ func (e *Executor) CallTool(
 // to the upstream gui_chat.ToolExecutor (resultFailure-returning, where
 // resultFailure is an anonymous interface{ Error() string } alias — see
 // external/gui/go/pkg/chat/result_failure.go). gui_chat is part of
-// dappco.re/go/gui — a separate canonical project that uses an in-house
+// github.com/dappcore/gui/go — a separate canonical project that uses an in-house
 // failure shape, so the adapter preserves the contract at the boundary rather
 // than forcing an upstream change.
 //

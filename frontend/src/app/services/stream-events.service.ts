@@ -9,7 +9,7 @@ import { Injectable, Signal, computed, signal } from '@angular/core';
  * here as a single SSE frame.
  *
  * `type` is the fully-qualified Go type name of the action message —
- * `dappco.re/go/gui/pkg/lifecycle.ActionDidBecomeActive` etc. — useful
+ * `github.com/dappcore/gui/go/pkg/lifecycle.ActionDidBecomeActive` etc. — useful
  * for routing on the frontend without needing to switch on each new
  * action type the backend learns to emit.
  */

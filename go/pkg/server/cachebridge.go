@@ -3,7 +3,7 @@
 package server
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // cacheBridge — typed wails wrapper over MCPBridge cache_* tools

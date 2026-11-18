@@ -3,8 +3,8 @@
 package vi_test
 
 import (
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/vi"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/ide/go/pkg/vi"
 )
 
 func ExampleRegister() {

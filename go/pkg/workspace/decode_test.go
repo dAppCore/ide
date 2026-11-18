@@ -3,7 +3,7 @@ package workspace
 import (
 	"testing"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestDecode_Workspace_Good(t *testing.T) {

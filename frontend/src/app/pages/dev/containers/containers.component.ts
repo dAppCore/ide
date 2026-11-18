@@ -3,7 +3,7 @@
 import { Component, computed, resource, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as ContainersBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/containersbridge';
+import * as ContainersBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/containersbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface ContainerRuntime {

@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // marketplaceBridge — typed wails wrapper over MCPBridge pkg_* tools

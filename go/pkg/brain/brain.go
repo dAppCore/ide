@@ -3,14 +3,14 @@ package brain
 import (
 	"net/http"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	aipkg "dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/config"
-	"dappco.re/go/ide/pkg/workspace"
-	storelib "dappco.re/go/store"
+	storelib "github.com/dappcore/go-store/go"
+	aipkg "github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/config"
+	"github.com/dappcore/ide/go/pkg/workspace"
 )
 
 type Subsystem struct {

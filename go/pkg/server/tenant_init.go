@@ -3,8 +3,8 @@
 package server
 
 import (
-	core "dappco.re/go"
-	"dappco.re/go/tenant"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-tenant/go"
 )
 
 // registerTenantService mounts core/go-tenant's Tenant Service under the

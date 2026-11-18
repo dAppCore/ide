@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // gitBridge — typed wails wrapper over MCPBridge git_* tools. /dev/git
@@ -169,7 +169,7 @@ func (b *gitBridge) Diff(ctx context.Context, input GitDiffInput) (GitDiffOutput
 		return GitDiffOutput{}, core.E("ide.server.Git.Diff", "mcp bridge unavailable", nil)
 	}
 	_ = ctx
-	raw := m.toolGitDiff( map[string]any{
+	raw := m.toolGitDiff(map[string]any{
 		"path":   input.Path,
 		"file":   input.File,
 		"staged": input.Staged,
@@ -201,7 +201,7 @@ func (b *gitBridge) Add(ctx context.Context, input GitAddInput) (GitAddOutput, e
 		params["files"] = input.Files
 	}
 	_ = ctx
-	raw := m.toolGitAdd( params)
+	raw := m.toolGitAdd(params)
 	out := GitAddOutput{}
 	out.OK, out.Error = decodeOK(raw)
 	return out, nil
@@ -213,7 +213,7 @@ func (b *gitBridge) Unstage(ctx context.Context, input GitUnstageInput) (GitAddO
 		return GitAddOutput{}, core.E("ide.server.Git.Unstage", "mcp bridge unavailable", nil)
 	}
 	_ = ctx
-	raw := m.toolGitUnstage( map[string]any{
+	raw := m.toolGitUnstage(map[string]any{
 		"path":  input.Path,
 		"files": input.Files,
 	})
@@ -228,7 +228,7 @@ func (b *gitBridge) Commit(ctx context.Context, input GitCommitInput) (GitCommit
 		return GitCommitOutput{}, core.E("ide.server.Git.Commit", "mcp bridge unavailable", nil)
 	}
 	_ = ctx
-	raw := m.toolGitCommit( map[string]any{
+	raw := m.toolGitCommit(map[string]any{
 		"path":    input.Path,
 		"message": input.Message,
 	})

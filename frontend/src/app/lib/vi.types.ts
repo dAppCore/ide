@@ -1,6 +1,6 @@
 /**
  * Vi data model — local type shapes that mirror the wails-generated
- * bindings at frontend/bindings/dappco.re/go/ide/pkg/vi/. We declare the
+ * bindings at frontend/bindings/github.com/dappcore/ide/go/pkg/vi/. We declare the
  * shapes here instead of importing from `@bindings/...` so the types
  * resolve cleanly under tsconfig.app.json's include scope (the bindings
  * tree lives outside src/, so its files don't make it into Angular's
@@ -89,7 +89,7 @@ export interface ViSnapshot {
 // @bindings/* alias races during HMR (TS2307 overlay even when the
 // build succeeds). The bindings file is regenerated on every dev
 // rebuild via the wails3 task, so the path is stable.
-import * as vibridge from '../../../bindings/dappco.re/go/ide/pkg/server/vibridge';
+import * as vibridge from '../../../bindings/github.com/dappcore/ide/go/pkg/server/vibridge';
 
 /**
  * Load all four Vi data slices in one round-trip.

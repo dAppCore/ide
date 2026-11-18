@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // lintBridge — typed wails wrapper over MCPBridge lint_run / lint_catalog.

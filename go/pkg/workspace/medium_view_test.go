@@ -1,12 +1,12 @@
 package workspace
 
 import (
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 	"io"
 	"io/fs"
 	"testing"
 
-	coreio "dappco.re/go/io"
+	coreio "github.com/dappcore/go-io/go"
 )
 
 type recordingMedium struct {

@@ -1,6 +1,6 @@
 package subagent
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func ExampleSubsystem_DispatchGuided() {
 	_ = any((*Subsystem).DispatchGuided)

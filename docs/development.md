@@ -18,7 +18,7 @@ This is the developer guide for `core/ide` — the binary that ships as **Lethea
 | `core` CLI | latest | Build system (`core build`) |
 | Task | 3+ | Build orchestration (`Taskfile.yml`) |
 
-The module path is `dappco.re/go/ide`. Dependencies are sourced from the `dappco.re/go/*` namespace via the workspace at `~/Code/go.work`. External submodule pins live under `external/` (one submodule per dependency — `external/{config,go,gui,io,log,mcp,process,rag,scm,store,webview,ws}`). Workspace mode pulls fresh from `external/`; CI mode (`GOWORK=off`) falls back to tagged versions in `go/go.mod`.
+The module path is `github.com/dappcore/ide/go`. Dependencies are sourced from the `github.com/dappcore/*` namespace via the workspace at `~/Code/go.work`. External submodule pins live under `external/` (one submodule per dependency — `external/{config,go,gui,io,log,mcp,process,rag,scm,store,webview,ws}`). Workspace mode pulls fresh from `external/`; CI mode (`GOWORK=off`) falls back to tagged versions in `go/go.mod`.
 
 ```sh
 # First-time setup on a fresh clone
@@ -215,13 +215,13 @@ Per [`AGENTS.md`](../AGENTS.md):
 
 GitHub is the public mirror; forge.lthn.sh is the homelab; forge.lthn.ai is the public Forgejo.
 
-**CI mode caveat (2026-05-04):** `GOWORK=off go vet ./...` currently blocks on tag bumps for `dappco.re/go/store` (needs SHA `d17ad7b` or later) and `dappco.re/go/gui` (needs SHA `68f33e0` for wails3 alpha.83 `WebviewWindow` API parity). Workspace-mode `go vet ./...` is CLEAN. Tag-bump tickets pending.
+**CI mode caveat (2026-05-04):** `GOWORK=off go vet ./...` currently blocks on tag bumps for `github.com/dappcore/go-store/go` (needs SHA `d17ad7b` or later) and `github.com/dappcore/gui/go` (needs SHA `68f33e0` for wails3 alpha.83 `WebviewWindow` API parity). Workspace-mode `go vet ./...` is CLEAN. Tag-bump tickets pending.
 
 ## Project structure
 
 ```
 ide/
-├── go/                            # Go module root (module: dappco.re/go/ide)
+├── go/                            # Go module root (module: github.com/dappcore/ide/go)
 │   ├── cmd/
 │   │   └── core-ide/              # Entry point
 │   │       ├── main.go            # Main — flag parse, config load, server compose
@@ -255,7 +255,7 @@ ide/
 │   ├── bindings/                  # Auto-generated TypeScript bindings
 │   ├── package.json
 │   └── angular.json
-├── external/                      # Submodule pins for dappco.re/go/* deps
+├── external/                      # Submodule pins for github.com/dappcore/* deps
 │   ├── config/  go/  gui/  io/  log/  mcp/  process/
 │   ├── rag/  scm/  store/  webview/  ws/
 ├── build/                         # Platform build configs
@@ -287,7 +287,7 @@ The MCP service is composed from subsystems in `pkg/server/conclave.go` via `new
 
 1. Pick the subsystem the tool belongs to (`pkg/brain/`, `pkg/workspace/`, `pkg/subagent/`, `pkg/navigate/`, `pkg/marketplace/`) — or create a new subsystem if it's its own concern.
 
-2. Add the tool definition + handler in the subsystem's `register.go`. Each tool implements the `mcp.Subsystem` interface from `dappco.re/go/mcp`.
+2. Add the tool definition + handler in the subsystem's `register.go`. Each tool implements the `mcp.Subsystem` interface from `github.com/dappcore/mcp/go`.
 
 3. Add the tool to the parity test list at [`pkg/server/integration_action_parity_test.go`](https://forge.lthn.sh/core/ide/src/branch/dev/go/pkg/server/integration_action_parity_test.go) so the count + parity remains enforced.
 
@@ -353,7 +353,7 @@ const result = await SomeService.SomeMethod(args);
 
 Per the canonical Core ecosystem rules (also enforced by the audit script):
 
-- **Use `dappco.re/go` primitives** in new Go code. Direct imports of `fmt`, `errors`, `strings`, `path/filepath`, `os`, `log`, `encoding/json`, and `bytes` are not part of this repo's style — the Core wrapper package provides the formatting, error wrapping, string, path, filesystem, JSON, and buffer APIs the audit expects.
+- **Use `github.com/dappcore/go` primitives** in new Go code. Direct imports of `fmt`, `errors`, `strings`, `path/filepath`, `os`, `log`, `encoding/json`, and `bytes` are not part of this repo's style — the Core wrapper package provides the formatting, error wrapping, string, path, filesystem, JSON, and buffer APIs the audit expects.
 - **All errors carry `core.Result`** — no naked Go `error` returns post-Mantis #1341. Errors propagate via structured `OK`/`Cause`/`Scope` fields.
 - **UK English** in documentation and user-facing strings (colour, organisation, centre).
 - **Strict typing** — explicit parameter and return types on every function.

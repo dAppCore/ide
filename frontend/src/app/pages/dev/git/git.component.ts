@@ -2,7 +2,7 @@
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import * as GitBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/gitbridge';
+import * as GitBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/gitbridge';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 interface GitBranch {

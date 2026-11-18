@@ -15,7 +15,7 @@ import (
 // container_* bridge tools — IDE surface over the canonical core/go-container
 // runtime. v1 mirrors go-container's Detect / DetectAll / List shape via shell
 // probes against installed binaries. v2 will swap to direct imports of
-// dappco.re/go/container once it's in the IDE's go.work.
+// github.com/dappcore/go-container/go once it's in the IDE's go.work.
 //
 // The tool surface is shaped to match what go-container exposes — runtime
 // capabilities (GPU, NetworkIsolation, HardwareIsolation, etc.) and the

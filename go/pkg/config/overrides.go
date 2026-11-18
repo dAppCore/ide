@@ -1,6 +1,6 @@
 package config
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func (cfg IDEConfig) Merge(override IDEConfig) IDEConfig {
 	if override.Ide.Transport.Mode != "" || override.Ide.Transport.HTTPAddr != "" || override.Ide.Transport.TCPAddr != "" || override.Ide.Transport.UnixSocket != "" || override.Ide.Transport.Token != "" {

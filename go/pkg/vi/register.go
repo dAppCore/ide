@@ -21,7 +21,7 @@ package vi
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // Tone categorises a brief or activity row by severity. Mirrors the TS union

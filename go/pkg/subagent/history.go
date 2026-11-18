@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strconv"
 
-	core "dappco.re/go"
-	storelib "dappco.re/go/store"
+	core "github.com/dappcore/go"
+	storelib "github.com/dappcore/go-store/go"
 )
 
 const (

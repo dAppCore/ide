@@ -3,8 +3,8 @@ package subagent
 import (
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/ws"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-ws/go"
 )
 
 const maxEventsPerWorkspace = 1000

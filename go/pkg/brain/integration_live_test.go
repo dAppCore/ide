@@ -8,14 +8,14 @@ import (
 	"context"
 	"testing"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	storelib "dappco.re/go/store"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	storelib "github.com/dappcore/go-store/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	brainpkg "dappco.re/go/ide/pkg/brain"
-	"dappco.re/go/ide/pkg/config"
-	serverpkg "dappco.re/go/ide/pkg/server"
+	brainpkg "github.com/dappcore/ide/go/pkg/brain"
+	"github.com/dappcore/ide/go/pkg/config"
+	serverpkg "github.com/dappcore/ide/go/pkg/server"
 )
 
 func TestLive_BrainRecall_Good_RealEndpoint(t *testing.T) {
@@ -23,7 +23,8 @@ func TestLive_BrainRecall_Good_RealEndpoint(t *testing.T) {
 	if !ok {
 		t.Skip(reason)
 	}
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -60,7 +61,8 @@ func TestLive_BrainRecall_Good_ActionFlow(t *testing.T) {
 	if !ok {
 		t.Skip(reason)
 	}
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}

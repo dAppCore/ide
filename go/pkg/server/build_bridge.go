@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // build_* bridge tools — the IDE's Build panel surfaces over canonical

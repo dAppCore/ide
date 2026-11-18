@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 // Package tasks owns the local-first task system in core/ide. Backed by
-// dappco.re/go/orm, schemas registered into the IDE's orm Service at
+// github.com/dappcore/orm/go, schemas registered into the IDE's orm Service at
 // boot. Storage flips between in-memory Memium (default) and DuckDB
 // (persistent) via the existing /data backend picker.
 //
@@ -19,7 +19,7 @@ package tasks
 import (
 	"time"
 
-	"dappco.re/go/orm"
+	"github.com/dappcore/orm/go"
 )
 
 // Issue is the primary task record.

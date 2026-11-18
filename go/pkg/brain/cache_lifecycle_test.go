@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	coreio "dappco.re/go/io"
-	storelib "dappco.re/go/store"
+	coreio "github.com/dappcore/go-io/go"
+	storelib "github.com/dappcore/go-store/go"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestCache_TTL_Good_HitWithinTTLReturnsValue(t *testing.T) {
@@ -115,7 +115,8 @@ func TestCache_Invalidate_Good_ForgetClearsRelevantKeys(t *testing.T) {
 
 func newLifecycleCache(t *testing.T, ttl time.Duration) *Cache {
 	t.Helper()
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -139,7 +140,8 @@ func newInvalidationSubsystem(t *testing.T) (*Subsystem, *int, func()) {
 			http.NotFound(w, r)
 		}
 	}))
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		server.Close()
 		t.Fatalf("store: %v", openResult)

@@ -1,6 +1,6 @@
 package marketplace
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func decode[T any](
 	opts core.Options,

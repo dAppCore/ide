@@ -15,7 +15,7 @@ import { FileEditorStore } from '../../services/store/file-editor.store';
 import { CommandRegistryService } from '../../services/command-registry.service';
 import { StatusBarRegistryService } from '../../services/status-bar-registry.service';
 import { SettingsRegistryService } from '../../services/settings-registry.service';
-import * as LemBridge from '../../../../bindings/dappco.re/go/ide/pkg/server/lemlabbridge';
+import * as LemBridge from '../../../../bindings/github.com/dappcore/ide/go/pkg/server/lemlabbridge';
 
 
 /**
@@ -884,7 +884,7 @@ export class IdeComponent implements OnInit, OnDestroy {
 
       // Settings first \u2014 they shape downstream defaults.
       // SettingsStore.hydrate() handles the camelCase / lowercase key
-      // normalisation that dappco.re/go/config imposes on YAML.
+      // normalisation that github.com/dappcore/config/go imposes on YAML.
       if (ui['settings'] && typeof ui['settings'] === 'object') {
         this.settingsStore.hydrate(ui['settings'] as Record<string, any>);
       }

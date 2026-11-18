@@ -3,7 +3,7 @@
 import { Component, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { cachedBridgeResource } from '../../../lib/cached-bridge-resource';
-import * as LocalesBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/localesbridge';
+import * as LocalesBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/localesbridge';
 import { DevSkeleton } from '../../../components/skeleton/dev-skeleton';
 
 interface LocaleEntry {

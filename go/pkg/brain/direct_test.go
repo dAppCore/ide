@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	storelib "dappco.re/go/store"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	storelib "github.com/dappcore/go-store/go"
 
-	aipkg "dappco.re/go/ide/pkg/ai"
-	"dappco.re/go/ide/pkg/config"
+	aipkg "github.com/dappcore/ide/go/pkg/ai"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestDirect_Recall_Good(t *testing.T) {
@@ -38,7 +38,9 @@ func TestDirect_Recall_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -87,7 +89,9 @@ func TestDirect_Recall_UglyFilterCacheIsolation(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -120,7 +124,9 @@ func TestDirect_Recall_Bad(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -146,7 +152,9 @@ func TestDirect_Recall_Ugly(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -180,7 +188,9 @@ func TestDirect_Remember_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -205,7 +215,8 @@ func TestDirect_Remember_Good(t *testing.T) {
 }
 
 func TestDirect_Forget_Bad(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -224,7 +235,9 @@ func TestDirect_List_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -246,7 +259,8 @@ func TestDirect_Context_Good(t *testing.T) {
 	defer server.Close()
 
 	root := t.TempDir()
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -315,7 +329,8 @@ func TestDirect_AgentID_Good(t *testing.T) {
 }
 
 func TestDirect_ApiCall_Bad(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -328,7 +343,8 @@ func TestDirect_ApiCall_Bad(t *testing.T) {
 }
 
 func TestDirect_KeyFingerprint_Ugly(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -339,7 +355,8 @@ func TestDirect_KeyFingerprint_Ugly(t *testing.T) {
 }
 
 func TestDirect_Context_Ugly(t *testing.T) {
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}
@@ -357,7 +374,9 @@ func TestDirect_Remember_Clear_Good(t *testing.T) {
 	})
 	defer server.Close()
 
-	storeInstance, openResult := storelib.New(":memory:")
+	openResult := storelib.New(":memory:")
+
+	storeInstance, _ := openResult.Value.(*storelib.Store)
 	if !openResult.OK {
 		t.Fatalf("store: %v", openResult)
 	}

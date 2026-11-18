@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	coremcp "dappco.re/go/mcp/pkg/mcp"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestTools_Marketplace_Good(t *testing.T) {

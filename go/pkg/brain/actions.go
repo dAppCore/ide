@@ -3,7 +3,7 @@ package brain
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func (s *Subsystem) registerActions(c *core.Core) {

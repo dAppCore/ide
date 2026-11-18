@@ -2,7 +2,7 @@
 
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import * as TenantBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/tenantbridge';
+import * as TenantBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/tenantbridge';
 
 interface TenantStatus {
   registered: boolean;

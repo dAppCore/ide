@@ -3,8 +3,8 @@
 package marketplace
 
 import (
-	core "dappco.re/go"
-	scmmarketplace "dappco.re/go/scm/marketplace"
+	core "github.com/dappcore/go"
+	scmmarketplace "github.com/dappcore/go-scm/go/marketplace"
 )
 
 // fixtureModules is the built-in sample marketplace catalogue. The IDE

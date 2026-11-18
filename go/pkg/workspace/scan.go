@@ -6,9 +6,9 @@ import (
 	"io/fs"
 	"slices"
 
-	core "dappco.re/go"
-	coreio "dappco.re/go/io"
-	"dappco.re/go/process"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	"github.com/dappcore/go-process/go"
 )
 
 const maxScanDepth = 16
@@ -211,7 +211,9 @@ func readLimitedContent(
 		return "", err
 	}
 	defer func() {
-		if cerr := file.Close(); cerr != nil { _ = cerr }
+		if cerr := file.Close(); cerr != nil {
+			_ = cerr
+		}
 	}()
 	raw, err := goio.ReadAll(goio.LimitReader(file, maxBytes+1))
 	if err != nil {
@@ -330,7 +332,9 @@ func logWorkspacePathRejection(rejection workspacePathRejection) {
 		return
 	}
 	c := core.New()
-	if r := c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root"); !r.OK { _ = r }
+	if r := c.Log().Warn(rejection.err, "ide.workspace.scan", "workspace scan skipped path outside workspace root"); !r.OK {
+		_ = r
+	}
 }
 
 func sortedEntries(entries []fs.DirEntry) []fs.DirEntry {

@@ -13,7 +13,7 @@ import {
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
-import * as TerminalBridge from '../../../../../bindings/dappco.re/go/ide/pkg/server/terminalbridge';
+import * as TerminalBridge from '../../../../../bindings/github.com/dappcore/ide/go/pkg/server/terminalbridge';
 import { WorkspaceStore } from '../../../services/store/workspace.store';
 
 const MCP_HOST = '127.0.0.1:9877';

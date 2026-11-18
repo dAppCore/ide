@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	stream "dappco.re/go/stream"
+	core "github.com/dappcore/go"
+	stream "github.com/dappcore/go-stream/go"
 )
 
-// stream_* bridge tools — surfaces dappco.re/go/stream Hub for the
+// stream_* bridge tools — surfaces github.com/dappcore/go-stream/go Hub for the
 // /stream panel under Developer. The IDE keeps a single in-process Hub
 // running; no transport adapters are wired (no peers will appear unless
 // a future lane plugs in WebSocket / TCP). The Hub is still useful as a

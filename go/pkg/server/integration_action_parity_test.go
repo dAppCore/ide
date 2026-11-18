@@ -3,9 +3,9 @@ package server
 import (
 	"testing"
 
-	coreio "dappco.re/go/io"
+	coreio "github.com/dappcore/go-io/go"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestIntegrationActionParity_ToolsHaveActions_Good(t *testing.T) {

@@ -1,6 +1,6 @@
 package config
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func ExampleIDEConfig_Merge() {
 	_ = any((*IDEConfig).Merge)

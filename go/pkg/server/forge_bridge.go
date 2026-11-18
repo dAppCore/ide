@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/forge"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-forge/go"
 )
 
 // probeForgeAuth performs a direct net/http call to /api/v1/user with the
@@ -153,11 +153,11 @@ func (b *MCPBridge) toolForgeStatus(ctx context.Context, _ map[string]any) map[s
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"configured":   ok,
+			"configured":    ok,
 			"authenticated": authed,
-			"as":           authedAs,
-			"base":         forgeBase,
-			"hint":         hint,
+			"as":            authedAs,
+			"base":          forgeBase,
+			"hint":          hint,
 		},
 	}
 }
@@ -407,12 +407,12 @@ func (b *MCPBridge) toolForgeReleases(ctx context.Context, params map[string]any
 	tagURL := strings.TrimSuffix(forgeBaseURL(), "/") + "/api/v1/repos/" + owner + "/" + repo + "/tags?limit=" + fmt.Sprintf("%d", limit)
 	if tagBody := forgeAuthedGET(tagURL); tagBody != nil {
 		var tags []struct {
-			Name        string `json:"name"`
-			Message     string `json:"message"`
-			ID          string `json:"id"`
-			ZipballURL  string `json:"zipball_url"`
-			TarballURL  string `json:"tarball_url"`
-			Commit      struct {
+			Name       string `json:"name"`
+			Message    string `json:"message"`
+			ID         string `json:"id"`
+			ZipballURL string `json:"zipball_url"`
+			TarballURL string `json:"tarball_url"`
+			Commit     struct {
 				URL     string `json:"url"`
 				SHA     string `json:"sha"`
 				Created string `json:"created"`
@@ -528,9 +528,9 @@ func (b *MCPBridge) toolForgeNotifications(ctx context.Context, _ map[string]any
 
 type forgeRepo struct {
 	Name, FullName, Description, HTMLURL string
-	Private, Fork                         bool
-	Stars                                 int64
-	UpdatedAt                             string
+	Private, Fork                        bool
+	Stars                                int64
+	UpdatedAt                            string
 }
 
 func repoToInfo(r interface{}) forgeRepo {

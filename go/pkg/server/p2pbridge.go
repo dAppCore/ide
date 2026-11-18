@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // p2pBridge exposes the gui p2p service to the Wails frontend with
@@ -16,12 +16,12 @@ import (
 // sweep (TODO(snider/wails) markers across ~20 panels). Pattern that
 // every other panel will follow:
 //
-//   1. struct {core *core.Core} stored in pkg/server
-//   2. typed methods that wrap c.Action(...) and unwrap Result
-//   3. registered in cmd/core-ide/wails_boot.go via app.RegisterService
-//   4. wails3 generate bindings emits the matching TS into
-//      frontend/bindings/dappco.re/go/ide/pkg/server/p2pbridge.ts
-//   5. panel imports + calls the typed binding instead of callBridge
+//  1. struct {core *core.Core} stored in pkg/server
+//  2. typed methods that wrap c.Action(...) and unwrap Result
+//  3. registered in cmd/core-ide/wails_boot.go via app.RegisterService
+//  4. wails3 generate bindings emits the matching TS into
+//     frontend/bindings/github.com/dappcore/ide/go/pkg/server/p2pbridge.ts
+//  5. panel imports + calls the typed binding instead of callBridge
 type p2pBridge struct {
 	core *core.Core
 }

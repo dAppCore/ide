@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
-	coremcp "dappco.re/go/mcp/pkg/mcp"
-	mcpagentic "dappco.re/go/mcp/pkg/mcp/agentic"
+	core "github.com/dappcore/go"
+	coremcp "github.com/dappcore/mcp/go/pkg/mcp"
+	mcpagentic "github.com/dappcore/mcp/go/pkg/mcp/agentic"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"dappco.re/go/ide/pkg/config"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 var relayEnvMu sync.Mutex
@@ -165,24 +165,24 @@ func withDispatchEnv(values map[string]string) func() {
 		} else {
 			previous[key] = nil
 		}
-			if result := core.Setenv(key, value); !result.OK {
-				err, _ := result.Value.(error)
-				core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
-			}
+		if result := core.Setenv(key, value); !result.OK {
+			err, _ := result.Value.(error)
+			core.Warn("ide.subagent.dispatch set env", "key", key, "err", err)
 		}
-		return func() {
-			for key, value := range previous {
-				if value == nil {
-					if result := core.Unsetenv(key); !result.OK {
-						err, _ := result.Value.(error)
-						core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
-					}
-					continue
-				}
-				if result := core.Setenv(key, *value); !result.OK {
+	}
+	return func() {
+		for key, value := range previous {
+			if value == nil {
+				if result := core.Unsetenv(key); !result.OK {
 					err, _ := result.Value.(error)
-					core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+					core.Warn("ide.subagent.dispatch unset env", "key", key, "err", err)
 				}
+				continue
+			}
+			if result := core.Setenv(key, *value); !result.OK {
+				err, _ := result.Value.(error)
+				core.Warn("ide.subagent.dispatch restore env", "key", key, "err", err)
+			}
 		}
 	}
 }

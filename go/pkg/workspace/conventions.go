@@ -3,9 +3,9 @@ package workspace
 import (
 	"embed"
 
-	core "dappco.re/go"
-	coreconfig "dappco.re/go/config"
-	coreio "dappco.re/go/io"
+	coreconfig "github.com/dappcore/config/go"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
 )
 
 //go:embed conventions/*.yaml
@@ -43,18 +43,18 @@ func loadConventionPacks(detected []string, allowed []string) ([]string, []strin
 		if writeErr := medium.Write(path, string(raw)); writeErr != nil {
 			continue
 		}
-			result := coreconfig.New(
-				coreconfig.WithMedium(workspaceConfigMedium(medium)),
-				coreconfig.WithPath(path),
-			)
-			if !result.OK {
-				continue
-			}
-			var data map[string]any
-			configValue := result.Value.(*coreconfig.Config)
-			if configValue == nil || !configValue.Get("", &data).OK {
-				continue
-			}
+		result := coreconfig.New(
+			coreconfig.WithMedium(workspaceConfigMedium(medium)),
+			coreconfig.WithPath(path),
+		)
+		if !result.OK {
+			continue
+		}
+		var data map[string]any
+		configValue := result.Value.(*coreconfig.Config)
+		if configValue == nil || !configValue.Get("", &data).OK {
+			continue
+		}
 		var pack conventionPack
 		if result := core.JSONUnmarshalString(core.JSONMarshalString(data), &pack); !result.OK {
 			continue

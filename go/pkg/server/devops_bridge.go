@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/devops/devkit"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-devops/go/devkit"
 )
 
 // devops_* bridge tools surface core/go-devops's developer-toolkit + the
@@ -61,11 +61,11 @@ func (b *MCPBridge) toolDevopsSecretsScan(_ context.Context, params map[string]a
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"path":      root,
-			"findings":  out,
-			"total":     len(findings),
-			"rules":     rulesArr,
-			"scanner":   "regex",
+			"path":     root,
+			"findings": out,
+			"total":    len(findings),
+			"rules":    rulesArr,
+			"scanner":  "regex",
 		},
 	}
 }

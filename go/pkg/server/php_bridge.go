@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	core "dappco.re/go"
-	"dappco.re/go/php/pkg/php"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/php/go/pkg/php"
 )
 
 // php_* bridge tools surface core/php's Laravel-project discovery + tooling.
@@ -145,20 +145,20 @@ func (b *MCPBridge) toolPHPProject(_ context.Context, params map[string]any) map
 	return map[string]any{
 		"ok": true,
 		"value": map[string]any{
-			"path":             path,
-			"name":             filepath.Base(path),
-			"app_name":         php.GetLaravelAppName(path),
-			"app_url":          php.GetLaravelAppURL(path),
-			"domain":           php.ExtractDomainFromURL(php.GetLaravelAppURL(path)),
-			"package_mgr":      php.DetectPackageManager(path),
-			"frankenphp":       php.IsFrankenPHPProject(path),
-			"services":         svcOut,
-			"has_env":          hasEnv,
-			"has_env_example":  hasEnvExample,
-			"has_node_modules": hasNodeModules,
-			"has_vendor":       hasVendor,
-			"has_composer_lock":  hasComposerLock,
-			"has_package_lock": hasPackageLock,
+			"path":              path,
+			"name":              filepath.Base(path),
+			"app_name":          php.GetLaravelAppName(path),
+			"app_url":           php.GetLaravelAppURL(path),
+			"domain":            php.ExtractDomainFromURL(php.GetLaravelAppURL(path)),
+			"package_mgr":       php.DetectPackageManager(path),
+			"frankenphp":        php.IsFrankenPHPProject(path),
+			"services":          svcOut,
+			"has_env":           hasEnv,
+			"has_env_example":   hasEnvExample,
+			"has_node_modules":  hasNodeModules,
+			"has_vendor":        hasVendor,
+			"has_composer_lock": hasComposerLock,
+			"has_package_lock":  hasPackageLock,
 		},
 	}
 }

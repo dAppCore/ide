@@ -3,7 +3,7 @@ package marketplace
 import (
 	"testing"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 func TestDecode_Marketplace_Good(t *testing.T) {

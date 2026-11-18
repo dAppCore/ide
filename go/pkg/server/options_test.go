@@ -3,9 +3,9 @@ package server
 import (
 	"testing"
 
-	core "dappco.re/go"
-	"dappco.re/go/ide/pkg/config"
-	coreio "dappco.re/go/io"
+	core "github.com/dappcore/go"
+	coreio "github.com/dappcore/go-io/go"
+	"github.com/dappcore/ide/go/pkg/config"
 )
 
 func TestOptions_Default_Good(t *testing.T) {

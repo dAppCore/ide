@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // ts_* bridge tools — TypeScript / Deno / JS project discovery surface.
@@ -25,19 +25,19 @@ import (
 // Deno Worker with permission gating).
 
 type tsProject struct {
-	Path           string   `json:"path"`
-	Name           string   `json:"name"`
-	Version        string   `json:"version"`
-	Description    string   `json:"description"`
-	PackageManager string   `json:"package_manager"`
-	Frameworks     []string `json:"frameworks"`
+	Path           string     `json:"path"`
+	Name           string     `json:"name"`
+	Version        string     `json:"version"`
+	Description    string     `json:"description"`
+	PackageManager string     `json:"package_manager"`
+	Frameworks     []string   `json:"frameworks"`
 	Scripts        []tsScript `json:"scripts"`
-	Deno           bool     `json:"deno"`
-	Workspace      bool     `json:"workspace"`
-	HasNodeModules bool     `json:"has_node_modules"`
-	HasLockfile    bool     `json:"has_lockfile"`
-	HasTsconfig    bool     `json:"has_tsconfig"`
-	Modified       string   `json:"modified"`
+	Deno           bool       `json:"deno"`
+	Workspace      bool       `json:"workspace"`
+	HasNodeModules bool       `json:"has_node_modules"`
+	HasLockfile    bool       `json:"has_lockfile"`
+	HasTsconfig    bool       `json:"has_tsconfig"`
+	Modified       string     `json:"modified"`
 }
 
 type tsScript struct {

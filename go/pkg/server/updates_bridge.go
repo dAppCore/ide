@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	core "dappco.re/go"
+	core "github.com/dappcore/go"
 )
 
 // updates_* bridge tools — surfaces version tracking for the tools the
@@ -26,12 +26,12 @@ import (
 // without hammering api.github.com.
 
 type toolEntry struct {
-	Key         string            // stable id
-	Name        string            // display name
-	Binary      string            // PATH lookup target
-	VersionCmd  []string          // command to print local version
-	VersionGrep string            // regex/substring to extract version
-	GithubRepo  string            // owner/repo for latest-release query, blank if not GitHub
+	Key         string   // stable id
+	Name        string   // display name
+	Binary      string   // PATH lookup target
+	VersionCmd  []string // command to print local version
+	VersionGrep string   // regex/substring to extract version
+	GithubRepo  string   // owner/repo for latest-release query, blank if not GitHub
 	Description string
 }
 
@@ -66,8 +66,8 @@ var (
 )
 
 type releaseEntry struct {
-	Version  string
-	URL      string
+	Version   string
+	URL       string
 	FetchedAt time.Time
 }
 

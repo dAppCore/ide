@@ -22,16 +22,16 @@
         "bindings/*"
       ],
       "@lthn/ide/*": [
-        "bindings/dappco.re/go/ide/pkg/ide/*"
+        "bindings/github.com/dappcore/ide/go/pkg/ide/*"
       ],
       "@lthn/docs/*": [
-        "bindings/dappco.re/go/ide/pkg/docs/*"
+        "bindings/github.com/dappcore/ide/go/pkg/docs/*"
       ],
       "@lthn/core/*": [
-        "bindings/dappco.re/go/ide/pkg/*"
+        "bindings/github.com/dappcore/ide/go/pkg/*"
       ],
       "@lthn/*": [
-        "bindings/dappco.re/go/ide/pkg/server/*"
+        "bindings/github.com/dappcore/ide/go/pkg/server/*"
       ],
       "@lib/*": [
         "src/app/lib/*"

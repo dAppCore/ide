@@ -1,6 +1,6 @@
 package brain
 
-import core "dappco.re/go"
+import core "github.com/dappcore/go"
 
 func TestErrors_OpenBrainError_Error_Good(t *core.T) {
 	subject := any((*OpenBrainError).Error)
